@@ -11,7 +11,7 @@ if [ -f submissions*.zip ]; then
 	rm submissions*.zip 
 fi
 
-zipCount=$(ls -1 *.zip 2>/dev/null | wc -l)
+zipCount=$(ls -1 submissions/*.zip 2>/dev/null | wc -l)
 if [ $zipCount -gt 0 ]; then 
 	# To extract all zips:
 	for i in submissions/*.zip; do unzip -q -n "$i" -d "${i%%.zip}"; done

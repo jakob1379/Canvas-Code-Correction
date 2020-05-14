@@ -15,7 +15,7 @@ if [ $submissionCount -gt 0 ]; then
 	num1=0
 
 		for d in "$totalPath"/*/; do 
-			fileCount=$(ls -1 *log *txt 2>/dev/null | wc -l)
+			fileCount=$(ls -1 "$d"/*log "$d"/*txt 2>/dev/null | wc -l)
 			if [ $fileCount -lt 3 ]; then
 				dir="$PWD"
 				cp -r "$folder"/code/* "$d"/
