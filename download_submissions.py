@@ -7,12 +7,21 @@ import urllib.request
 from joblib import Parallel, delayed
 import multiprocessing
 from time import time
+import argparse
+
+parser = argparse.ArgumentParser("""
+Program to download assignments. It needs two files next to it
+    course_id: Containing the course id
+    token:     Your personal accesstoken from canvas""")
+args = parser.parse_args()
+
+
+
 
 def download_url(url, save_path):
     with urllib.request.urlopen(url) as dl_file:
         with open(save_path, 'wb') as out_file:
             out_file.write(dl_file.read())
-
 
 def file_to_string(file_name):
     with open(file_name) as f:
@@ -96,7 +105,7 @@ API_KEY = file_to_string('token')
 canvas = Canvas(API_URL, API_KEY)
 
 # init course
-course_id = 38767
+course_id = file_to_string('course_id')
 course = canvas.get_course(course_id)
 
 # get users
@@ -107,7 +116,7 @@ for assignment in course.get_assignments():
 
     # Create paths for zip files
     print(f"Checking {assignment.name}...")
-    directory = f"{assignment.name}/".replace(' ', '')+'submissions/'
+    directory = assignment.name.replace(' ', '') + '/' + 'submissions/'
     if not os.path.exists(directory):
         os.makedirs(directory)
         old_files = []
@@ -119,5 +128,6 @@ for assignment in course.get_assignments():
     submissions = list(assignment.get_submissions())
     num_cores = multiprocessing.cpu_count()
     Parallel(n_jobs=num_cores)(
-        delayed(download_submission)(i) for i in pbar(submissions))
+        delayed(
+            download_submission)(i) for i in pbar(submissions))
     # shutil.make_archive(directory[:-1], 'zip', directory)

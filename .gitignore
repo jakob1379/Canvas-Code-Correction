@@ -2,6 +2,7 @@ submissions/
 *_scores.txt
 *.log
 token
+.python_version
 
 ###############
 # Emacs files #
