@@ -3,6 +3,7 @@ submissions/
 *.log
 token
 .python_version
+backup
 
 ###############
 # Emacs files #
