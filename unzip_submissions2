@@ -1,0 +1,22 @@
+#!/usr/bin/env bash
+set -euo pipefail
+IFS=$'\n\t'
+
+# Strip file extension and unzip to dir with same name as file
+unzip_d () {
+    zipfile="$1"
+    zipdir=${1%.zip}
+    unzip -od "$zipdir" "$zipfile"
+}
+
+# Find submissions/
+files=$(ls Week*/submissions/*.zip)
+
+# Walk through them and unzip to folders with same name
+for f in $files; do
+    unzip_d "$f" &&
+    rm "$f"
+
+    # Remove annoying mac folders
+    rm -rf $(find Week* -type d -name "__MACOSX")
+done
