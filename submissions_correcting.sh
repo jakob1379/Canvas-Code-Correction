@@ -75,10 +75,7 @@ function correction_routine {
 
     bname=$(basename "$submission")
     points=$(cat "$submission/$bname""_points.txt" | paste -sd+ - | bc)
-    printf "%0.2f " $points >> "$scoreFile"
-
-    # # url="https://absalon.ku.dk/courses/38767/assignments/99856/submissions/"
-    # echo -n "$url" >> "$scoreFile"
+    LC_ALL=C printf "%0.2f " "$points" >> "$scoreFile" #make locale correct
 
     OIFS=$IFS
     IFS='_'
@@ -118,7 +115,7 @@ for d in $totalPath*/
 do
 
     echo -e "$count of $total $week: $totalPath$d"
-    correction_routine "$totalPath$(basename "$d")"
+    correction_routine "$totalPath$(basename "$d")" &
     PID="$!"
     echo "$PID:$scripts" >> $tmp_file
     PID_LIST+="$PID "
