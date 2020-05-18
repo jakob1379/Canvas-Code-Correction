@@ -76,6 +76,8 @@ def download_submission(sub):
                 shutil.rmtree(f)
 
             # download attachment if it doesn't exist,
+            if 'yang' in file_name:
+                print("######:", directory+file_name+'.zip')
             if directory+file_name+'/' not in old_files:
                 url = sub.attachments[0]['url']
                 download_url(url, directory+file_name+'.zip')

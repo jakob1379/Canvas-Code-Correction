@@ -16,11 +16,14 @@ operations:
 }
 
 always='no'
-
-while getopts ":ha" opt; do
+verbose=false
+while getopts ":hav" opt; do
     case ${opt} in
 	a)
 	    always='yes'
+	    ;;
+	v)
+	    verbose=true
 	    ;;
 	h)
 	    displayUsage
@@ -54,7 +57,7 @@ function correction_routine {
     fileCount=$(ls -1 "$submission"/*log "$submission"/*txt 2>/dev/null | wc -l)
 
     # evaluate submission
-    if [[ -z `find $submission -type f -name '*points.txt'` ]] || [ $always = 'yes' ]
+    if [[ -z `find "$submission" -type f -name '*points.txt'` ]] || [ $always = 'yes' ]
     then
 	echo "evaluating..."
 	dir="$PWD"
@@ -70,7 +73,7 @@ function correction_routine {
     foldername=$(basename -- "$submission")
     echo -n "$foldername	" >> "$scoreFile"
 
-    bname=$(basename $submission)
+    bname=$(basename "$submission")
     points=$(cat "$submission/$bname""_points.txt" | paste -sd+ - | bc)
     printf "%0.2f " $points >> "$scoreFile"
 
@@ -111,11 +114,11 @@ total="$(ls $totalPath | wc -l)"
 count=1
 
 tmp_file=$(mktemp /tmp/file.XXX)
-for d in $(find $totalPath* -type d -name "*")
+for d in $totalPath*/
 do
-    echo -e "$count of $total $week: $(basename $d)"
-    correction_routine $d &
 
+    echo -e "$count of $total $week: $totalPath$d"
+    correction_routine "$totalPath$(basename "$d")"
     PID="$!"
     echo "$PID:$scripts" >> $tmp_file
     PID_LIST+="$PID "

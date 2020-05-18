@@ -38,11 +38,13 @@ course = canvas.get_course(course_id)
 # get users
 users = course.get_users()
 
+
+
 assignment = course.get_assignments()[0]
-base_dir = 'codechecker_2020/week1-2/submissions/'
-reports = sorted(glob(base_dir+'/*'))
+reports = sorted(glob(base_dir + 'Week*/submissions/*/'))
 
 score_to_complete = 43
+scores_to_complete = dict(1=43, 2=50, 3=50, 4=50)
 # pbar = Pbar.ProgressBar(redirect_stdout=True)
 # for rep in pbar(reports):
 for rep in reports:
