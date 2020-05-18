@@ -102,7 +102,7 @@ users = course.get_users()
 for assignment in course.get_assignments():
 
     # Create paths for zip files
-    print(f"Checking {assignment.name}...")
+    print("Downloading " + assignment.name + "...")
     directory = assignment.name.replace(' ', '') + '/' + 'submissions/'
     if not os.path.exists(directory):
         os.makedirs(directory)

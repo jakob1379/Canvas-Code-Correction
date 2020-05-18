@@ -9,8 +9,7 @@ echo "INFO: Unzipping"
 ./unzip_submissions2
 echo "INFO: Done!"
 
-for folder in $(ls -d */)
-do
+for folder in $(ls -d Week*/); do
     echo "INFO: Correcting submissions"
     bash submissions_correcting.sh "$folder"
     echo "INFO: Done!"
