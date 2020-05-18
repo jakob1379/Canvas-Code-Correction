@@ -10,10 +10,11 @@ unzip_d () {
 }
 
 # Find submissions/
-files=$(ls Week*/submissions/*.zip)
+files=$(ls Week*/submissions/*.zip) || echo "INFO: No zip files found"
 
 # Walk through them and unzip to folders with same name
 for f in $files; do
+    echo "INFO: Found zips to extract"
     unzip_d "$f" &&
     rm "$f"
 
