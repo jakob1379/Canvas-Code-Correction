@@ -30,6 +30,7 @@ def file_to_string(file_name):
 
 
 def download_submission(sub):
+    global old_files
     try:
         url = sub.attachments[0]['url']
         if url:
@@ -53,15 +54,17 @@ def download_submission(sub):
 
             # also filename from absalon
             file_name.append(sub.attachments[0]['display_name'])
-            file_name = [str(i) for i in file_name]
 
-            # Join name to simple file name
-            file_name = '_'.join(file_name)
+            # Combine to finale output name
+            file_name = '_'.join([str(i) for i in file_name])
 
             # check if user has old submissions
             for old_file in old_files:
                 if str(sub.user_id) in old_file and file_name not in old_file:
-                    os.remove(old_file)
+                    try:
+                        os.remove(old_file)
+                    except IsADirectoryError:
+                        pass
 
             # Delete old folder from correction directory
             old_corrections = glob('localCodeChecker_Rune/submissions/*')
@@ -77,22 +80,6 @@ def download_submission(sub):
 
     except AttributeError:
         pass
-
-
-# parser = argparse.ArgumentParser()
-# parser.add_argument("-c", "--course-id",
-#                     help="path to file containing id of the course",
-#                     metavar="course",
-#                     type=str,
-#                     nargs='?',
-#                     default='.saved_course_id')
-# parser.add_argument("-t", "--token",
-#                     help="path to absalon token.",
-#                     metavar="token",
-#                     type=str,
-#                     default='.saved_token')
-# parser.add_argument("arg", help="required positional arg")
-# args = parser.parse_args()
 
 # Canvas API URL
 domain = 'absalon.ku.dk'
@@ -127,7 +114,6 @@ for assignment in course.get_assignments():
     pbar = Pbar.ProgressBar(redirect_stdout=True)
     submissions = list(assignment.get_submissions())
     num_cores = multiprocessing.cpu_count()
-    Parallel(n_jobs=num_cores)(
-        delayed(
-            download_submission)(i) for i in pbar(submissions))
+    Parallel(n_jobs=num_cores)(delayed(
+        download_submission)(sub) for sub in pbar(submissions))
     # shutil.make_archive(directory[:-1], 'zip', directory)
