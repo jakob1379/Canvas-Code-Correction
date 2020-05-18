@@ -16,8 +16,6 @@ Program to download assignments. It needs two files next to it
 args = parser.parse_args()
 
 
-
-
 def download_url(url, save_path):
     with urllib.request.urlopen(url) as dl_file:
         with open(save_path, 'wb') as out_file:
@@ -67,7 +65,6 @@ def download_submission(sub):
                         pass
 
             # Delete old folder from correction directory
-            old_corrections = glob('localCodeChecker_Rune/submissions/*')
             for old_file in old_corrections:
                 if str(sub.user_id) in old_file and \
                    sub.attachment[0]['id'] not in old_file:
