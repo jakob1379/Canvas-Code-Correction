@@ -62,11 +62,11 @@ def download_submission(sub):
             file_name.append(tmp_fname)
 
             # Combine to finale output name
-            file_name = '_'.join([str(i) for i in file_name]) + '/'
+            file_name = '_'.join([str(i) for i in file_name])
 
             # check if user has old submissions
             folders_to_remove = [old for old in old_files if str(sub.user_id) in old
-                                 and file_name not in old]
+                                 and file_name+'/' not in old]
 
             for f in folders_to_remove:
                 shutil.rmtree(f)
@@ -74,7 +74,7 @@ def download_submission(sub):
             # download attachment if it doesn't exist,
             if directory+file_name+'/' not in old_files:
                 url = sub.attachments[0]['url']
-                download_url(url, directory+file_name)
+                download_url(url, directory+file_name+'.zip')
 
     except AttributeError:
         if args.verbose:
@@ -117,5 +117,3 @@ for assignment in course.get_assignments():
     Parallel(n_jobs=num_cores)(delayed(
         download_submission)(sub) for sub in pbar(submissions))
     # shutil.make_archive(directory[:-1], 'zip', directory)
-
-    break
