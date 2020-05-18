@@ -16,6 +16,7 @@ operations:
 }
 
 always='no'
+
 while getopts ":ha" opt; do
     case ${opt} in
 	a)
@@ -41,9 +42,11 @@ done
 # Check number of arguments
 if [ $# -lt 1 ]
 then
-    submission=$1
     echo "No path provided!"
+    exit 1
 fi
+
+submission=$1
 
 function correction_routine {
     # init variables
@@ -71,8 +74,9 @@ function correction_routine {
     points=$(cat "$submission/$bname""_points.txt" | paste -sd+ - | bc)
     printf "%0.2f " $points >> "$scoreFile"
 
-    url="https://absalon.ku.dk/courses/38767/assignments/99856/submissions/"
-    echo -n "$url" >> "$scoreFile"
+    # # url="https://absalon.ku.dk/courses/38767/assignments/99856/submissions/"
+    # echo -n "$url" >> "$scoreFile"
+
     OIFS=$IFS
     IFS='_'
     read -ra ADDR <<< "$foldername"
@@ -87,6 +91,7 @@ function correction_routine {
     fi
 
 }
+
 
 folder="$1"
 totalPath="$folder/submissions/"
@@ -110,6 +115,7 @@ for d in $(find $totalPath* -type d -name "*")
 do
     echo -e "$count of $total $week: $(basename $d)"
     correction_routine $d &
+
     PID="$!"
     echo "$PID:$scripts" >> $tmp_file
     PID_LIST+="$PID "

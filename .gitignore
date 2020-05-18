@@ -4,6 +4,7 @@ submissions/
 token
 .python-version
 backup
+upload_me/
 
 ###############
 # Emacs files #

@@ -8,11 +8,16 @@ from joblib import Parallel, delayed
 import multiprocessing
 from time import time
 import argparse
+import shutil
 
 parser = argparse.ArgumentParser("""
 Program to download assignments. It needs two files next to it
     course_id: Containing the course id
     token:     Your personal accesstoken from canvas""")
+parser.add_argument("-v", "--verbose",
+                    help="sets verbosity",
+                    action='store_true')
+
 args = parser.parse_args()
 
 
@@ -21,6 +26,7 @@ def download_url(url, save_path):
         with open(save_path, 'wb') as out_file:
             out_file.write(dl_file.read())
 
+
 def file_to_string(file_name):
     with open(file_name) as f:
         content = f.read()
@@ -28,7 +34,7 @@ def file_to_string(file_name):
 
 
 def download_submission(sub):
-    global old_files
+    global old_files, args
     try:
         url = sub.attachments[0]['url']
         if url:
@@ -51,32 +57,28 @@ def download_submission(sub):
             file_name.append(sub.attachments[0]['id'])
 
             # also filename from absalon
-            file_name.append(sub.attachments[0]['display_name'])
+            tmp_fname = '.'.join(
+                sub.attachments[0]['display_name'].split('.')[:-1])
+            file_name.append(tmp_fname)
 
             # Combine to finale output name
-            file_name = '_'.join([str(i) for i in file_name])
+            file_name = '_'.join([str(i) for i in file_name]) + '/'
 
             # check if user has old submissions
-            for old_file in old_files:
-                if str(sub.user_id) in old_file and file_name not in old_file:
-                    try:
-                        os.remove(old_file)
-                    except IsADirectoryError:
-                        pass
+            folders_to_remove = [old for old in old_files if str(sub.user_id) in old
+                                 and file_name not in old]
 
-            # Delete old folder from correction directory
-            for old_file in old_corrections:
-                if str(sub.user_id) in old_file and \
-                   sub.attachment[0]['id'] not in old_file:
-                    os.rmdir(old_file)
+            for f in folders_to_remove:
+                shutil.rmtree(f)
 
             # download attachment if it doesn't exist,
-            if directory+file_name not in old_files:
+            if directory+file_name+'/' not in old_files:
                 url = sub.attachments[0]['url']
                 download_url(url, directory+file_name)
 
     except AttributeError:
-        pass
+        if args.verbose:
+            print("Submission has no attachment:", sub.id)
 
 # Canvas API URL
 domain = 'absalon.ku.dk'
@@ -105,12 +107,15 @@ for assignment in course.get_assignments():
         os.makedirs(directory)
         old_files = []
     else:
-        old_files = glob(directory+'*')
+        old_files = glob(directory+'*/')
 
     # Let's parallellize this to increase the speed
     pbar = Pbar.ProgressBar(redirect_stdout=True)
     submissions = list(assignment.get_submissions())
     num_cores = multiprocessing.cpu_count()
+
     Parallel(n_jobs=num_cores)(delayed(
         download_submission)(sub) for sub in pbar(submissions))
     # shutil.make_archive(directory[:-1], 'zip', directory)
+
+    break

@@ -16,8 +16,19 @@ files=$(ls Week*/submissions/*.zip) || echo "INFO: No zip files found"
 for f in $files; do
     echo "INFO: Found zips to extract"
     unzip_d "$f" &&
-    rm "$f"
+	rm "$f"
 
     # Remove annoying mac folders
     rm -rf $(find Week* -type d -name "__MACOSX")
+done
+
+# # find files and move to top folder
+for d in Week*/submissions/*/; do
+    folder_count=$(find "$d"/* -maxdepth 0 -type d -print 2>/dev/null | wc -l)
+    if [ $folder_count -gt 0 ] ; then
+    	mv "$d"/*/*.hpp "$d"
+    	mv "$d"/*/*.h "$d"
+    	mv "$d"/*/*.cpp "$d"
+    	rm -r "$d"/*/;
+    fi
 done
