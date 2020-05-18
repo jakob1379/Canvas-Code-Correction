@@ -17,6 +17,9 @@ Program to download assignments. It needs two files next to it
 parser.add_argument("-v", "--verbose",
                     help="sets verbosity",
                     action='store_true')
+parser.add_argument("-p", "--parallel",
+                    help="download in parallel",
+                    action='store_true')
 
 args = parser.parse_args()
 
@@ -65,7 +68,8 @@ def download_submission(sub):
             file_name = '_'.join([str(i) for i in file_name])
 
             # check if user has old submissions
-            folders_to_remove = [old for old in old_files if str(sub.user_id) in old
+            folders_to_remove = [old for old in old_files
+                                 if str(sub.user_id) in old
                                  and file_name+'/' not in old]
 
             for f in folders_to_remove:
@@ -114,6 +118,11 @@ for assignment in course.get_assignments():
     submissions = list(assignment.get_submissions())
     num_cores = multiprocessing.cpu_count()
 
-    Parallel(n_jobs=num_cores)(delayed(
-        download_submission)(sub) for sub in pbar(submissions))
+    if args.parallel:
+        Parallel(n_jobs=num_cores)(delayed(
+            download_submission)(sub) for sub in pbar(submissions))
+    else:
+        for sub in pbar(submissions):
+            download_submission(sub)
+
     # shutil.make_archive(directory[:-1], 'zip', directory)
