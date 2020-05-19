@@ -1,14 +1,14 @@
 # Import the Canvas class
 from canvasapi import Canvas
 from glob import glob
-import os
-import progressbar as Pbar
-import urllib.request
 from joblib import Parallel, delayed
-import multiprocessing
 from time import time
 import argparse
+import multiprocessing
+import os
+import progressbar as Pbar
 import shutil
+import urllib.request
 
 parser = argparse.ArgumentParser("""
 Program to download assignments. It needs two files next to it
@@ -86,6 +86,7 @@ def download_submission(sub):
         if args.verbose:
             print("Submission has no attachment:", sub.id)
 
+
 # Canvas API URL
 domain = 'absalon.ku.dk'
 API_URL = "https://"+domain+"/"
@@ -121,6 +122,7 @@ for assignment in course.get_assignments():
     num_cores = multiprocessing.cpu_count()
 
     if args.parallel:
+        print("Downloading submissions in parallel!")
         Parallel(n_jobs=num_cores)(delayed(
             download_submission)(sub) for sub in pbar(submissions))
     else:
