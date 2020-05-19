@@ -59,12 +59,13 @@ def grade_submission(sub):
         submission.edit(submission={'posted_grade': 'complete'})
     elif (points < scores_to_complete[assignment_name] and
           submission.grade != 'incomplete' and
-          submission.grade != 'complete'):
+          submission.grade != 'complete' and
+          assignment_name == 'Week1-2'):
         if args.verbose:
             print(out_str)
             print("Incomplete with points:", points)
             print()
-        # submission.edit(submission={'posted_grade': 'incomplete'})
+        submission.edit(submission={'posted_grade': 'incomplete'})
 
 
 # %% Init

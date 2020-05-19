@@ -22,7 +22,7 @@ for f in $files; do
     rm -rf $(find Week* -type d -name "__MACOSX")
 done
 
-# # find files and move to top folder
+## find files and move to top folder
 for d in Week*/submissions/*/; do
     folder_count=$(find "$d"/* -maxdepth 0 -type d -print 2>/dev/null | wc -l)
     if [ $folder_count -gt 0 ] ; then
