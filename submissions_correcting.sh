@@ -10,14 +10,16 @@ displayUsage() {
 usage:  name <operation> [...]
 operations:
     correct {-h help} shows this dialogue
-    correct {-a always} always
+    correct {-a always} always corect assigments
+    correct {-p paralllel} run in parallel
 
 '
 }
 
 always='no'
 verbose=false
-while getopts ":hav" opt; do
+parallel=false
+while getopts ":havp" opt; do
     case ${opt} in
 	a)
 	    always='yes'
@@ -28,6 +30,10 @@ while getopts ":hav" opt; do
 	h)
 	    displayUsage
 	    exit 1
+	    ;;
+	p)
+	    echo "Correction INFO: Running in parallel!"
+	    parallel=true
 	    ;;
 	\?)
 	    echo "Invalid option: $OPTARG" 1>&2
@@ -115,19 +121,23 @@ for d in $totalPath*/
 do
 
     echo -e "$count of $total $week: $totalPath$d"
-    correction_routine "$totalPath$(basename "$d")" &
-    PID="$!"
-    echo "$PID:$scripts" >> $tmp_file
-    PID_LIST+="$PID "
-
+    if $parallel; then
+	correction_routine "$totalPath$(basename "$d")" &
+	PID="$!"
+	echo "$PID:$scripts" >> $tmp_file
+	PID_LIST+="$PID "
+    else
+	correction_routine "$totalPath$(basename "$d")"
+    fi
     count="$(($count+1))"
 done
 
-for process in ${PID_LIST[@]};do
-   wait $process
-   exit_status=$?
-   script_name=`egrep $process $tmp_file | awk -F ":" '{print $2}' | rev | awk -F "/" '{print $2}' | rev`
-   echo "$script_name exit status: $exit_status"
-done
-
+if $parallel; then
+    for process in ${PID_LIST[@]};do
+	wait $process
+	exit_status=$?
+	script_name=`egrep $process $tmp_file | awk -F ":" '{print $2}' | rev | awk -F "/" '{print $2}' | rev`
+	echo "$script_name exit status: $exit_status"
+    done
+fi
 echo "all's done!"
