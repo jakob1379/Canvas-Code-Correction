@@ -5,7 +5,7 @@ folder=$1
 cd "$folder"
 
 for i in submissions/*/; do
-    if [[ -n $(find "$i/"*_points.txt -cmin -30 -print 2>/dev/null) ]]
+    if [[ -n $(find "$i/"*_points.txt -mmin -30 -print 2>/dev/null) ]]
     then
 	trim="${i%/}"
 	zip -j -q   "${i%/}.zip"  "$i""${trim#*/}".txt "$i"*.log;
