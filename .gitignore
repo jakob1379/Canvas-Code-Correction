@@ -1,11 +1,10 @@
-submissions/
-upload_me/
 *_scores.txt
 *.log
 token
 .python-version
 backup
 Week*/upload_me/
+Week*/submissions/
 
 ###############
 # Emacs files #
