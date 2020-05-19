@@ -21,11 +21,9 @@ fi
 
 # # find files and move to top folder
 for d in submissions/*/; do
-
     if [ -d "__MACOSX" ]; then
 	rm -rf "__MACOSX";
     fi
-
     folder_count=$(find "$d"/* -maxdepth 0 -type d -print 2>/dev/null | wc -l)
     if [ $folder_count -gt 0 ] ; then
 	mv "$d"/*/*.hpp "$d"
@@ -33,5 +31,4 @@ for d in submissions/*/; do
 	mv "$d"/*/*.cpp "$d"
 	rm -r "$d"/*/;
     fi
-
 done

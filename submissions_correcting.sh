@@ -15,7 +15,6 @@ operations:
 
 '
 }
-
 always='no'
 verbose=false
 parallel=false
@@ -56,7 +55,6 @@ then
 fi
 
 submission=$1
-
 function correction_routine {
     # init variables
     submission=$1
@@ -72,8 +70,10 @@ function correction_routine {
 	python2 main.py > errors.log 2>&1
 	rm -rf test/ config.py main.py # TODO: Make one cleanup call instead
 	cd "$dir"
+	echo "$submission corrected" >> correction_status
     else
 	echo "skipping..."
+	echo "$submission skipped" >> correction_status
     fi
 
     foldername=$(basename -- "$submission")
@@ -98,7 +98,10 @@ function correction_routine {
 
 }
 
+# Create a file to keep track of correction statuss
+> correction_status
 
+# Read user input
 folder="$1"
 totalPath="$folder/submissions/"
 week=$(basename -- "$folder")
@@ -140,4 +143,10 @@ if $parallel; then
 	echo "$script_name exit status: $exit_status"
     done
 fi
-echo "all's done!"
+
+num_lines=$(cat correction_status | wc -l)
+corrected=$(grep -P "corrected$" correction_status | wc -l)
+skipped=$(grep -P "skipped$" correction_status | wc -l)
+echo "Done!"
+echo "corrected/skipped/total:"
+echo "$corrected/$skipped/$num_lines"

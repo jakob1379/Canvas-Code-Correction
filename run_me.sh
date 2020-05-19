@@ -18,7 +18,7 @@ parallel=false
 while getopts ":hp" opt; do
     case ${opt} in
 	p)
-	    echo "RU_NME: Parallelization enabled!"
+	    echo "RUN_ME: Parallelization enabled!"
 	    parallel=true
 	;;
 	h)
