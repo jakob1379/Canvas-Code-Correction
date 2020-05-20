@@ -22,12 +22,6 @@ parser.add_argument("-a", "--all",
 
 args = parser.parse_args()
 
-def print_dict(d):
-    max_key = len(max(d.keys(), key=len))
-    for k, v in d.items():
-        print(k.ljust(max_key) + ': ' + str(v))
-    print()
-
 
 def grade_submission(sub, assignments, args):
     scores_to_complete = {
@@ -51,13 +45,16 @@ def grade_submission(sub, assignments, args):
     # Grade accordingly
     out_str = 'Checking: ' + sub
     if args.all:
-        elif (points >= scores_to_complete[assignment_name])
+        print("Grading: grading ALL students!")
+        if (points >= scores_to_complete[assignment_name] and
+            submission.grade != 'complete'):
             submission.edit(submission={'posted_grade': 'complete'})
             if args.verbose:
                 print(out_str)
                 print("Completed with points:", points)
                 print()
-        elif (points < scores_to_complete[assignment_name])
+        elif (points < scores_to_complete[assignment_name] and
+              submission.grade != 'incomplete'):
             submission.edit(submission={'posted_grade': 'incomplete'})
             if args.verbose:
                 print(out_str)
@@ -116,7 +113,7 @@ num_cores = multiprocessing.cpu_count()
 
 if args.parallel:
     if args.verbose:
-        print("Grading in parallel!")
+        print("Grading: runnning in parallel!")
     Parallel(n_jobs=num_cores)(delayed(
         grade_submission)(rep, assignments_as_dict, args)
                                for rep in pbar(reports))
