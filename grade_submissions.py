@@ -16,6 +16,10 @@ parser.add_argument("-p", "--parallel",
 parser.add_argument("-v", "--verbose",
                     help="set verbose",
                     action='store_true')
+parser.add_argument("-a", "--all",
+                    help="Grade all students again",
+                    action='store_true')
+
 args = parser.parse_args()
 
 def print_dict(d):
@@ -25,7 +29,7 @@ def print_dict(d):
     print()
 
 
-def grade_submission(sub, assignments):
+def grade_submission(sub, assignments, args):
     scores_to_complete = {
         'Week1-2': 43,
         'Week3-4': 43,
@@ -46,26 +50,40 @@ def grade_submission(sub, assignments):
 
     # Grade accordingly
     out_str = 'Checking: ' + sub
-    if submission.grade == 'complete':
-        if args.verbose:
-            print(out_str)
-            print("Already passed!")
-            print()
-    elif (points >= scores_to_complete[assignment_name] and
-        submission.grade != 'complete'):
-        if args.verbose:
-            print(out_str)
-            print("Completed with points:", points)
-            print()
-        submission.edit(submission={'posted_grade': 'complete'})
-    elif (points < scores_to_complete[assignment_name]):# and
-          submission.grade != 'incomplete' and
-          submission.grade != 'complete'):
-        if args.verbose:
-            print(out_str)
-            print("Incomplete with points:", points)
-            print()
-        submission.edit(submission={'posted_grade': 'incomplete'})
+    if args.all:
+        elif (points >= scores_to_complete[assignment_name])
+            submission.edit(submission={'posted_grade': 'complete'})
+            if args.verbose:
+                print(out_str)
+                print("Completed with points:", points)
+                print()
+        elif (points < scores_to_complete[assignment_name])
+            submission.edit(submission={'posted_grade': 'incomplete'})
+            if args.verbose:
+                print(out_str)
+                print("Incomplete with points:", points)
+                print()
+    else:
+        if submission.grade == 'complete':
+            if args.verbose:
+                print(out_str)
+                print("Already passed!")
+                print()
+        elif (points >= scores_to_complete[assignment_name] and
+              submission.grade != 'complete'):
+            submission.edit(submission={'posted_grade': 'complete'})
+            if args.verbose:
+                print(out_str)
+                print("Completed with points:", points)
+                print()
+        elif (points < scores_to_complete[assignment_name] and
+              submission.grade != 'incomplete' and
+              submission.grade != 'complete'):
+            submission.edit(submission={'posted_grade': 'incomplete'})
+            if args.verbose:
+                print(out_str)
+                print("Incomplete with points:", points)
+                print()
 
 
 # %% Init
@@ -100,7 +118,8 @@ if args.parallel:
     if args.verbose:
         print("Grading in parallel!")
     Parallel(n_jobs=num_cores)(delayed(
-        grade_submission)(rep, assignments_as_dict) for rep in pbar(reports))
+        grade_submission)(rep, assignments_as_dict, args)
+                               for rep in pbar(reports))
 else:
     for rep in pbar(reports):
-        grade_submission(rep, assignments_as_dict)
+        grade_submission(rep, assignments_as_dict, args)
