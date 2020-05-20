@@ -1,4 +1,5 @@
 # Import the Canvas class
+from canvas_helpers import download_url, file_to_string, create_file_name
 from canvasapi import Canvas
 from glob import glob
 from joblib import Parallel, delayed
@@ -7,6 +8,7 @@ import argparse
 import multiprocessing
 import os
 import progressbar as Pbar
+import re
 import shutil
 import urllib.request
 
@@ -23,50 +25,11 @@ parser.add_argument("-p", "--parallel",
 
 args = parser.parse_args()
 
-
-def download_url(url, save_path):
-    with urllib.request.urlopen(url) as dl_file:
-        with open(save_path, 'wb') as out_file:
-            out_file.write(dl_file.read())
-
-
-def file_to_string(file_name):
-    with open(file_name) as f:
-        content = f.read()
-    return content.strip()
-
-
-def download_submission(sub):
-    global old_files, args
+def download_submission(sub, old_files, course, args):
     try:
         url = sub.attachments[0]['url']
         if url:
-            # Fomat file-name like absalon
-            file_name = []
-
-            # reorder name as last/first/middle
-            name = course.get_user(sub.user_id).name.lower().split()
-            name = ''.join(name[-1:] + name[:-1])
-            file_name.append(name)
-
-            # add if late
-            if sub.late:
-                file_name.append('LATE')
-
-            # get student id
-            file_name.append(sub.user_id)
-
-            # attachment id
-            file_name.append(sub.attachments[0]['id'])
-
-            # also filename from absalon
-            tmp_fname = '.'.join(
-                sub.attachments[0]['display_name'].split('.')[:-1])
-            file_name.append(tmp_fname)
-
-            # Combine to finale output name
-            file_name = '_'.join([str(i) for i in file_name])
-
+            file_name = create_file_name(sub, course)
             # check if user has old submissions
             folders_to_remove = [old for old in old_files
                                  if str(sub.user_id) in old
@@ -122,9 +85,10 @@ for assignment in course.get_assignments():
     if args.parallel:
         print("Downloading submissions in parallel!")
         Parallel(n_jobs=num_cores)(delayed(
-            download_submission)(sub) for sub in pbar(submissions))
+            download_submission)(sub, old_files, course, args)
+                                   for sub in pbar(submissions))
     else:
         for sub in pbar(submissions):
-            download_submission(sub)
+            download_submission(sub, old_files, course, args)
 
     # shutil.make_archive(directory[:-1], 'zip', directory)
