@@ -11,6 +11,7 @@ correction_status
 # Emacs files #
 ###############
 *_flymake.*
+__pycache__/
 *~
 .\#*
 *flycheck*

@@ -1,0 +1,65 @@
+# Import the Canvas class
+from canvasapi import Canvas
+from glob import glob
+from joblib import Parallel, delayed
+from time import time
+import argparse
+import multiprocessing
+import os
+import progressbar as Pbar
+import re
+import shutil
+import urllib.request
+
+def download_url(url, save_path):
+    with urllib.request.urlopen(url) as dl_file:
+        with open(save_path, 'wb') as out_file:
+            out_file.write(dl_file.read())
+
+
+def file_to_string(file_name):
+    with open(file_name) as f:
+        content = f.read()
+    return content.strip()
+
+
+def print_dict(d):
+    max_key = len(max(d.keys(), key=len))
+    for k, v in d.items():
+        print(k.ljust(max_key) + ': ' + str(v))
+    print()
+
+
+def flatten_list(list_of_lists):
+    if any([not isinstance(alist, list) for alist in list_of_lists]):
+        return list_of_lists
+    return [y for x in list_of_lists for y in x]
+
+
+def create_file_name(submission, course):
+    file_name = []
+    uid = submission.user_id
+
+    # Get users name as sur/first/middle
+    user_name = re.sub(
+        "[, ]", "", course.get_user(uid).sortable_name.lower())
+    file_name.append(user_name)
+
+    # add if late
+    if submission.late:
+        file_name.append('LATE')
+
+    # get student id
+    file_name.append(uid)
+
+    # attachment id
+    attachment = submission.attachments[0]
+    file_name.append(attachment['id'])
+
+    # also filename from absalon
+    tmp_fname = '.'.join(
+        attachment['display_name'].split('.')[:-1])
+    file_name.append(tmp_fname)
+
+    # Combine to finale output user_name
+    return '_'.join([str(i) for i in file_name])
