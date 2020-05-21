@@ -9,6 +9,9 @@ import multiprocessing
 import numpy as np
 import progressbar as Pbar
 import re
+import os
+import subprocess
+from urllib.parse import unquote
 
 parser = argparse.ArgumentParser()
 parser.add_argument("-p", "--parallel",
@@ -17,12 +20,15 @@ parser.add_argument("-p", "--parallel",
 parser.add_argument("-v", "--verbose",
                     help="set verbose",
                     action='store_true')
+parser.add_argument("-q", "--question",
+                    help="prompt if a non-matching comment should be uploaded",
+                    action='store_true')
 args = parser.parse_args()
 
 def extract_comment_filenames(comments):
     # Get all attachments in comments as one flat list
     return flatten_list(
-        [[att.get('filename') for att in comm.get('attachments')
+        [[unquote(att.get('filename')) for att in comm.get('attachments')
           if att.get('filename')]
          for comm in comments if comm.get('attachments')])
 
@@ -30,7 +36,7 @@ def extract_comment_filenames(comments):
 def upload_comments(sub, assignments, args):
     # Get assignment- and file name
     assignment_name = sub.split('/')[0]
-    handin_name = sub.split('/')[-2]
+    handin_name = re.sub(" ", "+", sub.split('/')[-2])
 
     # get points and user id
     user_id = re.findall(r'\d+', handin_name)[0]
@@ -43,15 +49,39 @@ def upload_comments(sub, assignments, args):
     # extract attached filenames from comments
     comment_files = extract_comment_filenames(submission.submission_comments)
 
+    # get path to comment zip
+    file_to_upload = glob(sub + '*.zip')
+
+
+    if file_to_upload:
+        file_to_upload = file_to_upload[0]
+        upload_name = file_to_upload.split('/')[-1]
+    else:
+        raise FileExistsError("zip to upload not found in: " + sub)
+
     out_str = 'Checking: ' + sub
     # Only upload if it isn't already there.
     if handin_name+'.zip' not in comment_files:
         if args.verbose:
             print(out_str)
-            print("Upload: uploading feedback\n")
-        basename = handin_name.split('_')[-1]
-        file_to_upload = glob(sub + basename + '.zip')[0]
-        submission.upload_comment(file_to_upload)
+            print("Upload: uploading feedback\n", file_to_upload)
+
+        ans = ''
+        if args.question:
+            print(30*'-')
+            print("Old Feedback uploads:")
+            if comment_files:
+                for comm in comment_files:
+                    print(comm)
+            else:
+                print(None)
+            print("\nNew comment:", upload_name, '\n')
+            ans = input("Upload: Should new comment be uploaded? [y/N] ")
+        if ans.lower() == 'y' or not args.question:
+            submission.upload_comment(file_to_upload)
+
+        elif args.question:
+            print("Upload: Comments NOT uploaded.")
     elif args.verbose:
         print(out_str)
         print("Upload: feedback already uploaded\n")
@@ -92,6 +122,5 @@ if args.parallel:
         upload_comments)(rep, assignments_as_dict, args) for
                                rep in pbar(reports))
 else:
-    for rep in pbar(reports):
+    for rep in (reports):
         upload_comments(rep, assignments_as_dict, args)
-        break
