@@ -36,13 +36,17 @@ def flatten_list(list_of_lists):
     return [y for x in list_of_lists for y in x]
 
 
-def create_file_name(submission, course):
+def create_file_name(submission, course, method='name'):
     file_name = []
     uid = submission.user_id
 
     # Get users name as sur/first/middle
-    user_name = re.sub(
-        "[, ]", "", course.get_user(uid).sortable_name.lower())
+    if method == 'sortable':
+        user_name = re.sub(
+            "[, ]", "", course.get_user(uid).sortable_name.lower())
+    elif method == 'name':
+        user_name = course.get_user(uid).name.lower().split(' ')
+        user_name = ''.join(user_name[-1:] + user_name[:-1])
     file_name.append(user_name)
 
     # add if late

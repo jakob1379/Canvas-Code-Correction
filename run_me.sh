@@ -50,9 +50,12 @@ for folder in $(ls -d Week*/); do
     $parallel && bash submissions_correcting.sh -p "$folder" || bash submissions_correcting.sh "$folder"
     echo "INFO: Done!"
 
-    echo "INFO: zipping answers"
-    bash submissions_zip.sh "$folder"
-    echo "INFO: Done!"
+    # echo "INFO: zipping answers"
+    # bash submissions_zip.sh "$folder"
+    # echo "INFO: Done!"
 done
+echo "INFO: zipping answers"
+./zip_submission
+echo "INFO: Done!"
 
 echo "INFO: Done with whole routine!"
