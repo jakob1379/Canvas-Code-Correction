@@ -16,8 +16,11 @@ parser.add_argument("-p", "--parallel",
 parser.add_argument("-v", "--verbose",
                     help="set verbose",
                     action='store_true')
-parser.add_argument("-a", "--all",
+parser.add_argument("-a", "--grade-all",
                     help="Grade all students again",
+                    action='store_true')
+parser.add_argument("-q", "--question",
+                    help="question what grade to give",
                     action='store_true')
 
 args = parser.parse_args()
@@ -27,7 +30,7 @@ def grade_submission(sub, assignments, args):
     scores_to_complete = {
         'Week1-2': 43,
         'Week3-4': 43,
-        'Week5-6': 45,
+        'Week5-6': 67.5,
         'Week7-8': 75}
 
     # Get assignment- and file name
@@ -35,7 +38,8 @@ def grade_submission(sub, assignments, args):
     handin_name = sub.split('/')[-2]
 
     # get points and user id
-    points = np.loadtxt(glob(sub + handin_name + '_points.txt')[0]).sum()
+    points = round(
+        np.loadtxt(glob(sub + handin_name + '_points.txt')[0]).sum(), 2)
     user_id = re.findall(r'\d+', handin_name)[0]
 
     # Get submission for user
@@ -44,43 +48,36 @@ def grade_submission(sub, assignments, args):
 
     # Grade accordingly
     out_str = 'Checking: ' + sub
-    if args.all:
-        print("Grading: grading ALL students!")
-        if (points >= scores_to_complete[assignment_name] and
-            submission.grade != 'complete'):
-            submission.edit(submission={'posted_grade': 'complete'})
-            if args.verbose:
-                print(out_str)
-                print("Completed with points:", points)
-                print()
-        elif (points < scores_to_complete[assignment_name] and
-              submission.grade != 'incomplete'):
-            submission.edit(submission={'posted_grade': 'incomplete'})
-            if args.verbose:
-                print(out_str)
-                print("Incomplete with points:", points)
-                print()
-    else:
-        if submission.grade == 'complete':
-            if args.verbose:
-                print(out_str)
-                print("Already passed!")
-                print()
-        elif (points >= scores_to_complete[assignment_name] and
-              submission.grade != 'complete'):
-            submission.edit(submission={'posted_grade': 'complete'})
-            if args.verbose:
-                print(out_str)
-                print("Completed with points:", points)
-                print()
-        elif (points < scores_to_complete[assignment_name] and
-              submission.grade != 'incomplete' and
-              submission.grade != 'complete'):
-            submission.edit(submission={'posted_grade': 'incomplete'})
-            if args.verbose:
-                print(out_str)
-                print("Incomplete with points:", points)
-                print()
+    if args.verbose:
+        print(out_str)
+    if args.question:
+        print("Points in file:",
+              str(points)+'/'+str(scores_to_complete[assignment_name]),
+              "=", round(points/scores_to_complete[assignment_name], 2))
+        print("Points to complete", assignment_name+':', scores_to_complete[assignment_name])
+        ans = input("Grade the student?: [y/N]: ").lower()
+        if ans != 'y':
+            return
+    if submission.grade == 'complete' and not args.grade_all:
+        if args.verbose:
+            print(out_str)
+            print("Already passed!")
+            print()
+    elif points >= scores_to_complete[assignment_name] and (
+            submission.grade != 'complete' or args.grade_all):
+        submission.edit(submission={'posted_grade': 'complete'})
+        if args.verbose:
+            print(out_str)
+            print("Completed with points:", points)
+            print()
+    elif points < scores_to_complete[assignment_name] and (
+            (submission.grade != 'incomplete' and submission.grade != 'complete') or
+            args.grade_all):
+        submission.edit(submission={'posted_grade': 'incomplete'})
+        if args.verbose:
+            print(out_str)
+            print("Incomplete with points:", points)
+            print()
 
 
 # %% Init
@@ -118,5 +115,5 @@ if args.parallel:
         grade_submission)(rep, assignments_as_dict, args)
                                for rep in pbar(reports))
 else:
-    for rep in pbar(reports):
+    for rep in (reports):
         grade_submission(rep, assignments_as_dict, args)
