@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+set -euo pipefail
+IFS=$'\n\t'
+
+top_dir=$(pwd)
+for submission in $(find Week*/submissions/* -type d -name '*'); do
+    cd "$top_dir/$submission"
+    bname=$(basename $submission)
+    zip_name=$(basename $submission | sed 's/ /+/g')
+    zip "$zip_name" "$bname.txt" "errors.log"
+done
