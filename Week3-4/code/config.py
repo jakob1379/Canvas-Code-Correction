@@ -2,7 +2,7 @@
 Config file
 '''
 # test files
-TIME_LIMIT = 30 #seconds per exercise
+TIME_LIMIT = 60 #seconds per exercise
 test_files = ["test_6_1_1.cpp","test_6_1_2.cpp","test_6_1_3.cpp","test_6_1_4.cpp","test_6_1_5.cpp","test_6_1_6.cpp","test_6_1_7.cpp", \
 			  "test_6_2_1.cpp","test_6_2_2.cpp","test_6_2_3.cpp","test_6_2_4.cpp","test_6_2_5.cpp","test_6_2_6.cpp","test_6_2_7.cpp","test_6_2_8.cpp","test_6_2_9.cpp", \
 			  "test_7_1_1.cpp","test_7_1_2.cpp","test_7_1_3.cpp","test_7_1_4.cpp","test_7_1_5.cpp", \
@@ -36,7 +36,7 @@ test_files = ["test_6_1_1.cpp","test_6_1_2.cpp","test_6_1_3.cpp","test_6_1_4.cpp
 ["test_7_3_2.cpp"]
 ["test_7_3_4.cpp"]
 
-["test_8_2.cpp"] 
+["test_8_2.cpp"]
 ["test_9_1.cpp"]
 '''
 
@@ -106,7 +106,7 @@ total_points["test_9_1.cpp"] = 5
 
 # number of subtests
 numberOfSubtests = {}
-numberOfSubtests["test_6_1_1.cpp"] = 2 
+numberOfSubtests["test_6_1_1.cpp"] = 2
 numberOfSubtests["test_6_1_2.cpp"] = 2
 numberOfSubtests["test_6_1_3.cpp"] = 1
 numberOfSubtests["test_6_1_4.cpp"] = 1
@@ -133,7 +133,7 @@ numberOfSubtests["test_7_1_5.cpp"] = 1
 #numberOfSubtests["test_7_3_2.cpp"] = 1
 #numberOfSubtests["test_7_3_4.cpp"] = 1
 
-numberOfSubtests["test_8_2.cpp"] = 2 
+numberOfSubtests["test_8_2.cpp"] = 2
 numberOfSubtests["test_9_1.cpp"] = 2
 
 
@@ -224,7 +224,7 @@ sub_files["test_6_2_8.cpp"] = "Matrix2x2.cpp"
 sub_files["test_6_2_9.cpp"] = "Matrix2x2.cpp"
 
 sub_files["test_7_1_1.cpp"] = "Student.cpp"
-sub_files["test_7_1_2.cpp"] = "Student.cpp" 
+sub_files["test_7_1_2.cpp"] = "Student.cpp"
 sub_files["test_7_1_3.cpp"] = "Student.cpp GraduateStudent.cpp"
 sub_files["test_7_1_4.cpp"] = "Student.cpp GraduateStudent.cpp"
 sub_files["test_7_1_5.cpp"] = "Student.cpp GraduateStudent.cpp PhdStudent.cpp"
@@ -232,10 +232,10 @@ sub_files["test_7_1_5.cpp"] = "Student.cpp GraduateStudent.cpp PhdStudent.cpp"
 #sub_files["test_7_3_2.cpp"] = "AbstractOdeSolver.cpp FowardEulerSolver.cpp"
 #sub_files["test_7_3_4.cpp"] = "AbstractOdeSolver.cpp RungeKuttaSolver.cpp"
 
-sub_files["test_8_2.cpp"] = "" 
+sub_files["test_8_2.cpp"] = ""
 sub_files["test_9_1.cpp"] = "Exception.cpp OutOfRangeException.cpp FileNotOpenException.cpp"
 
 compiler_lines = []
 for test in test_files:
-	compiler_lines.append( "clang++ -std=c++11 -o " + object_files[test] + " " + sub_files[test] + " " + 
+	compiler_lines.append( "clang++ -std=c++11 -o " + object_files[test] + " " + sub_files[test] + " " +
 		other_files[test] + " " + "test/" + test + " ")

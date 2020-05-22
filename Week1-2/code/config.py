@@ -3,7 +3,7 @@ Config file
 '''
 # test files
 test_files = ["test_2_6.cpp","test_3_3.cpp","test_5_3.cpp","test_5_4.cpp","test_5_6.cpp","test_5_9.cpp","test_5_10.cpp"]
-TIME_LIMIT = 30 #seconds per exercise
+TIME_LIMIT = 60 #seconds per exercise
 
 head_lines = {}
 head_lines["test_2_6.cpp"] = "Exercise 2.6"
@@ -70,5 +70,5 @@ sub_files["test_5_10.cpp"] = "5_10.cpp"
 
 compiler_lines = []
 for test in test_files:
-	compiler_lines.append( "clang++ -std=c++11 -w -o " + object_files[test] + " " + sub_files[test] + " " + 
+	compiler_lines.append( "clang++ -std=c++11 -w -o " + object_files[test] + " " + sub_files[test] + " " +
 		other_files[test] + " " + "test/" + test + " ")
