@@ -1,6 +1,4 @@
 #!/usr/bin/env bash
-set -euo pipefail
-IFS=$'\n\t'
 
 top_dir=$(pwd)
 for submission in $(find Week*/submissions/* -type d -name '*'); do

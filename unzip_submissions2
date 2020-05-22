@@ -1,6 +1,4 @@
 #!/usr/bin/env bash
-set -euo pipefail
-IFS=$'\n\t'
 
 # Strip file extension and unzip to dir with same name as file
 unzip_d () {
