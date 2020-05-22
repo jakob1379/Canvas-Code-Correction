@@ -1,5 +1,5 @@
 # Import the Canvas class
-from canvas_helpers import file_to_string
+from canvas_helpers import file_to_string, bcolors
 from canvasapi import Canvas
 from glob import glob
 from joblib import Parallel, delayed
@@ -45,18 +45,33 @@ def grade_submission(sub, assignments, args):
     # Get submission for user
     assignment = assignments[assignment_name]
     submission = assignment.get_submission(user_id)
+    current_grade = submission.grade
 
     # Grade accordingly
-    out_str = 'Checking: ' + sub
+    out_str = 'Grading: Checking ' + sub
+    ans = ''
+
     if args.verbose:
         print(out_str)
     if args.question:
-        print("Points in file:",
-              str(points)+'/'+str(scores_to_complete[assignment_name]),
-              "=", round(points/scores_to_complete[assignment_name], 2))
-        print("Points to complete", assignment_name+':', scores_to_complete[assignment_name])
-        ans = input("Grade the student?: [y/N]: ").lower()
-        if ans != 'y':
+        score = round(points - scores_to_complete[assignment_name])
+        if score < 0:
+            score = bcolors.FAIL+str(score)
+        else:
+            score = bcolors.OKGREEN+str(score)
+
+        print(30*'-')
+        print(file_to_string(sub + handin_name + '.txt'))
+        print("\nPoints in file:",
+              str(points)+'-'+str(scores_to_complete[assignment_name]),
+              "=", score + bcolors.ENDC)
+        print("\nPoints to complete", assignment_name+':',
+              scores_to_complete[assignment_name])
+        print("Current grade:", current_grade)
+        ans = str(input("Grade the student?: [y/N/(o)verride]: ") or 'n').lower()
+        if ans == 'n':
+            if args.verbose:
+                print("Submission not graded\n")
             return
     if submission.grade == 'complete' and not args.grade_all:
         if args.verbose:
@@ -64,16 +79,19 @@ def grade_submission(sub, assignments, args):
             print("Already passed!")
             print()
     elif points >= scores_to_complete[assignment_name] and (
-            submission.grade != 'complete' or args.grade_all):
+            submission.grade != 'complete' or args.grade_all or ans == 'o'):
         submission.edit(submission={'posted_grade': 'complete'})
+        if ans == 'o':
+            print("GRADE OVERWRITTEN!")
         if args.verbose:
             print(out_str)
             print("Completed with points:", points)
             print()
     elif points < scores_to_complete[assignment_name] and (
-            (submission.grade != 'incomplete' and submission.grade != 'complete') or
-            args.grade_all):
+          submission.grade != 'incomplete' or args.grade_all or ans == 'o'):
         submission.edit(submission={'posted_grade': 'incomplete'})
+        if ans == 'o':
+            print("GRADE OVERWRITTEN!")
         if args.verbose:
             print(out_str)
             print("Incomplete with points:", points)
@@ -105,7 +123,7 @@ users = course.get_users()
 reports = sorted(glob('Week*/submissions/*/'))
 
 # Let's start grading!
-pbar = Pbar.ProgressBar(redirect_stdout=True)
+# pbar = Pbar.ProgressBar(redirect_stdout=True)
 num_cores = multiprocessing.cpu_count()
 
 if args.parallel:
@@ -113,7 +131,7 @@ if args.parallel:
         print("Grading: runnning in parallel!")
     Parallel(n_jobs=num_cores)(delayed(
         grade_submission)(rep, assignments_as_dict, args)
-                               for rep in pbar(reports))
+                               for rep in reports)
 else:
-    for rep in (reports):
+    for rep in reports:
         grade_submission(rep, assignments_as_dict, args)
