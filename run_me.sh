@@ -15,13 +15,25 @@ operations:
 }
 
 # Arguments
+args='-'
 parallel=false
-while getopts ":hp" opt; do
+correct_all=false
+show_time=false
+while getopts ":hpat" opt; do
     case ${opt} in
 	p)
 	    echo "RUN_ME: Parallelization enabled!"
 	    parallel=true
-	;;
+	    args+='p'
+	    ;;
+	a)
+	    correct_all=true
+	    args+='a'
+	    ;;
+	t)
+	    show_time=true
+	    args+=t
+	    ;;
 	h)
 	    displayUsage
 	    exit 1
@@ -49,13 +61,19 @@ for folder in $(ls -d Week*/); do
     echo "INFO: Done!"
 
     echo "INFO: Correcting submissions"
-    $parallel && bash submissions_correcting.sh -p "$folder" || bash submissions_correcting.sh "$folder"
+    if [ "$args" != '-' ];
+    then
+	bash submissions_correcting.sh $args "$folder"
+    else
+	bash submissions_correcting.sh "$folder"
+    fi
     echo "INFO: Done!"
 
     # echo "INFO: zipping answers"
     # bash submissions_zip.sh "$folder"
     # echo "INFO: Done!"
 done
+
 echo "INFO: zipping answers"
 ./zip_submission
 echo "INFO: Done!"
