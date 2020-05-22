@@ -18,13 +18,17 @@ operations:
 always='no'
 verbose=false
 parallel=false
-while getopts ":havp" opt; do
+show_time=false
+while getopts ":havpt" opt; do
     case ${opt} in
 	a)
 	    always='yes'
 	    ;;
 	v)
 	    verbose=true
+	    ;;
+	t)
+	    show_time=true
 	    ;;
 	h)
 	    displayUsage
@@ -43,9 +47,9 @@ while getopts ":havp" opt; do
 	    exit 2
 	    ;;
     esac
-    shift
 done
 
+shift $((OPTIND-1))
 
 # Check number of arguments
 if [ $# -lt 1 ]
@@ -54,6 +58,8 @@ then
     exit 1
 fi
 
+sum=0
+count=0
 submission=$1
 function correction_routine {
     # init variables
@@ -67,7 +73,14 @@ function correction_routine {
 	dir="$PWD"
 	cp -r "$folder"/code/* "$submission"/
 	cd "$submission"
-	python2 main.py > errors.log 2>&1
+	if $show_time
+	then
+	    time python2 main.py > errors.log 2>&1
+	else
+	    python2 main.py > errors.log 2>&1
+	fi
+
+
 	rm -rf test/ config.py main.py # TODO: Make one cleanup call instead
 	cd "$dir"
 	echo "$submission corrected" >> correction_status
@@ -95,11 +108,7 @@ function correction_routine {
     else
     	echo "${ADDR[2]}" >> "$scoreFile"
     fi
-
 }
-
-# Create a file to keep track of correction statuss
-> correction_status
 
 # Read user input
 folder="$1"
