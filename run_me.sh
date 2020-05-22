@@ -14,6 +14,7 @@ operations:
 '
 }
 
+# Arguments
 parallel=false
 while getopts ":hp" opt; do
     case ${opt} in
@@ -34,9 +35,10 @@ while getopts ":hp" opt; do
 	    exit 2
 	    ;;
     esac
-    shift
 done
+shift $((OPTIND-1))
 
+# Routing
 echo "INFO: Downloading submissions"
 $parallel && python3 download_submissions.py -p || python3 download_submissions.py
 echo "INFO: Done!"
