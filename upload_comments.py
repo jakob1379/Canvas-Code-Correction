@@ -23,6 +23,10 @@ parser.add_argument("-v", "--verbose",
 parser.add_argument("-q", "--question",
                     help="prompt if a non-matching comment should be uploaded",
                     action='store_true')
+parser.add_argument("-a", "--all",
+                    help="description",
+                    action='store_true')
+
 args = parser.parse_args()
 
 def extract_comment_filenames(comments):
@@ -36,7 +40,8 @@ def extract_comment_filenames(comments):
 def upload_comments(sub, assignments, args):
     # Get assignment- and file name
     assignment_name = sub.split('/')[0]
-    handin_name = re.sub(" ", "+", sub.split('/')[-2])
+    txt_name = sub.split('/')[-2]
+    handin_name = re.sub(" ", "+", txt_name)
 
     # get points and user id
     user_id = re.findall(r'\d+', handin_name)[0]
@@ -52,7 +57,6 @@ def upload_comments(sub, assignments, args):
     # get path to comment zip
     file_to_upload = glob(sub + '*.zip')
 
-
     if file_to_upload:
         file_to_upload = file_to_upload[0]
         upload_name = file_to_upload.split('/')[-1]
@@ -61,7 +65,7 @@ def upload_comments(sub, assignments, args):
 
     out_str = 'Checking: ' + sub
     # Only upload if it isn't already there.
-    if handin_name+'.zip' not in comment_files:
+    if handin_name+'.zip' not in comment_files or args.all:
         if args.verbose:
             print(out_str)
             print("Upload: uploading feedback\n", file_to_upload)
@@ -69,17 +73,19 @@ def upload_comments(sub, assignments, args):
         ans = ''
         if args.question:
             print(30*'-')
-            print("Old Feedback uploads:")
+            print(file_to_string(sub + txt_name + '.txt'))
+            print("\nOld Feedback uploads:")
             if comment_files:
                 for comm in comment_files:
                     print(comm)
             else:
                 print(None)
-            print("\nNew comment:", upload_name, '\n')
+            print("\nNew comment:\n", upload_name, '\n')
             ans = input("Upload: Should new comment be uploaded? [y/N] ")
         if ans.lower() == 'y' or not args.question:
+            if args.verbose or args.question:
+                print("Upload: Comment has been uploaded!")
             submission.upload_comment(file_to_upload)
-
         elif args.question:
             print("Upload: Comments NOT uploaded.")
     elif args.verbose:
