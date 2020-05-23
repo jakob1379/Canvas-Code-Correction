@@ -22,8 +22,12 @@ parser.add_argument("-a", "--grade-all",
 parser.add_argument("-q", "--question",
                     help="question what grade to give",
                     action='store_true')
-
+parser.add_argument("path", nargs='?', default='Week*/submissions/*/',
+                    help="Path to check")
 args = parser.parse_args()
+
+if '/submissions/*/' not in args.path:
+    args.path += '/submissions/*/'
 
 
 def grade_submission(sub, assignments, args):
@@ -58,7 +62,7 @@ def grade_submission(sub, assignments, args):
         if score < 0:
             score = bcolors.FAIL+str(score)
         else:
-            score = bcolors.OKGREEN+str(score)
+            score = bcolors.OKBLUE+str(score)
 
         print(30*'-')
         print(file_to_string(sub + handin_name + '.txt'))
