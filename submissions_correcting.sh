@@ -80,8 +80,13 @@ function correction_routine {
 	    python2 main.py > errors.log 2>&1
 	fi
 
+	rm -rf test/ config.py main.py
 
-	rm -rf test/ config.py main.py # TODO: Make one cleanup call instead
+	# zip answers
+	bname=$(basename "$PWD")
+	zip_name=$(basename "$PWD" | sed 's/ /+/g')
+	zip "$zip_name" "$bname.txt" "errors.log"
+
 	cd "$dir"
 	echo "$submission corrected" >> correction_status
     else
@@ -131,7 +136,6 @@ count=1
 tmp_file=$(mktemp /tmp/file.XXX)
 for d in $totalPath*/
 do
-
     echo -e "$count of $total $week: $totalPath$d"
     if $parallel; then
 	correction_routine "$totalPath$(basename "$d")" &
