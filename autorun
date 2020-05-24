@@ -1,0 +1,65 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+displayUsage() {
+    echo '
+<>  angle brackets for required parameters: ping <hostname>
+[]  square brackets for optional parameters: mkdir [-p] <dirname>
+... ellipses for repeated items: cp <source1> [source2…] <dest>
+ |  vertical bars for choice of items: netstat {-t|-u}
+
+usage:  name <operation> [...]
+operations:
+    autorun {-h help} shows this dialogue
+    autorun {-n number} number of times to run the correction
+    autorun {-d daemon} keep running until process is closed
+    autorun {-t time} time to wait before next iteration in minutes'
+}
+
+n=1
+t=$(( 15*60 ))
+daemon=false
+while getopts ":hnd:t" opt; do
+    case ${opt} in
+	n)
+	    n="$OPTARG"
+	    ;;
+	d)
+	    daemon=true
+	    ;;
+	t)
+	    t=$(( $OPTARG*60 ))
+	    ;;
+	h)
+	    displayUsage
+	    exit 1
+	    ;;
+	\?)
+	    echo "Invalid option: $OPTARG" 1>&2
+	    exit 2
+	    ;;
+	:)
+	    echo "Invalid option: $OPTARG requires an argument" 1>&2
+	    exit 2
+	    ;;
+    esac
+    shift
+done
+
+
+while true; do
+    ./run_me.sh
+    python upload_comments.py
+    python grade_submissions.py
+
+    if [ "$n" -gt 1 ] || $daemon
+    then
+	sleep $t
+    else
+	n=$(( n-1 ))
+	if [ "$n" = "0" ]
+	then
+	    break
+	fi
+    fi
+done
