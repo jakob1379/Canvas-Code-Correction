@@ -52,14 +52,23 @@ shift $((OPTIND-1))
 
 # Routing
 echo "INFO: Downloading submissions"
-$parallel && python3 download_submissions.py -p || python3 download_submissions.py
+python3 download_submissions.py -p
 echo "INFO: Done!"
 
-for folder in $(ls -d Week*/); do
+for folder in $(ls -d Week*/); do    
     echo "INFO: Unzipping"
     bash submissions_unzip.sh "$folder"
     echo "INFO: Done!"
 
+    # Copy armadillo into submissions
+    if [ "$folder" = 'Week7-8/' ]; then
+	echo "Skipping $folder!"
+	break # delete this line when codechecker works
+
+	ls -d Week7-8/submissions/*/ | xargs -i% cp -ur armadillo/armadillo_bits/ %
+	ls -d Week7-8/submissions/*/ | xargs -i% cp -ur armadillo/armadillo.hpp %
+    fi
+    
     echo "INFO: Correcting submissions"
     if [ "$args" != '-' ];
     then
