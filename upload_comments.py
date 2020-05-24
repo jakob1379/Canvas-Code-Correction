@@ -26,8 +26,11 @@ parser.add_argument("-q", "--question",
 parser.add_argument("-a", "--all",
                     help="description",
                     action='store_true')
-
+parser.add_argument("path", nargs='?', default='Week*/submissions/*/',
+                    help="Path to check")
 args = parser.parse_args()
+if '/submissions/*/' not in args.path:
+    args.path += '/submissions/*/'
 
 def extract_comment_filenames(comments):
     # Get all attachments in comments as one flat list
@@ -115,7 +118,7 @@ assignments_as_dict = {ass.name.capitalize().replace(' ', ''): ass
 
 # get users and local points
 users = course.get_users()
-reports = sorted(glob('Week*/submissions/*/'))
+reports = sorted(glob(args.path))
 
 # Let's start grading!
 pbar = Pbar.ProgressBar(redirect_stdout=True)

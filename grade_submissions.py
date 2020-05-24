@@ -124,7 +124,7 @@ assignments_as_dict = {ass.name.capitalize().replace(' ', ''): ass
 
 # get users and local points
 users = course.get_users()
-reports = sorted(glob('Week*/submissions/*/'))
+reports = sorted(glob(args.path))
 
 # Let's start grading!
 # pbar = Pbar.ProgressBar(redirect_stdout=True)
