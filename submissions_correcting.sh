@@ -73,7 +73,9 @@ function correction_routine {
 	dir="$PWD"
 	cp -r "$folder"/code/* "$submission"/
 	cd "$submission"
+	start=$(date +%s)
 	if $show_time
+
 	then
 	    time python2 main.py > errors.log 2>&1
 	else
@@ -81,6 +83,10 @@ function correction_routine {
 	fi
 
 	rm -rf test/ config.py main.py
+	end=$(date +%s)
+	if $verbose; then
+	    echo "EVALUATED IN: $(( end - start))s"
+	fi
 
 	# zip answers
 	bname=$(basename "$PWD")
