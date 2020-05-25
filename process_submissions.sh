@@ -55,7 +55,7 @@ echo "INFO: Downloading submissions"
 python3 download_submissions.py -p
 echo "INFO: Done!"
 
-for folder in $(ls -d Week*/); do    
+for folder in $(ls -d Week*/); do
     echo "INFO: Unzipping"
     bash submissions_unzip.sh "$folder"
     echo "INFO: Done!"
@@ -68,7 +68,7 @@ for folder in $(ls -d Week*/); do
 	ls -d Week7-8/submissions/*/ | xargs -i% cp -ur armadillo/armadillo_bits/ %
 	ls -d Week7-8/submissions/*/ | xargs -i% cp -ur armadillo/armadillo.hpp %
     fi
-    
+
     echo "INFO: Correcting submissions"
     if [ "$args" != '-' ];
     then
@@ -82,6 +82,8 @@ for folder in $(ls -d Week*/); do
     # bash submissions_zip.sh "$folder"
     # echo "INFO: Done!"
 done
+
+mv Week7-8/ bak_Week7_8
 
 echo "INFO: zipping answers"
 ./zip_submission
