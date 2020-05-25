@@ -79,7 +79,6 @@ def grade_submission(sub, assignments, args):
             return
     if submission.grade == 'complete' and not args.grade_all:
         if args.verbose:
-            print(out_str)
             print("Already passed!")
             print()
     elif points >= scores_to_complete[assignment_name] and (
@@ -100,6 +99,11 @@ def grade_submission(sub, assignments, args):
             print(out_str)
             print("Incomplete with points:", points)
             print()
+    elif points < scores_to_complete[assignment_name] and submission.grade != 'incomplete':
+        if args.verbose:
+            print("Already failed")
+
+
 
 
 # %% Init
@@ -124,7 +128,7 @@ assignments_as_dict = {ass.name.capitalize().replace(' ', ''): ass
 
 # get users and local points
 users = course.get_users()
-reports = sorted(glob(args.path))
+reports = [rep for rep in sorted(glob(args.path)) if 'Week7-8' not in rep]
 
 # Let's start grading!
 # pbar = Pbar.ProgressBar(redirect_stdout=True)
