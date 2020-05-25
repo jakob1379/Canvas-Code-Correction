@@ -46,9 +46,8 @@ while getopts ":hnd:t" opt; do
     shift
 done
 
-
 while true; do
-    ./run_me.sh
+    ./process_submissions.sh
     python upload_comments.py
     python grade_submissions.py
 
@@ -63,3 +62,5 @@ while true; do
 	fi
     fi
 done
+
+echo "Autorun: Done!"
