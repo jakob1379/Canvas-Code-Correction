@@ -118,11 +118,12 @@ assignments_as_dict = {ass.name.capitalize().replace(' ', ''): ass
 
 # get users and local points
 users = course.get_users()
-reports = sorted(glob(args.path))
+reports = [rep for rep in sorted(glob(args.path)) if 'Week7-8' not in rep]
 
 # Let's start grading!
 pbar = Pbar.ProgressBar(redirect_stdout=True)
 num_cores = multiprocessing.cpu_count()
+
 
 if args.parallel:
     if args.verbose:
