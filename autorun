@@ -19,16 +19,18 @@ operations:
 n=1
 t=$(( 15*60 ))
 daemon=false
-while getopts ":hnd:t" opt; do
+while getopts ":hn:dt:" opt; do
     case ${opt} in
 	n)
 	    n="$OPTARG"
+	    echo "N SET TO: $n"
 	    ;;
 	d)
 	    daemon=true
 	    ;;
 	t)
-	    t=$(( $OPTARG*60 ))
+	    t=$(( $OPTARG ))
+	    echo "TIME SET TO: $t"
 	    ;;
 	h)
 	    displayUsage
@@ -43,19 +45,33 @@ while getopts ":hnd:t" opt; do
 	    exit 2
 	    ;;
     esac
-    shift
 done
 
+shift $((OPTIND-1))
+
+
 while true; do
+    echo "
+################################################################################
+#                             download submissions                             #
+################################################################################"
     ./process_submissions.sh
+    echo "
+################################################################################
+#                              uploading comments                              #
+################################################################################"
     python upload_comments.py
+    echo "
+################################################################################
+#                               updating grades                                #
+################################################################################"
     python grade_submissions.py
 
-    if [ "$n" -gt 1 ] || $daemon
+    if [ "$n" -gt 0 ] || $daemon
     then
+	n=$(( n-1 ))
 	sleep $t
     else
-	n=$(( n-1 ))
 	if [ "$n" = "0" ]
 	then
 	    break
