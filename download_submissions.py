@@ -1,5 +1,5 @@
 # Import the Canvas class
-from canvas_helpers import download_url, file_to_string, create_file_name
+from canvas_helpers import download_url, file_to_string, create_file_name, print_dict
 from canvasapi import Canvas
 from glob import glob
 from joblib import Parallel, delayed
@@ -22,6 +22,10 @@ parser.add_argument("-v", "--verbose",
 parser.add_argument("-p", "--parallel",
                     help="download in parallel",
                     action='store_true')
+parser.add_argument("-c", "--check-all",
+                    help="check all assignments, default is to only check " +
+                    "changed assignments",
+                    action='store_true')
 
 args = parser.parse_args()
 
@@ -32,8 +36,8 @@ def download_submission(sub, old_files, course, args):
             file_name = create_file_name(sub, course)
             # check if user has old submissions
             folders_to_remove = [old for old in old_files
-                                 if str(sub.user_id) in old
-                                 and file_name+'/' not in old]
+                                 if str(sub.user_id) in old and
+                                 file_name+'/' not in old]
 
             for f in folders_to_remove:
                 shutil.rmtree(f)
@@ -79,9 +83,16 @@ for assignment in course.get_assignments():
 
     # Let's parallellize this to increase the speed
     pbar = Pbar.ProgressBar(redirect_stdout=True)
-    submissions = list(assignment.get_submissions())
-    num_cores = multiprocessing.cpu_count()
 
+    # Download all or only changed submissions
+    if args.check_all:
+        submissions = list(assignment.get_submissions())
+    else:
+        submissions = [sub for sub in assignment.get_submissions()
+                       if not sub.grade_matches_current_submission]
+
+    # Download submissions
+    num_cores = multiprocessing.cpu_count()
     if args.parallel:
         print("Downloading submissions in parallel!")
         Parallel(n_jobs=num_cores)(delayed(
@@ -91,4 +102,4 @@ for assignment in course.get_assignments():
         for sub in pbar(submissions):
             download_submission(sub, old_files, course, args)
 
-    # shutil.make_archive(directory[:-1], 'zip', directory)
+    shutil.make_archive(directory[:-1], 'zip', directory)
