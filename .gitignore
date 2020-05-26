@@ -1,11 +1,12 @@
-*_scores.txt
 *.log
-token
+*_scores.txt
 .python-version
-backup
-Week*/upload_me/
 Week*/submissions/
+Week*/upload_me/
+Week*/*.zip
+backup
 correction_status
+token
 
 ###############
 # Emacs files #
