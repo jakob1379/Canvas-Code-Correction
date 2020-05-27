@@ -28,7 +28,7 @@ fi
 
 
 n=1
-t=$(( 15*60 ))
+t=0
 daemon=false
 while getopts ":hn:dt:" opt; do
     case ${opt} in
@@ -40,7 +40,7 @@ while getopts ":hn:dt:" opt; do
 	    daemon=true
 	    ;;
 	t)
-	    t=$(( $OPTARG ))
+	    t=$(( $OPTARG*60 ))
 	    echo "TIME SET TO: $t"
 	    ;;
 	h)
@@ -71,25 +71,29 @@ while true; do
 ################################################################################
 #                              uploading comments                              #
 ################################################################################"
-    python upload_comments.py -v
+    python upload_comments.py -vp
     echo "
 ################################################################################
 #                               updating grades                                #
 ################################################################################"
-    python grade_submissions.py -v
-    echo "
+    python grade_submissions.py -vp
+
+
+    if [ "$n" > "0" ]
+    then
+	n=$(( n-1 ))
+    fi
+    if [ "$n" > "0" ] || $daemon
+    then
+	echo "
 ################################################################################
 #                                   waiting                                    #
 ################################################################################"
-    if [ "$n" -gt 0 ] || $daemon
-    then
-	n=$(( n-1 ))
 	sleep $t
-    else
-	if [ "$n" = "0" ]
-	then
-	    break
-	fi
+    fi
+    if [ "$n" = "0" ] && [ "$daemon" = "false" ]
+    then
+	break
     fi
 done
 
