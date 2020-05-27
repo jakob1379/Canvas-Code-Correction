@@ -16,6 +16,17 @@ operations:
     autorun {-t time} time to wait before next iteration in minutes'
 }
 
+
+# check for network
+if $(ping -q -w 1 -c 1 `ip r | grep default | cut -d ' ' -f 3` > /dev/null && echo true || echo false)
+then
+    echo "we got connection!"
+else
+    echo "no connection to the internet"
+    exit 1
+fi
+
+
 n=1
 t=$(( 15*60 ))
 daemon=false
@@ -60,13 +71,16 @@ while true; do
 ################################################################################
 #                              uploading comments                              #
 ################################################################################"
-    python upload_comments.py
+    python upload_comments.py -v
     echo "
 ################################################################################
 #                               updating grades                                #
 ################################################################################"
-    python grade_submissions.py
-
+    python grade_submissions.py -v
+    echo "
+################################################################################
+#                                   waiting                                    #
+################################################################################"
     if [ "$n" -gt 0 ] || $daemon
     then
 	n=$(( n-1 ))

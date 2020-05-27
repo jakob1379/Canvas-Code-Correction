@@ -82,7 +82,6 @@ for assignment in course.get_assignments():
         old_files = glob(directory+'*/')
 
     # Let's parallellize this to increase the speed
-    pbar = Pbar.ProgressBar(redirect_stdout=True)
 
     # Download all or only changed submissions
     if args.check_all:
@@ -93,6 +92,7 @@ for assignment in course.get_assignments():
 
     # Download submissions
     num_cores = multiprocessing.cpu_count()
+    pbar = Pbar.ProgressBar(redirect_stdout=True)
     if args.parallel:
         print("Downloading submissions in parallel!")
         Parallel(n_jobs=num_cores)(delayed(
