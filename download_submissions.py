@@ -91,15 +91,17 @@ for assignment in course.get_assignments():
                        if not sub.grade_matches_current_submission]
 
     # Download submissions
-    num_cores = multiprocessing.cpu_count()
-    pbar = Pbar.ProgressBar(redirect_stdout=True)
-    if args.parallel:
-        print("Downloading submissions in parallel!")
-        Parallel(n_jobs=num_cores)(delayed(
-            download_submission)(sub, old_files, course, args)
-                                   for sub in pbar(submissions))
-    else:
-        for sub in pbar(submissions):
-            download_submission(sub, old_files, course, args)
 
-    shutil.make_archive(directory[:-1], 'zip', directory)
+    if submissions:
+        num_cores = multiprocessing.cpu_count()
+        pbar = Pbar.ProgressBar(redirect_stdout=True)
+        if args.parallel:
+            print("Downloading submissions in parallel!")
+            Parallel(n_jobs=num_cores)(delayed(
+                download_submission)(sub, old_files, course, args)
+                                       for sub in pbar(submissions))
+        else:
+            for sub in pbar(submissions):
+                download_submission(sub, old_files, course, args)
+
+    # shutil.make_archive(directory[:-1], 'zip', directory)

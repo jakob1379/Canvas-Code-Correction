@@ -61,6 +61,8 @@ fi
 sum=0
 count=0
 submission=$1
+corrected=0
+skipped=0
 function correction_routine {
     # init variables
     submission=$1
@@ -94,9 +96,10 @@ function correction_routine {
 	zip "$zip_name" "$bname.txt" "errors.log"
 
 	cd "$dir"
-	echo "$submission corrected" >> correction_status
+	corrected=$(( corrected+1 ))
     else
 	echo "skipping..."
+	skipped=$(( skipped+1))
 	echo "$submission skipped" >> correction_status
     fi
 
@@ -137,7 +140,7 @@ fi
 echo "Assignment_id	Total_points	URL" >  "$scoreFile"
 
 total="$(ls $totalPath | wc -l)"
-count=1
+count=0
 
 tmp_file=$(mktemp /tmp/file.XXX)
 for d in $totalPath*/
@@ -151,7 +154,7 @@ do
     else
 	correction_routine "$totalPath$(basename "$d")"
     fi
-    count="$(($count+1))"
+    count=$(( count+1 ))
 done
 
 if $parallel; then

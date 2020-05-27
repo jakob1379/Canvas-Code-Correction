@@ -60,7 +60,6 @@ def grade_submission(sub, assignments, args):
 
     if not args.grade_all and submission.grade_matches_current_submission:
         if args.verbose:
-            print(out_str)
             print("Grading: Submission already graded")
         return
 

@@ -121,7 +121,6 @@ users = course.get_users()
 reports = [rep for rep in sorted(glob(args.path)) if 'Week7-8' not in rep]
 
 # Let's start grading!
-pbar = Pbar.ProgressBar(redirect_stdout=True)
 num_cores = multiprocessing.cpu_count()
 
 
@@ -130,7 +129,7 @@ if args.parallel:
         print("Uploading comments in parallel!")
     Parallel(n_jobs=num_cores)(delayed(
         upload_comments)(rep, assignments_as_dict, args) for
-                               rep in pbar(reports))
+                               rep in reports)
 else:
     for rep in (reports):
         upload_comments(rep, assignments_as_dict, args)
