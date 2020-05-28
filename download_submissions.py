@@ -89,7 +89,7 @@ for assignment in course.get_assignments():
     else:
         submissions = [sub for sub in assignment.get_submissions()
                        if not sub.grade_matches_current_submission or
-                       not sub.grade]
+                       sub.grade is None]
 
     # Download submissions
     if submissions:

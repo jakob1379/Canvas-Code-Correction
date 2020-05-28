@@ -1,5 +1,5 @@
 # Import the Canvas class
-from canvas_helpers import file_to_string, bcolors
+from canvas_helpers import file_to_string, bcolors, flatten_list
 from canvasapi import Canvas
 from glob import glob
 from joblib import Parallel, delayed
@@ -58,7 +58,8 @@ def grade_submission(sub, assignments, args):
     if args.verbose:
         print(out_str)
 
-    if not args.grade_all and submission.grade_matches_current_submission:
+    if not args.grade_all and submission.grade_matches_current_submission and (
+            submission.grade is not None):
         if args.verbose:
             print("Grading: Submission already graded")
         return
@@ -123,6 +124,7 @@ if __name__ == '__main__':
     # get users and local points
     users = course.get_users()
     reports = [rep for rep in sorted(glob(args.path)) if 'Week7-8' not in rep]
+
 
     # Let's start grading!
     # pbar = Pbar.ProgressBar(redirect_stdout=True)
