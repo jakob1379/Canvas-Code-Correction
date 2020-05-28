@@ -103,5 +103,3 @@ for assignment in course.get_assignments():
         else:
             for sub in pbar(submissions):
                 download_submission(sub, old_files, course, args)
-
-    # shutil.make_archive(directory[:-1], 'zip', directory)
