@@ -142,8 +142,20 @@ echo "Assignment_id	Total_points	URL" >  "$scoreFile"
 total="$(ls $totalPath | wc -l)"
 count=0
 
+if [ "$always" = "yes" ]
+then
+    folders=$totalPath*/
+else
+    # Find folders not evaluated
+    folders=$(find $totalPath \
+		   -mindepth 1 \
+		   -type d '!' \
+		   -exec sh -c 'ls -1 "{}"|egrep -i -q "^*points.txt$"' ';' \
+		   -print | \
+		  xargs -i% echo "%/")
+fi
 tmp_file=$(mktemp /tmp/file.XXX)
-for d in $totalPath*/
+for d in $folders
 do
     echo -e "$count of $total $week: $totalPath$d"
     if $parallel; then
