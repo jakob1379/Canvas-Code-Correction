@@ -88,10 +88,10 @@ for assignment in course.get_assignments():
         submissions = list(assignment.get_submissions())
     else:
         submissions = [sub for sub in assignment.get_submissions()
-                       if not sub.grade_matches_current_submission]
+                       if not sub.grade_matches_current_submission or
+                       not sub.grade]
 
     # Download submissions
-
     if submissions:
         num_cores = multiprocessing.cpu_count()
         pbar = Pbar.ProgressBar(redirect_stdout=True)
