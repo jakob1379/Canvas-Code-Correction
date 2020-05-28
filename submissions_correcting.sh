@@ -66,42 +66,34 @@ skipped=0
 function correction_routine {
     # init variables
     submission=$1
-    fileCount=$(ls -1 "$submission"/*log "$submission"/*txt 2>/dev/null | wc -l)
 
     # evaluate submission
-    if [[ -z `find "$submission" -type f -name '*points.txt'` ]] || [ $always = 'yes' ]
+    echo "evaluating..."
+    dir="$PWD"
+    cp -r "$folder"/code/* "$submission"/
+    cd "$submission"
+    start=$(date +%s)
+    if $show_time
+
     then
-	echo "evaluating..."
-	dir="$PWD"
-	cp -r "$folder"/code/* "$submission"/
-	cd "$submission"
-	start=$(date +%s)
-	if $show_time
-
-	then
-	    time python2 main.py > errors.log 2>&1
-	else
-	    python2 main.py > errors.log 2>&1
-	fi
-
-	rm -rf test/ config.py main.py
-	end=$(date +%s)
-	if $verbose; then
-	    echo "EVALUATED IN: $(( end - start))s"
-	fi
-
-	# zip answers
-	bname=$(basename "$PWD")
-	zip_name=$(basename "$PWD" | sed 's/ /+/g')
-	zip "$zip_name" "$bname.txt" "errors.log"
-
-	cd "$dir"
-	corrected=$(( corrected+1 ))
+	time python2 main.py > errors.log 2>&1
     else
-	echo "skipping..."
-	skipped=$(( skipped+1))
-	echo "$submission skipped" >> correction_status
+	python2 main.py > errors.log 2>&1
     fi
+
+    rm -rf test/ config.py main.py
+    end=$(date +%s)
+    if $verbose; then
+	echo "EVALUATED IN: $(( end - start))s"
+    fi
+
+    # zip answers
+    bname=$(basename "$PWD")
+    zip_name=$(basename "$PWD" | sed 's/ /+/g')
+    zip "$zip_name" "$bname.txt" "errors.log"
+
+    cd "$dir"
+    corrected=$(( corrected+1 ))
 
     foldername=$(basename -- "$submission")
     echo -n "$foldername	" >> "$scoreFile"
@@ -154,33 +146,16 @@ else
 		   -print | \
 		  xargs -i% echo "%/")
 fi
-tmp_file=$(mktemp /tmp/file.XXX)
+
 for d in $folders
 do
-    echo -e "$count of $total $week: $totalPath$d"
-    if $parallel; then
-	correction_routine "$totalPath$(basename "$d")" &
-	PID="$!"
-	echo "$PID:$scripts" >> $tmp_file
-	PID_LIST+="$PID "
-    else
-	correction_routine "$totalPath$(basename "$d")"
+    if $verbose
+    then
+	echo "Correcting. $d"
     fi
-    count=$(( count+1 ))
+    correction_routine "$totalPath$(basename "$d")"
 done
 
-if $parallel; then
-    for process in ${PID_LIST[@]};do
-	wait $process
-	exit_status=$?
-	script_name=`egrep $process $tmp_file | awk -F ":" '{print $2}' | rev | awk -F "/" '{print $2}' | rev`
-	echo "$script_name exit status: $exit_status"
-    done
-fi
-
-num_lines=$(cat correction_status | wc -l)
-corrected=$(grep -P "corrected$" correction_status | wc -l)
-skipped=$(grep -P "skipped$" correction_status | wc -l)
 echo "Done!"
-echo "corrected/skipped/total:"
-echo "$corrected/$skipped/$num_lines"
+# echo "corrected/skipped/total:"
+# echo "$corrected/$skipped/$num_lines"
