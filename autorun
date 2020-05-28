@@ -79,11 +79,11 @@ while true; do
     python grade_submissions.py -vp
 
 
-    if [ "$n" > "0" ]
+    if [ "$n" -gt "0" ]
     then
 	n=$(( n-1 ))
     fi
-    if [ "$n" > "0" ] || $daemon
+    if [ "$n" -gt "0" ] || $daemon
     then
 	echo "
 ################################################################################
