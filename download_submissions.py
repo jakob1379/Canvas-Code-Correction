@@ -88,8 +88,9 @@ for assignment in course.get_assignments():
         submissions = list(assignment.get_submissions())
     else:
         submissions = [sub for sub in assignment.get_submissions()
-                       if not sub.grade_matches_current_submission or
-                       sub.grade is None]
+                       if vars(sub).get('attachments') is not None and
+                       (not sub.grade_matches_current_submission or
+                        sub.grade is None)]
 
     # Download submissions
     if submissions:
@@ -103,3 +104,4 @@ for assignment in course.get_assignments():
         else:
             for sub in pbar(submissions):
                 download_submission(sub, old_files, course, args)
+        pbar.finish()
