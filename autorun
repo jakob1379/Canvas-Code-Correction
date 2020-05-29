@@ -90,7 +90,7 @@ while true; do
 ################################################################################
 #                                   waiting                                    #
 ################################################################################"
-	! $daemon && date && echo "Runs left: $n" || date
+	! $daemon && date && echo "Runs left: $n" || date && echo "Running as daemon"
 	sleep "$t"m
     fi
     if [ "$n" = "0" ] && [ "$daemon" = "false" ]
