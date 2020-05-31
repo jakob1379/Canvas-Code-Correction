@@ -72,7 +72,7 @@ for folder in $(ls -d Week*/); do
     echo "INFO: Correcting submissions"
     if [ "$args" != '-' ];
     then
-	bash submissions_correcting.sh $args "$folder"
+	.bash submissions_correcting.sh "$args" "$folder"
     else
 	bash submissions_correcting.sh "$folder"
     fi

@@ -1,6 +1,6 @@
 # Import the Canvas class
 from canvas_helpers import (file_to_string, create_file_name,
-                            flatten_list, print_dict)
+                            flatten_list, print_dict, bcolors)
 from canvasapi import Canvas
 from glob import glob
 from joblib import Parallel, delayed
@@ -41,6 +41,9 @@ def extract_comment_filenames(comments):
 
 
 def upload_comments(sub, assignments, args):
+    if args.verbose:
+        out_str = 'Checking: ' + sub
+        print(out_str)
     # Get assignment- and file name
     assignment_name = sub.split('/')[0]
     txt_name = sub.split('/')[-2]
@@ -60,17 +63,23 @@ def upload_comments(sub, assignments, args):
     # get path to comment zip
     file_to_upload = glob(sub + '*.zip')
 
+
     if file_to_upload:
         file_to_upload = file_to_upload[0]
         upload_name = file_to_upload.split('/')[-1]
     else:
-        raise FileExistsError("zip to upload not found in: " + sub)
+        out_str = (
+            bcolors.WARNING + "zip to upload not found in: ".upper() + sub +
+            bcolors.ENDC)
+        print(out_str)
+        # ans = str(input(out_str) or 'y')
+        # if ans.lower() == 'n':
+        #     raise FileExistsError("zip to upload not found in: " + sub)
+        return
 
-    out_str = 'Checking: ' + sub
     # Only upload if it isn't already there.
     if handin_name+'.zip' not in comment_files or args.all:
         if args.verbose:
-            print(out_str)
             print("Upload: uploading feedback\n", file_to_upload)
 
         ans = ''
@@ -87,12 +96,11 @@ def upload_comments(sub, assignments, args):
             ans = input("Upload: Should new comment be uploaded? [y/N] ")
         if ans.lower() == 'y' or not args.question:
             if args.verbose or args.question:
-                print("Upload: Comment has been uploaded!")
+                print("Upload: Comment has been uploaded!\n")
             submission.upload_comment(file_to_upload)
         elif args.question:
             print("Upload: Comments NOT uploaded.")
     elif args.verbose:
-        print(out_str)
         print("Upload: feedback already uploaded\n")
 
 

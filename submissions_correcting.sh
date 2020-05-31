@@ -138,22 +138,18 @@ if [ "$always" = "yes" ]
 then
     folders=$totalPath*/
 else
-    # Find folders not evaluated
-    folders=$(find $totalPath \
-		   -mindepth 1 \
-		   -type d '!' \
-		   -exec sh -c 'ls -1 "{}"|egrep -i -q "^*points.txt$"' ';' \
-		   -print | \
-		  xargs -i% echo "%/")
+    folders=$(find "$totalPath" -mindepth 1 -type d '!' -exec sh -c 'ls -1 "{}"|egrep -i -q "^*points.txt$"' ';' -print | sort | xargs -i% echo "%/")
 fi
 
-for d in $folders
+for dir in "$folders"
 do
+    # dir="$(dirname $f)"
     if $verbose
     then
-	echo "Correcting. $d"
+	echo "Correcting:"
+	echo "$dir"
     fi
-    correction_routine "$totalPath$(basename "$d")"
+    correction_routine "$totalPath$(basename "$dir")"
 done
 
 echo "Done!"
