@@ -51,7 +51,6 @@ def upload_comments(sub, assignments, args):
 
     # get points and user id
     user_id = re.findall(r'\d+', handin_name)[0]
-
     # Get submission for user
     assignment = assignments[assignment_name]
     submission = assignment.get_submission(user_id,
@@ -62,7 +61,6 @@ def upload_comments(sub, assignments, args):
 
     # get path to comment zip
     file_to_upload = glob(sub + '*.zip')
-
 
     if file_to_upload:
         file_to_upload = file_to_upload[0]
