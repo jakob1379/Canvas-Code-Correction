@@ -26,6 +26,10 @@ parser.add_argument("-c", "--check-all",
                     help="check all assignments, default is to only check " +
                     "changed assignments",
                     action='store_true')
+parser.add_argument("-f", "--failed",
+                    help="download failed submissions",
+                    action='store_true')
+
 
 args = parser.parse_args()
 
@@ -86,6 +90,9 @@ for assignment in course.get_assignments():
     # Download all or only changed submissions
     if args.check_all:
         submissions = list(assignment.get_submissions())
+    elif args.failed:
+        submissions = [sub for sub in assignment.get_submissions()
+                       if sub.grade == 'incomplete']
     else:
         submissions = [sub for sub in assignment.get_submissions()
                        if vars(sub).get('attachments') is not None and
@@ -105,3 +112,5 @@ for assignment in course.get_assignments():
             for sub in pbar(submissions):
                 download_submission(sub, old_files, course, args)
         pbar.finish()
+    else:
+        print("No submissions to download...")
