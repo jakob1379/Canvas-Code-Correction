@@ -1,4 +1,8 @@
-#!/bin/bash
+#!/usr/bin/env bash
+set -euo pipefail
+IFS=$'\n\t'
+
+
 
 displayUsage() {
     echo '
@@ -63,12 +67,13 @@ count=0
 submission=$1
 corrected=0
 skipped=0
+
 function correction_routine {
     # init variables
     submission=$1
 
     # evaluate submission
-    echo "evaluating..."
+    $verbose && echo  "evaluating..."
     dir="$PWD"
     cp -r "$folder"/code/* "$submission"/
     cd "$submission"
@@ -141,17 +146,9 @@ else
     folders=$(find "$totalPath" -mindepth 1 -type d '!' -exec sh -c 'ls -1 "{}"|egrep -i -q "^*points.txt$"' ';' -print | sort | xargs -i% echo "%/")
 fi
 
-for dir in "$folders"
-do
-    # dir="$(dirname $f)"
-    if $verbose
-    then
-	echo "Correcting:"
-	echo "$dir"
-    fi
-    correction_routine "$totalPath$(basename "$dir")"
+for d in $folders; do
+    echo "Correcting: $d"
+    correction_routine "$totalPath$(basename "$d")"
 done
 
 echo "Done!"
-# echo "corrected/skipped/total:"
-# echo "$corrected/$skipped/$num_lines"
