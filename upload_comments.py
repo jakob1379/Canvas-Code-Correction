@@ -6,11 +6,7 @@ from glob import glob
 from joblib import Parallel, delayed
 import argparse
 import multiprocessing
-import numpy as np
-import progressbar as Pbar
 import re
-import os
-import subprocess
 from urllib.parse import unquote
 
 parser = argparse.ArgumentParser()
@@ -70,9 +66,6 @@ def upload_comments(sub, assignments, args):
             bcolors.WARNING + "zip to upload not found in: ".upper() + sub +
             bcolors.ENDC)
         print(out_str)
-        # ans = str(input(out_str) or 'y')
-        # if ans.lower() == 'n':
-        #     raise FileExistsError("zip to upload not found in: " + sub)
         return
 
     # Only upload if it isn't already there.
@@ -137,5 +130,5 @@ if args.parallel:
         upload_comments)(rep, assignments_as_dict, args) for
                                rep in reports)
 else:
-    for rep in (reports):
+    for rep in reports:
         upload_comments(rep, assignments_as_dict, args)
