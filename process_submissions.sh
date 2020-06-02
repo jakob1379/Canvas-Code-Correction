@@ -84,8 +84,6 @@ for folder in $(ls -d Week*/); do
     # echo "INFO: Done!"
 done
 
-mv Week7-8/ bak_Week7_8
-
 echo "INFO: zipping answers"
 ./zip_submission
 echo "INFO: Done!"
