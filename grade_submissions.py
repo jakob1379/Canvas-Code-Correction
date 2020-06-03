@@ -31,6 +31,10 @@ if '/submissions/*/' not in args.path:
 
 
 def grade_submission(sub, assignments, args):
+    out_str = 'Grading: Checking ' + sub
+    if args.verbose:
+        print(out_str)
+
     scores_to_complete = {
         'Week1-2': 43,
         'Week3-4': 43,
@@ -52,11 +56,7 @@ def grade_submission(sub, assignments, args):
     current_grade = submission.grade
 
     # Grade accordingly
-    out_str = 'Grading: Checking ' + sub
     ans = ''
-
-    if args.verbose:
-        print(out_str)
 
     if not args.grade_all and submission.grade_matches_current_submission and (
             submission.grade is not None):
@@ -87,15 +87,15 @@ def grade_submission(sub, assignments, args):
                 print("Submission not graded\n")
             return
 
-    # %% Edit online grade based on score and/or question answer if any
-    if points >= scores_to_complete[assignment_name] or ans == 'o':
-        submission.edit(submission={'posted_grade': 'complete'})
-        if args.verbose:
-            print("Completed with points:", points)
-    elif points < scores_to_complete[assignment_name] or ans == 'o':
-        submission.edit(submission={'posted_grade': 'incomplete'})
-        if args.verbose:
-            print("Incomplete with points:", points)
+    # # %% Edit online grade based on score and/or question answer if any
+    # if points >= scores_to_complete[assignment_name] or ans == 'o':
+    #     submission.edit(submission={'posted_grade': 'complete'})
+    #     if args.verbose:
+    #         print("Completed with points:", points)
+    # elif points < scores_to_complete[assignment_name] or ans == 'o':
+    #     submission.edit(submission={'posted_grade': 'incomplete'})
+    #     if args.verbose:
+    #         print("Incomplete with points:", points)
     if args.verbose:
         print()
 
