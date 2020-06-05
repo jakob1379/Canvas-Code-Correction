@@ -8,6 +8,7 @@ import argparse
 import multiprocessing
 import re
 from urllib.parse import unquote
+from tabulate import tabulate
 
 parser = argparse.ArgumentParser()
 parser.add_argument("-p", "--parallel",
@@ -27,6 +28,7 @@ parser.add_argument("path", nargs='?', default='Week*/submissions/*/',
 args = parser.parse_args()
 if '/submissions/*/' not in args.path:
     args.path += '/submissions/*/'
+
 
 def extract_comment_filenames(comments):
     # Get all attachments in comments as one flat list
@@ -79,16 +81,18 @@ def upload_comments(sub, assignments, args):
             print(file_to_string(sub + txt_name + '.txt'))
             print("\nOld Feedback uploads:")
             if comment_files:
-                for comm in comment_files:
-                    print(comm)
+                print(tabulate(
+                    [[i] for i in comment_files],
+                    headers=['Comment names'],
+                    showindex='always'),'\n')
             else:
                 print(None)
-            print("\nNew comment:\n", upload_name, '\n')
+            print("\nNew comment:\n", upload_name, '\n', handin_name+'.zip\n')
             ans = input("Upload: Should new comment be uploaded? [y/N] ")
         if ans.lower() == 'y' or not args.question:
             if args.verbose or args.question:
                 print("Upload: Comment has been uploaded!\n")
-            submission.upload_comment(file_to_upload)
+            # submission.upload_comment(file_to_upload)
         elif args.question:
             print("Upload: Comments NOT uploaded.")
     elif args.verbose:

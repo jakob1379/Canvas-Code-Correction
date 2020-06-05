@@ -61,11 +61,10 @@ def grade_submission(sub, assignments, args):
     if not args.grade_all and submission.grade_matches_current_submission and (
             submission.grade is not None):
         if args.verbose:
-            print("Grading: Submission already graded")
+            print("Grading: Submission already graded\n")
         return
 
-
-    # %% Print question and retrieve answer
+    #  %% Print question and retrieve answer
     if args.question:
         score = round(points - scores_to_complete[assignment_name])
         if score < 0:
@@ -87,15 +86,15 @@ def grade_submission(sub, assignments, args):
                 print("Submission not graded\n")
             return
 
-    # # %% Edit online grade based on score and/or question answer if any
-    # if points >= scores_to_complete[assignment_name] or ans == 'o':
-    #     submission.edit(submission={'posted_grade': 'complete'})
-    #     if args.verbose:
-    #         print("Completed with points:", points)
-    # elif points < scores_to_complete[assignment_name] or ans == 'o':
-    #     submission.edit(submission={'posted_grade': 'incomplete'})
-    #     if args.verbose:
-    #         print("Incomplete with points:", points)
+    # %% Edit online grade based on score and/or question answer if any
+    if points >= scores_to_complete[assignment_name] or ans == 'o':
+        submission.edit(submission={'posted_grade': 'complete'})
+        if args.verbose:
+            print("Completed with points:", points)
+    elif points < scores_to_complete[assignment_name] or ans == 'o':
+        submission.edit(submission={'posted_grade': 'incomplete'})
+        if args.verbose:
+            print("Incomplete with points:", points)
     if args.verbose:
         print()
 
