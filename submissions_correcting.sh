@@ -19,14 +19,14 @@ operations:
 
 '
 }
-always='no'
+always=false
 verbose=false
 parallel=false
 show_time=false
 while getopts ":havpt" opt; do
     case ${opt} in
 	a)
-	    always='yes'
+	    always=true
 	    ;;
 	v)
 	    verbose=true
@@ -139,8 +139,9 @@ echo "Assignment_id	Total_points	URL" >  "$scoreFile"
 total="$(ls $totalPath | wc -l)"
 count=0
 
-if [ "$always" = "yes" ]
+if $always
 then
+    echo "Correcting all!"
     folders=$totalPath*/
 else
     folders=$(find "$totalPath" -mindepth 1 -type d '!' -exec sh -c 'ls -1 "{}"|egrep -i -q "^*points.txt$"' ';' -print | sort | xargs -i% echo "%/")

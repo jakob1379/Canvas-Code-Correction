@@ -87,12 +87,12 @@ def upload_comments(sub, assignments, args):
                     showindex='always'),'\n')
             else:
                 print(None)
-            print("\nNew comment:\n", upload_name, '\n', handin_name+'.zip\n')
+            print("\nNew comment:\n", upload_name, '\n')
             ans = input("Upload: Should new comment be uploaded? [y/N] ")
         if ans.lower() == 'y' or not args.question:
             if args.verbose or args.question:
                 print("Upload: Comment has been uploaded!\n")
-            # submission.upload_comment(file_to_upload)
+            submission.upload_comment(file_to_upload)
         elif args.question:
             print("Upload: Comments NOT uploaded.")
     elif args.verbose:
