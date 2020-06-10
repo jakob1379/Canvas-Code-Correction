@@ -1,12 +1,13 @@
 from config import *
-import subprocess
+from test import test
 import glob
 import os
-import time
 import re
+import subprocess
+import time
 
 def addMissingIncluded(filename, existing):
-    cppfiles = [ (name.split("."))[0] for name in glob.glob("*.cpp") ]
+    cppfiles = [(name.split("."))[0] for name in glob.glob("*.cpp")]
     existingIncludes = filename.split(" ");
     newIncludes = []
 
@@ -61,13 +62,13 @@ def run(foldername):
         #print "after: " + line
 
         # add the std flag
-        nvmvalue,standard = extractStandardCompile();
+        nvmvalue, standard = extractStandardCompile();
         #print "########################"
         #print standard
         #print line
         #print "="
         line = line + standard
-        print "####", line
+        # print "####", line
 
         res = subprocess.call(line, shell=True)
         if res != 0:
@@ -99,14 +100,18 @@ def run(foldername):
     # f.write("0.0")#+"".join([str(s)+"\n" for s in points]))
     # f.close()
 
-def clean():
+def clean(clean_txt=False):
     with open(os.devnull, 'w')  as FNULL:
-        for fil in glob.glob("*.txt"):
-            subprocess.call("rm " + fil, shell=True, stdout=FNULL, stderr=FNULL);
+        if clean_txt:
+            for fil in glob.glob("*.txt"):
+                subprocess.call("rm " + fil, shell=True, stdout=FNULL, stderr=FNULL)
         for fil in object_files.values():
-            subprocess.call("rm " + fil, shell=True, stdout=FNULL, stderr=FNULL);
-        # subprocess.call("rm *.dat", shell=True, stdout=FNULL, stderr=FNULL);
-        subprocess.call("rm *.pyc", shell=True, stdout=FNULL, stderr=FNULL);
+            subprocess.call("rm " + fil, shell=True, stdout=FNULL, stderr=FNULL)
+        subprocess.call("rm *.dat", shell=True, stdout=FNULL, stderr=FNULL)
+        subprocess.call("rm *.pyc", shell=True, stdout=FNULL, stderr=FNULL)
+        subprocess.call("rm *.py", shell=True, stdout=FNULL, stderr=FNULL)
+        subprocess.call("rm -rf armadillo*", shell=True, stdout=FNULL, stderr=FNULL)
+        subprocess.call("rm deleteme.txt", shell=True, stdout=FNULL, stderr=FNULL)
 
 def testPassed(title, result):
     passed = True
@@ -114,7 +119,7 @@ def testPassed(title, result):
     if "Failed" in result:
         passed = False
         newtitle = (title.split(":"))[1]
-        description+= "-Failed test: " + newtitle.strip()
+        description += "-Failed test: " + newtitle.strip()
     return (passed, description)
 
 
@@ -122,5 +127,6 @@ if __name__ == '__main__':
     path = os.getcwd()
     folders = path.split("/")
     #print folders
-    run(folders[-1]);
-
+    run(folders[-1])
+    test()
+    clean()

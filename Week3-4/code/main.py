@@ -227,4 +227,3 @@ if __name__ == '__main__':
     folders = path.split("/")
     #print folders
     run(folders[-1]);
-
