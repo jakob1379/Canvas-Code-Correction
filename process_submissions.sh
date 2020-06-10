@@ -60,26 +60,15 @@ for folder in $(ls -d Week*/); do
     bash submissions_unzip.sh "$folder"
     echo "INFO: Done!"
 
-    # Copy armadillo into submissions
-    if [ "$folder" = 'Week7-8/' ]; then
-    	echo "Skipping $folder!"
-    	continue # delete this line when codechecker works
-    	ls -d Week7-8/submissions/*/ | xargs -i% cp -ur armadillo/armadillo_bits/ %
-    fi
-
     echo "INFO: Correcting submissions"
     if [ "$args" != '-' ];
     then
 	echo "found args: $args"
-	.bash submissions_correcting.sh "$args" "$folder"
+	bash submissions_correcting.sh "$args" "$folder"
     else
 	bash submissions_correcting.sh "$folder"
     fi
     echo "INFO: Done!"
-
-    # echo "INFO: zipping answers"
-    # bash submissions_zip.sh "$folder"
-    # echo "INFO: Done!"
 done
 
 echo "INFO: zipping answers"
