@@ -75,7 +75,8 @@ users = course.get_users()
 
 # Walk through all assignments
 for assignment in course.get_assignments():
-
+    if assignment.name == 'Week 7-8':
+        continue
     # Create paths for zip files
     print("Downloading " + assignment.name + "...")
     directory = assignment.name.replace(' ', '') + '/' + 'submissions/'
@@ -85,7 +86,7 @@ for assignment in course.get_assignments():
     else:
         old_files = glob(directory+'*/')
 
-    # Let's parallellize this to increase the speed
+    # Let's parallellize this to increase the speedy
 
     # Download all or only changed submissions
     if args.check_all:

@@ -42,6 +42,14 @@ def print_dict(d):
     print()
 
 
+def print_as_dict(dd):
+    d = vars(dd)
+    max_key = len(max(d.keys(), key=len))
+    for k, v in d.items():
+        print(k.ljust(max_key) + ': ' + str(v))
+    print()
+
+
 def flatten_list(list_of_lists):
     if any([not isinstance(alist, list) for alist in list_of_lists]):
         return list_of_lists
