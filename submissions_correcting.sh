@@ -23,7 +23,7 @@ always=false
 verbose=false
 parallel=false
 show_time=false
-while getopts ":havpt" opt; do
+while getopts ":havptr" opt; do
     case ${opt} in
 	a)
 	    always=true
@@ -144,6 +144,7 @@ then
     echo "Correcting all!"
     folders=$totalPath*/
 else
+
     folders=$(find "$totalPath" -mindepth 1 -type d '!' -exec sh -c 'ls -1 "{}"|egrep -i -q "^*points.txt$"' ';' -print | sort | xargs -i% echo "%/")
 fi
 

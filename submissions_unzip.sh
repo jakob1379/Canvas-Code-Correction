@@ -25,10 +25,10 @@ for d in submissions/*/; do
 	rm -rf "__MACOSX";
     fi
     folder_count=$(find "$d"/* -maxdepth 0 -type d -print 2>/dev/null | wc -l)
-    if [ $folder_count -gt 0 ] ; then
-	mv "$d"/*/*.hpp "$d"
-	mv "$d"/*/*.h "$d"
-	mv "$d"/*/*.cpp "$d"
-	rm -r "$d"/*/;
+    if [ "$folder_count" -gt "0" ] ; then
+	mv "$d"*/*.hpp "$d"
+	mv "$d"*/*.h "$d"
+	mv "$d"*/*.cpp "$d"
+	rm -r "$d"*/;
     fi
 done

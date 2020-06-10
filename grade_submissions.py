@@ -122,7 +122,7 @@ if __name__ == '__main__':
 
     # get users and local points
     users = course.get_users()
-    reports = [rep for rep in sorted(glob(args.path)) if 'Week7-8' not in rep]
+    reports = [rep for rep in sorted(glob(args.path))]
 
 
     # Let's start grading!

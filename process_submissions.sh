@@ -19,7 +19,8 @@ args='-'
 parallel=false
 correct_all=false
 show_time=false
-while getopts ":hpat" opt; do
+reverse=false
+while getopts ":hpatr" opt; do
     case ${opt} in
 	p)
 	    echo "RUN_ME: Parallelization enabled!"
@@ -32,7 +33,12 @@ while getopts ":hpat" opt; do
 	    ;;
 	t)
 	    show_time=true
-	    args+=t
+	    args+='t'
+	    ;;
+	r)
+	    reverse=true
+	    args+='r'
+	    echo "process_submission: running in reverse o.O"
 	    ;;
 	h)
 	    displayUsage
@@ -54,6 +60,7 @@ shift $((OPTIND-1))
 echo "INFO: Downloading submissions"
 python3 download_submissions.py -p
 echo "INFO: Done!"
+
 
 for folder in $(ls -d Week*/); do
     echo "INFO: Unzipping"
