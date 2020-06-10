@@ -68,15 +68,14 @@ def grade_submission(sub, assignments, args):
     if args.question:
         score = round(points - scores_to_complete[assignment_name])
         if score < 0:
-            score = bcolors.FAIL+str(score)
+            score = bcolors.FAIL
         else:
-            score = bcolors.OKBLUE+str(score)
+            score = bcolors.OKBLUE
 
         print(30*'-')
         print(file_to_string(sub + handin_name + '.txt'))
         print("\nPoints in file:",
-              str(points)+'-'+str(scores_to_complete[assignment_name]),
-              "=", score + bcolors.ENDC)
+              score+str(points)+bcolors.ENDC+'/'+str(scores_to_complete[assignment_name]))
         print("\nPoints to complete", assignment_name+':',
               scores_to_complete[assignment_name])
         print("Current grade:", current_grade)
