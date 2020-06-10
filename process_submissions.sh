@@ -62,11 +62,9 @@ for folder in $(ls -d Week*/); do
 
     # Copy armadillo into submissions
     if [ "$folder" = 'Week7-8/' ]; then
-	echo "Skipping $folder!"
-	continue # delete this line when codechecker works
-
-	ls -d Week7-8/submissions/*/ | xargs -i% cp -ur armadillo/armadillo_bits/ %
-	ls -d Week7-8/submissions/*/ | xargs -i% cp -ur armadillo/armadillo.hpp %
+    	echo "Skipping $folder!"
+    	continue # delete this line when codechecker works
+    	ls -d Week7-8/submissions/*/ | xargs -i% cp -ur armadillo/armadillo_bits/ %
     fi
 
     echo "INFO: Correcting submissions"
