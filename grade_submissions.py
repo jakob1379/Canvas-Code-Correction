@@ -39,7 +39,7 @@ def grade_submission(sub, assignments, args):
         'Week1-2': 43,
         'Week3-4': 43,
         'Week5-6': 67.5,
-        'Week7-8': 75}
+        'Week7-8': 2}
 
     # Get assignment- and file name
     assignment_name = sub.split('/')[0]
