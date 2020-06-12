@@ -1,6 +1,9 @@
 # Import the Canvas class
-from canvas_helpers import (file_to_string, create_file_name,
-                            flatten_list, print_dict, bcolors)
+from canvas_helpers import (file_to_string,
+                            create_file_name,
+                            extract_comment_filenames,
+                            flatten_list,
+                            bcolors)
 from canvasapi import Canvas
 from glob import glob
 from joblib import Parallel, delayed
@@ -28,14 +31,6 @@ parser.add_argument("path", nargs='?', default='Week*/submissions/*/',
 args = parser.parse_args()
 if '/submissions/*/' not in args.path:
     args.path += '/submissions/*/'
-
-
-def extract_comment_filenames(comments):
-    # Get all attachments in comments as one flat list
-    return flatten_list(
-        [[unquote(att.get('filename')) for att in comm.get('attachments')
-          if att.get('filename')]
-         for comm in comments if comm.get('attachments')])
 
 
 def upload_comments(sub, assignments, args):
@@ -84,7 +79,7 @@ def upload_comments(sub, assignments, args):
                 print(tabulate(
                     [[i] for i in comment_files],
                     headers=['Comment names'],
-                    showindex='always'),'\n')
+                    showindex='always'), '\n')
             else:
                 print(None)
             print("\nNew comment:\n", upload_name, '\n')
@@ -121,7 +116,7 @@ assignments_as_dict = {ass.name.capitalize().replace(' ', ''): ass
 
 # get users and local points
 users = course.get_users()
-reports = [rep for rep in sorted(glob(args.path))]
+reports = sorted(glob(args.path))
 
 # Let's start grading!
 num_cores = multiprocessing.cpu_count()
