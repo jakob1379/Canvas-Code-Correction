@@ -50,6 +50,14 @@ def print_as_dict(dd):
     print()
 
 
+def extract_comment_filenames(comments):
+    # Get all attachments in comments as one flat list
+    return flatten_list(
+        [[unquote(att.get('filename')) for att in comm.get('attachments')
+          if att.get('filename')]
+         for comm in comments if comm.get('attachments')])
+
+
 def flatten_list(list_of_lists):
     if any([not isinstance(alist, list) for alist in list_of_lists]):
         return list_of_lists
