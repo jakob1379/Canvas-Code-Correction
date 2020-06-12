@@ -1,5 +1,10 @@
 # Import the Canvas class
-from canvas_helpers import download_url, file_to_string, create_file_name, print_dict
+from canvas_helpers import (download_url,
+                            file_to_string,
+                            create_file_name,
+                            print_dict,
+                            flatten_list,
+                            extract_comment_filenames)
 from canvasapi import Canvas
 from glob import glob
 from joblib import Parallel, delayed
@@ -25,6 +30,9 @@ parser.add_argument("-p", "--parallel",
 parser.add_argument("-c", "--check-all",
                     help="check all assignments, default is to only check " +
                     "changed assignments",
+                    action='store_true')
+parser.add_argument("-u", "--uncommented",
+                    help="cheack uncommented assignments",
                     action='store_true')
 parser.add_argument("-f", "--failed",
                     help="download failed submissions",
@@ -74,9 +82,10 @@ course = canvas.get_course(course_id)
 users = course.get_users()
 
 # Walk through all assignments
+submissions = []
 for assignment in course.get_assignments():
     # Create paths for zip files
-    print("Downloading " + assignment.name + "...")
+    print("Checking " + assignment.name + "...")
     directory = assignment.name.replace(' ', '') + '/' + 'submissions/'
     if not os.path.exists(directory):
         os.makedirs(directory)
@@ -84,32 +93,37 @@ for assignment in course.get_assignments():
     else:
         old_files = glob(directory+'*/')
 
-    # Let's parallellize this to increase the speedy
-
     # Download all or only changed submissions
     if args.check_all:
-        submissions = list(assignment.get_submissions())
+        submissions += list(assignment.get_submissions())
     elif args.failed:
-        submissions = [sub for sub in assignment.get_submissions()
+        submissions += [sub for sub in assignment.get_submissions()
                        if sub.grade == 'incomplete']
+    elif args.uncommented:
+        for sub in assignment.get_submissions(include='submission_comments'):
+            comment_files = extract_comment_filenames(
+                sub.submission_comments)
+            submission_fname = create_file_name(sub, course) + '.zip'
+            if submission_fname not in comment_files:
+                submissions.append(sub)
     else:
-        submissions = [sub for sub in assignment.get_submissions()
-                       if vars(sub).get('attachments') is not None and
-                       (not sub.grade_matches_current_submission or
-                        sub.grade is None)]
+        for sub in assignment.get_submissions():
+            if vars(sub).get('attachments') is not None and (
+                    not sub.grade_matches_current_submission or
+                    sub.grade is None):
+                submissions.append(sub)
 
-    # Download submissions
-    if submissions:
-        num_cores = multiprocessing.cpu_count()
-        pbar = Pbar.ProgressBar(redirect_stdout=True)
-        if args.parallel:
-            print("Downloading submissions in parallel!")
-            Parallel(n_jobs=num_cores)(delayed(
-                download_submission)(sub, old_files, course, args)
-                                       for sub in pbar(submissions))
-        else:
-            for sub in pbar(submissions):
-                download_submission(sub, old_files, course, args)
-        pbar.finish()
+# Download submissions
+if submissions:
+    num_cores = multiprocessing.cpu_count()
+    pbar = Pbar.ProgressBar(redirect_stdout=True)
+    if args.parallel:
+        print("Downloading submissions in parallel!")
+        Parallel(n_jobs=num_cores)(delayed(
+            download_submission)(sub, old_files, course, args)
+                                   for sub in pbar(submissions))
     else:
-        print("No submissions to download...")
+        for sub in pbar(submissions):
+            download_submission(sub, old_files, course, args)
+else:
+    print("No submissions to download...")
