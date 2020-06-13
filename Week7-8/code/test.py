@@ -7,20 +7,17 @@ def eval_NN(threshold=3):
     NN_ta = np.loadtxt('NN_ta.dat')
     try:
         NN_student = np.loadtxt('NN.dat')
-
         if len(NN_student) != len(NN_ta):
             print("ERROR: NN.dat has length " + str(len(NN_student)))
             total_diff = len(NN_ta)
         else:
             # Count errors
             total_diff = (NN_ta != NN_student).sum()
-
         # Return pass/fail
         res = int(total_diff <= threshold)
     except Exception as e:
         print(e)
         res = 0
-
     return res
 
 
@@ -29,20 +26,17 @@ def eval_logreg(threshold=3):
     logreg_ta = np.loadtxt('LogReg_ta.dat')
     try:
         logreg_student = np.loadtxt('LogReg.dat')
-
         if len(logreg_student) != len(logreg_ta):
             print("ERROR: LogReg.dat has length " + str(len(logreg_student)))
             total_diff = len(logreg_ta)
         else:
             # Count errors
             total_diff = (logreg_ta != logreg_student).sum()
-
         # Return pass/fail
         res = int(total_diff <= threshold)
     except Exception as e:
         print(e)
         res = 0
-
     return res
 
 def test():
