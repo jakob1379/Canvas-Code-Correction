@@ -10,7 +10,6 @@ from joblib import Parallel, delayed
 import argparse
 import multiprocessing
 import re
-from urllib.parse import unquote
 from tabulate import tabulate
 
 parser = argparse.ArgumentParser()

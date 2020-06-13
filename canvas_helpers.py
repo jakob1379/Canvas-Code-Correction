@@ -10,6 +10,7 @@ import progressbar as Pbar
 import re
 import shutil
 import urllib.request
+from urllib.parse import unquote
 
 
 class bcolors:
