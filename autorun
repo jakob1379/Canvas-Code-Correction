@@ -33,7 +33,6 @@ daemon=false
 args='-'
 while getopts ":hn:dt:va" opt; do
     case ${opt} in
-
 	n)
 	    n="$OPTARG"
 	    ;;
