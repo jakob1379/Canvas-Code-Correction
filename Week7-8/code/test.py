@@ -59,7 +59,7 @@ def test():
 
         # Write comments for LogReg exercise
         logref_out = "\n\nExercise LogReg\n"
-        if content[0] == '1':
+        if content[1] == '1':
             logref_out += '-No errors found.'
         else:
             logref_out += '-Errors found: Points not classified correctly or .dat file has wrong format.\n'
