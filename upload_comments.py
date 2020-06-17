@@ -23,7 +23,7 @@ parser.add_argument("-q", "--question",
                     help="prompt if a non-matching comment should be uploaded",
                     action='store_true')
 parser.add_argument("-a", "--all",
-                    help="description",
+                    help="upload all feedback RISK OF DUPLICATES ON ABSALON",
                     action='store_true')
 parser.add_argument("path", nargs='?', default='Week*/submissions/*/',
                     help="Path to check")
