@@ -1,0 +1,124 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+displayUsage() {
+    echo '
+<>  angle brackets for required parameters: ping <hostname>
+[]  square brackets for optional parameters: mkdir [-p] <dirname>
+... ellipses for repeated items: cp <source1> [source2…] <dest>
+ |  vertical bars for choice of items: netstat {-t|-u}
+
+usage:  name <operation> [...]
+operations:
+    autorun {-h help} shows this dialogue
+    autorun {-n number} number of times to run the correction
+    autorun {-d daemon} keep running until process is closed
+    autorun {-t time} time to wait before next iteration in minutes'
+}
+
+
+# check for network
+if $(ping -q -w 1 -c 1 `ip r | grep -oP "default.* \K(\w+\.\w+\.\w+\.\w+)"` > /dev/null && echo true || echo false)
+then
+    echo "we got connection!"
+else
+    echo "no connection to the internet"
+    exit 1
+fi
+
+
+n=1
+t=0
+daemon=false
+args='-'
+while getopts ":hn:dt:va" opt; do
+    case ${opt} in
+	n)
+	    n="$OPTARG"
+	    ;;
+	d)
+	    daemon=true
+	    ;;
+	t)
+	    t=$OPTARG
+	    ;;
+	v)
+	    verbose=true
+	    args+='v'
+	    ;;
+	a)
+	    grade_all=true
+	    args+='a'
+	    ;;
+	h)
+	    displayUsage
+	    exit 1
+	    ;;
+	\?)
+	    echo "Invalid option: $OPTARG" 1>&2
+	    exit 2
+	    ;;
+	:)
+	    echo "Invalid option: $OPTARG requires an argument" 1>&2
+	    exit 2
+	    ;;
+    esac
+done
+
+shift $((OPTIND-1))
+
+function routine {
+    echo "
+    ################################################################################
+    #                           deleting old submissions                           #
+    ################################################################################"
+    bash delete_submissions.sh
+    echo "
+    ################################################################################
+    #                             process submissions                              #
+    ################################################################################"
+    ./process_submissions.sh -f
+    echo "
+    ################################################################################
+    #                              uploading comments                              #
+    ################################################################################"
+    python upload_comments.py -vpa
+    echo "
+    ################################################################################
+    #                               updating grades                                #
+    ################################################################################"
+    python grade_submissions.py -vpa
+
+    # echo "
+    # ################################################################################
+    # #                             removing submissions                             #
+    # ################################################################################"
+    # ./submissions_remove.sh
+}
+
+while true; do
+
+    time routine
+
+    if [ "$n" -gt "0" ]
+    then
+	n=$(( n-1 ))
+    fi
+    if [ "$n" -gt "0" ] || $daemon
+    then
+	echo "
+	################################################################################
+	#                                   waiting                                    #
+	################################################################################"
+	! $daemon && date && echo "Runs left: $n" || date && echo "Running as daemon"
+	while :;do for s in / - \\ \|; do printf "\r$s";sleep 0.2;done;done &
+	sleep "$t"m
+	kill $!; trap 'kill $!' SIGTERM
+    fi
+    if [ "$n" = "0" ] && [ "$daemon" = "false" ]
+    then
+	break
+    fi
+done
+
+echo "Autorun: Done!"
