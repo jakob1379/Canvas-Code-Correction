@@ -101,11 +101,11 @@ function correction_routine {
     corrected=$(( corrected+1 ))
 
     foldername=$(basename -- "$submission")
-    echo -n "$foldername	" >> "$scoreFile"
+    # echo -n "$foldername	" >> "$scoreFile"
 
     bname=$(basename "$submission")
     points=$(cat "$submission/$bname""_points.txt" | paste -sd+ - | bc)
-    LC_ALL=C printf "%0.2f " "$points" >> "$scoreFile" #make locale correct
+    # LC_ALL=C printf "%0.2f " "$points" >> "$scoreFile" #make locale correct
 
     OIFS=$IFS
     IFS='_'
@@ -114,27 +114,27 @@ function correction_routine {
 
     str1="LATE"
     str2="${ADDR[1]}"
-    if [ "$str1" != "$str2" ]; then
-    	echo "${ADDR[1]}" >> "$scoreFile"
-    else
-    	echo "${ADDR[2]}" >> "$scoreFile"
-    fi
+    # if [ "$str1" != "$str2" ]; then
+    # 	echo "${ADDR[1]}" >> "$scoreFile"
+    # else
+    # 	echo "${ADDR[2]}" >> "$scoreFile"
+    # fi
 }
 
 # Read user input
 folder="$1"
 totalPath="$folder/submissions/"
 week=$(basename -- "$folder")
-scoreFile="$week""_scores.txt"
+# scoreFile="$week""_scores.txt"
 
 submissionCount=$(ls -1 "$totalPath" 2>/dev/null | wc -l)
 
-if [ $submissionCount = 0 ]
-then
-    echo No submissions found >  "$scoreFile"
-fi
+# if [ $submissionCount = 0 ]
+# then
+#     echo No submissions found >  "$scoreFile"
+# fi
 
-echo "Assignment_id	Total_points	URL" >  "$scoreFile"
+# echo "Assignment_id	Total_points	URL" >  "$scoreFile"
 
 total="$(ls $totalPath | wc -l)"
 count=0
