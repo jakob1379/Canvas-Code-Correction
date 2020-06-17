@@ -21,11 +21,12 @@ correct_all=false
 show_time=false
 reverse=false
 failed=false
-while getopts ":hpatrf" opt; do
+while getopts ":hpatf" opt; do
     case ${opt} in
 	f)
+	    echo "Checking failed assignments"
 	    failed=true
-	    download_args='f'
+	    download_args+='f'
 	    ;;
 	p)
 	    echo "RUN_ME: Parallelization enabled!"
@@ -39,12 +40,7 @@ while getopts ":hpatrf" opt; do
 	t)
 	    show_time=true
 	    args+='t'
-	    ;;
-	r)
-	    reverse=true
-	    args+='r'
-	    echo "process_submission: running in reverse o.O"
-	    ;;
+   	    ;;
 	h)
 	    displayUsage
 	    exit 1
