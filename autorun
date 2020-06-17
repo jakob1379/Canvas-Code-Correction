@@ -18,7 +18,7 @@ operations:
 
 
 # check for network
-if $(ping -q -w 1 -c 1 `ip r | grep default | cut -d ' ' -f 3` > /dev/null && echo true || echo false)
+if $(ping -q -w 1 -c 1 `ip r | grep -oP "default.* \K(\w+\.\w+\.\w+\.\w+)"` > /dev/null && echo false)
 then
     echo "we got connection!"
 else
