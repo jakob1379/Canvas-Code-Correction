@@ -89,13 +89,6 @@ old_files = glob('Week*/submissions/*/')
 for assignment in course.get_assignments():
     # Create paths for zip files
     print("Checking " + assignment.name + "...")
-    # directory = assignment.name.replace(' ', '') + '/' + 'submissions/'
-    # if not os.path.exists(directory):
-    #     os.makedirs(directory)
-    #     old_files = []
-    # else:
-        # old_files = glob(directory+'*/')
-    # Download all or only changed submissions
     if args.check_all:
         submissions += list(assignment.get_submissions())
     elif args.failed:
