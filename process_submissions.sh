@@ -10,18 +10,23 @@ displayUsage() {
 usage:  name <operation> [...]
 operations:
     name {-h help} shows this dialogue
-
 '
 }
 
 # Arguments
+download_args='-p'
 args='-'
 parallel=false
 correct_all=false
 show_time=false
 reverse=false
-while getopts ":hpatr" opt; do
+failed=false
+while getopts ":hpatrf" opt; do
     case ${opt} in
+	f)
+	    failed=true
+	    download_args='f'
+	    ;;
 	p)
 	    echo "RUN_ME: Parallelization enabled!"
 	    parallel=true
@@ -58,7 +63,7 @@ shift $((OPTIND-1))
 
 # Routing
 echo "INFO: Downloading submissions"
-python3 download_submissions.py -p
+python3 download_submissions.py $download_args
 echo "INFO: Done!"
 
 
