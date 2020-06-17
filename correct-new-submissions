@@ -27,98 +27,98 @@ else
 fi
 
 
-# n=1
-# t=0
-# daemon=false
-# args='-'
-# while getopts ":hn:dt:va" opt; do
-#     case ${opt} in
-# 	n)
-# 	    n="$OPTARG"
-# 	    ;;
-# 	d)
-# 	    daemon=true
-# 	    ;;
-# 	t)
-# 	    t=$OPTARG
-# 	    ;;
-# 	v)
-# 	    verbose=true
-# 	    args+='v'
-# 	    ;;
-# 	a)
-# 	    grade_all=true
-# 	    args+='a'
-# 	    ;;
-# 	h)
-# 	    displayUsage
-# 	    exit 1
-# 	    ;;
-# 	\?)
-# 	    echo "Invalid option: $OPTARG" 1>&2
-# 	    exit 2
-# 	    ;;
-# 	:)
-# 	    echo "Invalid option: $OPTARG requires an argument" 1>&2
-# 	    exit 2
-# 	    ;;
-#     esac
-# done
+n=1
+t=0
+daemon=false
+args='-'
+while getopts ":hn:dt:va" opt; do
+    case ${opt} in
+	n)
+	    n="$OPTARG"
+	    ;;
+	d)
+	    daemon=true
+	    ;;
+	t)
+	    t=$OPTARG
+	    ;;
+	v)
+	    verbose=true
+	    args+='v'
+	    ;;
+	a)
+	    grade_all=true
+	    args+='a'
+	    ;;
+	h)
+	    displayUsage
+	    exit 1
+	    ;;
+	\?)
+	    echo "Invalid option: $OPTARG" 1>&2
+	    exit 2
+	    ;;
+	:)
+	    echo "Invalid option: $OPTARG requires an argument" 1>&2
+	    exit 2
+	    ;;
+    esac
+done
 
-# shift $((OPTIND-1))
+shift $((OPTIND-1))
 
-# function routine {
-#     echo "
-#     ################################################################################
-#     #                           deleting old submissions                           #
-#     ################################################################################"
-#     bash delete_submissions.sh
-#     echo "
-#     ################################################################################
-#     #                             process submissions                              #
-#     ################################################################################"
-#     ./process_submissions.sh
-#     echo "
-#     ################################################################################
-#     #                              uploading comments                              #
-#     ################################################################################"
-#     python upload_comments.py -vp
-#     echo "
-#     ################################################################################
-#     #                               updating grades                                #
-#     ################################################################################"
-#     python grade_submissions.py -vp
+function routine {
+    echo "
+    ################################################################################
+    #                           deleting old submissions                           #
+    ################################################################################"
+    bash delete_submissions.sh
+    echo "
+    ################################################################################
+    #                             process submissions                              #
+    ################################################################################"
+    ./process_submissions.sh
+    echo "
+    ################################################################################
+    #                              uploading comments                              #
+    ################################################################################"
+    python upload_comments.py -vp
+    echo "
+    ################################################################################
+    #                               updating grades                                #
+    ################################################################################"
+    python grade_submissions.py -vp
 
-#     # echo "
-#     # ################################################################################
-#     # #                             removing submissions                             #
-#     # ################################################################################"
-#     # ./submissions_remove.sh
-# }
+    # echo "
+    # ################################################################################
+    # #                             removing submissions                             #
+    # ################################################################################"
+    # ./submissions_remove.sh
+}
 
-# while true; do
+while true; do
 
-#     time routine
+    time routine
 
-#     if [ "$n" -gt "0" ]
-#     then
-# 	n=$(( n-1 ))
-#     fi
-#     if [ "$n" -gt "0" ] || $daemon
-#     then
-# 	echo "
-# 	################################################################################
-# 	#                                   waiting                                    #
-# 	################################################################################"
-# 	! $daemon && date && echo "Runs left: $n" || date && echo "Running as daemon"
-# 	while :;do for s in / - \\ \|; do printf "\r$s";sleep 0.2;done;done &
-# 	sleep "$t"m
-# 	kill $!; trap 'kill $!' SIGTERM
-#     fi
-#     if [ "$n" = "0" ] && [ "$daemon" = "false" ]
-#     then
-# 	break
-#     fi
-# done
+    if [ "$n" -gt "0" ]
+    then
+	n=$(( n-1 ))
+    fi
+    if [ "$n" -gt "0" ] || $daemon
+    then
+	echo "
+	################################################################################
+	#                                   waiting                                    #
+	################################################################################"
+	! $daemon && date && echo "Runs left: $n" || date && echo "Running as daemon"
+	while :;do for s in / - \\ \|; do printf "\r$s";sleep 0.2;done;done &
+	sleep "$t"m
+	kill $!; trap 'kill $!' SIGTERM
+    fi
+    if [ "$n" = "0" ] && [ "$daemon" = "false" ]
+    then
+	break
+    fi
+done
 
-# echo "Autorun: Done!"
+echo "Autorun: Done!"
