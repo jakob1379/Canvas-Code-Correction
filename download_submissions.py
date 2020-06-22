@@ -108,6 +108,9 @@ for assignment in course.get_assignments():
                     sub.grade is None):
                 submissions.append(sub)
 
+if args.verbose:
+    print("Submissions to correct:", len(submissions))
+
 # Download submissions
 if submissions:
     num_cores = multiprocessing.cpu_count()
