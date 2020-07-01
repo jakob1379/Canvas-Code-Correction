@@ -14,14 +14,14 @@ operations:
 }
 
 # Arguments
-download_args='-p'
+download_args='-'
 args='-'
 parallel=false
 correct_all=false
 show_time=false
 reverse=false
 failed=false
-while getopts ":hpatf" opt; do
+while getopts ":hpatfvp" opt; do
     case ${opt} in
 	f)
 	    echo "Checking failed assignments"
@@ -31,7 +31,7 @@ while getopts ":hpatf" opt; do
 	p)
 	    echo "RUN_ME: Parallelization enabled!"
 	    parallel=true
-	    args+='p'
+	    download_args+='p'
 	    ;;
 	a)
 	    correct_all=true
@@ -44,6 +44,14 @@ while getopts ":hpatf" opt; do
 	h)
 	    displayUsage
 	    exit 1
+	    ;;
+	v)
+	    verbose=true
+	    download_args+='v'
+	    ;;
+	p)
+	    parallel=true
+	    download_args+='p'
 	    ;;
 	\?)
 	    echo "Invalid option: $OPTARG" 1>&2
