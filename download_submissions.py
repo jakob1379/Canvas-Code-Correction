@@ -46,16 +46,17 @@ def download_submission(sub, old_files, course, args):
         url = sub.attachments[0]['url']
         if url:
             file_name = create_file_name(sub, course)
-            directory = course.get_assignment(sub.assignment_id).name.replace(
-                ' ', '') + '/' + 'submissions/'
+            directory = course.get_assignment(sub.assignment_id).name.replace(' ', '')
+            directory = os.path.join(directory, 'submissions', '')
+
             # check if user has old submissions
             folders_to_remove = [old for old in old_files
                                  if str(sub.user_id) in old and
-                                 file_name+'/' not in old]
+                                 os.path.join(file_name, '') not in old]
             for f in folders_to_remove:
                 shutil.rmtree(f)
             # download attachment if it doesn't exist,
-            if directory+file_name+'/' not in old_files:
+            if os.path.join(directory, 'file_name', '') not in old_files:
                 url = sub.attachments[0]['url']
                 print("Saving to:", directory+file_name+'.zip')
                 download_url(url, directory+file_name+'.zip')
@@ -84,11 +85,15 @@ users = course.get_users()
 
 # Walk through all assignments
 submissions = []
+sub_len = 0
 count = 0
-old_files = glob('Week*/submissions/*/')
+old_files = glob(os.path.join('Week*', 'submissions', '*', ''))
+
 for assignment in course.get_assignments():
     # Create paths for zip files
-    print("Checking " + assignment.name + "...")
+    if args.verbose:
+        print("Checking " + assignment.name + "...")
+
     if args.check_all:
         submissions += list(assignment.get_submissions())
     elif args.failed:
@@ -107,6 +112,9 @@ for assignment in course.get_assignments():
                     not sub.grade_matches_current_submission or
                     sub.grade is None):
                 submissions.append(sub)
+    if args.verbose:
+        print("found:", len(submissions)-sub_len)
+    sub_len = len(submissions)
 
 if args.verbose:
     print("Submissions to correct:", len(submissions))
