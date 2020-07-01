@@ -8,6 +8,7 @@ import multiprocessing
 import numpy as np
 import progressbar as Pbar
 import re
+import os
 
 parser = argparse.ArgumentParser()
 parser.add_argument("-p", "--parallel",
@@ -46,8 +47,8 @@ def grade_submission(sub, assignments, args):
     handin_name = sub.split('/')[-2]
 
     # get points and user id
-    points = round(
-        np.loadtxt(glob(sub + handin_name + '_points.txt')[0]).sum(), 2)
+    points_path = os.path.join(sub, handin_name'_points.txt')
+    points = round(np.loadtxt(glob(points_path)[0]).sum(), 2)
     user_id = re.findall(r'\d+', handin_name)[0]
 
     # Get submission for user
