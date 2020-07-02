@@ -11,7 +11,7 @@ import argparse
 import multiprocessing
 import re
 from tabulate import tabulate
-
+import os
 parser = argparse.ArgumentParser()
 parser.add_argument("-p", "--parallel",
                     help="grade submissions in parallel",
@@ -25,20 +25,24 @@ parser.add_argument("-q", "--question",
 parser.add_argument("-a", "--all",
                     help="upload all feedback RISK OF DUPLICATES ON ABSALON",
                     action='store_true')
-parser.add_argument("path", nargs='?', default='Week*/submissions/*/',
+parser.add_argument("path", nargs='?',
+                    default=os.path.join('Week*', 'submissions', '*', ''),
                     help="Path to check")
 args = parser.parse_args()
-if '/submissions/*/' not in args.path:
-    args.path += '/submissions/*/'
+
+submissions_path = os.path.join('', 'submissions', '*', '')
+if submissions_path not in args.path:
+    args.path += submissions_path
 
 
 def upload_comments(sub, assignments, args):
     if args.verbose:
         out_str = 'Checking: ' + sub
         print(out_str)
+
     # Get assignment- and file name
-    assignment_name = sub.split('/')[0]
-    txt_name = sub.split('/')[-2]
+    assignment_name = sub.split(os.sep)[0]
+    txt_name = sub.split(os.sep)[-2]
     handin_name = re.sub(" ", "+", txt_name)
 
     # get points and user id
@@ -56,7 +60,7 @@ def upload_comments(sub, assignments, args):
 
     if file_to_upload:
         file_to_upload = file_to_upload[0]
-        upload_name = file_to_upload.split('/')[-1]
+        upload_name = file_to_upload.split(os.sep)[-1]
     else:
         out_str = (
             bcolors.WARNING + "zip to upload not found in: ".upper() + sub +

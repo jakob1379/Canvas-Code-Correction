@@ -23,12 +23,14 @@ parser.add_argument("-a", "--grade-all",
 parser.add_argument("-q", "--question",
                     help="question what grade to give",
                     action='store_true')
-parser.add_argument("path", nargs='?', default='Week*/submissions/*/',
+parser.add_argument("path", nargs='?',
+                    default=os.path.join('Week*', 'submissions', '*', '')
                     help="Path to check")
 args = parser.parse_args()
 
-if '/submissions/*/' not in args.path:
-    args.path += '/submissions/*/'
+submissions_path = os.path.join('', 'submissions', '*', '')
+if submissions_path not in args.path:
+    args.path += submissions_path
 
 
 def grade_submission(sub, assignments, args):
@@ -43,11 +45,11 @@ def grade_submission(sub, assignments, args):
         'Week7-8': 2}
 
     # Get assignment- and file name
-    assignment_name = sub.split('/')[0]
-    handin_name = sub.split('/')[-2]
+    assignment_name = sub.split(os.sep)[0]
+    handin_name = sub.split(os.sep)[-2]
 
     # get points and user id
-    points_path = os.path.join(sub, handin_name'_points.txt')
+    points_path = os.path.join(sub, handin_name + '_points.txt')
     points = round(np.loadtxt(glob(points_path)[0]).sum(), 2)
     user_id = re.findall(r'\d+', handin_name)[0]
 
