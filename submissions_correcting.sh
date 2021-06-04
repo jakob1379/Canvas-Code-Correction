@@ -101,11 +101,9 @@ function correction_routine {
     corrected=$(( corrected+1 ))
 
     foldername=$(basename -- "$submission")
-    # echo -n "$foldername	" >> "$scoreFile"
 
     bname=$(basename "$submission")
     points=$(cat "$submission/$bname""_points.txt" | paste -sd+ - | bc)
-    # LC_ALL=C printf "%0.2f " "$points" >> "$scoreFile" #make locale correct
 
     OIFS=$IFS
     IFS='_'
@@ -114,37 +112,20 @@ function correction_routine {
 
     str1="LATE"
     str2="${ADDR[1]}"
-    # if [ "$str1" != "$str2" ]; then
-    #	echo "${ADDR[1]}" >> "$scoreFile"
-    # else
-    #	echo "${ADDR[2]}" >> "$scoreFile"
-    # fi
 }
 
 # Read user input
 folder="$1"
 totalPath="$folder""submissions/"
 week=$(basename -- "$folder")
-# scoreFile="$week""_scores.txt"
-
-submissionCount=$(ls -1 "$totalPath" 2>/dev/null | wc -l)
-
-# if [ $submissionCount = 0 ]
-# then
-#     echo "no submissions found!"
-#     exit 1
-# fi
-
-# total="$(ls $totalPath | wc -l)"
-# count=0
 
 if $always
 then
     echo "Correcting all!"
     folders=$totalPath*/
 else
-
-    folders=$(find "$totalPath" -mindepth 1 -type d '!' -exec sh -c 'ls -1 "{}"|egrep -i -q "^*points.txt$"' ';' -print | sort | xargs -i% echo "%/")
+    # Find folders that does not have a points.txt file in them
+    folders=$(find "$totalPath" -mindepth 1 -type d '!' -exec sh -c 'ls -1 "{}" | egrep -i -q "^*points.txt$"' ';' -print | sort | xargs -i% echo "%/")
 fi
 
 for d in $folders; do
