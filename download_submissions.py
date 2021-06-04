@@ -16,7 +16,7 @@ import progressbar as Pbar
 import re
 import shutil
 import urllib.request
-
+from pathlib import Path
 parser = argparse.ArgumentParser("""
 Program to download assignments. It needs two files next to it
     course_id: Containing the course id
@@ -49,6 +49,7 @@ def download_submission(sub, old_files, course, args):
             file_name = create_file_name(sub, course)
             directory = course.get_assignment(sub.assignment_id).name.replace(' ', '')
             directory = os.path.join(directory, 'submissions', '')
+            Path(directory).mkdir(parents=True, exist_ok=True)
 
             # check if user has old submissions
             folders_to_remove = [old for old in old_files
@@ -56,7 +57,7 @@ def download_submission(sub, old_files, course, args):
                                  os.path.join(file_name, '') not in old]
             for f in folders_to_remove:
                 shutil.rmtree(f)
-            # download attachment if it doesn't exist,
+                # download attachment if it doesn't exist,
             if os.path.join(directory, 'file_name', '') not in old_files:
                 url = sub.attachments[0]['url']
                 print("Saving to:", directory+file_name+'.zip')
@@ -114,7 +115,7 @@ for assignment in course.get_assignments():
                 submissions.append(sub)
     if args.verbose:
         print("found:", len(submissions)-sub_len)
-    sub_len = len(submissions)
+        sub_len = len(submissions)
 
 if args.verbose:
     print("Submissions to correct:", len(submissions))
