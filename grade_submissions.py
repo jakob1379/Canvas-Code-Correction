@@ -2,6 +2,7 @@
 from canvas_helpers import file_to_string, bcolors, flatten_list, bcolors
 from canvasapi import Canvas
 from glob import glob
+import os
 from joblib import Parallel, delayed
 import argparse
 import multiprocessing
