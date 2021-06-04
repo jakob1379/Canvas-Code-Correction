@@ -2,6 +2,7 @@
 from canvas_helpers import file_to_string, bcolors, flatten_list, bcolors
 from canvasapi import Canvas
 from glob import glob
+import os
 from joblib import Parallel, delayed
 import argparse
 import multiprocessing
@@ -24,7 +25,7 @@ parser.add_argument("-q", "--question",
                     help="question what grade to give",
                     action='store_true')
 parser.add_argument("path", nargs='?',
-                    default=os.path.join('Week*', 'submissions', '*', '')
+                    default=os.path.join('Week*', 'submissions', '*', ''),
                     help="Path to check")
 args = parser.parse_args()
 
