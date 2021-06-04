@@ -1,7 +1,7 @@
 *.log
 *_scores.txt
 .python-version
-Week*/submissions/
+Week*/submissions/*
 Week*/upload_me/
 Week*/*.zip
 backup
