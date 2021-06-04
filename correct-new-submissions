@@ -13,23 +13,12 @@ operations:
     {-v verbose} verbosity
     {-a all}     correct all assignments'
 }
-
-# check requirements
-bash check_requirements || exit 1
-
-# check for network
-if [ ! wget -q --spider http://google.com ]
-then
-    echo "No connection to the internet"
-    exit 1
-fi
-
 n=1
 t=0
 daemon=false
 args=''
 download_args=''
-while getopts ":hn:dt:va" opt; do
+while getopts ":hn:dt:vas" opt; do
     case ${opt} in
 	a)
 	    grade_all=true
@@ -47,6 +36,9 @@ while getopts ":hn:dt:va" opt; do
 	    ;;
 	n)
 	    n="$OPTARG"
+	    ;;
+	s)
+	    skip_check="skip"
 	    ;;
 	t)
 	    t=$OPTARG
@@ -66,8 +58,22 @@ while getopts ":hn:dt:va" opt; do
 	    ;;
     esac
 done
-
 shift $((OPTIND - 1))
+
+# check requirements
+if [ -z skip_check ]
+then
+    echo "Checking requirements"
+    bash check_requirements || exit 1
+fi
+
+# check for network
+if [ ! wget -q --spider http://google.com ]
+then
+    echo "No connection to the internet"
+    exit 1
+fi
+
 
 [ ! -z "$args"] && args+='-$args'
 [ ! -z "$download_args"] && args+='-$download_args'
