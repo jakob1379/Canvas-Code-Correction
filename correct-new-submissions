@@ -13,6 +13,7 @@ operations:
     {-v verbose} verbosity
     {-a all}     correct all assignments'
 }
+
 n=1
 t=0
 daemon=false
@@ -68,7 +69,7 @@ then
 fi
 
 # check for network
-if [ ! wget -q --spider http://google.com ]
+if ! wget -q --spider http://google.com
 then
     echo "No connection to the internet"
     exit 1
