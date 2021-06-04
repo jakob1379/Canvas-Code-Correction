@@ -3,7 +3,7 @@ set -euo pipefail
 IFS=$'\n\t'
 
 ecode=0
-not_installed=$(comm -23 <(cat requirements.txt | sort) <(pip freeze | grep -oP "^\w+" | sort))
+not_installed=$(comm -23 <(cat requirements.txt | sort) <(pip3 freeze | grep -oP "^\w+" | sort))
 
 if [ ! -f token ]
 then
