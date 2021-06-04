@@ -8,7 +8,8 @@ operations:
     {-h help}    shows this dialogue
     {-n number}  number of times to run the correction
     {-d daemon}  keep running until process is closed
-    {-t time}    time to wait before next iteration in minutes
+    {-w wait}    wait time before next iteration in minutes
+    {-t time}    time to run as daemon. Given as HH:MM:SS
     {-f failed}  correct failed assignment
     {-v verbose} verbosity
     {-a all}     correct all assignments'
@@ -16,10 +17,12 @@ operations:
 
 n=1
 t=0
+w=0
 daemon=false
 args=''
 download_args=''
-while getopts ":hn:dt:vas" opt; do
+
+while getopts ":hn:dw:vast:" opt; do
     case ${opt} in
 	a)
 	    grade_all=true
@@ -42,12 +45,15 @@ while getopts ":hn:dt:vas" opt; do
 	    skip_check="skip"
 	    ;;
 	t)
-	    t=$OPTARG
+	    max_time=$(echo "$OPTARG" | awk -F: '{ print ($1 * 3600) + ($2 * 60) + $3 }')
 	    ;;
 	v)
 	    verbose=true
 	    args+='v'
 	    download_args+='v'
+	    ;;
+	w)
+	    w=$OPTARG
 	    ;;
 	\?)
 	    echo "Invalid option: $OPTARG" 1>&2
@@ -125,10 +131,19 @@ function routine {
     #                               plotting results                               #
     ################################################################################"
     python plot_scores.py
-    date
     echo "Done plotting"
 }
 
+
+convert-secs() {
+    ((h=${1}/3600))
+    ((m=(${1}%3600)/60))
+    ((s=${1}%60))
+    printf "%02d:%02d:%02d\n" $h $m $s
+}
+
+
+SECONDS=0
 while true; do
 
     time routine
@@ -146,12 +161,19 @@ while true; do
 			printf "\r$s"
 			sleep 0.2
 		    done; done &
-	sleep "$t"m
+	sleep "$w"m
 	kill $!
 	trap 'kill $!' SIGTERM
+
+	run_time=$(convert-secs $SECONDS)
+	echo "Daemon has been running in: $run_time"
     fi
-    if [ "$n" = "0" ] && [ "$daemon" = "false" ]; then
+    if [ "$n" = "0" ] && [ "$daemon" = "false" ];
+    then
 	break
+    elif [ "$SECONDS" -gt "$max_time" ]
+    then
+	 break
     fi
 done
 
