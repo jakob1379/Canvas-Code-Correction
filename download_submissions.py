@@ -27,7 +27,13 @@ parser.add_argument("-v", "--verbose",
 parser.add_argument("-p", "--parallel",
                     help="download in parallel",
                     action='store_true')
-parser.add_argument("-c", "--check-all",
+parser.add_argument("-n", "--num-cores",
+                    help="description",
+                    metavar="num-cores",
+                    type=int,
+                    nargs='?',
+                    default=multiprocessing.cpu_count())
+parser.add_argument("-a", "--all",
                     help="check all assignments, default is to only check " +
                     "changed assignments",
                     action='store_true')
