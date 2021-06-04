@@ -75,15 +75,15 @@ function correction_routine {
     # evaluate submission
     $verbose && echo  "evaluating..."
     dir="$PWD"
-    cp -r "$folder"/code/* "$submission"/
+    /usr/bin/cp -rf "$folder"/code/* "$submission"/
     cd "$submission"
+
     start=$(date +%s)
     if $show_time
-
     then
-	time python2 main.py > errors.log 2>&1
+	time python main.py > errors.log 2>&1
     else
-	python2 main.py > errors.log 2>&1
+	python main.py > errors.log 2>&1
     fi
 
     rm -rf test/ config.py main.py
@@ -115,15 +115,15 @@ function correction_routine {
     str1="LATE"
     str2="${ADDR[1]}"
     # if [ "$str1" != "$str2" ]; then
-    # 	echo "${ADDR[1]}" >> "$scoreFile"
+    #	echo "${ADDR[1]}" >> "$scoreFile"
     # else
-    # 	echo "${ADDR[2]}" >> "$scoreFile"
+    #	echo "${ADDR[2]}" >> "$scoreFile"
     # fi
 }
 
 # Read user input
 folder="$1"
-totalPath="$folder/submissions/"
+totalPath="$folder""submissions/"
 week=$(basename -- "$folder")
 # scoreFile="$week""_scores.txt"
 
@@ -131,13 +131,12 @@ submissionCount=$(ls -1 "$totalPath" 2>/dev/null | wc -l)
 
 # if [ $submissionCount = 0 ]
 # then
-#     echo No submissions found >  "$scoreFile"
+#     echo "no submissions found!"
+#     exit 1
 # fi
 
-# echo "Assignment_id	Total_points	URL" >  "$scoreFile"
-
-total="$(ls $totalPath | wc -l)"
-count=0
+# total="$(ls $totalPath | wc -l)"
+# count=0
 
 if $always
 then

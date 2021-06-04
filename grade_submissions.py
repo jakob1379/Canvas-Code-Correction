@@ -1,5 +1,5 @@
 # Import the Canvas class
-from canvas_helpers import file_to_string, bcolors, flatten_list
+from canvas_helpers import file_to_string, bcolors, flatten_list, bcolors
 from canvasapi import Canvas
 from glob import glob
 from joblib import Parallel, delayed
@@ -8,7 +8,7 @@ import multiprocessing
 import numpy as np
 import progressbar as Pbar
 import re
-import os
+from pathlib import Path
 
 parser = argparse.ArgumentParser()
 parser.add_argument("-p", "--parallel",
@@ -49,9 +49,14 @@ def grade_submission(sub, assignments, args):
     handin_name = sub.split(os.sep)[-2]
 
     # get points and user id
-    points_path = os.path.join(sub, handin_name + '_points.txt')
-    points = round(np.loadtxt(glob(points_path)[0]).sum(), 2)
-    user_id = re.findall(r'\d+', handin_name)[0]
+    fname = sub + handin_name + '_points.txt'
+    if not Path(fname).exists():
+        print(bcolors.WARNING + "FILE DOES NOT EXIST: " + bcolors.ENDC, fname)
+        return
+
+    points = round(
+        np.loadtxt(glob(fname)[0]).sum(), 2)
+    user_id = re.findall(r'_(\d+)_', handin_name)[0]
 
     # Get submission for user
     assignment = assignments[assignment_name]
@@ -64,7 +69,7 @@ def grade_submission(sub, assignments, args):
     if not args.grade_all and submission.grade_matches_current_submission and (
             submission.grade is not None):
         if args.verbose:
-            print("Grading: Submission already graded\n")
+            print(bcolors.WARNING + "Grading: Submission already graded\n" + bcolors.ENDC)
         return
 
     #  %% Print question and retrieve answer
@@ -126,7 +131,6 @@ if __name__ == '__main__':
     users = course.get_users()
     reports = [rep for rep in sorted(glob(args.path))]
 
-
     # Let's start grading!
     # pbar = Pbar.ProgressBar(redirect_stdout=True)
     num_cores = multiprocessing.cpu_count()
@@ -136,7 +140,7 @@ if __name__ == '__main__':
             print("Grading: runnning in parallel!")
             Parallel(n_jobs=num_cores)(delayed(
                 grade_submission)(rep, assignments_as_dict, args)
-                                       for rep in reports)
+                for rep in reports)
     else:
         for rep in reports:
             grade_submission(rep, assignments_as_dict, args)

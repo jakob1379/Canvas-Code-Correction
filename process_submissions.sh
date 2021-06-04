@@ -7,31 +7,30 @@ displayUsage() {
 ... ellipses for repeated items: cp <source1> [source2…] <dest>
  |  vertical bars for choice of items: netstat {-t|-u}
 
-usage:  name <operation> [...]
+usage:  process_submissions.sh [-f -p -a -t -h]
 operations:
-    name {-h help} shows this dialogue
+    {-h help} shows this dialogue
+    {-f force} Checks already failed assignments
+    {-p parallel} downloads and check in parallel
+    {-a all} Checks all assignments again
+    {-t time} show time
 '
 }
 
 # Arguments
-download_args='-'
 args='-'
 parallel=false
 correct_all=false
 show_time=false
 reverse=false
 failed=false
-while getopts ":hpatfvp" opt; do
+while getopts ":hpat" opt; do
     case ${opt} in
-	f)
-	    echo "Checking failed assignments"
-	    failed=true
-	    download_args+='f'
-	    ;;
 	p)
-	    echo "RUN_ME: Parallelization enabled!"
+	    echo "Parallelization enabled!"
 	    parallel=true
-	    download_args+='p'
+
+	    args+='p'
 	    ;;
 	a)
 	    correct_all=true
@@ -40,7 +39,7 @@ while getopts ":hpatfvp" opt; do
 	t)
 	    show_time=true
 	    args+='t'
-   	    ;;
+	    ;;
 	h)
 	    displayUsage
 	    exit 1
@@ -65,12 +64,6 @@ while getopts ":hpatfvp" opt; do
 done
 shift $((OPTIND-1))
 
-# Routing
-echo "INFO: Downloading submissions"
-python3 download_submissions.py $download_args
-echo "INFO: Done!"
-
-
 for folder in $(ls -d Week*/); do
     echo "INFO: Unzipping"
     bash submissions_unzip.sh "$folder"
@@ -79,7 +72,6 @@ for folder in $(ls -d Week*/); do
     echo "INFO: Correcting submissions"
     if [ "$args" != '-' ];
     then
-	echo "found args: $args"
 	bash submissions_correcting.sh "$args" "$folder"
     else
 	bash submissions_correcting.sh "$folder"
@@ -88,7 +80,7 @@ for folder in $(ls -d Week*/); do
 done
 
 echo "INFO: zipping answers"
-./zip_submission
+bash zip_submission
 echo "INFO: Done!"
 
 echo "INFO: Done with whole routine!"

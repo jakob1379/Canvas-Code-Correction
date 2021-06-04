@@ -10,11 +10,11 @@ bool test2();
 bool test3();
 
 int main(){
-	BasicTest t1("e 5_10","test lower triangle matrix, no pivoting needed", "test_5_10.cpp.result.txt",test1);
+	BasicTest t1("e 5_10","test with lower triangle matrix such that no pivoting is needed", "test_5_10.cpp.result.txt",test1);
 	t1.run();
-	BasicTest t2("e 5_10","test 4x4 matrix pivoting needed", "test_5_10.cpp.result.txt",test2);
+	BasicTest t2("e 5_10","test with 4x4 matrix with pivoting needed", "test_5_10.cpp.result.txt",test2);
 	t2.run();
-	BasicTest t3("e 5_10","test 1x1 matrix (lower bound)", "test_5_10.cpp.result.txt",test3);
+	BasicTest t3("e 5_10","test with 1x1 matrix (lower bound)", "test_5_10.cpp.result.txt",test3);
 	t3.run();
 }
 
@@ -30,7 +30,7 @@ bool test1(){
 	testA[2][0] = 1; testA[2][1] = 1; testA[2][2] = 1;
 	double testb[3] = {1,1,1};
 	double testu[3];
-	guassian_elimination(testA, testb,testu,3);
+	guassian_elimination(testA, testb, testu, 3);
 	//std::cout << testu[0] << " " << testu[1] << " " << testu[2] << std::endl;
 
 	for(int i = 0; i<n; i++){
@@ -82,7 +82,7 @@ bool test3(){
 		delete [] testA[i];
 	}
 	delete[] testA;
-	
+
 	return (fabs(testu[0]-0.1)<precision);
 
 }

@@ -8,14 +8,14 @@ mkdir -p submissions/
 
 if [ -f submissions*.zip ]; then
     unzip -q -n submissions*.zip -d submissions;
-    rm submissions*.zip
+    rm -f submissions*.zip
 fi
 
 zipCount=$(ls -1 submissions/*.zip 2>/dev/null | wc -l)
 if [ $zipCount -gt 0 ]; then
     # To extract all zips:
     for i in submissions/*.zip; do unzip -q -n "$i" -d "${i%%.zip}"; done
-    rm submissions/*.zip
+    rm -f submissions/*.zip
 fi
 
 
@@ -29,6 +29,6 @@ for d in submissions/*/; do
 	mv "$d"*/*.hpp "$d"
 	mv "$d"*/*.h "$d"
 	mv "$d"*/*.cpp "$d"
-	rm -r "$d"*/;
+	rm -fr "$d"*/;
     fi
 done

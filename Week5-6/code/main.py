@@ -1,13 +1,14 @@
-from config import * 
+from config import *
 import subprocess
 import glob
 import os
 import time
 import re
 
+
 def addMissingIncluded(filename, existing):
-    cppfiles = [ (name.split("."))[0] for name in glob.glob("*.cpp") ]
-    existingIncludes = filename.split(" ");
+    cppfiles = [(name.split("."))[0] for name in glob.glob("*.cpp")]
+    existingIncludes = filename.split(" ")
     newIncludes = []
 
     regex = re.compile("\"[^\.][\S]+.h[pp]*\"")
@@ -19,7 +20,7 @@ def addMissingIncluded(filename, existing):
                     hits = regex.findall(line)
                     for hit in hits:
                         hit = (hit.split("."))[0]
-                        hit = hit.replace("\"","")
+                        hit = hit.replace("\"", "")
                         hit = hit + ".cpp"
                         if hit not in newIncludes and hit not in existingIncludes and (hit.split(".c"))[0] in cppfiles:
                             newIncludes.append(hit)
@@ -27,10 +28,12 @@ def addMissingIncluded(filename, existing):
             if not cppfile.strip():
                 pass
             else:
-                print "Error, but was catched. Tried to find '" + cppfile + "' in file '" + filename +"'"
+                print("Error, but was catched. Tried to find '" +
+                      cppfile + "' in file '" + filename + "'")
 
-    #print "\n added: " + " ".join(newIncludes) + "\n"
+    #print( "\n added: " + " ".join(newIncludes) + "\n")
     return existing + " ".join(newIncludes)
+
 
 def extractStandardCompile():
     filename = "standard.txt"
@@ -39,47 +42,48 @@ def extractStandardCompile():
             content = f.readlines()
             line = content[0].split("\n")[0]
             if "c++11" in line:
-                return (True," -std=c++11 ")
+                return (True, " -std=c++11 ")
             if "c++98" in line:
-                return (True," -std=c++98 ")
+                return (True, " -std=c++98 ")
             return (False, " -std=c++11 ")
     except Exception as e:
-        return (False," -std=c++11 ")
+        return (False, " -std=c++11 ")
+
 
 def run(foldername):
 
-    test_files_compiled = [True for i in xrange(len(test_files))] 
-    valggrind_logs = [test_files[i] + ".valgrind.txt" for i in xrange(len(test_files))]
+    test_files_compiled = [True for i in range(len(test_files))]
+    valggrind_logs = [test_files[i] + ".valgrind.txt" for i in range(len(test_files))]
 
     ## check if all files are present
     # not neccersary since if they are not present, then they cant compile, so it's already taken care of.
 
     ## compile files
-    for i in xrange(len(test_files)):
-        #print "compiler line before: " + compiler_lines[i]
+    for i in range(len(test_files)):
+        #print( "compiler line before: " + compiler_lines[i])
         line = addMissingIncluded(sub_files[test_files[i]], compiler_lines[i])
-        #print "after: " + line
+        #print( "after: " + line)
 
         # add the std flag
         nvmvalue,standard = extractStandardCompile();
-        #print "########################"
-        #print standard
-        #print line
-        #print "="
+        #print( "########################")
+        #print( standard)
+        #print( line)
+        #print( "=")
         line = line + standard
-        #print line
+        #print( line)
 
         res = subprocess.call(line, shell=True)
         if res != 0:
             test_files_compiled[i] = False
-            print "could not compile: " + line
-            print "------------------------------------------"
+            print( "could not compile: " + line)
+            print( "------------------------------------------")
  
     ## run files with valggrind
-    reachedTimeLimit = [False for i in xrange(len(test_files))]
-    for i in xrange(len(test_files)):
+    reachedTimeLimit = [False for i in range(len(test_files))]
+    for i in range(len(test_files)):
         if test_files_compiled[i]:
-            #print ("valgrind --log-file='" + valggrind_logs[i] + "' ./" + object_files[test_files[i]])
+            #print( ("valgrind --log-file='" + valggrind_logs[i] + "' ./" + object_files[test_files[i]])
             cmd = "valgrind  --log-file='" + valggrind_logs[i] + "' ./" + object_files[test_files[i]] + " > deleteme.txt"
             myproces = subprocess.Popen(cmd,shell=True)
             start = time.time()
@@ -94,9 +98,9 @@ def run(foldername):
             ##    "' ./" + object_files[test_files[i]] + " > deleteme.txt", shell=True)
 
     ## analyze result files from valggrind
-    result_files = [test_files[i] + ".valgrind.txt" for i in xrange(len(test_files))]
-    test_files_memory_freed = [True for x in xrange(len(test_files))]
-    test_files_segfault = [False for x in xrange(len(test_files))]
+    result_files = [test_files[i] + ".valgrind.txt" for i in range(len(test_files))]
+    test_files_memory_freed = [True for x in range(len(test_files))]
+    test_files_segfault = [False for x in range(len(test_files))]
     count = 0
     for result in result_files:
         if test_files_compiled[count] and not reachedTimeLimit[count]:
@@ -107,8 +111,8 @@ def run(foldername):
 
     ## analyse result files from the tests and generate resulting file
     outputFile = ""
-    points = [0 for i in xrange(len(result_files))]
-    result_files = [test_files[i] + ".result.txt" for i in xrange(len(test_files))]
+    points = [0 for i in range(len(result_files))]
+    result_files = [test_files[i] + ".result.txt" for i in range(len(test_files))]
     allResultFiles = glob.glob("*.result.txt");
 
     currentTestNumber = 0
@@ -135,13 +139,13 @@ def run(foldername):
             else:            
                 with open(result) as f:
                     content = f.readlines()
-                    #print content
+                    #print( content)
 
                     current = 0 
                     allPassed = True
                     while current < len(content):
                         (passed, description) = testPassed(content[current], content[current+1])
-                        #print str(passed) + " : " + description
+                        #print( str(passed) + " : " + description)
                         allPassed = allPassed and passed
                         if not passed:
                             outputFile+= description + "\n"
@@ -174,8 +178,8 @@ def run(foldername):
 
     #outputFile += "You got " + str(round(float(sum(points))/sum(total_points.values())*100,2) ) + "% correct.\n"
     #outputFile+="total points: " + str(sum(points)) + "\n"
-    #print outputFile
-    #print pointFile
+    #print( outputFile)
+    #print( pointFile)
 
     #filefound, stdflag = extractStandardCompile()
     #if filefound:
@@ -225,6 +229,7 @@ def memoryFreed_segfaulted(lines):
 if __name__ == '__main__':
     path = os.getcwd()
     folders = path.split("/")
-    #print folders
+    #print( folders)
+    
     run(folders[-1]);
     

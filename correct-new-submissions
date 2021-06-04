@@ -3,41 +3,50 @@ set -euo pipefail
 
 displayUsage() {
     echo '
-<>  angle brackets for required parameters: ping <hostname>
-[]  square brackets for optional parameters: mkdir [-p] <dirname>
-... ellipses for repeated items: cp <source1> [source2…] <dest>
- |  vertical bars for choice of items: netstat {-t|-u}
-
-usage:  name <operation> [...]
+usage:  correct-new-submissions [...]
 operations:
-    autorun {-h help} shows this dialogue
-    autorun {-n number} number of times to run the correction
-    autorun {-d daemon} keep running until process is closed
-    autorun {-t time} time to wait before next iteration in minutes'
+    {-h help}    shows this dialogue
+    {-n number}  number of times to run the correction
+    {-d daemon}  keep running until process is closed
+    {-t time}    time to wait before next iteration in minutes
+    {-f failed}  correct failed assignment
+    {-v verbose} verbosity
+    {-a all}     correct all assignments'
 }
 
+# check requirements
+bash check_requirements || exit 1
 
 # check for network
-if $(wget -q --spider http://google.com && echo true || echo false)
+if [ ! wget -q --spider http://google.com ]
 then
-    echo "we got connection!"
-else
-    echo "no connection to the internet"
+    echo "No connection to the internet"
     exit 1
 fi
-
 
 n=1
 t=0
 daemon=false
-args='-'
+args=''
+download_args=''
 while getopts ":hn:dt:va" opt; do
     case ${opt} in
-	n)
-	    n="$OPTARG"
+	a)
+	    grade_all=true
+	    args+='a'
 	    ;;
 	d)
 	    daemon=true
+	    ;;
+	f)
+	    download_args='f'
+	    ;;
+	h)
+	    displayUsage
+	    exit 0
+	    ;;
+	n)
+	    n="$OPTARG"
 	    ;;
 	t)
 	    t=$OPTARG
@@ -45,14 +54,7 @@ while getopts ":hn:dt:va" opt; do
 	v)
 	    verbose=true
 	    args+='v'
-	    ;;
-	a)
-	    grade_all=true
-	    args+='a'
-	    ;;
-	h)
-	    displayUsage
-	    exit 1
+	    download_args+='v'
 	    ;;
 	\?)
 	    echo "Invalid option: $OPTARG" 1>&2
@@ -65,7 +67,10 @@ while getopts ":hn:dt:va" opt; do
     esac
 done
 
-shift $((OPTIND-1))
+shift $((OPTIND - 1))
+
+[ ! -z "$args"] && args+='-$args'
+[ ! -z "$download_args"] && args+='-$download_args'
 
 function routine {
     echo "
@@ -73,50 +78,72 @@ function routine {
     #                           deleting old submissions                           #
     ################################################################################"
     bash delete_submissions.sh
+    echo "Done deleting old submissions!"
+
+    echo "
+    ################################################################################
+    #                           Downloading submissions                            #
+    ################################################################################
+    "
+    if [ ! -z "$download_args" ]; then
+	python3 download_submissions.py "$download_args"
+    else
+	python3 download_submissions.py
+    fi
+    echo "Done downloading submissions"
+
     echo "
     ################################################################################
     #                             process submissions                              #
     ################################################################################"
-    ./process_submissions.sh
+    bash process_submissions.sh
+    echo "Done correcting submissions!"
+
     echo "
     ################################################################################
     #                              uploading comments                              #
     ################################################################################"
-    python upload_comments.py -vp
+    python upload_comments.py -v
+    echo "Done uploading comments!"
+
     echo "
     ################################################################################
     #                               updating grades                                #
     ################################################################################"
-    python grade_submissions.py -vp
+    python grade_submissions.py -v
+    echo "Done updating grades!"
 
-    # echo "
-    # ################################################################################
-    # #                             removing submissions                             #
-    # ################################################################################"
-    # ./submissions_remove.sh
+    echo "
+    ################################################################################
+    #                               plotting results                               #
+    ################################################################################"
+    python plot_scores.py
+    date
+    echo "Done plotting"
 }
 
 while true; do
 
     time routine
 
-    if [ "$n" -gt "0" ]
-    then
-	n=$(( n-1 ))
+    if [ "$n" -gt "0" ]; then
+	n=$((n - 1))
     fi
-    if [ "$n" -gt "0" ] || $daemon
-    then
+    if [ "$n" -gt "0" ] || $daemon; then
 	echo "
 	################################################################################
 	#                                   waiting                                    #
 	################################################################################"
 	! $daemon && date && echo "Runs left: $n" || date && echo "Running as daemon"
-	while :;do for s in / - \\ \|; do printf "\r$s";sleep 0.2;done;done &
+	while :; do for s in / - \\ \|; do
+			printf "\r$s"
+			sleep 0.2
+		    done; done &
 	sleep "$t"m
-	kill $!; trap 'kill $!' SIGTERM
+	kill $!
+	trap 'kill $!' SIGTERM
     fi
-    if [ "$n" = "0" ] && [ "$daemon" = "false" ]
-    then
+    if [ "$n" = "0" ] && [ "$daemon" = "false" ]; then
 	break
     fi
 done

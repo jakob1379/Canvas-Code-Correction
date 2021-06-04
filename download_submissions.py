@@ -41,6 +41,7 @@ parser.add_argument("-f", "--failed",
 
 args = parser.parse_args()
 
+
 def download_submission(sub, old_files, course, args):
     try:
         url = sub.attachments[0]['url']
@@ -67,8 +68,7 @@ def download_submission(sub, old_files, course, args):
 
 
 # Canvas API URL
-domain = 'absalon.ku.dk'
-API_URL = "https://"+domain+"/"
+API_URL = "https://absalon.ku.dk/"
 
 # Canvas API key
 API_KEY = file_to_string('token')
@@ -127,7 +127,7 @@ if submissions:
         print("Downloading submissions in parallel!")
         Parallel(n_jobs=num_cores)(delayed(
             download_submission)(sub, old_files, course, args)
-                                   for sub in pbar(submissions))
+            for sub in pbar(submissions))
     else:
         for sub in pbar(submissions):
             download_submission(sub, old_files, course, args)

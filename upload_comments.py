@@ -46,7 +46,7 @@ def upload_comments(sub, assignments, args):
     handin_name = re.sub(" ", "+", txt_name)
 
     # get points and user id
-    user_id = re.findall(r'\d+', handin_name)[0]
+    user_id = re.findall(r'_(\d+)_', handin_name)[0]
     # Get submission for user
     assignment = assignments[assignment_name]
     submission = assignment.get_submission(user_id,
@@ -89,12 +89,12 @@ def upload_comments(sub, assignments, args):
             ans = input("Upload: Should new comment be uploaded? [y/N] ")
         if ans.lower() == 'y' or not args.question:
             if args.verbose or args.question:
-                print("Upload: Comment has been uploaded!\n")
+                print(bcolors.OKBLUE + "Upload: Comment has been uploaded!\n" + bcolors.ENDC)
             submission.upload_comment(file_to_upload)
         elif args.question:
-            print("Upload: Comments NOT uploaded.")
+            print(bcolors.FAIL + "Upload: Comments NOT uploaded." + bcolors.ENDC)
     elif args.verbose:
-        print("Upload: feedback already uploaded\n")
+        print(bcolors.WARNING + "Upload: feedback already uploaded\n" + bcolors.ENDC)
 
 
 # %% Init
@@ -130,7 +130,7 @@ if args.parallel:
         print("Uploading comments in parallel!")
     Parallel(n_jobs=num_cores)(delayed(
         upload_comments)(rep, assignments_as_dict, args) for
-                               rep in reports)
+        rep in reports)
 else:
     for rep in reports:
         upload_comments(rep, assignments_as_dict, args)

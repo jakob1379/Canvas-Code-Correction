@@ -9,7 +9,7 @@ elif [ $# -eq 1 ] && [ -d $1 ]
 then
      folder=$1
 else
-    echo "ERROR: Need a valid path"
+    echo "ERROR: Takes at most one argument!"
 fi
 
 rm -rf $folder

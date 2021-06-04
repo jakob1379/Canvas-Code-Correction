@@ -1,0 +1,45 @@
+#!/usr/bin/env bash
+set -euo pipefail
+IFS=$'\n\t'
+
+ecode=0
+not_installed=$(comm -23 <(cat requirements.txt | sort) <(pip freeze | grep -oP "^\w+" | sort))
+
+if [ ! -f token ]
+then
+    echo "Token file *token* does not exist
+Go to settings in absalon an generate a new token"
+    $BROWSER https://absalon.ku.dk/profile/settings
+fi
+
+if [ ! -z "$not_installed" ]
+then
+    echo "Did not find the following python packages:"
+    for val in $not_installed
+    do
+	echo " - $val"
+    done
+
+    echo "Please install before running the correction framework..."
+    ecode=1
+fi
+
+if ! command -v zip &> /dev/null
+then
+    echo "zip: could not be found"
+    ecode=1
+fi
+
+if ! command -v unzip &> /dev/null
+then
+    echo "unzip: could not be found"
+    ecode=1
+fi
+
+
+if [ "$ecode" == 0 ]
+then
+    exit 0
+else
+    exit 1
+fi
