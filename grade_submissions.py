@@ -24,7 +24,7 @@ parser.add_argument("-q", "--question",
                     help="question what grade to give",
                     action='store_true')
 parser.add_argument("path", nargs='?',
-                    default=os.path.join('Week*', 'submissions', '*', '')
+                    default=os.path.join('Week*', 'submissions', '*', ''),
                     help="Path to check")
 args = parser.parse_args()
 
