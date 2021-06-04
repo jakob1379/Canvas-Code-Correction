@@ -1,3 +1,9 @@
 #+TITLE: Automated Correction Framework for Applied Programming at Univeristy of Copenhagen
 #+AUTHOR: Jakob G. Aaes
 #+EMAIL: (concat "jakob1379" at-sign "gmail.com")
+
+* Ideas/ToDo [1/3]
+  This chapter notes ideas for future implementation.
+  * [ ] Ability to choose what assignments to download and/or specific students
+  * [X] What assignment to correct
+  * [ ] Instantiate assignment directories based on absalon assignments including the /submissions/ folder
