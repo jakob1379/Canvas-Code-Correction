@@ -101,7 +101,7 @@ for assignment in course.get_assignments():
     if args.verbose:
         print("Checking " + assignment.name + "...")
 
-    if args.check_all:
+    if args.all:
         submissions += list(assignment.get_submissions())
     elif args.failed:
         submissions += [sub for sub in assignment.get_submissions()
@@ -128,11 +128,10 @@ if args.verbose:
 
 # Download submissions
 if submissions:
-    num_cores = multiprocessing.cpu_count()
     pbar = Pbar.ProgressBar(redirect_stdout=True)
     if args.parallel:
         print("Downloading submissions in parallel!")
-        Parallel(n_jobs=num_cores)(delayed(
+        Parallel(n_jobs=args.num_cores)(delayed(
             download_submission)(sub, old_files, course, args)
             for sub in pbar(submissions))
     else:
