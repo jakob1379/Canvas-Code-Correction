@@ -13,10 +13,13 @@ import argparse
 import multiprocessing
 import os
 import progressbar as Pbar
+from functools import partial
+from p_tqdm import p_map
 import re
 import shutil
 import urllib.request
 from pathlib import Path
+
 parser = argparse.ArgumentParser("""
 Program to download assignments. It needs two files next to it
     course_id: Containing the course id
@@ -62,11 +65,12 @@ def download_submission(sub, old_files, course, args):
                                  if str(sub.user_id) in old and
                                  os.path.join(file_name, '') not in old]
             for f in folders_to_remove:
-                shutil.rmtree(f)
-                # download attachment if it doesn't exist,
+                shutil.rmtree(f, ignore_errors=True)
+            # download attachment if it doesn't exist,
             if os.path.join(directory, 'file_name', '') not in old_files:
                 url = sub.attachments[0]['url']
-                print("Saving to:", directory+file_name+'.zip')
+                if args.verbose:
+                    print("Saving to:", directory+file_name+'.zip')
                 download_url(url, directory+file_name+'.zip')
 
     except AttributeError:
@@ -128,13 +132,15 @@ if args.verbose:
 
 # Download submissions
 if submissions:
-    pbar = Pbar.ProgressBar(redirect_stdout=True)
     if args.parallel:
         print("Downloading submissions in parallel!")
-        Parallel(n_jobs=args.num_cores)(delayed(
-            download_submission)(sub, old_files, course, args)
-            for sub in pbar(submissions))
+        p_map(
+            partial(download_submission, old_files=old_files,
+                    course=course, args=args),
+            submissions,
+            num_cpus=args.num_cores)
     else:
+        pbar = Pbar.ProgressBar(redirect_stdout=True)
         for sub in pbar(submissions):
             download_submission(sub, old_files, course, args)
 else:
