@@ -1,4 +1,5 @@
 # Import the Canvas class
+import re
 import multiprocessing
 import seaborn as sns
 from canvas_helpers import (file_to_string,
@@ -11,7 +12,14 @@ import seaborn as sns
 import argparse
 from pandasgui import show
 from functools import partial
+from p_tqdm import p_map
+from tabulate import tabulate
+import pandas.plotting as pplot
 plt.style.use('ggplot')
+# plt.rcParams.update({
+#     "text.usetex": True,
+#     "font.family": "sans-serif",
+#     "font.sans-serif": ["Helvetica"]})
 
 parser = argparse.ArgumentParser()
 parser.add_argument("-s", "--show",
@@ -23,6 +31,16 @@ parser.add_argument("-o", "--out",
                     type=str,
                     nargs='?',
                     default="scores.pdf")
+parser.add_argument("-n", "--num-cores",
+                    help="Number of cores to use and run in parallel",
+                    metavar="parallel",
+                    type=int,
+                    nargs='?',
+                    default=multiprocessing.cpu_count())
+
+parser.add_argument("-v", "--verbose",
+                    help="set verbose",
+                    action='store_true')
 args = parser.parse_args()
 
 
@@ -30,11 +48,11 @@ def student_passed(student, assignments):
     return all([ass.get_submission(student).grade for ass in assignments])
 
 
-def count_students_passed(course):
+def count_students_passed(course, args):
     students = [student.id for student in course.get_users(enrollment_type=['student'])]
 
     assignments = course.get_assignments()
-    pool = multiprocessing.Pool(processes=4)
+    pool = multiprocessing.Pool(processes=args.num_cores)
     students_passed = sum(
         pool.map(partial(student_passed, assignments=assignments), students))
 
@@ -44,6 +62,8 @@ def count_students_passed(course):
 
 
 def plot_scores(df, course, args):
+    if args.verbose:
+        print("Aggregating data for plotting...")
     plot_data = (
         df
         .groupby(["Assignment", "grade"])
@@ -52,17 +72,24 @@ def plot_scores(df, course, args):
         .reset_index()
         .sort_values(by="Assignment"))
     df2 = (
-        df
+        df[df.grade == "complete"]
         .groupby("Assignment")
-        .agg({"attempt": ["mean", "var"]})
+        .agg({"attempt": ["mean", "var", "min", "max"]})
         .reset_index()
         .set_index("Assignment")
         .round(2)
     )
+    df2.index.name = None
+    # Remove unnecessary multindex
+    df2.columns = df2.columns.droplevel(0)
 
+    if args.verbose:
+        print("Counting students who have passed...")
     # Count how many have passed the course
-    students_passed = count_students_passed(course)
+    students_passed = count_students_passed(course, args)
 
+    if args.verbose:
+        print("Plotting...")
     fig, (ax1, ax2) = plt.subplots(
         nrows=1, ncols=2,
         sharex=False, sharey=True,
@@ -70,18 +97,14 @@ def plot_scores(df, course, args):
     )
     ax1 = sns.barplot(data=plot_data, x="percentage",
                       y="Assignment", hue="grade", ax=ax1)
-    ax1.text(1.02, 0.5, df2.reset_index().to_string(index=False),
-             # verticalalignment='bottom',
-             horizontalalignment='left',
-             transform=ax1.transAxes,
-             color='black', fontsize=10)
+    ax1.axis('tight')
 
     ax1.axvline(students_passed, linestyle='dashed', color='tab:green',
                 label=f'Students Passed: {100*students_passed:.2f}%')
 
     ax1.set_xlabel('Grade count')
     ax1.set_xlim(0, 1.01)
-    ax1.legend(loc="best")
+    ax1.legend(loc="best", framealpha=0.3)
 
     if df[(df.grade == "complete") & (df.Assignment == "Week 7-8")].empty:
         df = df.append(dict(
@@ -90,17 +113,12 @@ def plot_scores(df, course, args):
             attempt=0
         ), ignore_index=True)
 
-        sns.violinplot(
-            data=df[df.grade == "complete"],
-            y="Assignment",
-            x="attempt",
-            ax=ax2,
-            color="0.8"
-        )
-
-    else:
-        sns.violinplot(data=df[df.grade == "complete"],
-                       y="Assignment", x="attempt", ax=ax2)
+    sns.violinplot(
+        data=df[df.grade == "complete"],
+        y="Assignment",
+        x="attempt",
+        ax=ax2
+    )
 
     sns.stripplot(
         data=df,
@@ -111,11 +129,24 @@ def plot_scores(df, course, args):
         ax=ax2
     )
 
+    ax2.text(0.98, 0.55,
+             tabulate(df2, headers=df2.columns),
+             horizontalalignment='right',
+             verticalalignment='top',
+             transform=ax2.transAxes,
+             color='black', fontsize=10,
+             bbox=dict(boxstyle="square", alpha=0.15))
+
+    ax2.axis('tight')
+
+    if args.verbose:
+        print("Saving figure...")
     fig.tight_layout()
-    fig.savefig(args.out, format='pdf')
 
     if args.show:
         plt.show()
+    else:
+        fig.savefig(args.out, format='pdf')
 
 
 if __name__ == '__main__':
