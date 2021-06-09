@@ -13,10 +13,13 @@ import argparse
 import multiprocessing
 import os
 import progressbar as Pbar
+from functools import partial
+from p_tqdm import p_map
 import re
 import shutil
 import urllib.request
 from pathlib import Path
+
 parser = argparse.ArgumentParser("""
 Program to download assignments. It needs two files next to it
     course_id: Containing the course id
@@ -27,7 +30,13 @@ parser.add_argument("-v", "--verbose",
 parser.add_argument("-p", "--parallel",
                     help="download in parallel",
                     action='store_true')
-parser.add_argument("-c", "--check-all",
+parser.add_argument("-n", "--num-cores",
+                    help="description",
+                    metavar="num-cores",
+                    type=int,
+                    nargs='?',
+                    default=multiprocessing.cpu_count())
+parser.add_argument("-a", "--all",
                     help="check all assignments, default is to only check " +
                     "changed assignments",
                     action='store_true')
@@ -56,11 +65,12 @@ def download_submission(sub, old_files, course, args):
                                  if str(sub.user_id) in old and
                                  os.path.join(file_name, '') not in old]
             for f in folders_to_remove:
-                shutil.rmtree(f)
-                # download attachment if it doesn't exist,
+                shutil.rmtree(f, ignore_errors=True)
+            # download attachment if it doesn't exist,
             if os.path.join(directory, 'file_name', '') not in old_files:
                 url = sub.attachments[0]['url']
-                print("Saving to:", directory+file_name+'.zip')
+                if args.verbose:
+                    print("Saving to:", directory+file_name+'.zip')
                 download_url(url, directory+file_name+'.zip')
 
     except AttributeError:
@@ -95,7 +105,7 @@ for assignment in course.get_assignments():
     if args.verbose:
         print("Checking " + assignment.name + "...")
 
-    if args.check_all:
+    if args.all:
         submissions += list(assignment.get_submissions())
     elif args.failed:
         submissions += [sub for sub in assignment.get_submissions()
@@ -122,14 +132,15 @@ if args.verbose:
 
 # Download submissions
 if submissions:
-    num_cores = multiprocessing.cpu_count()
-    pbar = Pbar.ProgressBar(redirect_stdout=True)
     if args.parallel:
         print("Downloading submissions in parallel!")
-        Parallel(n_jobs=num_cores)(delayed(
-            download_submission)(sub, old_files, course, args)
-            for sub in pbar(submissions))
+        p_map(
+            partial(download_submission, old_files=old_files,
+                    course=course, args=args),
+            submissions,
+            num_cpus=args.num_cores)
     else:
+        pbar = Pbar.ProgressBar(redirect_stdout=True)
         for sub in pbar(submissions):
             download_submission(sub, old_files, course, args)
 else:

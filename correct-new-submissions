@@ -20,8 +20,8 @@ t=0
 w=0
 daemon=false
 args=''
-download_args=''
-
+download_args='p'
+max_time=0
 while getopts ":hn:dw:vast:" opt; do
     case ${opt} in
 	a)
@@ -82,8 +82,8 @@ then
 fi
 
 
-[ ! -z "$args"] && args+='-$args'
-[ ! -z "$download_args"] && args+='-$download_args'
+[ ! -z "$args"] && args+="-$args"
+[ ! -z "$download_args" ] && download_args="-$download_args"
 
 function routine {
     echo "
@@ -171,9 +171,9 @@ while true; do
     if [ "$n" = "0" ] && [ "$daemon" = "false" ];
     then
 	break
-    elif [ "$SECONDS" -gt "$max_time" ]
+    elif [ "$SECONDS" -gt "$max_time" ] && [ "$max_time" -ne "0" ] && [ "$daemon" = "true" ];
     then
-	 break
+	break
     fi
 done
 

@@ -1,10 +1,14 @@
 #!/bin/bash
 
+if [ $# -ne 1 ] || [ ! -d $1 ]
+then
+    echo "submissions_unzip: Needs exactly one directory"
+    exit 1
+fi
+
 folder=$1
 
 cd "$folder"
-mkdir -p submissions/
-
 
 if [ -f submissions*.zip ]; then
     unzip -q -n submissions*.zip -d submissions;

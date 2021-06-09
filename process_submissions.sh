@@ -7,7 +7,7 @@ displayUsage() {
 ... ellipses for repeated items: cp <source1> [source2…] <dest>
  |  vertical bars for choice of items: netstat {-t|-u}
 
-usage:  process_submissions.sh [-f -p -a -t -h]
+usage:  process_submissions.sh [-f -p -a -t -h] [H1,..,Hn]
 operations:
     {-h help} shows this dialogue
     {-f force} Checks already failed assignments
@@ -64,7 +64,19 @@ while getopts ":hpat" opt; do
 done
 shift $((OPTIND-1))
 
-for folder in $(ls -d Week*/); do
+if [ $# -eq 0 ];  then
+    echo "some args"
+    assigments=$(ls -d Week*/)
+else
+    assigments=$@
+fi
+
+# Check arguments
+for folder in $assigments; do
+    if [ ! -d "$folder" ]; then
+	echo "WARNING! input does not exist: $folder"
+	continue
+    fi
     echo "INFO: Unzipping"
     bash submissions_unzip.sh "$folder"
     echo "INFO: Done!"
