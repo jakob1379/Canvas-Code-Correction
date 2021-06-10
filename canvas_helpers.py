@@ -1,4 +1,6 @@
 # Import the Canvas class
+from pprint import pprint
+import sys
 from canvasapi import Canvas
 from glob import glob
 from joblib import Parallel, delayed
@@ -96,3 +98,11 @@ def create_file_name(submission, course, method='name'):
 
     # Combine to finale output user_name
     return '_'.join([str(i) for i in file_name])
+
+
+def list_assignments(course):
+    assignments = [' - ' + assignment.name for assignment in course.get_assignments()]
+    assignments = "\n".join(assignments)
+    print("Possible assignments are:\n" + assignments)
+
+    sys.exit()

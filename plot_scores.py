@@ -1,4 +1,5 @@
 # Import the Canvas class
+from datetime import datetime
 import re
 import multiprocessing
 import seaborn as sns
@@ -139,6 +140,7 @@ def plot_scores(df, course, args):
 
     ax2.axis('tight')
 
+    fig.suptitle(datetime.now().strftime("%b %d %Y %T"))
     if args.verbose:
         print("Saving figure...")
     fig.tight_layout()

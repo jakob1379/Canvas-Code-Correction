@@ -2,9 +2,9 @@
 #+AUTHOR: Jakob G. Aaes
 #+EMAIL: (concat "jakob1379" at-sign "gmail.com")
 
-* Ideas/ToDo [1/3]
+* Ideas/ToDo [2/6]
   This chapter notes ideas for future implementation.
-  * [ ] Ability to choose what assignments to download and/or specific students
+  * [X] Ability to choose what assignments to download and/or specific students
   * [X] What assignment to correct
   * [ ] Instantiate assignment directories based on absalon assignments including the /submissions/ folder
   * [ ] Randomize the order that handins are being corrected in for a daemon of grade and comment upload it on the fly with multiple instances of a corrector running

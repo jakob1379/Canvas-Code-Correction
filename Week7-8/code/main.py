@@ -85,7 +85,7 @@ def run(foldername):
     for i in range(len(test_files)):
         if test_files_compiled[i]:
             #print ("valgrind --log-file='" + valggrind_logs[i] + "' ./" + object_files[test_files[i]])
-            cmd = "./" + object_files[test_files[i]] + " > deleteme.txt"
+            cmd = object_files[test_files[i]] + " > deleteme.txt"
             myproces = subprocess.Popen(cmd, shell=True)
             start = time.time()
 

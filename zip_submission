@@ -5,5 +5,5 @@ for submission in Week*/submissions/*/; do
     cd "$top_dir/$submission"
     bname=$(basename "$submission")
     zip_name=$(basename "$submission" | sed 's/ /+/g')
-    zip "$zip_name" "$bname.txt" "errors.log"
+    zip "$zip_name.zip" "$bname.txt" "errors.log"
 done

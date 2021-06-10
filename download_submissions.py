@@ -4,7 +4,8 @@ from canvas_helpers import (download_url,
                             create_file_name,
                             print_dict,
                             flatten_list,
-                            extract_comment_filenames)
+                            extract_comment_filenames,
+                            list_assignments)
 from canvasapi import Canvas
 from glob import glob
 from joblib import Parallel, delayed
@@ -16,14 +17,17 @@ import progressbar as Pbar
 from functools import partial
 from p_tqdm import p_map
 import re
+import sys
 import shutil
 import urllib.request
 from pathlib import Path
+from pprint import pprint
 
 parser = argparse.ArgumentParser("""
 Program to download assignments. It needs two files next to it
     course_id: Containing the course id
-    token:     Your personal accesstoken from canvas""")
+    token:     Your personal accesstoken from canvas
+Default behaviour is to only download handins that have been changed""")
 parser.add_argument("-v", "--verbose",
                     help="sets verbosity",
                     action='store_true')
@@ -36,17 +40,35 @@ parser.add_argument("-n", "--num-cores",
                     type=int,
                     nargs='?',
                     default=multiprocessing.cpu_count())
-parser.add_argument("-a", "--all",
-                    help="check all assignments, default is to only check " +
-                    "changed assignments",
+# parser.add_argument("-a", "--all",
+#                     help="check all assignments, default is to only check changed assignments",
+#                     action='store_true')
+# parser.add_argument("-u", "--uncommented",
+#                     help="cheack uncommented assignments",
+#                     action='store_true')
+# parser.add_argument("-f", "--failed",
+#                     help="download failed submissions",
+#                     action='store_true')
+parser.add_argument("-a", "--assignment",
+                    help="Specific assignments to download",
+                    metavar="assignement",
+                    action="append",
+                    type=str)
+parser.add_argument("-s", "--student-id",
+                    help="Specific student-id to download",
+                    metavar="student-id",
+                    action="append",
+                    type=int)
+parser.add_argument("-d", "--download",
+                    help="Which handins to download",
+                    dest='download',
+                    type=str,
+                    # nargs='?',
+                    default="new",
+                    choices=["failed", "uncommented", "all", "new"])
+parser.add_argument("-l", "--list-assignments",
+                    help="list assignments for course and exit",
                     action='store_true')
-parser.add_argument("-u", "--uncommented",
-                    help="cheack uncommented assignments",
-                    action='store_true')
-parser.add_argument("-f", "--failed",
-                    help="download failed submissions",
-                    action='store_true')
-
 
 args = parser.parse_args()
 
@@ -91,6 +113,9 @@ canvas = Canvas(API_URL, API_KEY)
 course_id = file_to_string('course_id')
 course = canvas.get_course(course_id)
 
+if args.list_assignments:
+    list_assignments(course)
+
 # get users
 users = course.get_users()
 
@@ -100,35 +125,43 @@ sub_len = 0
 count = 0
 old_files = glob(os.path.join('Week*', 'submissions', '*', ''))
 
+
 for assignment in course.get_assignments():
     # Create paths for zip files
     if args.verbose:
         print("Checking " + assignment.name + "...")
 
-    if args.all:
+    if args.download == "all":
         submissions += list(assignment.get_submissions())
-    elif args.failed:
+    elif args.download == "failed":
         submissions += [sub for sub in assignment.get_submissions()
                         if sub.grade == 'incomplete']
-    elif args.uncommented:
+    elif args.download == "uncommented":
         for sub in assignment.get_submissions(include='submission_comments'):
             comment_files = extract_comment_filenames(
                 sub.submission_comments)
             submission_fname = create_file_name(sub, course) + '.zip'
             if submission_fname not in comment_files:
                 submissions.append(sub)
-    else:
+    elif args.download == "new":
         for sub in assignment.get_submissions():
             if vars(sub).get('attachments') is not None and (
                     not sub.grade_matches_current_submission or
                     sub.grade is None):
                 submissions.append(sub)
+
+    # is specific students where chosen filter them out_file
+    if args.student_id:
+        submissions = [sub for sub in submissions if sub.user_id in args.student_id]
+    # filter based on assignment
+    if args.assignment:
+        submissions = [sub for sub in submissions if course.get_assignment(
+            sub.assignment_id).name in args.assignment]
     if args.verbose:
         print("found:", len(submissions)-sub_len)
         sub_len = len(submissions)
 
-if args.verbose:
-    print("Submissions to correct:", len(submissions))
+print("Submissions to correct:", len(submissions))
 
 # Download submissions
 if submissions:

@@ -20,9 +20,9 @@ t=0
 w=0
 daemon=false
 args=''
-download_args='p'
+download_args='-p '
 max_time=0
-while getopts ":hn:dw:vast:" opt; do
+while getopts ":hn:dw:vast:f" opt; do
     case ${opt} in
 	a)
 	    grade_all=true
@@ -32,7 +32,7 @@ while getopts ":hn:dw:vast:" opt; do
 	    daemon=true
 	    ;;
 	f)
-	    download_args='f'
+	    download_args='-d failed '
 	    ;;
 	h)
 	    displayUsage
@@ -50,7 +50,7 @@ while getopts ":hn:dw:vast:" opt; do
 	v)
 	    verbose=true
 	    args+='v'
-	    download_args+='v'
+	    download_args+='-v '
 	    ;;
 	w)
 	    w=$OPTARG
@@ -82,8 +82,7 @@ then
 fi
 
 
-[ ! -z "$args"] && args+="-$args"
-[ ! -z "$download_args" ] && download_args="-$download_args"
+[ ! -z "$args" ] && args+="-$args"
 
 function routine {
     echo "
@@ -99,11 +98,18 @@ function routine {
     ################################################################################
     "
     if [ ! -z "$download_args" ]; then
-	python3 download_submissions.py "$download_args"
+	numAssignments=$(python3 download_submissions.py $download_args |  grep -oP "Submissions to correct:.*" | grep -oP "\d+")
     else
-	python3 download_submissions.py
+	numAssignments=$(python3 download_submissions.py |  grep -P "Submissions to correct:.*" | grep -oP "\d+")
     fi
     echo "Done downloading submissions"
+    echo "Number of assignments: $numAssignments"
+
+    if [ "$numAssignments" -eq "0" ]
+    then
+	echo "No new assignments. Skipping rest of the routine"
+	return
+    fi
 
     echo "
     ################################################################################
