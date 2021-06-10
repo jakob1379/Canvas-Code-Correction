@@ -9,3 +9,4 @@
   * [ ] Instantiate assignment directories based on absalon assignments including the /submissions/ folder
   * [ ] Randomize the order that handins are being corrected in for a daemon of grade and comment upload it on the fly with multiple instances of a corrector running
   * [ ] When plotting iterate through all assignments and add empty violin of no one handed in yet
+  * [ ] when checking new assignments in download_assignments - check on assignment name and comment name
