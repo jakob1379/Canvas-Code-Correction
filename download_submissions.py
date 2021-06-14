@@ -125,7 +125,6 @@ sub_len = 0
 count = 0
 old_files = glob(os.path.join('Week*', 'submissions', '*', ''))
 
-
 for assignment in course.get_assignments():
     # Create paths for zip files
     if args.verbose:
