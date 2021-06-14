@@ -1,8 +1,6 @@
 # Import the Canvas class
 from datetime import datetime
-import re
 import multiprocessing
-import seaborn as sns
 from canvas_helpers import (file_to_string,
                             flatten_list)
 from canvasapi import Canvas
@@ -11,11 +9,9 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 import argparse
-from pandasgui import show
 from functools import partial
 from p_tqdm import p_map
 from tabulate import tabulate
-import pandas.plotting as pplot
 plt.style.use('ggplot')
 # plt.rcParams.update({
 #     "text.usetex": True,
@@ -34,7 +30,7 @@ parser.add_argument("-o", "--out",
                     default="scores.pdf")
 parser.add_argument("-n", "--num-cores",
                     help="Number of cores to use and run in parallel",
-                    metavar="parallel",
+                    metavar="cores",
                     type=int,
                     nargs='?',
                     default=multiprocessing.cpu_count())
@@ -63,8 +59,6 @@ def count_students_passed(course, args):
 
 
 def plot_scores(df, course, args):
-    if args.verbose:
-        print("Aggregating data for plotting...")
     plot_data = (
         df
         .groupby(["Assignment", "grade"])
@@ -105,7 +99,7 @@ def plot_scores(df, course, args):
 
     ax1.set_xlabel('Grade count')
     ax1.set_xlim(0, 1.01)
-    ax1.legend(loc="best", framealpha=0.3)
+    ax1.legend(loc="best", framealpha=0.3)._legend_box.align = 'right'
 
     if df[(df.grade == "complete") & (df.Assignment == "Week 7-8")].empty:
         df = df.append(dict(
@@ -152,7 +146,8 @@ def plot_scores(df, course, args):
 
 
 if __name__ == '__main__':
-
+    if args.verbose:
+        print("setting up connection to absalon...")
     # Canvas API URL
     domain = 'absalon.ku.dk'
     API_URL = "https://"+domain+"/"
@@ -171,13 +166,16 @@ if __name__ == '__main__':
     try:
         scores.shape
     except:
+        if args.verbose:
+            print("Fetching submissions...")
         scores = np.array(flatten_list(
-            [[(assignment.name, sub.grade, sub.attempt) for sub in assignment.get_submissions()]
+            [[(assignment.name, sub.grade, sub.attempt, sub.user_id, course.get_user(sub.user_id).name) for sub in assignment.get_submissions()]
              for assignment in assignments]))
 
     # Count unique values i.e. complete, incomplete and not handed in
     num_students = len(list(course.get_users(type="student")))
-    df = pd.DataFrame(scores, columns=['Assignment', 'grade', "attempt"])
+    df = pd.DataFrame(scores, columns=['Assignment',
+                      'grade', "attempt", "uid", "uname"])
     df.loc[df.Assignment == "Week1-2", "Assignment"] = "Week 1-2"
     df.grade.fillna('Not handed in', inplace=True)  # replace nan with not handed in
     df.attempt.fillna(0, inplace=True)  # replace nan with not handed in
@@ -187,5 +185,7 @@ if __name__ == '__main__':
         .reset_index(drop=True)
     )
 
+    if args.verbose:
+        print("Aggregating data for plotting...")
     plot_scores(df, course, args)
     print("Done!")
