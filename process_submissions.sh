@@ -24,33 +24,27 @@ correct_all=false
 show_time=false
 reverse=false
 failed=false
-while getopts ":hpat" opt; do
+while getopts ":haptv" opt; do
     case ${opt} in
-	p)
-	    echo "Parallelization enabled!"
-	    parallel=true
-
-	    args+='p'
+	h)
+	    displayUsage
+	    exit 1
 	    ;;
 	a)
 	    correct_all=true
 	    args+='a'
 	    ;;
+	p)
+	#     echo "Parallelization enabled!"
+	#     parallel=true
+	#     args+='p'
+	    ;;
 	t)
 	    show_time=true
 	    args+='t'
 	    ;;
-	h)
-	    displayUsage
-	    exit 1
-	    ;;
 	v)
 	    verbose=true
-	    download_args+='v'
-	    ;;
-	p)
-	    parallel=true
-	    download_args+='p'
 	    ;;
 	\?)
 	    echo "Invalid option: $OPTARG" 1>&2
