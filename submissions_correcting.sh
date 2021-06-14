@@ -122,15 +122,19 @@ week=$(basename -- "$folder")
 if $always
 then
     echo "Correcting all!"
-    folders=$totalPath*/
+    folders=$(find "$totalPath" -maxdepth 1 -type d)
 else
     # Find folders that does not have a points.txt file in them
     folders=$(find "$totalPath" -mindepth 1 -type d '!' -exec sh -c 'ls -1 "{}" | egrep -i -q "^*points.txt$"' ';' -print | sort | xargs -i% echo "%/")
 fi
 
+num_folders=$(echo "$folders" | wc -l)
+count=0
 for d in $folders; do
     echo "Correcting: $d"
     correction_routine "$totalPath$(basename "$d")"
+    echo $count | tqdm --update-to --total=$num_folders
+    ((count+=1))
 done
 
 echo "Done!"
