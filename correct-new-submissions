@@ -6,13 +6,15 @@ displayUsage() {
 usage:  correct-new-submissions [...]
 operations:
     {-h help}    shows this dialogue
-    {-n number}  number of times to run the correction
+    {-a all}     correct all assignments
     {-d daemon}  keep running until process is closed
-    {-w wait}    wait time before next iteration in minutes
-    {-t time}    time to run as daemon. Given as HH:MM:SS
+    {-n number}  number of times to run the correction
     {-f failed}  correct failed assignment
+    {-s skip}    skip checking requirements
+    {-t time}    time to run as daemon. Given as HH:MM:SS
     {-v verbose} verbosity
-    {-a all}     correct all assignments'
+    {-w wait}    wait time before next iteration in minutes
+'
 }
 
 n=1
@@ -22,7 +24,7 @@ daemon=false
 args=''
 download_args='-p '
 max_time=0
-while getopts ":hn:dw:vast:f" opt; do
+while getopts ":hadfn:st:vw:" opt; do
     case ${opt} in
 	a)
 	    grade_all=true
@@ -67,6 +69,7 @@ while getopts ":hn:dw:vast:f" opt; do
 done
 shift $((OPTIND - 1))
 
+
 # check requirements
 if [ -z skip_check ]
 then
@@ -97,10 +100,17 @@ function routine {
     #                           Downloading submissions                            #
     ################################################################################
     "
+
     if [ ! -z "$download_args" ]; then
-	numAssignments=$(python3 download_submissions.py $download_args |  grep -oP "Submissions to correct:.*" | grep -oP "\d+")
+	download_out=$(python3 download_submissions.py $download_args | tee /dev/fd/2)
+	numAssignments=$(echo "$download_out" | \
+			     grep -oP "Submissions to correct:.*" | \
+			     grep -oP "\d+")
     else
-	numAssignments=$(python3 download_submissions.py |  grep -P "Submissions to correct:.*" | grep -oP "\d+")
+	download_out=$(python3 download_submissions.py)
+	numAssignments=$(echo "$download_out"|  \
+			     grep -P "Submissions to correct:.*" | \
+			     grep -oP "\d+")
     fi
     echo "Done downloading submissions"
     echo "Number of assignments: $numAssignments"
@@ -122,21 +132,21 @@ function routine {
     ################################################################################
     #                              uploading comments                              #
     ################################################################################"
-    python upload_comments.py -v
+    python3 upload_comments.py -v
     echo "Done uploading comments!"
 
     echo "
     ################################################################################
     #                               updating grades                                #
     ################################################################################"
-    python grade_submissions.py -v
+    python3 grade_submissions.py -v
     echo "Done updating grades!"
 
     echo "
     ################################################################################
     #                               plotting results                               #
     ################################################################################"
-    python plot_scores.py
+    python3 plot_scores.py
     echo "Done plotting"
 }
 
