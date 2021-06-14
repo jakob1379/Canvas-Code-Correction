@@ -9,8 +9,8 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 import argparse
+import progressbar as Pbar
 from functools import partial
-from p_tqdm import p_map
 from tabulate import tabulate
 plt.style.use('ggplot')
 # plt.rcParams.update({
@@ -99,7 +99,8 @@ def plot_scores(df, course, args):
 
     ax1.set_xlabel('Grade count')
     ax1.set_xlim(0, 1.01)
-    ax1.legend(loc="best", framealpha=0.3)._legend_box.align = 'right'
+    ax1.legend(title="Submissions", loc="best",
+               framealpha=0.3)._legend_box.align = 'right'
 
     if df[(df.grade == "complete") & (df.Assignment == "Week 7-8")].empty:
         df = df.append(dict(
@@ -161,16 +162,17 @@ if __name__ == '__main__':
     # init course
     course_id = file_to_string('course_id')
     course = canvas.get_course(course_id)
-    assignments = course.get_assignments()
+    assignments = list(course.get_assignments())
 
     try:
         scores.shape
     except:
         if args.verbose:
             print("Fetching submissions...")
+        pbar = Pbar.ProgressBar(redirect_stdout=True)
         scores = np.array(flatten_list(
             [[(assignment.name, sub.grade, sub.attempt, sub.user_id, course.get_user(sub.user_id).name) for sub in assignment.get_submissions()]
-             for assignment in assignments]))
+             for assignment in pbar(assignments)]))
 
     # Count unique values i.e. complete, incomplete and not handed in
     num_students = len(list(course.get_users(type="student")))
