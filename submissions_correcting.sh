@@ -133,7 +133,7 @@ count=0
 for d in $folders; do
     echo "Correcting: $d"
     correction_routine "$totalPath$(basename "$d")"
-    echo $count | tqdm --update-to --total=$num_folders
+    echo $count | tqdm --update-to --total=$num_folders > /dev/null
     ((count+=1))
 done
 
