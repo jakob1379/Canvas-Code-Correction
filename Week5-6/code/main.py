@@ -55,10 +55,10 @@ def run(foldername):
     test_files_compiled = [True for i in range(len(test_files))]
     valggrind_logs = [test_files[i] + ".valgrind.txt" for i in range(len(test_files))]
 
-    ## check if all files are present
+    # check if all files are present
     # not neccersary since if they are not present, then they cant compile, so it's already taken care of.
 
-    ## compile files
+    # compile files
     for i in range(len(test_files)):
         #print( "compiler line before: " + compiler_lines[i])
         line = addMissingIncluded(sub_files[test_files[i]], compiler_lines[i])
