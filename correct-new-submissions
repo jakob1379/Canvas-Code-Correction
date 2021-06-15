@@ -26,6 +26,10 @@ download_args='-p '
 max_time=0
 while getopts ":hadfn:st:vw:" opt; do
     case ${opt} in
+	h)
+	    displayUsage
+	    exit 0
+	    ;;
 	a)
 	    grade_all=true
 	    args+='a'
@@ -35,10 +39,6 @@ while getopts ":hadfn:st:vw:" opt; do
 	    ;;
 	f)
 	    download_args='-d failed '
-	    ;;
-	h)
-	    displayUsage
-	    exit 0
 	    ;;
 	n)
 	    n="$OPTARG"
