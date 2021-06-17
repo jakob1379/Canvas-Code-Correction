@@ -1,6 +1,12 @@
 #!/usr/bin/env bash
 
 top_dir="$PWD"
+
+if [ "" = "$(ls -A Week*/submissions/*/ 2> /dev/null)" ]; then
+    echo "zip_submission: no submissions to zip"
+    exit 0
+fi
+
 for submission in Week*/submissions/*/; do
     cd "$top_dir/$submission"
     bname=$(basename "$submission")
