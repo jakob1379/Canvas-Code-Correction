@@ -10,7 +10,6 @@ displayUsage() {
 usage:  process_submissions.sh [-f -p -a -t -h] [H1,..,Hn]
 operations:
     {-h help} shows this dialogue
-    {-f force} Checks already failed assignments
     {-p parallel} downloads and check in parallel
     {-a all} Checks all assignments again
     {-t time} show time
