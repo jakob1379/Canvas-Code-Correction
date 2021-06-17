@@ -116,16 +116,16 @@ function correction_routine {
 
 # Read user input
 folder="$1"
-totalPath="$folder""submissions/"
 week=$(basename -- "$folder")
+totalPath="$week/submissions/"
 
-if $always
+if [[ $always ]]
 then
     echo "Correcting all!"
-    folders=$(find "$totalPath" -maxdepth 1 -type d)
+    folders=$(find $totalPath -mindepth 1 -maxdepth 1 -type d)
 else
     # Find folders that does not have a points.txt file in them
-    folders=$(find "$totalPath" -mindepth 1 -type d '!' -exec sh -c 'ls -1 "{}" | egrep -i -q "^*points.txt$"' ';' -print | sort | xargs -i% echo "%/")
+    folders=$(find $totalPath -type f -not -name '*_points.txt' -exec dirname {} \;)
 fi
 
 num_folders=$(echo "$folders" | wc -l)
