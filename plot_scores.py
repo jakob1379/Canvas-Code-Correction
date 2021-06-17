@@ -1,22 +1,17 @@
-# Import the Canvas class
-from datetime import datetime
-import multiprocessing
-from canvas_helpers import (file_to_string,
-                            flatten_list)
+from canvas_helpers import file_to_string
 from canvasapi import Canvas
-import numpy as np
-import pandas as pd
-import matplotlib.pyplot as plt
-import seaborn as sns
-import argparse
-import progressbar as Pbar
+from datetime import datetime
 from functools import partial
+from itertools import chain
 from tabulate import tabulate
+import argparse
+import matplotlib.pyplot as plt
+import multiprocessing
+import pandas as pd
+import progressbar as Pbar
+import seaborn as sns
+from p_tqdm import p_map
 plt.style.use('ggplot')
-# plt.rcParams.update({
-#     "text.usetex": True,
-#     "font.family": "sans-serif",
-#     "font.sans-serif": ["Helvetica"]})
 
 parser = argparse.ArgumentParser()
 parser.add_argument("-s", "--show",
@@ -41,11 +36,7 @@ parser.add_argument("-v", "--verbose",
 args = parser.parse_args()
 
 
-def student_passed(student, assignments):
-    return all([ass.get_submission(student).grade for ass in assignments])
-
-
-def count_students_passed(course, args):
+def count_students_no_handins(course, args):
     students = [student.id for student in course.get_users(enrollment_type=['student'])]
 
     assignments = course.get_assignments()
@@ -62,14 +53,14 @@ def plot_scores(df, course, args):
     plot_data = (
         df
         .groupby(["Assignment", "grade"])
-        .apply(lambda group: len(group)/num_students)
+        .apply(lambda group: len(group)/df.uid.nunique())
         .to_frame("percentage")
         .reset_index()
         .sort_values(by="Assignment"))
     df2 = (
         df[df.grade == "complete"]
         .groupby("Assignment")
-        .agg({"attempt": ["mean", "var", "min", "max"]})
+        .agg({"attempts": ["mean", "var", "min", "max"]})
         .reset_index()
         .set_index("Assignment")
         .round(2)
@@ -80,8 +71,13 @@ def plot_scores(df, course, args):
 
     if args.verbose:
         print("Counting students who have passed...")
-    # Count how many have passed the course
-    students_passed = count_students_passed(course, args)
+        # Count how many have passed the course
+    students_passed = (
+        df.groupby('uid').filter(lambda group: all(
+            group.grade == 'complete')).uid.nunique()/df.uid.nunique()
+    )
+    students_no_handins = (
+        df.groupby('uid').filter(lambda group: all(group.grade == 'Not handed in')).uid.nunique()/df.uid.nunique())
 
     if args.verbose:
         print("Plotting...")
@@ -90,55 +86,63 @@ def plot_scores(df, course, args):
         sharex=False, sharey=True,
         figsize=(9, 4)
     )
-    ax1 = sns.barplot(data=plot_data, x="percentage",
-                      y="Assignment", hue="grade", ax=ax1)
+    ax1 = sns.barplot(
+        data=plot_data,
+        x="percentage",
+        y="Assignment",
+        hue="grade",
+        ax=ax1)
     ax1.axis('tight')
 
     ax1.axvline(students_passed, linestyle='dashed', color='tab:green',
-                label=f'Students Passed: {100*students_passed:.2f}%')
+                label=f'Passed: {100*students_passed:.2f}%')
+    ax1.axvline(students_no_handins, linestyle='dashed', color='tab:red',
+                label=f'No handins: {100*students_no_handins:.2f}%')
 
     ax1.set_xlabel('Grade count')
     ax1.set_xlim(0, 1.01)
-    ax1.legend(title="Submissions", loc="best",
-               framealpha=0.3)._legend_box.align = 'right'
+    ax1.legend(title="Submissions", loc=4,
+               framealpha=0.3,
+               prop={'size': 6})._legend_box.align = 'right'
 
     if df[(df.grade == "complete") & (df.Assignment == "Week 7-8")].empty:
         df = df.append(dict(
             Assignment="Week 7-8",
             grade="complete",
-            attempt=0
+            attempts=0
         ), ignore_index=True)
 
     sns.violinplot(
         data=df[df.grade == "complete"],
         y="Assignment",
-        x="attempt",
+        x="attempts",
         ax=ax2
     )
 
     sns.stripplot(
         data=df,
-        x="attempt",
+        x="attempts",
         y="Assignment",
         jitter=True,
         zorder=1,
         ax=ax2
     )
 
-    ax2.text(0.98, 0.55,
+    ax2.text(0.98, 0.22,
              tabulate(df2, headers=df2.columns),
              horizontalalignment='right',
              verticalalignment='top',
              transform=ax2.transAxes,
-             color='black', fontsize=10,
+             color='black', fontsize=6,
              bbox=dict(boxstyle="square", alpha=0.15))
 
     ax2.axis('tight')
 
     fig.suptitle(datetime.now().strftime("%b %d %Y %T"))
+    fig.tight_layout()
+
     if args.verbose:
         print("Saving figure...")
-    fig.tight_layout()
 
     if args.show:
         plt.show()
@@ -149,7 +153,7 @@ def plot_scores(df, course, args):
 if __name__ == '__main__':
     if args.verbose:
         print("setting up connection to absalon...")
-    # Canvas API URL
+        # Canvas API URL
     domain = 'absalon.ku.dk'
     API_URL = "https://"+domain+"/"
 
@@ -164,23 +168,36 @@ if __name__ == '__main__':
     course = canvas.get_course(course_id)
     assignments = list(course.get_assignments())
 
-    try:
-        scores.shape
-    except:
-        if args.verbose:
-            print("Fetching submissions...")
-        pbar = Pbar.ProgressBar(redirect_stdout=True)
-        scores = np.array(flatten_list(
-            [[(assignment.name, sub.grade, sub.attempt, sub.user_id, course.get_user(sub.user_id).name) for sub in assignment.get_submissions()]
-             for assignment in pbar(assignments)]))
+    if args.verbose:
+        print("Fetching submissions...")
+    pbar = Pbar.ProgressBar(redirect_stdout=True)
+    scores = list(chain(*[
+        [(assignment.name,
+          sub.grade,
+          sub.attempt,
+          sub.user_id,
+          course.get_user(sub.user_id).name)
+         for sub in list(assignment.get_submissions())]
+        for assignment in pbar(assignments)]))
+
+    # Parallel execution does not work
+    # scores = list(chain(*[
+    #     p_map(
+    #         lambda sub: (
+    #             assignment.name,
+    #             sub.grade,
+    #             sub.attempts,
+    #             sub.user_id,
+    #             course.get_user(sub.user_id).name),
+    #         list(assignment.get_submissions()))
+    #     for assignment in assignments]))
 
     # Count unique values i.e. complete, incomplete and not handed in
-    num_students = len(list(course.get_users(type="student")))
     df = pd.DataFrame(scores, columns=['Assignment',
-                      'grade', "attempt", "uid", "uname"])
+                                       'grade', "attempts", "uid", "uname"])
     df.loc[df.Assignment == "Week1-2", "Assignment"] = "Week 1-2"
     df.grade.fillna('Not handed in', inplace=True)  # replace nan with not handed in
-    df.attempt.fillna(0, inplace=True)  # replace nan with not handed in
+    df.attempts.fillna(0, inplace=True)  # replace nan with not handed in
     df = (
         df.apply(pd.to_numeric, errors="coerce")
         .fillna(df)
