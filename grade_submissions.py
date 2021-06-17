@@ -87,7 +87,9 @@ def grade_submission(sub, assignments, args):
               score+str(points)+bcolors.ENDC+'/'+str(scores_to_complete[assignment_name]))
         print("\nPoints to complete", assignment_name+':',
               scores_to_complete[assignment_name])
-        print("Current grade:", current_grade)
+
+        color = bcolors.OKBLUE if current_grade == 'complete' else bcolors.FAIL
+        print("Current grade:", color+current_grade+bcolors.ENDC)
         ans = str(input("Grade the student?: [y/N]: ") or 'n').lower()
         if ans == 'n':
             if args.verbose:
