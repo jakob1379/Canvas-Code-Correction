@@ -41,7 +41,7 @@ def file_to_string(file_name):
 def print_dict(d):
     max_key = len(max(d.keys(), key=len))
     for k, v in d.items():
-        print(k.ljust(max_key) + ': ' + str(v))
+        print(k.ljust(max_key) + ' : ' + str(v))
     print()
 
 
@@ -49,7 +49,7 @@ def print_as_dict(dd):
     d = vars(dd)
     max_key = len(max(d.keys(), key=len))
     for k, v in d.items():
-        print(k.ljust(max_key) + ': ' + str(v))
+        print(k.ljust(max_key) + ' : ' + str(v))
     print()
 
 

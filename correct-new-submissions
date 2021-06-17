@@ -59,10 +59,12 @@ while getopts ":hadfn:st:vw:" opt; do
 	    ;;
 	\?)
 	    echo "Invalid option: $OPTARG" 1>&2
+	    displayUsage
 	    exit 2
 	    ;;
 	:)
 	    echo "Invalid option: $OPTARG requires an argument" 1>&2
+	    displayUsage
 	    exit 2
 	    ;;
     esac
@@ -103,15 +105,12 @@ function routine {
 
     if [ ! -z "$download_args" ]; then
 	download_out=$(python3 download_submissions.py $download_args | tee /dev/fd/2)
-	numAssignments=$(echo "$download_out" | \
-			     grep -oP "Submissions to correct:.*" | \
-			     grep -oP "\d+")
     else
 	download_out=$(python3 download_submissions.py)
-	numAssignments=$(echo "$download_out"|  \
-			     grep -P "Submissions to correct:.*" | \
-			     grep -oP "\d+")
     fi
+    numAssignments=$(echo "$download_out" | \
+			     grep -oP "Submissions to correct:.*" | \
+			     grep -oP "\d+")
     echo "Done downloading submissions"
     echo "Number of assignments: $numAssignments"
 
@@ -172,11 +171,15 @@ while true; do
 	################################################################################
 	#                                   waiting                                    #
 	################################################################################"
-	! $daemon && date && echo "Runs left: $n" || date && echo "Running as daemon"
-	while :; do for s in / - \\ \|; do
+	! $daemon && date && echo "Runs left: $n"
+	# While loop for creating a rotating /-\
+	while :;
+	do
+	    for s in / - \\ \|; do
 			printf "\r$s"
 			sleep 0.2
-		    done; done &
+	    done;
+	done &
 	sleep "$w"m
 	kill $!
 	trap 'kill $!' SIGTERM
