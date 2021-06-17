@@ -69,6 +69,9 @@ parser.add_argument("-d", "--download",
 parser.add_argument("-l", "--list-assignments",
                     help="list assignments for course and exit",
                     action='store_true')
+parser.add_argument("--dry",
+                    help="dry run where nothing is downloaded",
+                    action='store_true')
 
 args = parser.parse_args()
 
@@ -93,7 +96,8 @@ def download_submission(sub, old_files, course, args):
                 url = sub.attachments[0]['url']
                 if args.verbose:
                     print("Saving to:", directory+file_name+'.zip')
-                download_url(url, directory+file_name+'.zip')
+                if not args.dry:
+                    download_url(url, directory+file_name+'.zip')
 
     except AttributeError:
         if args.verbose:
