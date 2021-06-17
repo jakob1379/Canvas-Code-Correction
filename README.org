@@ -2,7 +2,7 @@
 #+AUTHOR: Jakob G. Aaes
 #+EMAIL: (concat "jakob1379" at-sign "gmail.com")
 
-* Ideas/ToDo [2/6]
+* Ideas/ToDo [2/7]
   This chapter notes ideas for future implementation.
   * [X] Ability to choose what assignments to download and/or specific students
   * [X] What assignment to correct
@@ -10,3 +10,5 @@
   * [ ] Randomize the order that handins are being corrected in for a daemon of grade and comment upload it on the fly with multiple instances of a corrector running
   * [ ] When plotting iterate through all assignments and add empty violin of no one handed in yet
   * [ ] when checking new assignments in download_assignments - check on assignment name and comment name
+  * [ ] Make sure all methods are documented
+  * [ ] Common example usecases e.g. how to correct a single student/assignment etc.
