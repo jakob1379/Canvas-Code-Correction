@@ -68,9 +68,9 @@ def upload_comments(sub, assignments, args):
     # Compare latest online comment with local comment
     if submission.submission_comments:
         try:
-            comment_urls = submission.submission_comments[-1]['attachments'][0]['url']
+            latest_comment_url = submission.submission_comments[-1]['attachments'][0]['url']
             fname = submission.submission_comments[-1]['attachments'][0]['display_name']
-            download_url(lates_comment_url, 'tmp/' + fname)
+            download_url(latest_comment_url, 'tmp/' + fname)
 
             previous_md5 = md5sum('tmp/' + fname)
             new_md5 = md5sum(file_to_upload[0])
