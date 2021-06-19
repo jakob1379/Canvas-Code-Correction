@@ -1,27 +1,35 @@
 # Import the Canvas class
-from canvas_helpers import (download_url,
-                            file_to_string,
-                            create_file_name,
-                            print_dict,
-                            flatten_list,
-                            extract_comment_filenames,
-                            list_assignments)
-from canvasapi import Canvas
-from glob import glob
-from joblib import Parallel, delayed
-from time import time
 import argparse
 import multiprocessing
 import os
-import progressbar as Pbar
-from functools import partial
-from p_tqdm import p_map
-import re
-import sys
 import shutil
-import urllib.request
+import sys
+from functools import partial
+from glob import glob
 from pathlib import Path
 from pprint import pprint
+
+import progressbar as Pbar
+from canvasapi import Canvas
+from p_tqdm import p_map
+
+from canvas_helpers import create_file_name
+from canvas_helpers import download_url
+from canvas_helpers import extract_comment_filenames
+from canvas_helpers import file_to_string
+
+# Canvas API URL
+API_URL = "https://absalon.ku.dk/"
+
+# Canvas API key
+API_KEY = file_to_string('token')
+
+# Initialize a new Canvas object
+canvas = Canvas(API_URL, API_KEY)
+
+# init course
+course_id = file_to_string('course_id')
+course = canvas.get_course(course_id)
 
 parser = argparse.ArgumentParser("""
 Program to download assignments. It needs two files next to it
@@ -40,24 +48,17 @@ parser.add_argument("-n", "--num-cores",
                     type=int,
                     nargs='?',
                     default=multiprocessing.cpu_count())
-# parser.add_argument("-a", "--all",
-#                     help="check all assignments, default is to only check changed assignments",
-#                     action='store_true')
-# parser.add_argument("-u", "--uncommented",
-#                     help="cheack uncommented assignments",
-#                     action='store_true')
-# parser.add_argument("-f", "--failed",
-#                     help="download failed submissions",
-#                     action='store_true')
 parser.add_argument("-a", "--assignment",
                     help="Specific assignments to download",
                     metavar="assignement",
-                    action="append",
+                    default=[a.name for a in course.get_assignments()],
+                    nargs='*',
+                    choices=[a.name for a in course.get_assignments()],
                     type=str)
 parser.add_argument("-s", "--student-id",
                     help="Specific student-id to download",
                     metavar="student-id",
-                    action="append",
+                    nargs='*',
                     type=int)
 parser.add_argument("-d", "--download",
                     help="Which handins to download",
@@ -104,21 +105,10 @@ def download_submission(sub, old_files, course, args):
             print("Submission has no attachment:", sub.id)
 
 
-# Canvas API URL
-API_URL = "https://absalon.ku.dk/"
-
-# Canvas API key
-API_KEY = file_to_string('token')
-
-# Initialize a new Canvas object
-canvas = Canvas(API_URL, API_KEY)
-
-# init course
-course_id = file_to_string('course_id')
-course = canvas.get_course(course_id)
-
 if args.list_assignments:
-    list_assignments(course)
+    print("Possible assignments are:")
+    print('\n'.join([' - '+a.name for a in course.get_assignments()]))
+    sys.exit()
 
 # get users
 users = course.get_users()
@@ -129,7 +119,7 @@ sub_len = 0
 count = 0
 old_files = glob(os.path.join('Week*', 'submissions', '*', ''))
 
-for assignment in course.get_assignments():
+for assignment in [a for a in course.get_assignments() if a.name in args.assignment]:
     # Create paths for zip files
     if args.verbose:
         print("Checking " + assignment.name + "...")
