@@ -8,6 +8,7 @@ backup
 correction_status
 token
 *.pdf
+tmp/
 
 ###############
 # Emacs files #

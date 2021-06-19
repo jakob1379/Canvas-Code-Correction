@@ -12,7 +12,6 @@ from canvas_helpers import bcolors
 from canvas_helpers import download_url
 from canvas_helpers import extract_comment_filenames
 from canvas_helpers import file_to_string
-from canvas_helpers import bcolors
 from canvas_helpers import md5sum
 from canvasapi import Canvas
 from tabulate import tabulate
@@ -66,10 +65,10 @@ def upload_comments(sub, assignments, args):
     # get path to comment zip
     file_to_upload = glob(sub + '*.zip')
 
-    # # Extract checksum from latest comment file if possible
-    if comment_files:
+    # Compare latest online comment with local comment
+    if submission.submission_comments:
         try:
-            lates_comment_url = submission.submission_comments[-1]['attachments'][0]['url']
+            comment_urls = submission.submission_comments[-1]['attachments'][0]['url']
             fname = submission.submission_comments[-1]['attachments'][0]['display_name']
             download_url(lates_comment_url, 'tmp/' + fname)
 
