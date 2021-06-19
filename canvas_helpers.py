@@ -1,5 +1,7 @@
 # Import the Canvas class
 import re
+from pathlib import Path
+import os
 import urllib.request
 from glob import glob
 from hashlib import md5
@@ -20,6 +22,13 @@ class bcolors:
 
 
 def download_url(url, save_path):
+    # Make sure destination folder exists
+    end_folder = os.sep.join(save_path.split(os.sep)[:-1])
+    if end_folder:
+        (
+            Path(end_folder)
+            .mkdir(parents=True, exist_ok=True)
+        )
     with urllib.request.urlopen(url) as dl_file:
         with open(save_path, 'wb') as out_file:
             out_file.write(dl_file.read())
