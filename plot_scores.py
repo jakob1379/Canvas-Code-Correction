@@ -72,12 +72,12 @@ def plot_scores(df, course, args):
     if args.verbose:
         print("Counting students who have passed...")
         # Count how many have passed the course
-    students_passed = (
-        df.groupby('uid').filter(lambda group: all(
-            group.grade == 'complete')).uid.nunique()/df.uid.nunique()
-    )
-    students_no_handins = (
-        df.groupby('uid').filter(lambda group: all(group.grade == 'Not handed in')).uid.nunique()/df.uid.nunique())
+    num_students_passed = df.groupby('uid').filter(lambda group: all(
+        group.grade == 'complete')).uid.nunique()
+    students_passed = (num_students_passed / df.uid.nunique())
+    num_students_no_handins = df.groupby('uid').filter(
+        lambda group: all(group.grade == 'Not handed in')).uid.nunique()
+    students_no_handins = (num_students_no_handins / df.uid.nunique())
 
     if args.verbose:
         print("Plotting...")
@@ -95,15 +95,15 @@ def plot_scores(df, course, args):
     ax1.axis('tight')
 
     ax1.axvline(students_passed, linestyle='dashed', color='tab:green',
-                label=f'Passed: {100*students_passed:.2f}%')
+                label=f'Passed: {100*students_passed:.2f}% - {num_students_passed}/{df.uid.nunique():d}')
     ax1.axvline(students_no_handins, linestyle='dashed', color='tab:red',
-                label=f'No handins: {100*students_no_handins:.2f}%')
+                label=f'No handins: {100*students_no_handins:.2f}% - {num_students_no_handins:d}/{df.uid.nunique():d}')
 
-    ax1.set_xlabel('Grade count')
+    ax1.set_xlabel(f'Percentage out of {df.uid.nunique():d} students')
     ax1.set_xlim(0, 1.01)
     ax1.legend(title="Submissions", loc=4,
                framealpha=0.3,
-               prop={'size': 6})._legend_box.align = 'right'
+               prop={'size': 6})
 
     if df[(df.grade == "complete") & (df.Assignment == "Week 7-8")].empty:
         df = df.append(dict(
