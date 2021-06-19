@@ -156,10 +156,6 @@ for assignment in course.get_assignments():
     # is specific students where chosen filter them out_file
     if args.student_id:
         submissions = [sub for sub in submissions if sub.user_id in args.student_id]
-    # filter based on assignment
-    if args.assignment:
-        submissions = [sub for sub in submissions if course.get_assignment(
-            sub.assignment_id).name in args.assignment]
     if args.verbose:
         print("found:", len(submissions)-sub_len)
         sub_len = len(submissions)
