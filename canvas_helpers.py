@@ -1,17 +1,10 @@
 # Import the Canvas class
-from pprint import pprint
-import sys
-from canvasapi import Canvas
-from glob import glob
-from joblib import Parallel, delayed
-from time import time
-import argparse
-import multiprocessing
-import os
-import progressbar as Pbar
 import re
-import shutil
 import urllib.request
+from glob import glob
+from hashlib import md5
+from pprint import pprint
+from time import time
 from urllib.parse import unquote
 
 
@@ -51,6 +44,15 @@ def print_as_dict(dd):
     for k, v in d.items():
         print(k.ljust(max_key) + ' : ' + str(v))
     print()
+
+
+def md5sum(fname):
+    m = md5()
+    with open(fname, "rb") as f:
+        # read file in chunk and call update on each chunk if file is large.
+        data = f.read()
+        m.update(data)
+    return m.hexdigest()
 
 
 def extract_comment_filenames(comments):
@@ -98,11 +100,3 @@ def create_file_name(submission, course, method='name'):
 
     # Combine to finale output user_name
     return '_'.join([str(i) for i in file_name])
-
-
-def list_assignments(course):
-    assignments = [' - ' + assignment.name for assignment in course.get_assignments()]
-    assignments = "\n".join(assignments)
-    print("Possible assignments are:\n" + assignments)
-
-    sys.exit()
