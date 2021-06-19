@@ -4,3 +4,4 @@ IFS=$'\n\t'
 
 folder=Week*/submissions/*
 rm -rf $folder
+rm -rf tmp/*
