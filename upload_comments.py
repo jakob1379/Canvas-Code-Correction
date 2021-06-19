@@ -1,17 +1,22 @@
 # Import the Canvas class
-from canvas_helpers import (file_to_string,
-                            create_file_name,
-                            extract_comment_filenames,
-                            flatten_list,
-                            bcolors)
-from canvasapi import Canvas
-from glob import glob
-from joblib import Parallel, delayed
 import argparse
 import multiprocessing
-import re
-from tabulate import tabulate
 import os
+import re
+from glob import glob
+
+from joblib import Parallel
+from joblib import delayed
+
+from canvas_helpers import bcolors
+from canvas_helpers import download_url
+from canvas_helpers import extract_comment_filenames
+from canvas_helpers import file_to_string
+from canvas_helpers import bcolors
+from canvas_helpers import md5sum
+from canvasapi import Canvas
+from tabulate import tabulate
+
 parser = argparse.ArgumentParser()
 parser.add_argument("-p", "--parallel",
                     help="grade submissions in parallel",
@@ -28,6 +33,9 @@ parser.add_argument("-a", "--all",
 parser.add_argument("path", nargs='?',
                     default=os.path.join('Week*', 'submissions', '*', ''),
                     help="Path to check")
+parser.add_argument("-d", "--dry",
+                    help="dry run without uploading anything",
+                    action='store_true')
 args = parser.parse_args()
 
 submissions_path = os.path.join('', 'submissions', '*', '')
@@ -58,6 +66,19 @@ def upload_comments(sub, assignments, args):
     # get path to comment zip
     file_to_upload = glob(sub + '*.zip')
 
+    # # Extract checksum from latest comment file if possible
+    if comment_files:
+        try:
+            lates_comment_url = submission.submission_comments[-1]['attachments'][0]['url']
+            fname = submission.submission_comments[-1]['attachments'][0]['display_name']
+            download_url(lates_comment_url, 'tmp/' + fname)
+
+            previous_md5 = md5sum('tmp/' + fname)
+            new_md5 = md5sum(file_to_upload[0])
+        except KeyError or FileNotFoundError:
+            previous_md5 = ""
+            new_md5 = ""
+
     if file_to_upload:
         file_to_upload = file_to_upload[0]
         upload_name = file_to_upload.split(os.sep)[-1]
@@ -69,7 +90,7 @@ def upload_comments(sub, assignments, args):
         return
 
     # Only upload if it isn't already there.
-    if handin_name+'.zip' not in comment_files or args.all:
+    if handin_name+'.zip' not in comment_files or args.all or (previous_md5 != new_md5):
         if args.verbose:
             print("Upload: uploading feedback\n", file_to_upload)
 
@@ -85,12 +106,20 @@ def upload_comments(sub, assignments, args):
                     showindex='always'), '\n')
             else:
                 print(None)
-            print("\nNew comment:\n", upload_name, '\n')
+            print("\nNew comment:\n   ", upload_name, '\n')
+
+            if previous_md5 == new_md5:
+                md5string = bcolors.OKBLUE + "True" + bcolors.ENDC
+            else:
+                md5string = bcolors.FAIL + "False" + bcolors.ENDC
+
+            print("md5sum are equal:", md5string)
             ans = input("Upload: Should new comment be uploaded? [y/N] ")
         if ans.lower() == 'y' or not args.question:
             if args.verbose or args.question:
                 print(bcolors.OKBLUE + "Upload: Comment has been uploaded!\n" + bcolors.ENDC)
-            submission.upload_comment(file_to_upload)
+            if not args.dry:
+                submission.upload_comment(file_to_upload)
         elif args.question:
             print(bcolors.FAIL + "Upload: Comments NOT uploaded." + bcolors.ENDC)
     elif args.verbose:
