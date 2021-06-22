@@ -13,5 +13,4 @@
   * [ ] Make sure all methods are documented
   * [ ] Common example usecases e.g. how to correct a single student/assignment etc.
   * [ ] change submissions_correcting to only have to run a single bash script called "main"
-  * [ ] include how to setup assignment names file
   * [ ] write config files where default params reside
