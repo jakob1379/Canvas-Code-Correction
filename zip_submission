@@ -4,12 +4,12 @@ IFS=$'\n\t'
 
 
 top_dir="$PWD"
-for submission in $(find -mindepth 3 -maxdepth 3  -type d -wholename "*/submissions/*"); do
+for submission in $(find -mindepth 3 -maxdepth 3  -type d -wholename "*submissions*"); do
     cd "$top_dir/$submission"
     bname=$(basename "$submission")
     zip_name=$(basename "$submission" | sed 's/ /+/g')
 
-    if [ -f "$zip_name.zip" ] && [ "errors.log" ]; then
+    if [ -f "$bname.txt" ] && [ "errors.log" ]; then
 	zip -X -q "$zip_name.zip" "$bname.txt" "errors.log"
     fi
 done
