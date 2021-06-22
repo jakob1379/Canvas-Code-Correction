@@ -12,7 +12,7 @@ from pprint import pprint
 import progressbar as Pbar
 from canvasapi import Canvas
 from p_tqdm import p_map
-
+from itertools import chain
 from canvas_helpers import create_file_name
 from canvas_helpers import download_url
 from canvas_helpers import extract_comment_filenames
@@ -51,6 +51,7 @@ parser.add_argument("-n", "--num-cores",
 parser.add_argument("-a", "--assignment",
                     help="Specific assignments to download",
                     metavar="assignement",
+
                     default=[a.name for a in course.get_assignments()],
                     nargs='*',
                     choices=[a.name for a in course.get_assignments()],
@@ -117,7 +118,8 @@ users = course.get_users()
 submissions = []
 sub_len = 0
 count = 0
-old_files = glob(os.path.join('Week*', 'submissions', '*', ''))
+
+old_files = glob(os.path.join("*", 'submissions', '*', ''))
 
 for assignment in [a for a in course.get_assignments() if a.name in args.assignment]:
     # Create paths for zip files

@@ -1,4 +1,7 @@
-#!/bin/bash
+#!/usr/bin/env bash
+set -euo pipefail
+IFS=$'\n\t'
+
 
 displayUsage() {
     echo '
@@ -53,8 +56,7 @@ done
 shift $((OPTIND-1))
 
 if [ $# -eq 0 ];  then
-    echo "some args"
-    assigments=$(ls -d Week*/)
+    assigments=$(find -type d -wholename "*/submissions" | grep -oP "\w+.*/")
 else
     assigments=$@
 fi

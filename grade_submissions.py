@@ -1,20 +1,36 @@
 # Import the Canvas class
-from canvas_helpers import file_to_string, bcolors, flatten_list, bcolors
-from canvasapi import Canvas
-from glob import glob
-import os
-from joblib import Parallel, delayed
 import argparse
 import multiprocessing
-import numpy as np
-import progressbar as Pbar
+import os
 import re
+from functools import partial
+from glob import glob
+from math import floor
+from multiprocessing import cpu_count
 from pathlib import Path
+
+import numpy as np
+from joblib import Parallel
+from joblib import delayed
+
+import progressbar as Pbar
+from canvas_helpers import bcolors
+from canvas_helpers import file_to_string
+from canvas_helpers import flatten_list
+from canvasapi import Canvas
+from p_tqdm import p_map
 
 parser = argparse.ArgumentParser()
 parser.add_argument("-p", "--parallel",
                     help="grade submissions in parallel",
                     action='store_true')
+parser.add_argument("-n", "--num-cpus",
+                    help="description",
+                    metavar="num-cpus",
+                    type=int,
+                    nargs='?',
+                    default=cpu_count())
+
 parser.add_argument("-v", "--verbose",
                     help="set verbose",
                     action='store_true')
@@ -25,13 +41,13 @@ parser.add_argument("-q", "--question",
                     help="question what grade to give",
                     action='store_true')
 parser.add_argument("path", nargs='?',
-                    default=os.path.join('Week*', 'submissions', '*', ''),
+                    default=os.path.join('*', 'submissions', '*', ''),
                     help="Path to check")
-args = parser.parse_args()
+parser.add_argument("-d", "--dry",
+                    help="Dry run. Doesn't change anything",
+                    action='store_true')
 
-submissions_path = os.path.join('', 'submissions', '*', '')
-if submissions_path not in args.path:
-    args.path += submissions_path
+args = parser.parse_args()
 
 
 def grade_submission(sub, assignments, args):
@@ -75,7 +91,7 @@ def grade_submission(sub, assignments, args):
 
     #  %% Print question and retrieve answer
     if args.question:
-        score = round(points - scores_to_complete[assignment_name])
+        score = floor(points - scores_to_complete[assignment_name])
         if score < 0:
             score = bcolors.FAIL
         else:
@@ -97,14 +113,16 @@ def grade_submission(sub, assignments, args):
             return
 
     # %% Edit online grade based on score and/or question answer if any
-    if points >= scores_to_complete[assignment_name] or ans == 'o':
-        submission.edit(submission={'posted_grade': 'complete'})
+    if (points >= scores_to_complete[assignment_name] or ans == 'o') and (not args.dry):
         if args.verbose:
-            print("Completed with points:", points)
-    elif points < scores_to_complete[assignment_name] or ans == 'o':
-        submission.edit(submission={'posted_grade': 'incomplete'})
+            print(bcolors.OKBLUE + "Completed" + bcolors.ENDC + " with points:", points)
+        if not args.dry:
+            submission.edit(submission={'posted_grade': 'complete'})
+    elif (points < scores_to_complete[assignment_name] or ans == 'o'):
         if args.verbose:
-            print("Incomplete with points:", points)
+            print(bcolors.FAIL + "Incomplete " + bcolors.ENDC + " with points:", points)
+        if not args.dry:
+            submission.edit(submission={'posted_grade': 'incomplete'})
     if args.verbose:
         print()
 
@@ -132,18 +150,18 @@ if __name__ == '__main__':
 
     # get users and local points
     users = course.get_users()
-    reports = [rep for rep in sorted(glob(args.path))]
+    reports = sorted(glob(args.path))
 
     # Let's start grading!
-    # pbar = Pbar.ProgressBar(redirect_stdout=True)
-    num_cores = multiprocessing.cpu_count()
-
     if args.parallel:
+        num_cores = multiprocessing.cpu_count()
         if args.verbose:
             print("Grading: runnning in parallel!")
-            Parallel(n_jobs=num_cores)(delayed(
-                grade_submission)(rep, assignments_as_dict, args)
-                for rep in reports)
+        Parallel(n_jobs=num_cores)(
+            delayed(grade_submission)(rep, assignments_as_dict, args) for rep in reports)
+        p_map(partial(grade_submission, assignments=assignments_as_dict,
+              args=args), reports, num_cpus=args.num_cpus)
     else:
-        for rep in reports:
+        pbar = Pbar.ProgressBar(redirect_stdout=True)
+        for rep in pbar(reports):
             grade_submission(rep, assignments_as_dict, args)

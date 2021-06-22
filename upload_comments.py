@@ -4,10 +4,11 @@ import multiprocessing
 import os
 import re
 from glob import glob
-
+from p_tqdm import p_map
+from functools import partial
 from joblib import Parallel
 from joblib import delayed
-
+import shutil
 from canvas_helpers import bcolors
 from canvas_helpers import download_url
 from canvas_helpers import extract_comment_filenames
@@ -15,11 +16,17 @@ from canvas_helpers import file_to_string
 from canvas_helpers import md5sum
 from canvasapi import Canvas
 from tabulate import tabulate
-
+from multiprocessing import cpu_count
 parser = argparse.ArgumentParser()
 parser.add_argument("-p", "--parallel",
                     help="grade submissions in parallel",
                     action='store_true')
+parser.add_argument("-n", "--num-cpus",
+                    help="description",
+                    metavar="num-cpus",
+                    type=int,
+                    nargs='?',
+                    default=cpu_count())
 parser.add_argument("-v", "--verbose",
                     help="set verbose",
                     action='store_true')
@@ -30,16 +37,12 @@ parser.add_argument("-a", "--all",
                     help="upload all feedback RISK OF DUPLICATES ON ABSALON",
                     action='store_true')
 parser.add_argument("path", nargs='?',
-                    default=os.path.join('Week*', 'submissions', '*', ''),
+                    default=os.path.join('*', 'submissions', '*', ''),
                     help="Path to check")
 parser.add_argument("-d", "--dry",
                     help="dry run without uploading anything",
                     action='store_true')
 args = parser.parse_args()
-
-submissions_path = os.path.join('', 'submissions', '*', '')
-if submissions_path not in args.path:
-    args.path += submissions_path
 
 
 def upload_comments(sub, assignments, args):
@@ -89,7 +92,8 @@ def upload_comments(sub, assignments, args):
         return
 
     # Only upload if it isn't already there.
-    if handin_name+'.zip' not in comment_files or args.all or (previous_md5 != new_md5):
+    # or (previous_md5 != new_md5):
+    if (handin_name+'.zip' not in comment_files) or args.all:
         if args.verbose:
             print("Upload: uploading feedback\n", file_to_upload)
 
@@ -105,15 +109,17 @@ def upload_comments(sub, assignments, args):
                     showindex='always'), '\n')
             else:
                 print(None)
-            print("\nNew comment:\n   ", upload_name, '\n')
+            print("New comment:   ", upload_name)
+            print("Old comment:   ", fname, '\n')
 
             if previous_md5 == new_md5:
-                md5string = bcolors.OKBLUE + "True" + bcolors.ENDC
+                md5string = bcolors.OKBLUE + "Yes" + bcolors.ENDC
             else:
-                md5string = bcolors.FAIL + "False" + bcolors.ENDC
-
+                md5string = bcolors.FAIL + "No" + bcolors.ENDC
             print("md5sum are equal:", md5string)
+
             ans = input("Upload: Should new comment be uploaded? [y/N] ")
+
         if ans.lower() == 'y' or not args.question:
             if args.verbose or args.question:
                 print(bcolors.OKBLUE + "Upload: Comment has been uploaded!\n" + bcolors.ENDC)
@@ -156,9 +162,15 @@ num_cores = multiprocessing.cpu_count()
 if args.parallel:
     if args.verbose:
         print("Uploading comments in parallel!")
-    Parallel(n_jobs=num_cores)(delayed(
-        upload_comments)(rep, assignments_as_dict, args) for
-        rep in reports)
+    p_map(
+        partial(upload_comments, assignments=assignments_as_dict, args=args),
+        reports,
+        num_cpus=args.num_cpus)
 else:
     for rep in reports:
         upload_comments(rep, assignments_as_dict, args)
+
+# clear temporary files
+files = glob("tmp/*")
+for fname in files:
+    os.remove(fname)

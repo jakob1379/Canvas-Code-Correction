@@ -1,15 +1,12 @@
 #!/usr/bin/env bash
+set -euo pipefail
+IFS=$'\n\t'
+
 
 top_dir="$PWD"
-
-if [ "" = "$(ls -A Week*/submissions/*/ 2> /dev/null)" ]; then
-    echo "zip_submission: no submissions to zip"
-    exit 0
-fi
-
-for submission in Week*/submissions/*/; do
+for submission in $(find -mindepth 3 -maxdepth 3  -type d -wholename "*/submissions/*"); do
     cd "$top_dir/$submission"
     bname=$(basename "$submission")
     zip_name=$(basename "$submission" | sed 's/ /+/g')
-    zip "$zip_name.zip" "$bname.txt" "errors.log"
+    zip -X -q "$zip_name.zip" "$bname.txt" "errors.log"
 done
