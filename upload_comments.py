@@ -69,17 +69,16 @@ def upload_comments(sub, assignments, args):
     file_to_upload = glob(sub + '*.zip')
 
     # Compare latest online comment with local comment
+    fname = ""
+    new_md5 = md5sum(file_to_upload[0])
     if submission.submission_comments:
         try:
             latest_comment_url = submission.submission_comments[-1]['attachments'][0]['url']
             fname = submission.submission_comments[-1]['attachments'][0]['display_name']
             download_url(latest_comment_url, 'tmp/' + fname)
-
             previous_md5 = md5sum('tmp/' + fname)
-            new_md5 = md5sum(file_to_upload[0])
         except KeyError or FileNotFoundError:
             previous_md5 = ""
-            new_md5 = ""
 
     if file_to_upload:
         file_to_upload = file_to_upload[0]

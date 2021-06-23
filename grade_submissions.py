@@ -30,7 +30,6 @@ parser.add_argument("-n", "--num-cpus",
                     type=int,
                     nargs='?',
                     default=cpu_count())
-
 parser.add_argument("-v", "--verbose",
                     help="set verbose",
                     action='store_true')
@@ -157,11 +156,12 @@ if __name__ == '__main__':
         num_cores = multiprocessing.cpu_count()
         if args.verbose:
             print("Grading: runnning in parallel!")
-        Parallel(n_jobs=num_cores)(
-            delayed(grade_submission)(rep, assignments_as_dict, args) for rep in reports)
+        # Parallel(n_jobs=num_cores)(
+        #     delayed(grade_submission)(rep, assignments_as_dict, args) for rep in reports)
         p_map(partial(grade_submission, assignments=assignments_as_dict,
               args=args), reports, num_cpus=args.num_cpus)
     else:
-        pbar = Pbar.ProgressBar(redirect_stdout=True)
+        redirect_stdout = False if args.question else True
+        pbar = Pbar.ProgressBar(redirect_stdout=redirect_stdout)
         for rep in pbar(reports):
             grade_submission(rep, assignments_as_dict, args)
