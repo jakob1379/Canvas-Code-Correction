@@ -65,23 +65,26 @@ skipped=0
 
 function correction_routine {
     # init variables
-    submission=$1
+    submission="$1"
 
     # evaluate submission
-    $verbose && echo  "evaluating..."
+    $verbose && echo "evaluating..."
     dir="$PWD"
+    orig_file_names=$(find "$folder"/code/ -maxdepth 1 -mindepth 1 -exec basename {} \;)
     /usr/bin/cp -rf "$folder"/code/* "$submission"/
     cd "$submission"
 
     start=$(date +%s)
     if $show_time
     then
-	time python main.py > errors.log 2>&1
+	time sh main.sh 2> /dev/null #python main.py > errors.log 2>&1
     else
-	python main.py > errors.log 2>&1
+	sh main.sh 2> /dev/null # python main.py > errors.log 2>&1
     fi
 
-    rm -rf test/ config.py main.py
+    # delete test files
+    for fname in $orig_file_names; do rm -rf $fname; done # rm -rf test/ config.py main.py
+
     end=$(date +%s)
     if $verbose; then
 	echo "EVALUATED IN: $(( end - start))s"
@@ -117,10 +120,12 @@ totalPath="$week/submissions/"
 if [[ $always ]]
 then
     echo "Correcting all!"
-    folders=$(find $totalPath -mindepth 1 -maxdepth 1 -type d)
+    folders=$(find "$totalPath" -mindepth 1 -maxdepth 1 -type d)
 else
     # Find folders that does not have a points.txt file in them
-    folders=$(find $totalPath -type f -not -name '*_points.txt' -exec dirname {} \;)
+    folders=$(comm -13 \
+		   <(find "$totalPath" -mindepth 2 -maxdepth 2 -type f -name "*points.txt" -exec dirname '{}' \; | sort) \
+		   <(find "$totalPath" -mindepth 1 -maxdepth 1 -type d | sort))
 fi
 
 num_folders=$(echo "$folders" | wc -l)

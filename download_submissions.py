@@ -1,4 +1,5 @@
 # Import the Canvas class
+import cProfile
 import argparse
 import multiprocessing
 import os
@@ -11,7 +12,7 @@ from pprint import pprint
 
 import progressbar as Pbar
 from canvasapi import Canvas
-from p_tqdm import p_map
+from p_tqdm import p_map, p_umap
 from itertools import chain
 from canvas_helpers import create_file_name
 from canvas_helpers import download_url
@@ -155,17 +156,20 @@ for assignment in [a for a in course.get_assignments() if a.name in args.assignm
 print("Submissions to correct:", len(submissions))
 
 # Download submissions
-if submissions:
-    if args.parallel:
-        print("Downloading submissions in parallel!")
-        p_map(
-            partial(download_submission, old_files=old_files,
-                    course=course, args=args),
-            submissions,
-            num_cpus=args.num_cores)
+
+with cProfile.Profile() as pr:
+    if submissions:
+        if args.parallel:
+            print("Downloading submissions in parallel!")
+            p_umap(
+                partial(download_submission, old_files=old_files,
+                        course=course, args=args),
+                submissions,
+                num_cpus=args.num_cores)
+        else:
+            pbar = Pbar.ProgressBar(redirect_stdout=True)
+            for sub in pbar(submissions):
+                download_submission(sub, old_files, course, args)
     else:
-        pbar = Pbar.ProgressBar(redirect_stdout=True)
-        for sub in pbar(submissions):
-            download_submission(sub, old_files, course, args)
-else:
-    print("No submissions to download...")
+        print("No submissions to download...")
+pr.dump_stats("download_umap.pstats")

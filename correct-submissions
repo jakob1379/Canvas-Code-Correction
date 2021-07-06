@@ -2,7 +2,7 @@
 set -euo pipefail
 
 displayUsage() {
-    echo '
+    echo "
 usage:  correct-new-submissions [...]
 operations:
     {-h help}    shows this dialogue
@@ -13,8 +13,11 @@ operations:
     {-s skip}    skip checking requirements
     {-t time}    time to run as daemon. Given as HH:MM:SS
     {-v verbose} verbosity
-    {-w wait}    wait time before next iteration in minutes
-'
+    {-w wait}    Pause for NUMBER seconds.  SUFFIX may be 's' for seconds (the default),
+'m' for minutes, 'h' for hours or 'd' for days.  NUMBER need not be an
+integer.  Given two or more arguments, pause for the amount of time
+specified by the sum of their values.
+"
 }
 
 n=1
@@ -172,6 +175,7 @@ while true; do
 	#                                   waiting                                    #
 	################################################################################"
 	! $daemon && date && echo "Runs left: $n"
+
 	# While loop for creating a rotating /-\
 	while :;
 	do
@@ -180,12 +184,12 @@ while true; do
 			sleep 0.2
 	    done;
 	done &
-	sleep "$w"m
+	sleep $w
 	kill $!
 	trap 'kill $!' SIGTERM
 
 	run_time=$(convert-secs $SECONDS)
-	echo "Daemon has been running in: $run_time"
+	echo -e "\nDaemon has been running for: $run_time"
     fi
     if [ "$n" = "0" ] && [ "$daemon" = "false" ];
     then

@@ -2,15 +2,17 @@
 #+AUTHOR: Jakob G. Aaes
 #+EMAIL: (concat "jakob1379" at-sign "gmail.com")
 
-* Ideas/ToDo [3/10]
+* Ideas/ToDo [5/11]
   This chapter notes ideas for future implementation.
   * [X] Ability to choose what assignments to download and/or specific students
   * [X] What assignment to correct
   * [ ] Instantiate assignment directories based on absalon assignments including the /submissions/ folder
-  * [ ] Randomize the order that handins are being corrected in for a daemon of grade and comment upload it on the fly with multiple instances of a corrector running
-  * [ ] When plotting iterate through all assignments and add empty violin of no one handed in yet
+  * [ ] /on-hold/ Randomize the order that handins are being corrected in for a daemon of grade and comment upload it on the fly with multiple instances of a corrector running
+  * [X] When plotting iterate through all assignments and add empty violin of no one handed in yet
   * [X] when checking new assignments in download_assignments - check on assignment name and comment name/hash
   * [ ] Make sure all methods are documented
   * [ ] Common example usecases e.g. how to correct a single student/assignment etc.
-  * [ ] change submissions_correcting to only have to run a single bash script called "main"
+  * [X] change submissions_correcting to only have to run a single bash script called "main"
   * [ ] write config files where default params reside
+  * [ ] check up on 'students_passed' not defined error
+  * [ ] put everything into 'mains'
