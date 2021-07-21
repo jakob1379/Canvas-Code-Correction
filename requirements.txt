@@ -13,3 +13,4 @@ seaborn
 tabulate
 tqdm
 urllib3
+possum
