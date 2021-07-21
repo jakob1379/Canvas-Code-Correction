@@ -5,20 +5,24 @@ import os
 import re
 from functools import partial
 from glob import glob
-from math import floor
 from multiprocessing import cpu_count
 from pathlib import Path
 
 import numpy as np
+import progressbar as Pbar
+from canvasapi import Canvas
 from joblib import Parallel
 from joblib import delayed
+from math import floor
+from p_tqdm import p_map
 
-import progressbar as Pbar
 from canvas_helpers import bcolors
 from canvas_helpers import file_to_string
 from canvas_helpers import flatten_list
-from canvasapi import Canvas
-from p_tqdm import p_map
+
+import configparser
+config = configparser.ConfigParser()
+config.read('config.ini')
 
 parser = argparse.ArgumentParser()
 parser.add_argument("-p", "--parallel",

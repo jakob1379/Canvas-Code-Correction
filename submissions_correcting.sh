@@ -123,9 +123,15 @@ then
     folders=$(find "$totalPath" -mindepth 1 -maxdepth 1 -type d)
 else
     # Find folders that does not have a points.txt file in them
-    folders=$(comm -13 \
-		   <(find "$totalPath" -mindepth 2 -maxdepth 2 -type f -name "*points.txt" -exec dirname '{}' \; | sort) \
-		   <(find "$totalPath" -mindepth 1 -maxdepth 1 -type d | sort))
+    # folders=$(comm -13 \
+    #		   <(find "$totalPath" -mindepth 2 -maxdepth 2 -type f -name "*points.txt" -exec dirname '{}' \; | sort) \
+    #		   <(find "$totalPath" -mindepth 1 -maxdepth 1 -type d | sort))
+    folders=$(find "$totalPath" \
+		   -mindepth 1 \
+		   -maxdepth 1 \
+		   -type d \
+		   -exec sh -c '[[ $(ls -A "{}"/*points.txt 2>/dev/null) ]] && exit 1; true' \; \
+		   -print)
 fi
 
 num_folders=$(echo "$folders" | wc -l)
