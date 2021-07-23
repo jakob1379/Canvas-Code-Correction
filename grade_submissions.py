@@ -93,8 +93,9 @@ def grade_submission(sub, assignments, args):
         return
 
     #  %% Print question and retrieve answer
+    points_needed = float(config['scores_to_complete'][assignment_name])
     if args.question:
-        score = floor(points - scores_to_complete[assignment_name])
+        score = floor(points - points_needed)
         if score < 0:
             score = bcolors.FAIL
         else:
@@ -103,12 +104,11 @@ def grade_submission(sub, assignments, args):
         print(30*'-')
         print(file_to_string(sub + handin_name + '.txt'))
         print("\nPoints in file:",
-              score+str(points)+bcolors.ENDC+'/'+str(scores_to_complete[assignment_name]))
-        print("\nPoints to complete", assignment_name+':',
-              scores_to_complete[assignment_name])
+              score+str(points)+bcolors.ENDC+'/'+str(points_needed))
 
         color = bcolors.OKBLUE if current_grade == 'complete' else bcolors.FAIL
         print("Current grade:", color+current_grade+bcolors.ENDC)
+        # TODO: insert 'is late'
         ans = str(input("Grade the student?: [y/N]: ") or 'n').lower()
         if ans == 'n':
             if args.verbose:
@@ -116,12 +116,12 @@ def grade_submission(sub, assignments, args):
             return
 
     # %% Edit online grade based on score and/or question answer if any
-    if (points >= scores_to_complete[assignment_name] or ans == 'o') and (not args.dry):
+    if (points >= points_needed or ans == 'o') and (not args.dry):
         if args.verbose:
             print(bcolors.OKBLUE + "Completed" + bcolors.ENDC + " with points:", points)
         if not args.dry:
             submission.edit(submission={'posted_grade': 'complete'})
-    elif (points < scores_to_complete[assignment_name] or ans == 'o'):
+    elif (points < points_needed or ans == 'o'):
         if args.verbose:
             print(bcolors.FAIL + "Incomplete " + bcolors.ENDC + " with points:", points)
         if not args.dry:
@@ -130,38 +130,28 @@ def grade_submission(sub, assignments, args):
         print()
 
 
-# %% Init
-if __name__ == '__main__':
+def main():
     if args.verbose:
         print('Initialising canvas...')
 
-    # Canvas API URL
-    domain = 'absalon.ku.dk'
-    API_URL = "https://"+domain+"/"
-
-    # Canvas API key
-    API_KEY = file_to_string('token')
-
     # Initialize a new Canvas object
-    canvas = Canvas(API_URL, API_KEY)
+    canvas = Canvas(config['DEFAULT']['apiurl'], config['DEFAULT']['token'])
 
     # init course
-    course_id = file_to_string('course_id')
+    course_id = config['DEFAULT']['courseid']
     course = canvas.get_course(course_id)
-    assignments_as_dict = {ass.name.capitalize().replace(' ', ''): ass
+    # assignments_as_dict = {ass.name.capitalize().replace(' ', ''): ass
+    #                        for ass in course.get_assignments()}
+    assignments_as_dict = {ass.name: ass
                            for ass in course.get_assignments()}
 
     # get users and local points
-    users = course.get_users()
     reports = sorted(glob(args.path))
 
     # Let's start grading!
     if args.parallel:
-        num_cores = multiprocessing.cpu_count()
         if args.verbose:
             print("Grading: runnning in parallel!")
-        # Parallel(n_jobs=num_cores)(
-        #     delayed(grade_submission)(rep, assignments_as_dict, args) for rep in reports)
         p_map(partial(grade_submission, assignments=assignments_as_dict,
               args=args), reports, num_cpus=args.num_cpus)
     else:
@@ -169,3 +159,7 @@ if __name__ == '__main__':
         pbar = Pbar.ProgressBar(redirect_stdout=redirect_stdout)
         for rep in pbar(reports):
             grade_submission(rep, assignments_as_dict, args)
+
+
+if __name__ == '__main__':
+    main()

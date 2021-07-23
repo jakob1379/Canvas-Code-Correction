@@ -19,19 +19,18 @@ from canvas_helpers import download_url
 from canvas_helpers import extract_comment_filenames
 from canvas_helpers import file_to_string
 
-# Canvas API URL
-API_URL = "https://absalon.ku.dk/"
-
-# Canvas API key
-API_KEY = file_to_string('token')
+import configparser
+config = configparser.ConfigParser()
+config.read('config.ini')
 
 # Initialize a new Canvas object
-canvas = Canvas(API_URL, API_KEY)
+canvas = Canvas(config['DEFAULT']['apiurl'], config['DEFAULT']['token'])
 
 # init course
-course_id = file_to_string('course_id')
+course_id = config['DEFAILT']['courseid']
 course = canvas.get_course(course_id)
 
+# set up argparse
 parser = argparse.ArgumentParser("""
 Program to download assignments. It needs two files next to it
     course_id: Containing the course id
@@ -52,7 +51,6 @@ parser.add_argument("-n", "--num-cores",
 parser.add_argument("-a", "--assignment",
                     help="Specific assignments to download",
                     metavar="assignement",
-
                     default=[a.name for a in course.get_assignments()],
                     nargs='*',
                     choices=[a.name for a in course.get_assignments()],
@@ -77,6 +75,11 @@ parser.add_argument("--dry",
                     action='store_true')
 
 args = parser.parse_args()
+
+if args.list_assignments:
+    print("Possible assignments are:")
+    print('\n'.join([' - '+a.name for a in course.get_assignments()]))
+    sys.exit()
 
 
 def download_submission(sub, old_files, course, args):
@@ -107,57 +110,49 @@ def download_submission(sub, old_files, course, args):
             print("Submission has no attachment:", sub.id)
 
 
-if args.list_assignments:
-    print("Possible assignments are:")
-    print('\n'.join([' - '+a.name for a in course.get_assignments()]))
-    sys.exit()
+def find_submissions(args, course):
+    # Walk through all assignments and find submissions
+    submissions = []
+    sub_len = 0
+    count = 0
 
-# get users
-users = course.get_users()
+    for assignment in [a for a in course.get_assignments() if a.name in args.assignment]:
+        if args.verbose:
+            print("Checking " + assignment.name + "...")
+        if args.download == "all":
+            submissions += list(assignment.get_submissions())
+        elif args.download == "failed":
+            submissions += [sub for sub in assignment.get_submissions()
+                            if sub.grade == 'incomplete']
+        elif args.download == "uncommented":
+            for sub in assignment.get_submissions(include='submission_comments'):
+                comment_files = extract_comment_filenames(
+                    sub.submission_comments)
+                submission_fname = create_file_name(sub, course) + '.zip'
+                if submission_fname not in comment_files:
+                    submissions.append(sub)
+        elif args.download == "new":
+            for sub in assignment.get_submissions():
+                if (vars(sub).get('attachments') is not None and
+                        (not sub.grade_matches_current_submission or sub.grade is None)):
+                    submissions.append(sub)
 
-# Walk through all assignments
-submissions = []
-sub_len = 0
-count = 0
-
-old_files = glob(os.path.join("*", 'submissions', '*', ''))
-
-for assignment in [a for a in course.get_assignments() if a.name in args.assignment]:
-    # Create paths for zip files
-    if args.verbose:
-        print("Checking " + assignment.name + "...")
-
-    if args.download == "all":
-        submissions += list(assignment.get_submissions())
-    elif args.download == "failed":
-        submissions += [sub for sub in assignment.get_submissions()
-                        if sub.grade == 'incomplete']
-    elif args.download == "uncommented":
-        for sub in assignment.get_submissions(include='submission_comments'):
-            comment_files = extract_comment_filenames(
-                sub.submission_comments)
-            submission_fname = create_file_name(sub, course) + '.zip'
-            if submission_fname not in comment_files:
-                submissions.append(sub)
-    elif args.download == "new":
-        for sub in assignment.get_submissions():
-            if vars(sub).get('attachments') is not None and (
-                    not sub.grade_matches_current_submission or
-                    sub.grade is None):
-                submissions.append(sub)
-
-    # is specific students where chosen filter them out_file
+    # if specific students where chosen filter them
     if args.student_id:
         submissions = [sub for sub in submissions if sub.user_id in args.student_id]
     if args.verbose:
         print("found:", len(submissions)-sub_len)
         sub_len = len(submissions)
 
-print("Submissions to correct:", len(submissions))
+    return submissions
 
-# Download submissions
 
-with cProfile.Profile() as pr:
+def main():
+    old_files = glob(os.path.join("*", 'submissions', '*', ''))
+    submissions = find_submissions(args, course)
+    print("Submissions to correct:", len(submissions))
+
+    # Download submissions
     if submissions:
         if args.parallel:
             print("Downloading submissions in parallel!")
@@ -172,4 +167,7 @@ with cProfile.Profile() as pr:
                 download_submission(sub, old_files, course, args)
     else:
         print("No submissions to download...")
-pr.dump_stats("download_umap.pstats")
+
+
+if __name__ == '__main__':
+    main()
