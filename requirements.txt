@@ -1,15 +1,15 @@
 canvasapi
-ipython
 joblib
 matplotlib
 multiprocess
 numpy
 pandas
-pandasgui
 plotly
+p-tqdm
 progressbar2
 requests
 scipy
 seaborn
 tabulate
 tqdm
+urllib3

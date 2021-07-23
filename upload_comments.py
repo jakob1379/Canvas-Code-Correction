@@ -17,6 +17,11 @@ from canvas_helpers import md5sum
 from canvasapi import Canvas
 from tabulate import tabulate
 from multiprocessing import cpu_count
+
+import configparser
+config = configparser.ConfigParser()
+config.read('config.ini')
+
 parser = argparse.ArgumentParser()
 parser.add_argument("-p", "--parallel",
                     help="grade submissions in parallel",
@@ -130,46 +135,41 @@ def upload_comments(sub, assignments, args):
         print(bcolors.WARNING + "Upload: feedback already uploaded\n" + bcolors.ENDC)
 
 
-# %% Init
-if args.verbose:
-    print('Initialising canvas...')
-
-# Canvas API URL
-domain = 'absalon.ku.dk'
-API_URL = "https://"+domain+"/"
-
-# Canvas API key
-API_KEY = file_to_string('token')
-
-# Initialize a new Canvas object
-canvas = Canvas(API_URL, API_KEY)
-
-# init course
-course_id = file_to_string('course_id')
-course = canvas.get_course(course_id)
-assignments_as_dict = {ass.name.capitalize().replace(' ', ''): ass
-                       for ass in course.get_assignments()}
-
-# get users and local points
-users = course.get_users()
-reports = sorted(glob(args.path))
-
-# Let's start grading!
-num_cores = multiprocessing.cpu_count()
-
-
-if args.parallel:
+def main():
+    # %% Init
     if args.verbose:
-        print("Uploading comments in parallel!")
-    p_map(
-        partial(upload_comments, assignments=assignments_as_dict, args=args),
-        reports,
-        num_cpus=args.num_cpus)
-else:
-    for rep in reports:
-        upload_comments(rep, assignments_as_dict, args)
+        print('Initialising canvas...')
 
-# clear temporary files
-files = glob("tmp/*")
-for fname in files:
-    os.remove(fname)
+    # Initialize a new Canvas object
+    canvas = Canvas(config['DEFAULT']['apiurl'], config['DEFAULT']['token'])
+
+    # init course
+    course_id = config['DEFAILT']['courseid']
+    course = canvas.get_course(course_id)
+    assignments_as_dict = {ass.name.capitalize().replace(' ', ''): ass
+                           for ass in course.get_assignments()}
+
+    # get users
+    reports = sorted(glob(args.path))
+
+    # Let's start grading!
+
+    if args.parallel:
+        if args.verbose:
+            print("Uploading comments in parallel!")
+            p_map(
+                partial(upload_comments, assignments=assignments_as_dict, args=args),
+                reports,
+                num_cpus=args.num_cpus)
+    else:
+        for rep in reports:
+            upload_comments(rep, assignments_as_dict, args)
+
+    # clear temporary files
+    files = glob("tmp/*")
+    for fname in files:
+        os.remove(fname)
+
+
+if __name__ == '__main__':
+    main()

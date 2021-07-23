@@ -1,3 +1,4 @@
+import configparser
 from matplotlib.lines import Line2D
 from canvas_helpers import file_to_string
 from canvasapi import Canvas
@@ -14,6 +15,8 @@ import seaborn as sns
 from p_tqdm import p_map
 import numpy as np
 plt.style.use('ggplot')
+config = configparser.ConfigParser()
+config.read('config.ini')
 
 parser = argparse.ArgumentParser()
 parser.add_argument("-s", "--show",
@@ -38,20 +41,51 @@ parser.add_argument("-v", "--verbose",
 args = parser.parse_args()
 
 
-def count_students_no_handins(course, args):
-    students = [student.id for student in course.get_users(enrollment_type=['student'])]
+def load_data(course):
+    assignments = list(course.get_assignments())
 
-    assignments = course.get_assignments()
-    pool = multiprocessing.Pool(processes=args.num_cores)
-    students_passed = sum(
-        pool.map(partial(student_passed, assignments=assignments), students))
+    if args.verbose:
+        print("Fetching submissions from each assignment...")
+    pbar = Pbar.ProgressBar(redirect_stdout=True)
+    scores = list(chain(*[
+        [(assignment.name,
+          sub.grade,
+          sub.attempt,
+          sub.user_id,
+          course.get_user(sub.user_id).name)
+         for sub in list(assignment.get_submissions())]
+        for assignment in pbar(assignments)]))
 
-    # normalize
-    students_passed /= len(students)
-    return students_passed
+    # Parallel execution does not work
+    # scores = list(chain(*[
+    #     p_map(
+    #         lambda sub: (
+    #             assignment.name,
+    #             sub.grade,
+    #             sub.attempts,
+    #             sub.user_id,
+    #             course.get_user(sub.user_id).name),
+    #         list(assignment.get_submissions()))
+    #     for assignment in assignments]))
+
+    # Count unique values i.e. complete, incomplete and not handed in
+    df = pd.DataFrame(scores, columns=['Assignment',
+                                       'grade', "attempts", "uid", "uname"])
+    df.loc[df.Assignment == "Week1-2", "Assignment"] = "Week 1-2"
+    df.grade.fillna('Not handed in', inplace=True)  # replace nan with not handed in
+    df.attempts.fillna(0, inplace=True)
+    df = (
+        df.apply(pd.to_numeric, errors="coerce")
+        .fillna(df)
+        .reset_index(drop=True)
+    )
+
+    return df
 
 
-def plot_scores(df, course, args):
+def plot_scores(df_in, arguments):
+    df = df_in.copy()
+
     plot_data = (
         df
         .groupby(["Assignment", "grade"])
@@ -71,7 +105,7 @@ def plot_scores(df, course, args):
     # Remove unnecessary multindex
     df2.columns = df2.columns.droplevel(0)
 
-    if args.verbose:
+    if arguments.verbose:
         print("Counting students who have passed...")
         # Count how many have passed the course
     num_students_passed = df.groupby('uid').filter(lambda group: all(
@@ -83,7 +117,7 @@ def plot_scores(df, course, args):
     students_attempted_and_passed = (
         num_students_passed / (df.uid.nunique() - num_students_no_handins))
 
-    if args.verbose:
+    if arguments.verbose:
         print("Plotting...")
     fig, (ax1, ax2) = plt.subplots(
         nrows=1, ncols=2,
@@ -172,70 +206,32 @@ def plot_scores(df, course, args):
     fig.suptitle(datetime.now().strftime("%b %d %Y %T"))
     fig.tight_layout()
 
-    if args.verbose:
+    if arguments.verbose:
         print("Saving figure...")
 
-    if args.show:
+    if arguments.show:
         plt.show()
     else:
-        fig.savefig(args.out, format='pdf')
+        fig.savefig(arguments.out, format='pdf')
+
+
+def main():
+    if args.verbose:
+        print("setting up connection to absalon...")
+
+    # Initialize a new Canvas object
+    canvas = Canvas(config['DEFAULT']['apiurl'], config['DEFAULT']['token'])
+
+    # init course
+    course_id = config['DEFAILT']['courseid']
+    course = canvas.get_course(course_id)
+
+    df = load_data(course)
+    if args.verbose:
+        print("Aggregating data for plotting...")
+    plot_scores(df, args)
+    print("Done!")
 
 
 if __name__ == '__main__':
-    if args.verbose:
-        print("setting up connection to absalon...")
-        # Canvas API URL
-    domain = 'absalon.ku.dk'
-    API_URL = "https://"+domain+"/"
-
-   # Canvas API key
-    API_KEY = file_to_string('token')
-
-    # Initialize a new Canvas object
-    canvas = Canvas(API_URL, API_KEY)
-
-    # init course
-    course_id = file_to_string('course_id')
-    course = canvas.get_course(course_id)
-    assignments = list(course.get_assignments())
-
-    if args.verbose:
-        print("Fetching submissions...")
-    pbar = Pbar.ProgressBar(redirect_stdout=True)
-    scores = list(chain(*[
-        [(assignment.name,
-          sub.grade,
-          sub.attempt,
-          sub.user_id,
-          course.get_user(sub.user_id).name)
-         for sub in list(assignment.get_submissions())]
-        for assignment in pbar(assignments)]))
-
-    # Parallel execution does not work
-    # scores = list(chain(*[
-    #     p_map(
-    #         lambda sub: (
-    #             assignment.name,
-    #             sub.grade,
-    #             sub.attempts,
-    #             sub.user_id,
-    #             course.get_user(sub.user_id).name),
-    #         list(assignment.get_submissions()))
-    #     for assignment in assignments]))
-
-    # Count unique values i.e. complete, incomplete and not handed in
-    df = pd.DataFrame(scores, columns=['Assignment',
-                                       'grade', "attempts", "uid", "uname"])
-    df.loc[df.Assignment == "Week1-2", "Assignment"] = "Week 1-2"
-    df.grade.fillna('Not handed in', inplace=True)  # replace nan with not handed in
-    df.attempts.fillna(0, inplace=True)  # replace nan with not handed in
-    df = (
-        df.apply(pd.to_numeric, errors="coerce")
-        .fillna(df)
-        .reset_index(drop=True)
-    )
-
-    if args.verbose:
-        print("Aggregating data for plotting...")
-    plot_scores(df, course, args)
-    print("Done!")
+    main()
