@@ -51,4 +51,3 @@
   * [X] when checking new assignments in download_assignments - check on assignment name and comment name/hash
   * [X] change submissions_correcting to only have to run a single bash script called "main"
   * [X] write config files where default params reside
-2
