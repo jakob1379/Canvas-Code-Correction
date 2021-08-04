@@ -2,7 +2,7 @@
 #+AUTHOR: Jakob G. Aaes
 #+EMAIL: (concat "jakob1379" at-sign "gmail.com")
 
-* Ideas/ToDo [16/37]
+* Ideas/ToDo [17/41]
   :PROPERTIES:
   :COOKIE_DATA: recursive
   :END:
@@ -23,6 +23,7 @@
     - [ ] [[file:plot_scores.py::41][load_data]]
     - [ ] [[file:plot_scores.py::83][plot_scores]]
     - [ ] [[file:upload_comments.py::48][upload_comments]]
+  * [ ] Put Valgrind somewhere else of let it be part of the code supplied by course admin as it does not strictly belong in the framework
   * [ ] Setup script:
     This script should go through all the necessary steps to start running the code checking
     1. [ ] enter token
@@ -33,8 +34,8 @@
     6. [ ] Upload scores or not i.e. is the assignments scored or simply passed/failed
   * [ ] Instantiate assignment directories based on absalon assignments including the /submissions/ folder
   * [ ] Common example usecases e.g. how to correct a single student/assignment etc.
-  * [-] Config-related
-    - [ ] add allowance for late submission or marked as failed in config
+  * [X] Config-related
+    - #[-] add allowance for late submission or marked as failed in config --- Not necessary as this should be set in absalon for each assignment
     - [X] Should token be in the config?
     - [X] in [[file:grade_submissions.py]] change scores to be read from config files
     - [X] read url and courses from config
