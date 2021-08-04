@@ -19,6 +19,7 @@ Go to https://absalon.ku.dk/profile/settings and generate a new token"
     ecode=1
 fi
 
+# Check for installed packages
 installed_packages=$(pip3 freeze | awk -F '==' '{print $1}' | sort | uniq)
 not_installed=$(comm -23 \
 		     <(cat requirements.txt | sort) \
@@ -36,21 +37,22 @@ then
     ecode=1
 fi
 
+# Check if the some command exists
 if ! command -v zip &> /dev/null
 then
-    echo "zip: could not be found"
+    echo "command zip: could not be found"
     ecode=1
 fi
 
 if ! command -v unzip &> /dev/null
 then
-    echo "unzip: could not be found"
+    echo "command unzip: could not be found"
     ecode=1
 fi
 
 if ! command -v valgrind &> /dev/null
 then
-    echo "valgrind: could not be found"
+    echo "command valgrind: could not be found"
     ecode=1
 fi
 
