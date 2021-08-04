@@ -8,19 +8,13 @@ displayUsage() {
 usage:  process_submissions.sh [-f -p -a -t -h] [H1,..,Hn]
 operations:
     {-h help} shows this dialogue
-    {-p parallel} downloads and check in parallel
+    {-p plagiarism check} check for plagiarism
     {-a all} Checks all assignments again
-    {-t time} show time
 '
 }
 
 # Arguments
 args='-'
-parallel=false
-correct_all=false
-show_time=false
-reverse=false
-failed=false
 while getopts ":haptv" opt; do
     case ${opt} in
 	h)
@@ -28,20 +22,13 @@ while getopts ":haptv" opt; do
 	    exit 1
 	    ;;
 	a)
-	    correct_all=true
 	    args+='a'
 	    ;;
 	p)
-	#     echo "Parallelization enabled!"
-	#     parallel=true
-	#     args+='p'
+	    plagiarism=true
 	    ;;
 	t)
-	    show_time=true
 	    args+='t'
-	    ;;
-	v)
-	    verbose=true
 	    ;;
 	\?)
 	    echo "Invalid option: $OPTARG" 1>&2
@@ -70,6 +57,12 @@ for folder in $assigments; do
     echo "INFO: Unzipping"
     bash submissions_unzip.sh "$folder"
     echo "INFO: Done!"
+
+    if [ ! -z "$plagiarism" ]
+    then
+	echo "INfO: Checking plagiarism"
+	./plagiarism-check.sh "$folder"
+    fi
 
     echo "INFO: Correcting submissions"
     if [ "$args" != '-' ];
