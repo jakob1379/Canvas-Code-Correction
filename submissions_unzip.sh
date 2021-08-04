@@ -1,6 +1,6 @@
 #!/bin/bash
 
-if [ $# -ne 1 ] || [ ! -d $1 ]
+if [ $# -ne 1 ] || [ ! -d "$1" ]
 then
     echo "submissions_unzip: Needs exactly one directory"
     exit 1
