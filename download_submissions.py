@@ -23,18 +23,26 @@ import configparser
 config = configparser.ConfigParser()
 config.read('config.ini')
 
-# Initialize a new Canvas object
-canvas = Canvas(config['DEFAULT']['apiurl'], config['DEFAULT']['token'])
-
 # init course
-course_id = config['DEFAILT']['courseid']
+if not config['DEFAULT'].get('courseid'):
+    print("No courseid found in config!")
+    sys.exit(2)
+elif not config['DEFAULT'].get('token'):
+    print("No token found in config!")
+    sys.exit(2)
+
+# Initialize a new Canvas object
+token = config['DEFAULT']['token']
+url = config['DEFAULT']['apiurl']
+canvas = Canvas(url, token)
+
+# create course object
+course_id = config['DEFAULT']['courseid']
 course = canvas.get_course(course_id)
 
 # set up argparse
 parser = argparse.ArgumentParser("""
-Program to download assignments. It needs two files next to it
-    course_id: Containing the course id
-    token:     Your personal accesstoken from canvas
+Tool to download assignments.
 Default behaviour is to only download handins that have been changed""")
 parser.add_argument("-v", "--verbose",
                     help="sets verbosity",
@@ -87,8 +95,9 @@ def download_submission(sub, old_files, course, args):
         url = sub.attachments[0]['url']
         if url:
             file_name = create_file_name(sub, course)
-            directory = course.get_assignment(sub.assignment_id).name.replace(' ', '')
-            directory = os.path.join(directory, 'submissions', '')
+            assignment_name = course.get_assignment(sub.assignment_id).name
+            # assignment_name = assignment_name.replace(' ', '') # not necessary, but nice for more compact naming.
+            directory = os.path.join(assignment_name, 'submissions', '')
             Path(directory).mkdir(parents=True, exist_ok=True)
 
             # check if user has old submissions
