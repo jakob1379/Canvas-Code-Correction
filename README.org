@@ -2,7 +2,7 @@
 #+AUTHOR: Jakob G. Aaes
 #+EMAIL: (concat "jakob1379" at-sign "gmail.com")
 
-* Ideas/ToDo [17/41]
+* Ideas/ToDo [17/43]
   :PROPERTIES:
   :COOKIE_DATA: recursive
   :END:
@@ -32,8 +32,10 @@
     4. [ ] setup assignments folders according to the assignments on absalon
     5. [ ] Enter points required for completing each assignment
     6. [ ] Upload scores or not i.e. is the assignments scored or simply passed/failed
+  * [ ] find a better name than correct-submissions
   * [ ] Instantiate assignment directories based on absalon assignments including the /submissions/ folder
   * [ ] Common example usecases e.g. how to correct a single student/assignment etc.
+  * [ ] Move assignments to a single folder called *assignments* for easier iteration through each assignment
   * [X] Config-related
     - #[-] add allowance for late submission or marked as failed in config --- Not necessary as this should be set in absalon for each assignment
     - [X] Should token be in the config?
