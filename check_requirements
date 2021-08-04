@@ -31,11 +31,19 @@ then
     for val in $not_installed
     do
 	echo " - $val"
+
+	if [ "$val" -eq "mossum" ]; then
+	    echo "install mossum wiht:"
+	    echo "pip3 install git+https://github.com/hjalti/mossum@master"
+	fi
     done
 
     echo "Please install before running the correction framework..."
     ecode=1
+
+
 fi
+
 
 # Check if the some command exists
 if ! command -v zip &> /dev/null
