@@ -48,6 +48,7 @@ function check_assignment {
     bash mossurl2table.sh "$url" >> "$assignment/similarity.txt"
 
     # Print lines that crosses the cutoff value
+
     suspecious_handins=$(awk -v cutoff="$cutoff" '{ if ($3 >= cutoff) { print } }' "$assignment/similarity.txt")
     if [ ! -z "$suspecious_handins" ]
     then
@@ -70,6 +71,6 @@ function check_assignment {
 # combine folders and extensions into regexes for moss
 for folder in $@; do
     echo "Checking: $folder"
-    check_assignment "$folder" &q
+    check_assignment "$folder" &
 done
 wait
