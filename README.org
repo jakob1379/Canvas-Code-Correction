@@ -29,6 +29,7 @@
   * [ ] Common example usecases e.g. how to correct a single student/assignment etc.
   * [ ] Move assignments to a single folder called *assignments* for easier iteration through each assignment
   * [ ] insert title in plagiarism check at mossum when PR has been accepted.
+  * [ ] in [[file:grade_submissions.py]] implement the config.ini for uploading scores instead if grade
   * [X] Put Valgrind somewhere else or let it be part of the code supplied by course admin as it does not strictly belong in the framework
   * [X] Setup script:
     This script should go through all the necessary steps to start running the code checking
