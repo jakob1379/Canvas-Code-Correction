@@ -122,17 +122,21 @@ def upload_comments(sub, assignments, args):
                 md5string = bcolors.FAIL + "No" + bcolors.ENDC
             print("md5sum are equal:", md5string)
 
-            ans = input("Upload: Should new comment be uploaded? [y/N] ")
+            while ans not in {'y', 'n'}:
+                ans = (input("Upload: Should new comment be uploaded? [y/N] ")
+                       or 'n').lower()
 
         if ans.lower() == 'y' or not args.question:
-            if args.verbose or args.question:
-                print(bcolors.OKBLUE + "Upload: Comment has been uploaded!\n" + bcolors.ENDC)
             if not args.dry:
                 submission.upload_comment(file_to_upload)
-        elif args.question:
-            print(bcolors.FAIL + "Upload: Comments NOT uploaded." + bcolors.ENDC)
+                if args.verbose or args.question:
+                    comment = bcolors.OKBLUE + "Upload: Comment has been uploaded!\n"
+        elif args.question or args.verbose:
+            comment = bcolors.FAIL + "Upload: Comments NOT uploaded.\n"
     elif args.verbose:
-        print(bcolors.WARNING + "Upload: feedback already uploaded\n" + bcolors.ENDC)
+        comment = bcolors.WARNING + "Upload: feedback already uploaded\n"
+    if args.verbose:
+        print(comment + bcolors.ENDC)
 
 
 def main():
