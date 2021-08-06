@@ -180,7 +180,9 @@ def plot_scores(df_in, arguments):
         data=df[df.grade == "complete"],
         y="Assignment",
         x="attempts",
-        ax=ax2
+        ax=ax2,
+        linewidth=0,
+        color=".8"
     )
 
     sns.stripplot(
@@ -189,7 +191,8 @@ def plot_scores(df_in, arguments):
         y="Assignment",
         jitter=True,
         zorder=1,
-        ax=ax2
+        ax=ax2,
+        alpha=0.25
     )
 
     ax2.text(0.98, 0.27,
@@ -223,7 +226,7 @@ def main():
     canvas = Canvas(config['DEFAULT']['apiurl'], config['DEFAULT']['token'])
 
     # init course
-    course_id = config['DEFAILT']['courseid']
+    course_id = config['DEFAULT']['courseid']
     course = canvas.get_course(course_id)
 
     df = load_data(course)
