@@ -58,13 +58,6 @@ then
     ecode=1
 fi
 
-if ! command -v valgrind &> /dev/null
-then
-    echo "command valgrind: could not be found"
-    ecode=1
-fi
-
-
 if [ "$ecode" == 0 ]
 then
     exit 0
