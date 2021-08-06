@@ -122,8 +122,6 @@ def grade_submission(sub, assignments, args):
             print(bcolors.FAIL + "Incomplete " + bcolors.ENDC + " with points:", points)
         if not args.dry:
             submission.edit(submission={'posted_grade': 'incomplete'})
-    if args.verbose:
-        print()
 
 
 def main():
