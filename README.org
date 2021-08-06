@@ -2,7 +2,7 @@
 #+AUTHOR: Jakob G. Aaes
 #+EMAIL: (concat "jakob1379" at-sign "gmail.com")
 
-* Ideas/ToDo [17/43]
+* Ideas/ToDo [25/45]
   :PROPERTIES:
   :COOKIE_DATA: recursive
   :END:
@@ -23,19 +23,21 @@
     - [ ] [[file:plot_scores.py::41][load_data]]
     - [ ] [[file:plot_scores.py::83][plot_scores]]
     - [ ] [[file:upload_comments.py::48][upload_comments]]
-  * [ ] Put Valgrind somewhere else of let it be part of the code supplied by course admin as it does not strictly belong in the framework
-  * [ ] Setup script:
-    This script should go through all the necessary steps to start running the code checking
-    1. [ ] enter token
-    2. [ ] check validity of token
-    3. [ ] enter course id
-    4. [ ] setup assignments folders according to the assignments on absalon
-    5. [ ] Enter points required for completing each assignment
-    6. [ ] Upload scores or not i.e. is the assignments scored or simply passed/failed
   * [ ] find a better name than correct-submissions
+  * [ ] change plotting according to Kenny' suggestions
   * [ ] Instantiate assignment directories based on absalon assignments including the /submissions/ folder
   * [ ] Common example usecases e.g. how to correct a single student/assignment etc.
   * [ ] Move assignments to a single folder called *assignments* for easier iteration through each assignment
+  * [ ] insert title in plagiarism check at mossum when PR has been accepted.
+  * [X] Put Valgrind somewhere else or let it be part of the code supplied by course admin as it does not strictly belong in the framework
+  * [X] Setup script:
+    This script should go through all the necessary steps to start running the code checking
+    1. [X] enter token
+    2. [X] check validity of token
+    3. [X] enter course id
+    4. [X] setup assignments folders according to the assignments on absalon
+    5. [X] Enter points required for completing each assignment
+    6. [X] Upload scores or not i.e. is the assignments scored or simply passed/failed
   * [X] Config-related
     - #[-] add allowance for late submission or marked as failed in config --- Not necessary as this should be set in absalon for each assignment
     - [X] Should token be in the config?
