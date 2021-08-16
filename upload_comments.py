@@ -1,14 +1,10 @@
 # Import the Canvas class
 import argparse
-import multiprocessing
 import os
 import re
 from glob import glob
 from p_tqdm import p_map
 from functools import partial
-from joblib import Parallel
-from joblib import delayed
-import shutil
 from canvas_helpers import bcolors
 from canvas_helpers import download_url
 from canvas_helpers import extract_comment_filenames
@@ -50,7 +46,7 @@ parser.add_argument("-d", "--dry",
 args = parser.parse_args()
 
 
-def upload_comments(sub, assignments, args):
+def upload_comments(sub, assignments):
     if args.verbose:
         out_str = 'Checking: ' + sub
         print(out_str)
@@ -141,10 +137,11 @@ def main():
         print('Initialising canvas...')
 
     # Initialize a new Canvas object
-    canvas = Canvas(config['DEFAULT']['apiurl'], config['DEFAULT']['token'])
+    canvas = Canvas(config.get('DEFAULT', 'apiurl'),
+                    config.get('DEFAULT', 'token'))
 
     # init course
-    course_id = config['DEFAILT']['courseid']
+    course_id = config.get('DEFAULT', 'courseid')
     course = canvas.get_course(course_id)
     assignments_as_dict = {ass.name.capitalize().replace(' ', ''): ass
                            for ass in course.get_assignments()}
@@ -158,12 +155,12 @@ def main():
         if args.verbose:
             print("Uploading comments in parallel!")
             p_map(
-                partial(upload_comments, assignments=assignments_as_dict, args=args),
+                partial(upload_comments, assignments=assignments_as_dict),
                 reports,
                 num_cpus=args.num_cpus)
     else:
         for rep in reports:
-            upload_comments(rep, assignments_as_dict, args)
+            upload_comments(rep, assignments_as_dict)
 
     # clear temporary files
     files = glob("tmp/*")
