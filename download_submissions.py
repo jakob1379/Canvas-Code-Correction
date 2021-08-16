@@ -1,5 +1,4 @@
 # Import the Canvas class
-import cProfile
 import argparse
 import multiprocessing
 import os
@@ -8,36 +7,33 @@ import sys
 from functools import partial
 from glob import glob
 from pathlib import Path
-from pprint import pprint
 
 import progressbar as Pbar
 from canvasapi import Canvas
-from p_tqdm import p_map, p_umap
-from itertools import chain
+from p_tqdm import p_umap
 from canvas_helpers import create_file_name
 from canvas_helpers import download_url
 from canvas_helpers import extract_comment_filenames
-from canvas_helpers import file_to_string
 
 import configparser
 config = configparser.ConfigParser()
 config.read('config.ini')
 
 # init course
-if not config['DEFAULT'].get('courseid'):
+if not config.get('DEFAULT', 'courseid'):
     print("No courseid found in config!")
     sys.exit(2)
-elif not config['DEFAULT'].get('token'):
+elif not config.get('DEFAULT', 'token'):
     print("No token found in config!")
     sys.exit(2)
 
 # Initialize a new Canvas object
-token = config['DEFAULT']['token']
-url = config['DEFAULT']['apiurl']
+token = config.get('DEFAULT', 'token')
+url = config.get('DEFAULT', 'apiurl')
 canvas = Canvas(url, token)
 
 # create course object
-course_id = config['DEFAULT']['courseid']
+course_id = config.get('DEFAULT', 'courseid')
 course = canvas.get_course(course_id)
 
 # set up argparse
@@ -90,7 +86,7 @@ if args.list_assignments:
     sys.exit()
 
 
-def download_submission(sub, old_files, course, args):
+def download_submission(sub, old_files):
     try:
         url = sub.attachments[0]['url']
         if url:
@@ -119,7 +115,7 @@ def download_submission(sub, old_files, course, args):
             print("Submission has no attachment:", sub.id)
 
 
-def find_submissions(args, course):
+def find_submissions(args):
     # Walk through all assignments and find submissions
     submissions = []
     sub_len = 0
@@ -158,7 +154,7 @@ def find_submissions(args, course):
 
 def main():
     old_files = glob(os.path.join("*", 'submissions', '*', ''))
-    submissions = find_submissions(args, course)
+    submissions = find_submissions(args)
     print("Submissions to correct:", len(submissions))
 
     # Download submissions
@@ -166,14 +162,13 @@ def main():
         if args.parallel:
             print("Downloading submissions in parallel!")
             p_umap(
-                partial(download_submission, old_files=old_files,
-                        course=course, args=args),
+                partial(download_submission, old_files=old_files),
                 submissions,
                 num_cpus=args.num_cores)
         else:
             pbar = Pbar.ProgressBar(redirect_stdout=True)
             for sub in pbar(submissions):
-                download_submission(sub, old_files, course, args)
+                download_submission(sub, old_files)
     else:
         print("No submissions to download...")
 
