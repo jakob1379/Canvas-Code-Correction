@@ -70,6 +70,6 @@ function check_assignment {
 # combine folders and extensions into regexes for moss
 for folder in $@; do
     echo "Checking: $folder"
-    check_assignment "$folder" &q
+    check_assignment "$folder" &
 done
 wait
