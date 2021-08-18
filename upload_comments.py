@@ -109,13 +109,13 @@ def upload_comments(sub, assignments):
                     showindex='always'), '\n')
             else:
                 print(None)
-            print("New comment:   ", upload_name)
-            print("Old comment:   ", fname, '\n')
+            print(f"New comment:   {upload_name}")
+            print(f"Old comment:   {fname}\n")
 
             if previous_md5 == new_md5:
-                md5string = bcolors.OKBLUE + "Yes" + bcolors.ENDC
+                md5string = f"{bcolors.OKBLUE}Yes{bcolors.ENDC}"
             else:
-                md5string = bcolors.FAIL + "No" + bcolors.ENDC
+                md5string = f"{bcolors.FAIL}No[bcolors.ENDC]"
             print("md5sum are equal:", md5string)
 
             ans = input("Upload: Should new comment be uploaded? [y/N] ")
