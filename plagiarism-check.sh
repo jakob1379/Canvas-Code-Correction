@@ -18,6 +18,7 @@ function check_assignment {
     # create input for moss
     assignment=$(basename "$1")
     mossPath=$(basename "$1" | sed 's/ /\\ /g')
+
     # # download all the handins
     # rm -rf "$assignment/submissions/*"
     # python download_submissions.py -d all -a "$assignment"
@@ -25,23 +26,41 @@ function check_assignment {
 
     # Construct the paths for moss by checking each presence of each extension
     paths_to_check=()
+    all_files=""
     echo "checking extensions..."
     IFS=' '
     for ext in $extensions
     do
+	IFS='\n\t'
 	if [ ! -z  "$(find "$assignment/submissions" -type f -name "*$ext")" ]
 	then
-	    echo "$mossPath/submissions/*/*$ext"
+	    echo "Found: $ext"
 	    paths_to_check+=("$mossPath/submissions/*/*$ext")
+
+	    # Add escape character for space in names
+	    while read -r file
+	    do
+		new_fname=$(echo "$file" | sed 's/\ /\\\ /g')
+		all_files+=" $new_fname"
+	    done < <(find "$assignment/submissions" \
+			  -type f \
+			  -name "*$ext")
 	fi
+	IFS=' '
     done
-    IFS='\n\t'
+    all_files=$(echo "$all_files" | sed 's/\ //')
+
+    # return of nothing found
+    if [ -z "$paths_to_check" ]
+    then
+	echo "No files found. skipping $1"
+	return
+    fi
 
     # Catch result url
-
     echo "uploading to moss..."
-    # url=$(eval "moss -d $paths_to_check" | grep -P 'http://moss.stanford.edu/results.*')/
-    url=$(./moss -l $language -d ${paths_to_check[@]} | grep -oP 'http://moss.stanford.edu/results.*')/
+    # url=$(./moss -l $language -d ${paths_to_check[@]} | grep -oP 'http://moss.stanford.edu/results.*')/
+    url=$(eval "./moss -l $language -d $all_files" | grep -oP 'http://moss.stanford.edu/results.*')/
     echo "$url"
     # # url="http://moss.stanford.edu/results/8/4255768150604/" # a test url
 
