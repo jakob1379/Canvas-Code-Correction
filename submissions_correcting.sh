@@ -77,13 +77,15 @@ function correction_routine {
     start=$(date +%s)
     if $show_time
     then
-	time sh main.sh 2> /dev/null #python main.py > errors.log 2>&1
+	time sh main.sh 2> /dev/null
     else
-	sh main.sh 2> /dev/null # python main.py > errors.log 2>&1
+	sh main.sh 2> /dev/null
     fi
 
     # delete test files
-    for fname in $orig_file_names; do rm -rf $fname; done # rm -rf test/ config.py main.py
+    for fname in $orig_file_names; do
+	rm -rf $fname
+    done
 
     end=$(date +%s)
     if $verbose; then
