@@ -9,7 +9,8 @@ then
 fi
 
 # folders="$(find -wholename "*/submissions")"
-extensions=$(awk -F '=' -e '/^ext/{print $2}' config.ini)
+# extensions=$(awk -F '=' -e '/^ext/{print $2}' config.ini)
+extensions=$(awk -F '=' '/^extensions/{print $2}' config.ini)
 cutoff=$(awk -F '=' 'BEGIN{ORS=""}/cutoff/{print $2}' config.ini)
 language=$(awk -F '=' 'BEGIN{ORS=""}/lang/{print $2}' config.ini )
 
@@ -25,14 +26,16 @@ function check_assignment {
     # Construct the paths for moss by checking each presence of each extension
     paths_to_check=()
     echo "checking extensions..."
+    IFS=' '
     for ext in $extensions
     do
 	if [ ! -z  "$(find "$assignment/submissions" -type f -name "*$ext")" ]
 	then
-	    # paths_to_check="$paths_to_check""$mossPath/submissions/*/*$ext "
+	    echo "$mossPath/submissions/*/*$ext"
 	    paths_to_check+=("$mossPath/submissions/*/*$ext")
 	fi
     done
+    IFS='\n\t'
 
     # Catch result url
 
