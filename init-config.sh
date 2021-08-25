@@ -73,7 +73,7 @@ then
 fi
 
 # initialize assignment folders from canvas
-assignments=$(bash setup-assignment-folders.sh)
+assignments=$(bash setup-assignmhnt-folders.sh)
 
 echo "Enter the amount of points needed to complete each assignment:"
 scores=()
@@ -87,7 +87,7 @@ do
 	then
 	    echo "Not a valid number. Try again"
 	else
-	    scores+=("$assignment=$score")
+	    scores+=( "$assignment=$score" )
 	    break
 	fi
     done
