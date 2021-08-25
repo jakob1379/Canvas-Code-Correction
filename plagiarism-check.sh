@@ -61,6 +61,7 @@ function check_assignment {
     bash mossurl2table.sh "$url" >> "$assignment/similarity.txt"
 
     # Print lines that crosses the cutoff value
+
     suspecious_handins=$(awk -v cutoff="$cutoff" '{ if ($3 >= cutoff) { print } }' "$assignment/similarity.txt")
     if [ ! -z "$suspecious_handins" ]
     then

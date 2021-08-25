@@ -2,7 +2,7 @@
 #+AUTHOR: Jakob G. Aaes
 #+EMAIL: (concat "jakob1379" at-sign "gmail.com")
 
-* Ideas/ToDo [24/46]
+* Ideas/ToDo [25/50]
   :PROPERTIES:
   :COOKIE_DATA: recursive
   :END:
@@ -24,10 +24,14 @@
     - [ ] [[file:plot_scores.py::83][plot_scores]]
     - [ ] [[file:upload_comments.py::48][upload_comments]]
   * [ ] find a better name than correct-submissions
+  * [ ] change plotting according to Kenny' suggestions
   * [ ] rewrite bcolors to be functions that appends and prepends rather than being plain strings
   * [ ] Instantiate assignment directories based on absalon assignments including the /submissions/ folder
   * [ ] Common example usecases e.g. how to correct a single student/assignment etc.
   * [ ] Move assignments to a single folder called *assignments* for easier iteration through each assignment
+  * [ ] insert title in plagiarism check at mossum when PR has been accepted.
+  * [ ] in [[file:grade_submissions.py]] implement the config.ini for uploading scores instead if grade
+  * [X] Put Valgrind somewhere else or let it be part of the code supplied by course admin as it does not strictly belong in the framework
   * [-] Setup script:
     This script should go through all the necessary steps to start running the code checking
     1. [X] enter token
