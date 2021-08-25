@@ -1,3 +1,6 @@
+##########################
+# project specific files #
+##########################
 *.log
 *_scores.txt
 .python-version
@@ -8,6 +11,7 @@ backup
 correction_status
 *.pdf
 tmp/
+**/code/
 
 ###############
 # Emacs files #

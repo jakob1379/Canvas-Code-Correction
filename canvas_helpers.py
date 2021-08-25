@@ -3,10 +3,7 @@ import re
 from pathlib import Path
 import os
 import urllib.request
-from glob import glob
 from hashlib import md5
-from pprint import pprint
-from time import time
 from urllib.parse import unquote
 
 

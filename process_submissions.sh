@@ -15,6 +15,7 @@ operations:
 
 # Arguments
 args='-'
+plagiarism=''
 while getopts ":haptv" opt; do
     case ${opt} in
 	h)

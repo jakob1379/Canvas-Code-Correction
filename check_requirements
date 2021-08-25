@@ -43,7 +43,11 @@ then
 
 
 fi
-
+if ! command -v firejail &> /dev/null
+then
+    echo "command firejail: could not be found"
+    ecode=1
+fi
 
 # Check if the some command exists
 if ! command -v zip &> /dev/null

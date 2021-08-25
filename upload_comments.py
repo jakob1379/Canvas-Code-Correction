@@ -1,14 +1,10 @@
 # Import the Canvas class
 import argparse
-import multiprocessing
 import os
 import re
 from glob import glob
 from p_tqdm import p_map
 from functools import partial
-from joblib import Parallel
-from joblib import delayed
-import shutil
 from canvas_helpers import bcolors
 from canvas_helpers import download_url
 from canvas_helpers import extract_comment_filenames
@@ -17,7 +13,7 @@ from canvas_helpers import md5sum
 from canvasapi import Canvas
 from tabulate import tabulate
 from multiprocessing import cpu_count
-
+import sys
 import configparser
 config = configparser.ConfigParser()
 config.read('config.ini')
@@ -41,16 +37,22 @@ parser.add_argument("-q", "--question",
 parser.add_argument("-a", "--all",
                     help="upload all feedback RISK OF DUPLICATES ON ABSALON",
                     action='store_true')
-parser.add_argument("path", nargs='?',
-                    default=os.path.join('*', 'submissions', '*', ''),
-                    help="Path to check")
 parser.add_argument("-d", "--dry",
                     help="dry run without uploading anything",
                     action='store_true')
+parser.add_argument("path", nargs='?',
+                    default=os.path.join('*', 'submissions', '*', ''),
+                    help="Path to check")
 args = parser.parse_args()
 
+if os.path.join('submissions', '*', '') not in args.path:
+    args.path = os.path.join(args.path, 'submissions', '*', '')
+if not glob(args.path):
+    print("No assignments found in:", args.path)
+    sys.exit()
 
-def upload_comments(sub, assignments, args):
+
+def upload_comments(sub, assignments):
     if args.verbose:
         out_str = 'Checking: ' + sub
         print(out_str)
@@ -113,13 +115,13 @@ def upload_comments(sub, assignments, args):
                     showindex='always'), '\n')
             else:
                 print(None)
-            print("New comment:   ", upload_name)
-            print("Old comment:   ", fname, '\n')
+            print(f"New comment:   {upload_name}")
+            print(f"Old comment:   {fname}\n")
 
             if previous_md5 == new_md5:
-                md5string = bcolors.OKBLUE + "Yes" + bcolors.ENDC
+                md5string = f"{bcolors.OKBLUE}Yes{bcolors.ENDC}"
             else:
-                md5string = bcolors.FAIL + "No" + bcolors.ENDC
+                md5string = f"{bcolors.FAIL}No[bcolors.ENDC]"
             print("md5sum are equal:", md5string)
 
             while ans not in {'y', 'n'}:
@@ -145,29 +147,33 @@ def main():
         print('Initialising canvas...')
 
     # Initialize a new Canvas object
-    canvas = Canvas(config['DEFAULT']['apiurl'], config['DEFAULT']['token'])
+    canvas = Canvas(config.get('DEFAULT', 'apiurl'),
+                    config.get('DEFAULT', 'token'))
 
     # init course
-    course_id = config['DEFAILT']['courseid']
+    course_id = config.get('DEFAULT', 'courseid')
     course = canvas.get_course(course_id)
-    assignments_as_dict = {ass.name.capitalize().replace(' ', ''): ass
+    # assignments_as_dict = {ass.name.capitalize().replace(' ', ''): ass
+    #                        for ass in course.get_assignments()}
+    assignments_as_dict = {ass.name: ass
                            for ass in course.get_assignments()}
-
     # get users
     reports = sorted(glob(args.path))
+    if not reports:
+        print("No reports found...")
+        sys.exit()
 
     # Let's start grading!
-
     if args.parallel:
         if args.verbose:
             print("Uploading comments in parallel!")
             p_map(
-                partial(upload_comments, assignments=assignments_as_dict, args=args),
+                partial(upload_comments, assignments=assignments_as_dict),
                 reports,
                 num_cpus=args.num_cpus)
     else:
         for rep in reports:
-            upload_comments(rep, assignments_as_dict, args)
+            upload_comments(rep, assignments_as_dict)
 
     # clear temporary files
     files = glob("tmp/*")

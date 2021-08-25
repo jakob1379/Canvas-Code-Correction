@@ -9,7 +9,8 @@ then
 fi
 
 # folders="$(find -wholename "*/submissions")"
-extensions=$(awk -F '=' -e '/^ext/{print $2}' config.ini)
+# extensions=$(awk -F '=' -e '/^ext/{print $2}' config.ini)
+extensions=$(awk -F '=' '/^extensions/{print $2}' config.ini)
 cutoff=$(awk -F '=' 'BEGIN{ORS=""}/cutoff/{print $2}' config.ini)
 language=$(awk -F '=' 'BEGIN{ORS=""}/lang/{print $2}' config.ini )
 
@@ -17,6 +18,7 @@ function check_assignment {
     # create input for moss
     assignment=$(basename "$1")
     mossPath=$(basename "$1" | sed 's/ /\\ /g')
+
     # # download all the handins
     # rm -rf "$assignment/submissions/*"
     # python download_submissions.py -d all -a "$assignment"
@@ -25,20 +27,31 @@ function check_assignment {
     # Construct the paths for moss by checking each presence of each extension
     paths_to_check=()
     echo "checking extensions..."
+    IFS=' '
     for ext in $extensions
     do
+	IFS='\n\t'
 	if [ ! -z  "$(find "$assignment/submissions" -type f -name "*$ext")" ]
 	then
-	    # paths_to_check="$paths_to_check""$mossPath/submissions/*/*$ext "
-	    paths_to_check+=("$mossPath/submissions/*/*$ext")
+	    echo "Found: $ext"
+	    mapfile -d $'\0' tmp_paths < \
+		    <(find "$assignment/submissions" -type f -name "*$ext" -print0)
+	    echo "${tmp_paths[@]}"
+	    paths_to_check+=( "${paths_to_check[@]}" "${tmp_paths[@]}" )
 	fi
+	IFS=' '
     done
 
-    # Catch result url
+    # return if nothing found
+    if [ -z "$paths_to_check" ]
+    then
+	echo "No files found. skipping $1"
+	return
+    fi
 
+    # Catch result url
     echo "uploading to moss..."
-    # url=$(eval "moss -d $paths_to_check" | grep -P 'http://moss.stanford.edu/results.*')/
-    url=$(./moss -l $language -d ${paths_to_check[@]} | grep -oP 'http://moss.stanford.edu/results.*')/
+    url=$(./moss -l $language -d "${paths_to_check[@]}" | grep -oP 'http://moss.stanford.edu/results.*')/
     echo "$url"
     # # url="http://moss.stanford.edu/results/8/4255768150604/" # a test url
 

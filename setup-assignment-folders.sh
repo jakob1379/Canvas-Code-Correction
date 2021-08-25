@@ -2,11 +2,9 @@
 set -euo pipefail
 IFS=$'\n\t'
 
-assignments=$(python download_submissions.py -l \
-		  | grep -P ' - ' | sed 's/ - //')
+assignmentNames=$(python download_submissions.py -l | grep -P ' - ' | sed 's/ - //')
 
-for line in $assignments; do
-    mkdir -p "$line/code"
+for name in $assignmentNames; do
+    echo "$name"
+    mkdir -p "$name/code"
 done
-
-echo "$assignments"
