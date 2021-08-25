@@ -37,13 +37,19 @@ parser.add_argument("-q", "--question",
 parser.add_argument("-a", "--all",
                     help="upload all feedback RISK OF DUPLICATES ON ABSALON",
                     action='store_true')
-parser.add_argument("path", nargs='?',
-                    default=os.path.join('*', 'submissions', '*', ''),
-                    help="Path to check")
 parser.add_argument("-d", "--dry",
                     help="dry run without uploading anything",
                     action='store_true')
+parser.add_argument("path", nargs='?',
+                    default=os.path.join('*', 'submissions', '*', ''),
+                    help="Path to check")
 args = parser.parse_args()
+
+if os.path.join('submissions', '*', '') not in args.path:
+    args.path = os.path.join(args.path, 'submissions', '*', '')
+if not glob(args.path):
+    print("No assignments found in:", args.path)
+    sys.exit()
 
 
 def upload_comments(sub, assignments):
@@ -149,6 +155,9 @@ def main():
                            for ass in course.get_assignments()}
     # get users
     reports = sorted(glob(args.path))
+    if not reports:
+        print("No reports found...")
+        sys.exit()
 
     # Let's start grading!
     if args.parallel:
