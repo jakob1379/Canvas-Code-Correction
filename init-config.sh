@@ -51,26 +51,8 @@ cutoff=50
 "
 
 
-if [ -f "config.ini" ]
-then
-    while true; do
-	read -p "config.ini exists, are you sure you want to overwrite? [y/N] " ans
-	ans="$(echo "$ans" | tr '[:upper:]' '[:lower:]')"
-	case "$ans" in
-	    'y' )
-		echo "Text is saved in config.ini"
-		echo "$text" > config.ini
-		break
-		;;
-	    'n' )
-		echo "Text is NOT saved!"
-		echo "$text"
-		break
-		;;
-	esac
-
-    done
-fi
+echo "Text is saved in config.ini"
+echo "$text" > config.ini
 
 # initialize assignment folders from canvas
 assignments=$(bash setup-assignment-folders.sh)
