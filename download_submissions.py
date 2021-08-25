@@ -103,7 +103,7 @@ def download_submission(sub, old_files):
             for f in folders_to_remove:
                 shutil.rmtree(f, ignore_errors=True)
             # download attachment if it doesn't exist,
-            if os.path.join(directory, 'file_name', '') not in old_files:
+            if os.path.join(directory, file_name, '') not in old_files:
                 url = sub.attachments[0]['url']
                 if args.verbose:
                     print("Saving to:", directory+file_name+'.zip')
