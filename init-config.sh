@@ -73,7 +73,7 @@ then
 fi
 
 # initialize assignment folders from canvas
-assignments=$(bash setup-assignmhnt-folders.sh)
+assignments=$(bash setup-assignment-folders.sh)
 
 echo "Enter the amount of points needed to complete each assignment:"
 scores=()
