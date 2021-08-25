@@ -23,13 +23,15 @@ if [ "$http_code" -eq "401" ]; then
 elif [ "$http_code" -eq "404" ]; then
     echo "Course-id is invalid. try again..."
     exit 2
+else
+    echo "Token is valid!"
 fi
 
 read -p "please insert the used language.
 Supported languages are (\"c\", \"cc\", \"java\", \"ml\", \"pascal\", \"ada\", \"lisp\", \"scheme\", \"haskell\", \"fortran\", \"ascii\", \"vhdl\", \"perl\", \"matlab\", \"python\", \"mips\", \"prolog\", \"spice\", \"vb\", \"csharp\", \"modula2\", \"a8086\", \"javascript\", \"plsql\", \"verilog\"): " lang
 lang="$(echo "$lang" | tr '[:upper:]' '[:lower:]'))"
 
-read -p "please insert the extension to check for plagiarism, multiple should be seperated with space e.g. .cpp .h .hpp" exts
+read -p "please insert the extension to check for plagiarism, multiple should be seperated with space e.g. .cpp .h .hpp " exts
 echo "Similarity has been set to defaul 50%. This can be changed manually in config.ini"
 
 text="[DEFAULT]
@@ -53,8 +55,8 @@ if [ -f "config.ini" ]
 then
     while true; do
 	read -p "config.ini exists, are you sure you want to overwrite? [y/N] " ans
-	ans="$(echo "$ans" | tr '[:upper:]' '[:lower:]'))"
-	case $ans in
+	ans="$(echo "$ans" | tr '[:upper:]' '[:lower:]')"
+	case "$ans" in
 	    'y' )
 		echo "Text is saved in config.ini"
 		echo "$text" > config.ini
