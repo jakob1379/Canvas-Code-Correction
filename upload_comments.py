@@ -13,7 +13,7 @@ from canvas_helpers import md5sum
 from canvasapi import Canvas
 from tabulate import tabulate
 from multiprocessing import cpu_count
-
+import sys
 import configparser
 config = configparser.ConfigParser()
 config.read('config.ini')
@@ -143,14 +143,14 @@ def main():
     # init course
     course_id = config.get('DEFAULT', 'courseid')
     course = canvas.get_course(course_id)
-    assignments_as_dict = {ass.name.capitalize().replace(' ', ''): ass
+    # assignments_as_dict = {ass.name.capitalize().replace(' ', ''): ass
+    #                        for ass in course.get_assignments()}
+    assignments_as_dict = {ass.name: ass
                            for ass in course.get_assignments()}
-
     # get users
     reports = sorted(glob(args.path))
 
     # Let's start grading!
-
     if args.parallel:
         if args.verbose:
             print("Uploading comments in parallel!")
