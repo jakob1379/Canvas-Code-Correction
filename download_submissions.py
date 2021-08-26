@@ -86,7 +86,15 @@ if args.list_assignments:
     sys.exit()
 
 
-def download_submission(sub, old_files):
+def download_submission(sub, old_files=glob(os.path.join("*", 'submissions', '*', ''))):
+    """ Downloads a submissions and delete local files if any previous attempts
+    are present
+
+    :param sub: canvas submission object
+    :param old_files: list of paths to local submissions
+
+    """
+
     try:
         url = sub.attachments[0]['url']
         if url:
@@ -115,13 +123,21 @@ def download_submission(sub, old_files):
             print("Submission has no attachment:", sub.id)
 
 
-def find_submissions(args):
+def find_submissions():
+    """ Find submissions based on what args have been passed. Defaults to finding all
+
+    :returns: list of canvas submission objects
+    :rtype: list
+
+    """
+
     # Walk through all assignments and find submissions
     submissions = []
     sub_len = 0
-    count = 0
 
-    for assignment in [a for a in course.get_assignments() if a.name in args.assignment]:
+    assignments = [a for a in course.get_assignments()
+                   if a.name in args.assignment]
+    for assignment in assignments:
         if args.verbose:
             print("Checking " + assignment.name + "...")
         if args.download == "all":
@@ -131,17 +147,25 @@ def find_submissions(args):
                             if sub.grade == 'incomplete']
         elif args.download == "uncommented":
             for sub in assignment.get_submissions(include='submission_comments'):
+
+                if not list(sub.submission_comments):
+                    submissions.append(sub)
+                    continue
+
                 comment_files = extract_comment_filenames(
                     sub.submission_comments)
+
                 submission_fname = create_file_name(sub, course) + '.zip'
                 if submission_fname not in comment_files:
                     submissions.append(sub)
         elif args.download == "new":
             for sub in assignment.get_submissions():
                 if (vars(sub).get('attachments') is not None and
-                        (not sub.grade_matches_current_submission or sub.grade is None)):
+                        (not sub.grade_matches_current_submission
+                         or sub.grade is None)):
                     submissions.append(sub)
-
+        else:
+            submissions += list(assignment.get_submissions())
     # if specific students where chosen filter them
     if args.student_id:
         submissions = [sub for sub in submissions if sub.user_id in args.student_id]
@@ -153,8 +177,7 @@ def find_submissions(args):
 
 
 def main():
-    old_files = glob(os.path.join("*", 'submissions', '*', ''))
-    submissions = find_submissions(args)
+    submissions = find_submissions()
     print("Submissions to correct:", len(submissions))
 
     # Download submissions
@@ -162,13 +185,13 @@ def main():
         if args.parallel:
             print("Downloading submissions in parallel!")
             p_umap(
-                partial(download_submission, old_files=old_files),
+                partial(download_submission),
                 submissions,
                 num_cpus=args.num_cores)
         else:
             pbar = Pbar.ProgressBar(redirect_stdout=True)
             for sub in pbar(submissions):
-                download_submission(sub, old_files)
+                download_submission(sub)
     else:
         print("No submissions to download...")
 

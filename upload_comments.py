@@ -53,6 +53,14 @@ if not glob(args.path):
 
 
 def upload_comments(sub, assignments):
+    """ uploads zipped content to absalone if it is not already there. Compared with md5sum.
+
+    :param sub: Path to submission folder
+    :param assignments: dict of assignment names as key and canvas assignment object as values
+    # TODO: change to just take the canvas object instead of the whole dict
+
+    """
+
     if args.verbose:
         out_str = 'Checking: ' + sub
         print(out_str)
