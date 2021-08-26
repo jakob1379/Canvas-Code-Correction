@@ -8,6 +8,27 @@
   :END:
 
   This chapter notes ideas for future implementation.
+  * [ ] find a better name than correct-submissions
+  * [ ] change upload_comment and grade_submission to take the assignment object by extracting the assignment object outside of the function. There is no need to pass all assignment to the function.
+  * [ ] change plotting according to Kenny' suggestions
+  * [ ] rewrite bcolors to be functions that appends and prepends rather than being plain strings
+  * [ ] Instantiate assignment directories based on absalon assignments including the /submissions/ folder
+  * [ ] Common example usecases e.g. how to correct a single student/assignment etc.
+  * [ ] Move assignments to a single folder called *assignments* for easier iteration through each assignment
+  * [ ] insert title in plagiarism check at mossum when PR has been accepted.
+  * [ ] in [[file:grade_submissions.py]] implement the config.ini for uploading scores instead if grade
+  * [-] Setup script:
+    :PROPERTIES:
+    :HTML_CONTAINER_CLASS:    hsCollapsed
+    :END:
+    This script should go through all the necessary steps to start running the code checking
+    1. [X] enter token
+    2. [X] check validity of token
+    3. [X] enter course id
+    4. [X] setup assignments folders according to the assignments on absalon
+    5. [X] Enter points required for completing each assignment
+    6. [X] Upload scores or not i.e. is the assignments scored or simply passed/failed
+    7. [ ] What files to uploads i.e. give filenames or regex
   * [X] Make sure all methods are documented
     - [X] [[file:canvas_helpers.py::24][download_url]]
     - [X] [[file:canvas_helpers.py::37][file_to_string]]
@@ -23,25 +44,7 @@
     - [X] [[file:plot_scores.py::41][load_data]]
     - [X] [[file:plot_scores.py::83][plot_scores]]
     - [X] [[file:upload_comments.py::48][upload_comments]]
-  * [ ] find a better name than correct-submissions
-  * [ ] change upload_comment and grade_submission to take the assignment object by extracting the assignment object outside of the function. There is no need to pass all assignment to the function.
-  * [ ] change plotting according to Kenny' suggestions
-  * [ ] rewrite bcolors to be functions that appends and prepends rather than being plain strings
-  * [ ] Instantiate assignment directories based on absalon assignments including the /submissions/ folder
-  * [ ] Common example usecases e.g. how to correct a single student/assignment etc.
-  * [ ] Move assignments to a single folder called *assignments* for easier iteration through each assignment
-  * [ ] insert title in plagiarism check at mossum when PR has been accepted.
-  * [ ] in [[file:grade_submissions.py]] implement the config.ini for uploading scores instead if grade
   * [X] Put Valgrind somewhere else or let it be part of the code supplied by course admin as it does not strictly belong in the framework
-  * [-] Setup script:
-    This script should go through all the necessary steps to start running the code checking
-    1. [X] enter token
-    2. [X] check validity of token
-    3. [X] enter course id
-    4. [X] setup assignments folders according to the assignments on absalon
-    5. [X] Enter points required for completing each assignment
-    6. [X] Upload scores or not i.e. is the assignments scored or simply passed/failed
-    7. [ ] What files to uploads i.e. give filenames or regex
   * [X] Put Valgrind somewhere else of let it be part of the code supplied by course admin as it does not strictly belong in the framework
   * [X] Config-related
     - #[-] add allowance for late submission or marked as failed in config --- Not necessary as this should be set in absalon for each assignment
