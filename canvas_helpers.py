@@ -19,6 +19,11 @@ class bcolors:
 
 
 def download_url(url, save_path):
+    """ files files at url to the given path
+    :param url: target url
+    :param save_path: target path
+    """
+
     # Make sure destination folder exists
     end_folder = os.sep.join(save_path.split(os.sep)[:-1])
     if end_folder:
@@ -32,12 +37,26 @@ def download_url(url, save_path):
 
 
 def file_to_string(file_name):
-    with open(file_name) as f:
+    """ reads entire file into a single string
+
+    :param file_name: path
+    :returns: file content as string
+    :rtype: str
+
+    """
+
+    with open(file_name, "r") as f:
         content = f.read()
     return content.strip()
 
 
 def print_dict(d):
+    """ pretty prints a dictionary
+
+    :param d: dictionary to print
+
+    """
+
     max_key = len(max(d.keys(), key=len))
     for k, v in d.items():
         print(k.ljust(max_key) + ' : ' + str(v))
@@ -45,6 +64,12 @@ def print_dict(d):
 
 
 def print_as_dict(dd):
+    """ Function that takes an input and tries to pretty print its variables and methods. __dict__ must be defined
+
+    :param dd: any input that has a __dict__ defined
+
+    """
+
     d = vars(dd)
     max_key = len(max(d.keys(), key=len))
     for k, v in d.items():
@@ -53,6 +78,14 @@ def print_as_dict(dd):
 
 
 def md5sum(fname):
+    """ Calculates the md5sum of a given file
+
+    :param fname: path to file
+    :returns: md5sum
+    :rtype: str
+
+    """
+
     m = md5()
     with open(fname, "rb") as f:
         # read file in chunk and call update on each chunk if file is large.
@@ -62,20 +95,35 @@ def md5sum(fname):
 
 
 def extract_comment_filenames(comments):
+    """ extract all filenames from submission comments
+
+    :param comments:
+    :returns: list of filenames
+    :rtype: list
+
+    """
+
     # Get all attachments in comments as one flat list
-    return flatten_list(
-        [[unquote(att.get('filename')) for att in comm.get('attachments')
-          if att.get('filename')]
-         for comm in comments if comm.get('attachments')])
-
-
-def flatten_list(list_of_lists):
-    if any([not isinstance(alist, list) for alist in list_of_lists]):
-        return list_of_lists
-    return [y for x in list_of_lists for y in x]
+    fileNames = []
+    for comment in list(comments):
+        if comment.get("attachments"):
+            for attachment in list(comment.get("attachments")):
+                if attachment.get("filename"):
+                    fileNames.append(attachment.get("filename"))
+    return fileNames
 
 
 def create_file_name(submission, course, method='name'):
+    """ constructs the basename for a submission
+
+    :param submission: canvas submission object
+    :param course: canvas course object
+    :param method: what name type to use
+    :returns: basename to use with files
+    :rtype: str
+
+    """
+
     file_name = []
     uid = submission.user_id
 

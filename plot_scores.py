@@ -42,6 +42,14 @@ args = parser.parse_args()
 
 
 def load_data(course):
+    """ Fetch data for all assignment and convert to pandas df
+
+    :param course: canvas course object
+    :returns: DataFrame
+    :rtype: pd.DataFrame
+
+    """
+
     assignments = list(course.get_assignments())
 
     if args.verbose:
@@ -83,7 +91,16 @@ def load_data(course):
     return df
 
 
-def plot_scores(df_in, arguments):
+def plot_scores(df_in):
+    """ Creates a statistical overview of the submissions for the course
+
+    :param df_in: Dataframe to use
+    :param arguments:
+    :returns:
+    :rtype:
+
+    """
+
     df = df_in.copy()
 
     plot_data = (
@@ -105,7 +122,7 @@ def plot_scores(df_in, arguments):
     # Remove unnecessary multindex
     df2.columns = df2.columns.droplevel(0)
 
-    if arguments.verbose:
+    if args.verbose:
         print("Counting students who have passed...")
         # Count how many have passed the course
     num_students_passed = df.groupby('uid').filter(lambda group: all(
@@ -117,7 +134,7 @@ def plot_scores(df_in, arguments):
     students_attempted_and_passed = (
         num_students_passed / (df.uid.nunique() - num_students_no_handins))
 
-    if arguments.verbose:
+    if args.verbose:
         print("Plotting...")
     fig, (ax1, ax2) = plt.subplots(
         nrows=1, ncols=2,
@@ -209,13 +226,13 @@ def plot_scores(df_in, arguments):
     fig.suptitle(datetime.now().strftime("%b %d %Y %T"))
     fig.tight_layout()
 
-    if arguments.verbose:
+    if args.verbose:
         print("Saving figure...")
 
-    if arguments.show:
+    if args.show:
         plt.show()
     else:
-        fig.savefig(arguments.out, format='pdf')
+        fig.savefig(args.out, format='pdf')
 
 
 def main():
@@ -232,7 +249,7 @@ def main():
     df = load_data(course)
     if args.verbose:
         print("Aggregating data for plotting...")
-    plot_scores(df, args)
+    plot_scores(df)
     print("Done!")
 
 

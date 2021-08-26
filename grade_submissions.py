@@ -11,7 +11,7 @@ import numpy as np
 import progressbar as Pbar
 from canvasapi import Canvas
 from p_tqdm import p_map
-
+import sys
 from canvas_helpers import bcolors
 from canvas_helpers import file_to_string
 
@@ -47,13 +47,24 @@ parser.add_argument("-d", "--dry",
 
 args = parser.parse_args()
 
+if os.path.join('submissions', '*', '') not in args.path:
+    args.path = os.path.join(args.path, 'submissions', '*', '')
+if not glob(args.path):
+    print("No assignments found in:", args.path)
+    sys.exit()
+
 
 def get_grade(points, assignmentName):
-    """
-    funtion that return points or complete/incomplete depending on config
+    """ convert points to grading according to setup in config.ini
+
+    :param points: number of points scores
+    :param assignmentName: name of the assignment graded
+    :returns: grade
+    :rtype: str or float
+
     """
     if config.getboolean('DEFAULT', "upload_score"):
-        grade = points
+        grade = float(points)
     else:
         points_needed = config.getfloat('scores_to_complete', assignmentName)
         grade = 'complete' if points >= points_needed else 'incomplete'
@@ -61,6 +72,14 @@ def get_grade(points, assignmentName):
 
 
 def grade_submission(sub, assignments):
+    """
+
+    :param sub: path to corrected folders
+    :param assignments: dictionary with assignment names as keys and canvas assignment objects as values
+    # TODO: change to take the actual canvas assignment object
+
+    """
+
     out_str = 'Grading: Checking ' + sub
     if args.verbose:
         print(out_str)
