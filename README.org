@@ -18,9 +18,6 @@
   * [ ] insert title in plagiarism check at mossum when PR has been accepted.
   * [ ] in [[file:grade_submissions.py]] implement the config.ini for uploading scores instead if grade
   * [-] Setup script:
-    :PROPERTIES:
-    :HTML_CONTAINER_CLASS:    hsCollapsed
-    :END:
     This script should go through all the necessary steps to start running the code checking
     1. [X] enter token
     2. [X] check validity of token
