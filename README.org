@@ -2,7 +2,7 @@
 #+AUTHOR: Jakob G. Aaes
 #+EMAIL: (concat "jakob1379" at-sign "gmail.com")
 
-* Ideas/ToDo [40/51]
+* Ideas/ToDo [42/51]
   :PROPERTIES:
   :COOKIE_DATA: recursive
   :END:
@@ -15,8 +15,8 @@
   * [ ] Instantiate assignment directories based on absalon assignments including the /submissions/ folder
   * [ ] Common example usecases e.g. how to correct a single student/assignment etc.
   * [ ] Move assignments to a single folder called *assignments* for easier iteration through each assignment
-  * [ ] insert title in plagiarism check at mossum when PR has been accepted.
-  * [ ] in [[file:grade_submissions.py]] implement the config.ini for uploading scores instead if grade
+  * [X] insert title in plagiarism check at mossum when PR has been accepted.
+  * [X] in [[file:grade_submissions.py]] implement the config.ini for uploading scores instead if grade
   * [-] Setup script:
     This script should go through all the necessary steps to start running the code checking
     1. [X] enter token

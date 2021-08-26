@@ -77,6 +77,7 @@ function check_assignment {
 	    --format pdf \
 	    --transformer '.*/submissions/(.*)_.*_.*_(.*).*/' \
 	    --output "$assignment/similarity_graph" \
+	    --title "$url" \
 	    "$url"
     fi
 }
