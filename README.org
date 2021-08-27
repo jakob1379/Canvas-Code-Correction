@@ -2,7 +2,7 @@
 #+AUTHOR: Jakob G. Aaes
 #+EMAIL: (concat "jakob1379" at-sign "gmail.com")
 
-* Ideas/ToDo [43/51]
+* Ideas/ToDo [8/14]
   :PROPERTIES:
   :COOKIE_DATA: recursive
   :END:
@@ -14,7 +14,7 @@
   * [ ] rewrite bcolors to be functions that appends and prepends rather than being plain strings
   * [ ] Common example usecases e.g. how to correct a single student/assignment etc.
   * [ ] Move assignments to a single folder called *assignments* for easier iteration through each assignment
-  * [-] Setup script:
+  * [X] Setup script:
     This script should go through all the necessary steps to start running the code checking
     1. [X] enter token
     2. [X] check validity of token
@@ -22,4 +22,4 @@
     4. [X] setup assignments folders according to the assignments on absalon
     5. [X] Enter points required for completing each assignment
     6. [X] Upload scores or not i.e. is the assignments scored or simply passed/failed
-    7. [ ] What files to uploads i.e. give filenames or regex
+    7. [X] What files to uploads i.e. give filenames or regex
