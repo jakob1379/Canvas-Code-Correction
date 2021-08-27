@@ -2,7 +2,6 @@
 import argparse
 import os
 import re
-from functools import partial
 from glob import glob
 from multiprocessing import cpu_count
 from pathlib import Path
@@ -71,7 +70,7 @@ def get_grade(points, assignmentName):
     return grade
 
 
-def grade_submission(sub, assignments):
+def grade_submission(sub, assignment):
     """
 
     :param sub: path to corrected folders
@@ -99,7 +98,6 @@ def grade_submission(sub, assignments):
     user_id = re.findall(r'_(\d+)_', handin_name)[0]
 
     # Get submission for user
-    assignment = assignments[assignment_name]
     submission = assignment.get_submission(user_id)
     current_grade = submission.grade
     new_grade = get_grade(points, assignment_name)
@@ -115,7 +113,7 @@ def grade_submission(sub, assignments):
 
     #  %% Print question and retrieve answer
     points_needed = config.getfloat('scores_to_complete', assignment_name)
-    if args.question:
+    if args.question and not args.parallel:
         if int(points - points_needed) < 0:
             scoreColor = bcolors.FAIL
         else:
@@ -172,16 +170,26 @@ def main():
     # get users and local points
     reports = sorted(glob(args.path))
 
+    if not reports:
+        print("No reports found...")
+        sys.exit()
+
+    # Create a list ofcorresponding canvas assignment objects
+    assignment_for_reports = [
+        assignments_as_dict[reports[0].split(os.sep)[0]] for rep in reports]
+
     # Let's start grading!
     if args.parallel:
         if args.verbose:
             print("Grading: runnning in parallel!")
-        p_map(partial(grade_submission, assignments=assignments_as_dict),
-              reports, num_cpus=args.num_cpus)
+        p_map(grade_submission,
+              reports,
+              assignment_for_reports,
+              num_cpus=args.num_cpus)
     else:
         pbar = Pbar.ProgressBar(redirect_stdout=not args.question)
-        for rep in pbar(reports):
-            grade_submission(rep, assignments_as_dict)
+        for rep, assignment in pbar(zip(reports, assignment_for_reports)):
+            grade_submission(rep, assignment)
 
 
 if __name__ == '__main__':

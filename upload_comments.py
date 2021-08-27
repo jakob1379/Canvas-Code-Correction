@@ -1,10 +1,10 @@
 # Import the Canvas class
+import progressbar as Pbar
 import argparse
 import os
 import re
 from glob import glob
 from p_tqdm import p_map
-from functools import partial
 from canvas_helpers import bcolors
 from canvas_helpers import download_url
 from canvas_helpers import extract_comment_filenames
@@ -52,7 +52,7 @@ if not glob(args.path):
     sys.exit()
 
 
-def upload_comments(sub, assignments):
+def upload_comments(sub, assignment):
     """ uploads zipped content to absalone if it is not already there. Compared with md5sum.
 
     :param sub: Path to submission folder
@@ -60,6 +60,9 @@ def upload_comments(sub, assignments):
     # TODO: change to just take the canvas object instead of the whole dict
 
     """
+
+    if not glob(f"{sub}*.zip"):
+        return
 
     if args.verbose:
         out_str = 'Checking: ' + sub
@@ -72,8 +75,8 @@ def upload_comments(sub, assignments):
 
     # get points and user id
     user_id = re.findall(r'_(\d+)_', handin_name)[0]
+
     # Get submission for user
-    assignment = assignments[assignment_name]
     submission = assignment.get_submission(user_id,
                                            include='submission_comments')
 
@@ -94,6 +97,8 @@ def upload_comments(sub, assignments):
             previous_md5 = md5sum('tmp/' + fname)
         except KeyError or FileNotFoundError:
             previous_md5 = ""
+    else:
+        previous_md5 = ""
 
     if file_to_upload:
         file_to_upload = file_to_upload[0]
@@ -129,7 +134,7 @@ def upload_comments(sub, assignments):
             if previous_md5 == new_md5:
                 md5string = f"{bcolors.OKBLUE}Yes{bcolors.ENDC}"
             else:
-                md5string = f"{bcolors.FAIL}No[bcolors.ENDC]"
+                md5string = f"{bcolors.FAIL}No{bcolors.ENDC}"
             print("md5sum are equal:", md5string)
 
             while ans not in {'y', 'n'}:
@@ -165,23 +170,31 @@ def main():
     #                        for ass in course.get_assignments()}
     assignments_as_dict = {ass.name: ass
                            for ass in course.get_assignments()}
-    # get users
+    # get local submissions
     reports = sorted(glob(args.path))
+
     if not reports:
         print("No reports found...")
         sys.exit()
+
+    # Create a list ofcorresponding canvas assignment objects
+    assignment_for_reports = [
+        assignments_as_dict[reports[0].split(os.sep)[0]] for rep in reports]
 
     # Let's start grading!
     if args.parallel:
         if args.verbose:
             print("Uploading comments in parallel!")
+
             p_map(
-                partial(upload_comments, assignments=assignments_as_dict),
+                upload_comments,
                 reports,
+                assignment_for_reports,
                 num_cpus=args.num_cpus)
     else:
-        for rep in reports:
-            upload_comments(rep, assignments_as_dict)
+        pbar = Pbar.ProgressBar(redirect_stdout=not args.question)
+        for rep, assignment in pbar(zip(reports, assignment_for_reports)):
+            upload_comments(rep, assignment)
 
     # clear temporary files
     files = glob("tmp/*")
