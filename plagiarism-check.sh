@@ -82,9 +82,16 @@ function check_assignment {
     fi
 }
 
+function routine {
+    folder="$(basename $1)"
+    check_assignment "$folder/"
+    python hclust.py "$folder/similarity.txt"
+}
+
 # combine folders and extensions into regexes for moss
 for folder in $@; do
     echo "Checking: $folder"
-    check_assignment "$folder" &
+    routine "$folder" &
 done
+
 wait
