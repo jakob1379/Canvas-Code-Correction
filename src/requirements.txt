@@ -1,0 +1,16 @@
+canvasapi
+joblib
+matplotlib
+multiprocess
+numpy
+pandas
+plotly
+p-tqdm
+progressbar2
+requests
+scipy
+seaborn
+tabulate
+tqdm
+urllib3
+possum

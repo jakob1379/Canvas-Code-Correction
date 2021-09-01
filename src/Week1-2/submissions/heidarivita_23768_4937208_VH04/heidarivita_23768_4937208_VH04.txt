@@ -1,0 +1,23 @@
+Exercise 2.6
+-No errors found.
+
+Exercise 3.3
+-Failed test: Test against TA solution, n=100000
+-Failed test: Test against TA solution, n=10000
+-Errors found.
+
+Exercise 5.3
+-No errors found.
+
+Exercise 5.4
+-Something forced the code to exit prematurely (e.g. assertions or exit).
+
+Exercise 5.6
+-No errors found.
+
+Exercise 5.9
+-No errors found.
+
+Exercise 5.10
+-Segfault occured.
+
