@@ -1,0 +1,70 @@
+#!/usr/bin/env bash
+set -euo pipefail
+IFS=$'\n\t'
+
+ecode=0
+
+function token_exists {
+    if [ "$(awk -F '=' '/TOKEN/{ print length($2) }' config.ini)" -gt "0" ]; then
+	return 0
+    else
+	return 1
+    fi
+}
+
+if ! token_exists
+then
+    echo "Token in config.ini does not exist
+Go to https://absalon.ku.dk/profile/settings and generate a new token"
+    ecode=1
+fi
+
+# Check for installed packages
+installed_packages=$(pip3 freeze | awk -F '==' '{print $1}' | sort | uniq)
+not_installed=$(comm -23 \
+		     <(cat requirements.txt | sort) \
+		     <(echo "$installed_packages"))
+if [ ! -z "$not_installed" ]
+then
+
+    echo "Did not find the following python packages:"
+    for val in $not_installed
+    do
+	echo " - $val"
+
+	if [ "$val" -eq "mossum" ]; then
+	    echo "install mossum with:"
+	    echo "pip3 install git+https://github.com/hjalti/mossum@master"
+	fi
+    done
+
+    echo "Please install before running the correction framework..."
+    ecode=1
+
+
+fi
+if ! command -v firejail &> /dev/null
+then
+    echo "command firejail: could not be found"
+    ecode=1
+fi
+
+# Check if the some command exists
+if ! command -v zip &> /dev/null
+then
+    echo "command zip: could not be found"
+    ecode=1
+fi
+
+if ! command -v unzip &> /dev/null
+then
+    echo "command unzip: could not be found"
+    ecode=1
+fi
+
+if [ "$ecode" == 0 ]
+then
+    exit 0
+else
+    exit 1
+fi

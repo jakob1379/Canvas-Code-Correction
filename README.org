@@ -1,0 +1,61 @@
+#+TITLE: Automated Correction Framework for Applied Programming at Univeristy of Copenhagen
+#+AUTHOR: Jakob G. Aaes
+#+EMAIL: (concat "jakob1379" at-sign "gmail.com")
+#+OPTIONS: toc:2
+
+*Canvas Submission Correction* aims to make it easier for course administrators to automate correction of assignments on a local machine by handling the download, unzipping and uploading of the corrections. What is left is for the user to supply the code needed to correct the assignment. That's it!
+
+
+* Requirements
+  A few programs are needed in order for this framework to be functional
+  - firejail
+  - zip
+  - unzip
+  - python packages in requirements.txt
+  - Install =mossum= with ~pip3 install git+https://github.com/hjalti/mossum@master~
+
+* Setup
+  The following steps are needed before being able to easily use the framework as intended.
+  1. Install the requirements
+  2. Run ~init-config.sh~ to initialize the config file.
+  3. Run ~setup-assignment-folders.sh~ to initialize the assignment folders, names as the assignments on Canvas. Each assignment folder has a folder called "code". The content will be copied to and executed within each submissions. As such the code to correct has to be designed around this assumption.
+
+* Example usage
+  Now you should be ready to run stuff!
+** Primary usage
+   The primary way to use the whole thing is to call the ~main.sh~ as that does everything from downloading and extracting submissions to assignment folders, run the user provided correction code, zip comments and logs, and lastly upload grades and comments to Canvas.
+
+   If no arguments are provided the routine will be run only once, but a series of optional parameters may be passed to enable continuous check of submissions, time between checks and so forth. The documentation is as follows
+   #+BEGIN_SRC
+usage:  main.sh [...]
+operations:
+    {-h help}    shows this dialogue
+    {-a all}     correct all assignments
+    {-d daemon}  keep running until process is closed
+    {-n number}  number of times to run the correction
+    {-f failed}  correct failed assignment
+    {-s skip}    skip checking requirements
+    {-t time}    time to run as daemon. Given as HH:MM:SS
+    {-v verbose} set verbosity
+    {-w wait}    Pause for NUMBER seconds.  SUFFIX may be 's' for seconds (the default),
+'m' for minutes, 'h' for hours or 'd' for days.  NUMBER need not be an
+integer.  Given two or more arguments, pause for the amount of time
+specified by the sum of their values.
+#+END_SRC
+
+** Downloading submissions
+   ~download_submissions.py~ handles the downloading of submissions. There is a list of optional arguments which can be used to download submissions with specific states, specific students and so forth. Default is to download ungraded submissions from all assignments.
+
+   If you want to download all failed assignments from an assignment called `myAssignment` you call
+   #+BEGIN_SRC sh
+   python download_submissions.py --type failed --assignment myAssignment
+   #+END_SRC
+   The download speed can be increased by enabling parallel, though it might fail as time between calls are not considered (yet).
+** Manually correct submissions
+   If you have manually downloaded some assignments, they can be corrected using the ~process_submissions.sh [assignment name]~. Default is correct all locally uncorrected submissions, but specifying the assignment name enabled correction of submission in just that assignment.
+** Uploading grades
+   The ~upload_grades.py~ finds submission folders with .zip and uploads them to the corresponding submission on Canvas. Moreover you can enable manual inspection before uploading when using optional argument ~python upload_grades.py --question~
+** Plagiarism-check
+   ~plagiarism-check.sh <assignment name>~ uses =moss= to calculate the similarity between the local assignments by uploading files with the specified extension from the =config.ini= file, and lastly create a graph to easily inspect for groups of similarity.
+** Uploading comments
+   The ~upload_comments.py~ find submission folders which have a =<submission name>_points.txt=. The =config.ini= determines whether the actual score or a complete/incomplete is used on Canvas
