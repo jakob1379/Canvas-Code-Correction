@@ -13,10 +13,9 @@ operations:
     {-s skip}    skip checking requirements
     {-t time}    time to run as daemon. Given as HH:MM:SS
     {-v verbose} set verbosity
-    {-w wait}    Pause for NUMBER seconds.  SUFFIX may be 's' for seconds (the default),
-'m' for minutes, 'h' for hours or 'd' for days.  NUMBER need not be an
-integer.  Given two or more arguments, pause for the amount of time
-specified by the sum of their values.
+    {-w wait}    Pause for TIME. SUFFIX may be 's' for seconds (the default),
+'m' for minutes, 'h' for hours or 'd' for days. Given two or more arguments, pause for the amount of time
+specified by the sum of their values e.g. '1d4h'
 "
 }
 
