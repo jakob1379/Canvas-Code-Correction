@@ -58,4 +58,4 @@ specified by the sum of their values.
 ** Plagiarism-check
    ~plagiarism-check.sh <assignment name>~ uses =moss= to calculate the similarity between the local assignments by uploading files with the specified extension from the =config.ini= file, and lastly create a graph to easily inspect for groups of similarity.
 ** Uploading comments
-   The ~upload_comments.py~ find submission folders which have a =<submission name>_points.txt=. The =config.ini= determines whether the actual score or a complete/incomplete is used on Canvas
+   The ~upload_comments.py~ find submission folders which have a =<submission name>_points.txt=. The =config.ini= determines whether the actual score or a complete/incomplete is used on Canvas.
