@@ -33,3 +33,9 @@ __pycache__/
 similarity*.pdf
 suspicious.txt
 TODO.org
+/.commitlintrc.json
+/.husky/
+/node_modules/
+/package-lock.json
+t
+/package.json
