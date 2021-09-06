@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [1.1.1](https://github.com/jakob1379/Canvas-Code-Correction/compare/v1.1.0...v1.1.1) (2021-09-06)
+
+
+### Bug Fixes
+
+* removed unwanted files ([9378557](https://github.com/jakob1379/Canvas-Code-Correction/commits/9378557fb24973ff97c04e161fcd473c6a08ac89))
+
 ## 1.1.0 (2021-09-03)
 
 
