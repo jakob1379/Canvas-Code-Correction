@@ -37,5 +37,4 @@ TODO.org
 /.commitlintrc.json
 /.husky/
 /node_modules/
-/package-lock.json
 /.versionrc.json
