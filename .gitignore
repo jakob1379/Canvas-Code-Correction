@@ -38,5 +38,4 @@ TODO.org
 /.husky/
 /node_modules/
 /package-lock.json
-/package.json
 /.versionrc.json
