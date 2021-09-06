@@ -4,6 +4,7 @@
 *.log
 *_scores.txt
 .python-version
+Week*
 Week*/submissions/*
 Week*/upload_me/
 Week*/*.zip
@@ -33,3 +34,9 @@ __pycache__/
 similarity*.pdf
 suspicious.txt
 TODO.org
+/.commitlintrc.json
+/.husky/
+/node_modules/
+/package-lock.json
+/package.json
+/.versionrc.json
