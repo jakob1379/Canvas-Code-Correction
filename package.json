@@ -1,0 +1,35 @@
+{
+  "dependencies": {
+    "@commitlint/cli": "^13.1.0",
+    "@commitlint/config-conventional": "^13.1.0",
+    "husky-init": "^7.0.0"
+  },
+  "devDependencies": {
+    "husky": "^7.0.0",
+    "standard-version": "^9.3.1"
+  },
+  "scripts": {
+    "release": "standard-version",
+    "release:minor": "standard-version --release-as minor",
+    "release:patch": "standard-version --release-as patch",
+    "release:major": "standard-version --release-as major",
+    "prepare": "husky install"
+  },
+  "name": "canvas-code-correction",
+  "description": "*Canvas Submission Correction* aims to make it easier for course administrators to automate correction of assignments on a local machine by handling the download, unzipping and uploading of the corrections. What is left is for the user to supply the code needed to correct the assignment. That's it!",
+  "version": "1.1.4",
+  "main": "index.js",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jakob1379/Canvas-Code-Checking.git"
+  },
+  "keywords": [
+    "Canvas"
+  ],
+  "author": "Jakob Guldberg Aaes",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/jakob1379/Canvas-Code-Checking/issues"
+  },
+  "homepage": "https://github.com/jakob1379/Canvas-Code-Checking#readme"
+}
