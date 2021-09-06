@@ -4,6 +4,7 @@
 *.log
 *_scores.txt
 .python-version
+Week*
 Week*/submissions/*
 Week*/upload_me/
 Week*/*.zip
