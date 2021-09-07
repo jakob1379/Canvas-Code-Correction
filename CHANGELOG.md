@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [1.2.1](https://github.com/jakob1379/Canvas-Code-Correction/compare/v1.2.0...v1.2.1) (2021-09-07)
+
+
+### Bug Fixes
+
+* removed unwanted files, added check for moss ([26c7773](https://github.com/jakob1379/Canvas-Code-Correction/commits/26c777383c7b1173c31634569fb25cff30c3cf57))
+
 ## [1.2.0](https://github.com/jakob1379/Canvas-Code-Correction/compare/v1.1.4...v1.2.0) (2021-09-07)
 
 ### [1.1.4](https://github.com/jakob1379/Canvas-Code-Correction/compare/v1.1.0...v1.1.4) (2021-09-06)
