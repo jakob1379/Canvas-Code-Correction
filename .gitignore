@@ -13,6 +13,20 @@ correction_status
 *.pdf
 tmp/
 **/code/
+/config.ini
+*similarity.txt
+similarity*.pdf
+suspicious.txt
+TODO.org
+
+##############
+# versioning #
+##############
+/.commitlintrc.json
+/.husky/
+/node_modules/
+/.versionrc.json
+get-next-version
 
 ###############
 # Emacs files #
@@ -29,12 +43,3 @@ __pycache__/
 /eshell/lastdir
 /server/
 \#*
-/config.ini
-*similarity.txt
-similarity*.pdf
-suspicious.txt
-TODO.org
-/.commitlintrc.json
-/.husky/
-/node_modules/
-/.versionrc.json
