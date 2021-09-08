@@ -18,6 +18,8 @@ tmp/
 similarity*.pdf
 suspicious.txt
 TODO.org
+src/moss
+src/config.ini
 
 ##############
 # versioning #
