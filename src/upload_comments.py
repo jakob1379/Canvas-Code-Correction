@@ -69,7 +69,6 @@ def upload_comments(sub, assignment):
         print(out_str)
 
     # Get assignment- and file name
-    assignment_name = sub.split(os.sep)[0]
     txt_name = sub.split(os.sep)[-2]
     handin_name = re.sub(" ", "+", txt_name)
 
