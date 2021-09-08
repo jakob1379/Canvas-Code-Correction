@@ -93,7 +93,7 @@ function correction_routine {
 
     # delete test files
     for fname in $orig_file_names; do
-	rm -rf $fname
+	rm -rf "$fname"
     done
 
     end=$(date +%s)
