@@ -34,11 +34,38 @@ lang="$(echo "$lang" | tr '[:upper:]' '[:lower:]'))"
 read -p "please insert the extension to check for plagiarism, multiple should be seperated with space e.g. .cpp .h .hpp " exts
 echo "Similarity has been set to defaul 50%. This can be changed manually in config.ini"
 
+echo "Setting up sandboxing..."
+if command -v firejail &> /dev/null
+then
+    while true; do
+	read -p "Should the programs be run in a sandbox? [y/N] " ans
+	ans="$(echo "$ans" | tr '[:upper:]' '[:lower:]')"
+	case "$ans" in
+	    'y' )
+		firejailAvailable='yes'
+		break
+		;;
+	    'n' )
+		firejailAvailable='no'
+		break
+		;;
+	    * )
+		echo "not a valid input..."
+		;;
+	esac
+    done
+else
+    echo "Firejail not available..."
+    firejailAvailable='no'
+fi
+
+
 text="[DEFAULT]
 APIURL=https://absalon.ku.dk/
 TOKEN=$token
 COURSEID=$courseid
 UPLOAD_SCORE=no
+SANDBOX=$firejailAvailable
 
 [plagiarism]
 # This framework is using moss (https://theory.stanford.edu/~aiken/moss/)

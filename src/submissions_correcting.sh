@@ -62,6 +62,7 @@ count=0
 submission=$1
 corrected=0
 skipped=0
+sandbox="$(awk -F '=' -e '/^sandbox/{print $2}' config.ini)"
 
 function correction_routine {
     # init variables
@@ -77,14 +78,22 @@ function correction_routine {
     start=$(date +%s)
     if $show_time
     then
-	time sh main.sh 2> /dev/null
+	if [ "$sandbox" == 'yes' ]; then
+	    time firejail sh main.sh 2> /dev/null
+	else
+	    time sh main.sh 2> /dev/null
+	fi
     else
-	sh main.sh 2> /dev/null
+	if [ "$sandbox" == 'yes' ]; then
+	    firejail sh main.sh 2> /dev/null
+	else
+	    sh main.sh 2> /dev/null
+	fi
     fi
 
     # delete test files
     for fname in $orig_file_names; do
-	rm -rf $fname
+	rm -rf "$fname"
     done
 
     end=$(date +%s)

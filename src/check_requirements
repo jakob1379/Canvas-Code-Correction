@@ -43,9 +43,10 @@ then
 
 
 fi
+
 if ! command -v firejail &> /dev/null
 then
-    echo "command firejail: could not be found"
+    echo "optional command firejail: could not be found"
     ecode=1
 fi
 
@@ -64,8 +65,8 @@ fi
 
 if ! command -v ./moss &> /dev/null
 then
-    echo "command moss: could not be found.
-Details on how to obtain MOSS can be found here: https://theory.stanford.edu/~aiken/moss/"
+    echo "No file called moss in src: Details on how to obtain MOSS can be found here
+ https://theory.stanford.edu/~aiken/moss/"
     ecode=1
 fi
 
