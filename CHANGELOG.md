@@ -2,6 +2,20 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.3.0](https://github.com/jakob1379/Canvas-Code-Correction/compare/v1.2.2...v1.3.0) (2021-09-09)
+
+
+### Features
+
+* added sandbox options ([0292451](https://github.com/jakob1379/Canvas-Code-Correction/commits/029245139e6750433c4b0cb8fc35fe347d5aea32))
+
+
+### Bug Fixes
+
+* quoted variable ([cfff352](https://github.com/jakob1379/Canvas-Code-Correction/commits/cfff35221a61da3ef118651499d6768a9fc7ea0f))
+* requirements messages updated ([f8bcfcb](https://github.com/jakob1379/Canvas-Code-Correction/commits/f8bcfcbc1224ab3fbe32688194b4fd12c39b5663))
+* unzip now moves content of single folder 1 up ([eb40bed](https://github.com/jakob1379/Canvas-Code-Correction/commits/eb40bed20fac0d459d9438becea1bcb90ffd7b8a))
+
 ### [1.2.2](https://github.com/jakob1379/Canvas-Code-Correction/compare/v1.2.0...v1.2.2) (2021-09-07)
 
 
