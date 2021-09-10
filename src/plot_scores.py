@@ -79,7 +79,6 @@ def load_data(course):
     # Count unique values i.e. complete, incomplete and not handed in
     df = pd.DataFrame(scores, columns=['Assignment',
                                        'grade', "attempts", "uid", "uname"])
-    df.loc[df.Assignment == "Week1-2", "Assignment"] = "Week 1-2"
     df.grade.fillna('Not handed in', inplace=True)  # replace nan with not handed in
     df.attempts.fillna(0, inplace=True)
     df = (
