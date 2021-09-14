@@ -111,13 +111,18 @@ def download_submission(sub, old_files=glob(os.path.join("*", 'submissions', '*'
                                  os.path.join(file_name, '') not in old]
             for f in folders_to_remove:
                 shutil.rmtree(f, ignore_errors=True)
+
             # download attachment if it doesn't exist,
             if os.path.join(directory, file_name, '') not in old_files:
-                url = sub.attachments[0]['url']
-                if args.verbose:
-                    print("Saving to:", directory+file_name+'.zip')
-                if not args.dry:
-                    download_url(url, directory+file_name+'.zip')
+                attachments_with_url = [
+                    att for att in sub.attachments if att.get("url")]
+                for att in attachments_with_url:
+                    final_path = os.path.join(
+                        directory, file_name, att.get("filename"))
+                    if args.verbose:
+                        print("Saving to:", final_path)
+                    if not args.dry:
+                        download_url(att.get("url"), final_path)
 
     except AttributeError:
         if args.verbose:
