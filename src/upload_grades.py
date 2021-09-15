@@ -137,19 +137,7 @@ def grade_submission(sub, assignment):
     if args.dry:
         return
 
-    # Edit online grade based on scoreColor and/or question answer if any
-    if (points >= points_needed or ans == 'o'):
-        if args.verbose:
-            state = f"{bcolors.OKBLUE}Completed{bcolors.ENDC}"
-            print(f"{state} with points: {points}\n")
-        grade = 'complete'
-    elif (points < points_needed or ans == 'o'):
-        if args.verbose:
-            state = f"{bcolors.FAIL}Incomplete{bcolors.ENDC}"
-            print(f"{state} with {points}: points\n")
-        grade = 'incomplete'
-
-    submission.edit(submission={'posted_grade': grade})
+    submission.edit(submission={'posted_grade': new_grade})
 
 
 def main():
