@@ -101,7 +101,7 @@ def grade_submission(sub, assignment):
     # Get submission for user
     submission = assignment.get_submission(user_id)
     current_grade = submission.grade
-    new_grade = get_grade(points, assignment_name)
+    new_grade = get_grade(points, assignment)
 
     # Grade accordingly
     ans = ''
