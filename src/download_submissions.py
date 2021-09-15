@@ -179,6 +179,8 @@ def find_submissions():
         print("found:", len(submissions)-sub_len)
         sub_len = len(submissions)
 
+    # Filter out those that do not have any attachments
+    submissions = [sub for sub in submissions if 'attachments' in vars(sub).keys()]
     return submissions
 
 
