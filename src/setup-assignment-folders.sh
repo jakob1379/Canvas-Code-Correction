@@ -8,3 +8,5 @@ for name in $assignmentNames; do
     echo "$name"
     mkdir -p "$name/code"
 done
+
+mkdir tmp

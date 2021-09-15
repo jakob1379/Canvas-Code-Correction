@@ -54,33 +54,39 @@ def load_data(course):
 
     if args.verbose:
         print("Fetching submissions from each assignment...")
-    pbar = Pbar.ProgressBar(redirect_stdout=True)
-    scores = list(chain(*[
-        [(assignment.name,
-          sub.grade,
-          sub.attempt,
-          sub.user_id,
-          course.get_user(sub.user_id).name)
-         for sub in list(assignment.get_submissions())]
-        for assignment in pbar(assignments)]))
 
-    # Parallel execution does not work
-    # scores = list(chain(*[
-    #     p_map(
-    #         lambda sub: (
-    #             assignment.name,
-    #             sub.grade,
-    #             sub.attempts,
-    #             sub.user_id,
-    #             course.get_user(sub.user_id).name),
-    #         list(assignment.get_submissions()))
-    #     for assignment in assignments]))
+    scores = []
+    pbar = Pbar.ProgressBar(redirect_stdout=True,
+                            max_value=Pbar.UnknownLength)
+    counter = 0
+    for assignment in assignments:
+        for sub in assignment.get_submissions():
+            pbar.update(counter)
+            scores.append(
+                (assignment.name,
+                 sub.attempt,
+                 sub.entered_grade,
+                 sub.entered_score,
+                 sub.grade,
+                 sub.score,
+                 sub.user_id,
+                 course.get_user(sub.user_id).name)
+            )
+            counter += 1
+    pbar.finish()
 
     # Count unique values i.e. complete, incomplete and not handed in
-    df = pd.DataFrame(scores, columns=['Assignment',
-                                       'grade', "attempts", "uid", "uname"])
-    df.loc[df.Assignment == "Week1-2", "Assignment"] = "Week 1-2"
-    df.grade.fillna('Not handed in', inplace=True)  # replace nan with not handed in
+    df = pd.DataFrame(scores,
+                      columns=['Assignment',
+                               'attempts',
+                               'entered_grade',
+                               'entered_score',
+                               'grade',
+                               'score',
+                               'user_id',
+                               "uname"])
+    # replace nan with not handed in
+    df.entered_grade.fillna('Not handed in', inplace=True)
     df.attempts.fillna(0, inplace=True)
     df = (
         df.apply(pd.to_numeric, errors="coerce")
@@ -105,13 +111,13 @@ def plot_scores(df_in):
 
     plot_data = (
         df
-        .groupby(["Assignment", "grade"])
-        .apply(lambda group: len(group)/df.uid.nunique())
+        .groupby(["Assignment", "entered_grade"])
+        .apply(lambda group: len(group)/df.user_id.nunique())
         .to_frame("percentage")
         .reset_index()
         .sort_values(by="Assignment"))
     df2 = (
-        df[df.grade == "complete"]
+        df[df.entered_grade == "complete"]
         .groupby("Assignment")
         .agg({"attempts": ["median", "mad", "mean", "var", "max"]})
         .reset_index()
@@ -125,14 +131,14 @@ def plot_scores(df_in):
     if args.verbose:
         print("Counting students who have passed...")
         # Count how many have passed the course
-    num_students_passed = df.groupby('uid').filter(lambda group: all(
-        group.grade == 'complete')).uid.nunique()
-    students_passed = (num_students_passed / df.uid.nunique())
-    num_students_no_handins = df.groupby('uid').filter(
-        lambda group: all(group.grade == 'Not handed in')).uid.nunique()
-    students_no_handins = (num_students_no_handins / df.uid.nunique())
+    num_students_passed = df.groupby('user_id').filter(lambda group: all(
+        group.entered_grade == 'complete')).user_id.nunique()
+    students_passed = (num_students_passed / df.user_id.nunique())
+    num_students_no_handins = df.groupby('user_id').filter(
+        lambda group: all(group.grade == 'Not handed in')).user_id.nunique()
+    students_no_handins = (num_students_no_handins / df.user_id.nunique())
     students_attempted_and_passed = (
-        num_students_passed / (df.uid.nunique() - num_students_no_handins))
+        num_students_passed / (df.user_id.nunique() - num_students_no_handins))
 
     if args.verbose:
         print("Plotting...")
@@ -146,7 +152,7 @@ def plot_scores(df_in):
         data=plot_data,
         x="percentage",
         y="Assignment",
-        hue="grade",
+        hue="entered_grade",
         ax=ax1)
     ax1.axis('tight')
 
@@ -154,24 +160,24 @@ def plot_scores(df_in):
         students_passed,
         linestyle='dashed',
         color='tab:green',
-        label=f'Passed: {100*students_passed:.2f}% - {num_students_passed}/{df.uid.nunique():d}')
+        label=f'Passed: {100*students_passed:.2f}% - {num_students_passed}/{df.user_id.nunique():d}')
 
     # Add a legend showing percentage of students who attempted AND passed
     attempt_passed_line = Line2D(
         [0], [0],
-        label=f'Attempted and passed: {100*students_attempted_and_passed:.2f}% - {num_students_passed}/{df.uid.nunique() - num_students_no_handins:d}', color='tab:blue',
+        label=f'Attempted and passed: {100*students_attempted_and_passed:.2f}% - {num_students_passed}/{df.user_id.nunique() - num_students_no_handins:d}', color='tab:blue',
         linestyle="dashed")
 
     ax1.axvline(
         students_no_handins,
         linestyle='dashed',
         color='tab:red',
-        label=f'No handins: {100*students_no_handins:.2f}% - {num_students_no_handins:d}/{df.uid.nunique():d}')
+        label=f'No handins: {100*students_no_handins:.2f}% - {num_students_no_handins:d}/{df.user_id.nunique():d}')
 
     line_handles, _ = ax1.get_legend_handles_labels()
     line_handles.append(attempt_passed_line)
 
-    ax1.set_xlabel(f'Percentage out of {df.uid.nunique():d} students')
+    ax1.set_xlabel(f'Percentage out of {df.user_id.nunique():d} students')
     ax1.set_xlim(0, 1.01)
     bar_handles = ax1.get_legend_handles_labels()[3:]
 
@@ -191,10 +197,10 @@ def plot_scores(df_in):
                     Assignment=group.name,
                     grade="complete",
                     attempts=0))))
-    df = df.append(empty_assignments, ignore_index=True).sort_values(by="Assignment")
+    df3 = df.append(empty_assignments, ignore_index=True).sort_values(by="Assignment")
 
     sns.violinplot(
-        data=df[df.grade == "complete"],
+        data=df[df3.entered_grade == "complete"],
         y="Assignment",
         x="attempts",
         ax=ax2,
@@ -203,7 +209,7 @@ def plot_scores(df_in):
     )
 
     sns.stripplot(
-        data=df,
+        data=df3,
         x="attempts",
         y="Assignment",
         jitter=True,

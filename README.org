@@ -23,11 +23,11 @@
 * Example usage
   Now you should be ready to run stuff!
 ** Primary usage
-   The primary way to use the whole thing is to call the ~main.sh~ as that does everything from downloading and extracting submissions to assignment folders, run the user provided correction code, zip comments and logs, and lastly upload grades and comments to Canvas.
+   The primary way to use the whole thing is to call the ~canvas-code-correction.sh~ as that does everything from downloading and extracting submissions to assignment folders, run the user provided correction code, zip comments and logs, and lastly upload grades and comments to Canvas.
 
    If no arguments are provided the routine will be run only once, but a series of optional parameters may be passed to enable continuous check of submissions, time between checks and so forth. The documentation is as follows
    #+BEGIN_SRC
-usage:  main.sh [...]
+usage:  canvas-code-correction.sh [...]
 operations:
     {-h help}    shows this dialogue
     {-a all}     correct all assignments

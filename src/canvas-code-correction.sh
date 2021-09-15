@@ -3,7 +3,7 @@ set -euo pipefail
 
 displayUsage() {
     echo "
-usage:  main.sh [...]
+usage:  canvas-code-correction.sh [...]
 operations:
     {-h help}    shows this dialogue
     {-a all}     correct all assignments
