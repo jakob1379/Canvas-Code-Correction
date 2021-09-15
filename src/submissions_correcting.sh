@@ -133,10 +133,6 @@ then
     echo "Correcting all!"
     folders=$(find "$totalPath" -mindepth 1 -maxdepth 1 -type d)
 else
-    # Find folders that does not have a points.txt file in them
-    # folders=$(comm -13 \
-    #		   <(find "$totalPath" -mindepth 2 -maxdepth 2 -type f -name "*points.txt" -exec dirname '{}' \; | sort) \
-    #		   <(find "$totalPath" -mindepth 1 -maxdepth 1 -type d | sort))
     folders=$(find "$totalPath" \
 		   -mindepth 1 \
 		   -maxdepth 1 \
