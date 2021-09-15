@@ -108,7 +108,7 @@ function routine {
     if [ ! -z "$download_args" ]; then
 	download_out=$(python3 download_submissions.py $download_args | tee /dev/fd/2)
     else
-	download_out=$(python3 download_submissions.py)
+	download_out=$(python3 download_submissions.py | tee /dev/fd/2)
     fi
     numAssignments=$(echo "$download_out" | \
 			     grep -oP "Submissions to correct:.*" | \
