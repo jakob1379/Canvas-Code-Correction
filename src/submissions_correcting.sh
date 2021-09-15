@@ -125,8 +125,8 @@ function correction_routine {
 
 # Read user input
 folder="$1"
-week=$(basename -- "$folder")
-totalPath="$week/submissions/"
+assignment=$(basename -- "$folder")
+totalPath="$assignment/submissions/"
 
 if [[ $always ]]
 then
