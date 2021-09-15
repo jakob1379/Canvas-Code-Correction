@@ -55,10 +55,14 @@ def load_data(course):
     if args.verbose:
         print("Fetching submissions from each assignment...")
     pbar = Pbar.ProgressBar(redirect_stdout=True)
+
     scores = list(chain(*[
         [(assignment.name,
-          sub.grade,
           sub.attempt,
+          sub.entered_grade,
+          sub.entered_score,
+          sub.grade,
+          sub.score,
           sub.user_id,
           course.get_user(sub.user_id).name)
          for sub in list(assignment.get_submissions())]
@@ -77,8 +81,15 @@ def load_data(course):
     #     for assignment in assignments]))
 
     # Count unique values i.e. complete, incomplete and not handed in
-    df = pd.DataFrame(scores, columns=['Assignment',
-                                       'grade', "attempts", "uid", "uname"])
+    df = pd.DataFrame(scores,
+                      columns=['Assignment',
+                               'attempt',
+                               'entered_grade',
+                               'entered_score',
+                               'grade',
+                               'score',
+                               'user_id',
+                               "uname"])
     df.grade.fillna('Not handed in', inplace=True)  # replace nan with not handed in
     df.attempts.fillna(0, inplace=True)
     df = (
