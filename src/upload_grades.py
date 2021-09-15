@@ -75,7 +75,6 @@ def grade_submission(sub, assignment):
 
     :param sub: path to corrected folders
     :param assignments: dictionary with assignment names as keys and canvas assignment objects as values
-    # TODO: change to take the actual canvas assignment object
 
     """
 
