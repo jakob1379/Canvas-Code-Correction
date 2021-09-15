@@ -131,14 +131,16 @@ totalPath="$week/submissions/"
 if [[ $always ]]
 then
     echo "Correcting all!"
-    folders=$(find "$totalPath" -mindepth 1 -maxdepth 1 -type d)
+    folders=$(find "$totalPath" -mindepth 1 -maxdepth 1 -type d |\
+	   shuf)
 else
     folders=$(find "$totalPath" \
 		   -mindepth 1 \
 		   -maxdepth 1 \
 		   -type d \
 		   -exec sh -c '[[ $(ls -A "{}"/*points.txt 2>/dev/null) ]] && exit 1; true' \; \
-		   -print)
+		   -print | \
+	   shuf)
 fi
 
 num_folders=$(echo "$folders" | wc -l)
