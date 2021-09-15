@@ -150,7 +150,7 @@ def find_submissions():
             submissions += list(assignment.get_submissions())
         elif args.download == "failed":
             submissions += [sub for sub in assignment.get_submissions()
-                            if sub.grade == 'incomplete']
+                            if (sub.grade == 'incomplete') or (sub.grade == 0) or sub.grade == '0%']
         elif args.download == "uncommented":
             for sub in assignment.get_submissions(include='submission_comments'):
 
