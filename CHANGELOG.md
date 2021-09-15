@@ -2,6 +2,27 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.4.0](https://github.com/jakob1379/Canvas-Code-Correction/compare/v1.3.0...v1.4.0) (2021-09-15)
+
+
+### Features
+
+* changed name of main to ccc ([318da24](https://github.com/jakob1379/Canvas-Code-Correction/commits/318da244734bbd2917f09a59247f01d67f4dec1a))
+* downloads and unpack directly in folder ([e80907b](https://github.com/jakob1379/Canvas-Code-Correction/commits/e80907be0550fb05a47c4339db5236222ca483fa))
+* randomizes order of correction to continue after breaking ([75bd6e0](https://github.com/jakob1379/Canvas-Code-Correction/commits/75bd6e0fe66ba05339553a7d7837dc7f8d202aff))
+* updated plotting to use new df format ([420e99d](https://github.com/jakob1379/Canvas-Code-Correction/commits/420e99d79b00c23919277287b86cc179cab2b5f2))
+
+
+### Bug Fixes
+
+* added init tmp folder ([7c5dc82](https://github.com/jakob1379/Canvas-Code-Correction/commits/7c5dc82112341baab9e145428bf83beb73dc27fa))
+* added package-lock.json ([6af0215](https://github.com/jakob1379/Canvas-Code-Correction/commits/6af02154384fee9327b17c46fd901b9b18bf36dd))
+* does not download submissions without attachments ([ea9e035](https://github.com/jakob1379/Canvas-Code-Correction/commits/ea9e035d34a095de46c8ff7bfe62b910e5def3fd))
+* download failed generalized more ([ae02889](https://github.com/jakob1379/Canvas-Code-Correction/commits/ae02889f900c269efdf1a78365fb7df9f452fe36))
+* ignored package-lock.json ([131139d](https://github.com/jakob1379/Canvas-Code-Correction/commits/131139dcf1196aed8b8986e83615265688479e85))
+* removed lock-file as it is not needed for online repo ([37ac21f](https://github.com/jakob1379/Canvas-Code-Correction/commits/37ac21f3f3654aef91e9aafe36162ee43c68f22d))
+* removed unnecessary line ([84879d1](https://github.com/jakob1379/Canvas-Code-Correction/commits/84879d1e9981424e8e74faa300af06545ee1598e))
+
 ## [1.3.0](https://github.com/jakob1379/Canvas-Code-Correction/compare/v1.2.2...v1.3.0) (2021-09-09)
 
 
