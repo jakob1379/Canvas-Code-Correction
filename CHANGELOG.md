@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [1.4.3](https://github.com/jakob1379/Canvas-Code-Correction/compare/v1.4.2...v1.4.3) (2021-09-15)
+
+
+### Bug Fixes
+
+* accounts for grading type percent ([eb83c7e](https://github.com/jakob1379/Canvas-Code-Correction/commits/eb83c7e0372767ff695e999998c67a0975e4a721))
+* disabled parallel download as defaul ([2552e18](https://github.com/jakob1379/Canvas-Code-Correction/commits/2552e187668240ae23c6247a101f075b0096b576))
+* passed wrong element to get_grade ([d15dc08](https://github.com/jakob1379/Canvas-Code-Correction/commits/d15dc08bd2d4fa96c404ffc924f67423b9cb12e3))
+* writes output to terminal directly ([0e5e3b0](https://github.com/jakob1379/Canvas-Code-Correction/commits/0e5e3b030720c3535ad7bb9fafbd998d86485b05))
+
 ### [1.4.2](https://github.com/jakob1379/Canvas-Code-Correction/compare/v1.4.0...v1.4.2) (2021-09-15)
 
 

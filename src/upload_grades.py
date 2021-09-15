@@ -53,7 +53,7 @@ if not glob(args.path):
     sys.exit()
 
 
-def get_grade(points, assignmentName):
+def get_grade(points, assignment):
     """ convert points to grading according to setup in config.ini
 
     :param points: number of points scores
@@ -62,10 +62,12 @@ def get_grade(points, assignmentName):
     :rtype: str or float
 
     """
+    points_needed = config.getfloat('scores_to_complete', assignment.name)
     if config.getboolean('DEFAULT', "upload_score"):
         grade = float(points)
+        if assignment.grading_type == "percent":
+            grade = f"{grade/points_needed * 100}%"
     else:
-        points_needed = config.getfloat('scores_to_complete', assignmentName)
         grade = 'complete' if points >= points_needed else 'incomplete'
     return grade
 
@@ -75,7 +77,6 @@ def grade_submission(sub, assignment):
 
     :param sub: path to corrected folders
     :param assignments: dictionary with assignment names as keys and canvas assignment objects as values
-    # TODO: change to take the actual canvas assignment object
 
     """
 
@@ -100,7 +101,7 @@ def grade_submission(sub, assignment):
     # Get submission for user
     submission = assignment.get_submission(user_id)
     current_grade = submission.grade
-    new_grade = get_grade(points, assignment_name)
+    new_grade = get_grade(points, assignment)
 
     # Grade accordingly
     ans = ''
