@@ -131,14 +131,15 @@ def plot_scores(df_in):
     if args.verbose:
         print("Counting students who have passed...")
         # Count how many have passed the course
+    nunique_students = df.user_id.nunique()
     num_students_passed = df.groupby('user_id').filter(lambda group: all(
         group.entered_grade == 'complete')).user_id.nunique()
-    students_passed = (num_students_passed / df.user_id.nunique())
+    students_passed = (num_students_passed / nunique_students)
     num_students_no_handins = df.groupby('user_id').filter(
         lambda group: all(group.grade == 'Not handed in')).user_id.nunique()
-    students_no_handins = (num_students_no_handins / df.user_id.nunique())
+    students_no_handins = (num_students_no_handins / nunique_students)
     students_attempted_and_passed = (
-        num_students_passed / (df.user_id.nunique() - num_students_no_handins))
+        num_students_passed / (nunique_students - num_students_no_handins))
 
     if args.verbose:
         print("Plotting...")
@@ -160,24 +161,24 @@ def plot_scores(df_in):
         students_passed,
         linestyle='dashed',
         color='tab:green',
-        label=f'Passed: {100*students_passed:.2f}% - {num_students_passed}/{df.user_id.nunique():d}')
+        label=f'Passed: {100*students_passed:.2f}% - {num_students_passed}/{nunique_students:d}')
 
     # Add a legend showing percentage of students who attempted AND passed
     attempt_passed_line = Line2D(
         [0], [0],
-        label=f'Attempted and passed: {100*students_attempted_and_passed:.2f}% - {num_students_passed}/{df.user_id.nunique() - num_students_no_handins:d}', color='tab:blue',
+        label=f'Attempted and passed: {100*students_attempted_and_passed:.2f}% - {num_students_passed}/{nunique_students - num_students_no_handins:d}', color='tab:blue',
         linestyle="dashed")
 
     ax1.axvline(
         students_no_handins,
         linestyle='dashed',
         color='tab:red',
-        label=f'No handins: {100*students_no_handins:.2f}% - {num_students_no_handins:d}/{df.user_id.nunique():d}')
+        label=f'No handins: {100*students_no_handins:.2f}% - {num_students_no_handins:d}/{nunique_students:d}')
 
     line_handles, _ = ax1.get_legend_handles_labels()
     line_handles.append(attempt_passed_line)
 
-    ax1.set_xlabel(f'Percentage out of {df.user_id.nunique():d} students')
+    ax1.set_xlabel(f'Percentage out of {nunique_students:d} students')
     ax1.set_xlim(0, 1.01)
     bar_handles = ax1.get_legend_handles_labels()[3:]
 
@@ -186,21 +187,8 @@ def plot_scores(df_in):
                framealpha=0.3,
                prop={'size': 6})
 
-    # Edge case where no-one has completed the assignment but we still want an empty line
-    empty_assignments = []
-    (df.groupby("Assignment")
-     .filter(lambda group: not group.notnull().values.all())
-     .groupby("Assignment")
-     .apply(lambda group:
-            empty_assignments.append(
-                dict(
-                    Assignment=group.name,
-                    grade="complete",
-                    attempts=0))))
-    df3 = df.append(empty_assignments, ignore_index=True).sort_values(by="Assignment")
-
     sns.violinplot(
-        data=df[df3.entered_grade == "complete"],
+        data=df[df.entered_grade == "complete"],
         y="Assignment",
         x="attempts",
         ax=ax2,
@@ -209,7 +197,7 @@ def plot_scores(df_in):
     )
 
     sns.stripplot(
-        data=df3,
+        data=df,
         x="attempts",
         y="Assignment",
         jitter=True,
