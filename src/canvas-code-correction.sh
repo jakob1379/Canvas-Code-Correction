@@ -24,7 +24,7 @@ t=0
 w=0
 daemon=false
 args=''
-download_args='-p '
+download_args=' '
 max_time=0
 while getopts ":hadfn:st:vw:" opt; do
     case ${opt} in
