@@ -66,7 +66,7 @@ def get_grade(points, assignment):
     if config.getboolean('DEFAULT', "upload_score"):
         grade = float(points)
         if assignment.grading_type == "percent":
-            grade = f"{grade/points_needed * 100}%"
+            grade = f"{grade/points_needed * 100:0.0f}%"
     else:
         grade = 'complete' if points >= points_needed else 'incomplete'
     return grade
