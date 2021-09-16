@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [1.4.4](https://github.com/jakob1379/Canvas-Code-Correction/compare/v1.4.3...v1.4.4) (2021-09-16)
+
+
+### Bug Fixes
+
+* changed to correct lookup for points needed ([e91becf](https://github.com/jakob1379/Canvas-Code-Correction/commits/e91becf916affb6af4df9d4fc9f5e91baaa30db3))
+* fixed percent formatting ([c6ee8b5](https://github.com/jakob1379/Canvas-Code-Correction/commits/c6ee8b552938d537efe01281b50c06ba217e49c4))
+
 ### [1.4.3](https://github.com/jakob1379/Canvas-Code-Correction/compare/v1.4.2...v1.4.3) (2021-09-15)
 
 
