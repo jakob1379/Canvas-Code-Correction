@@ -175,18 +175,17 @@ def find_submissions():
     # if specific students where chosen filter them
     if args.student_id:
         submissions = [sub for sub in submissions if sub.user_id in args.student_id]
-    if args.verbose:
-        print("found:", len(submissions)-sub_len)
-        sub_len = len(submissions)
-
     # Filter out those that do not have any attachments
     submissions = [sub for sub in submissions if 'attachments' in vars(sub).keys()]
+
+    if args.verbose:
+        print("Submissions to correct:", len(submissions))
+
     return submissions
 
 
 def main():
     submissions = find_submissions()
-    print("Submissions to correct:", len(submissions))
 
     # Download submissions
     if submissions:
