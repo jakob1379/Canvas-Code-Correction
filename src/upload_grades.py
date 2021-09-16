@@ -66,7 +66,7 @@ def get_grade(points, assignment):
     if config.getboolean('DEFAULT', "upload_score"):
         grade = float(points)
         if assignment.grading_type == "percent":
-            grade = f"{grade/points_needed * 100}%"
+            grade = f"{grade/points_needed * 100:0.0f}%"
     else:
         grade = 'complete' if points >= points_needed else 'incomplete'
     return grade
@@ -107,7 +107,7 @@ def grade_submission(sub, assignment):
     ans = ''
 
     if (not args.grade_all) and submission.grade_matches_current_submission and (
-            submission.grade is not None):
+            submission.grade is not None) and (current_grade == new_grade):
         if args.verbose:
             print(f"{bcolors.WARNING}Grading: Submission already graded{bcolors.ENDC}\n")
             return
