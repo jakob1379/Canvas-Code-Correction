@@ -107,7 +107,7 @@ def grade_submission(sub, assignment):
     ans = ''
 
     if (not args.grade_all) and submission.grade_matches_current_submission and (
-            submission.grade is not None):
+            submission.grade is not None) and (current_grade == new_grade):
         if args.verbose:
             print(f"{bcolors.WARNING}Grading: Submission already graded{bcolors.ENDC}\n")
             return
