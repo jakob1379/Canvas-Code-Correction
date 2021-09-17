@@ -12,7 +12,7 @@ from canvasapi import Canvas
 from p_tqdm import p_map
 import sys
 from canvas_helpers import bcolors
-from canvas_helpers import file_to_string
+from canvas_helpers import file_to_string, init_canvas_course
 
 import configparser
 config = configparser.ConfigParser()
@@ -145,12 +145,9 @@ def main():
     if args.verbose:
         print('Initialising canvas...')
 
-    # Initialize a new Canvas object
-    canvas = Canvas(config['DEFAULT']['apiurl'], config['DEFAULT']['token'])
+    # Initialize a new Canvas course object
+    course = init_canvas_course(config)
 
-    # init course
-    course_id = config.get('DEFAULT', 'courseid')
-    course = canvas.get_course(course_id)
     # assignments_as_dict = {ass.name.capitalize().replace(' ', ''): ass
     #                        for ass in course.get_assignments()}
     assignments_as_dict = {ass.name: ass

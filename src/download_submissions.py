@@ -1,5 +1,6 @@
 # Import the Canvas class
 import argparse
+import configparser
 import multiprocessing
 import os
 import shutil
@@ -9,13 +10,13 @@ from glob import glob
 from pathlib import Path
 
 import progressbar as Pbar
-from canvasapi import Canvas
-from p_tqdm import p_umap
 from canvas_helpers import create_file_name
 from canvas_helpers import download_url
 from canvas_helpers import extract_comment_filenames
+from canvas_helpers import init_canvas_course
+from canvasapi import Canvas
+from p_tqdm import p_umap
 
-import configparser
 config = configparser.ConfigParser()
 config.read('config.ini')
 
@@ -27,14 +28,8 @@ elif not config.get('DEFAULT', 'token'):
     print("No token found in config!")
     sys.exit(2)
 
-# Initialize a new Canvas object
-token = config.get('DEFAULT', 'token')
-url = config.get('DEFAULT', 'apiurl')
-canvas = Canvas(url, token)
-
-# create course object
-course_id = config.get('DEFAULT', 'courseid')
-course = canvas.get_course(course_id)
+# Initialize a new Canvas course object
+course = init_canvas_course(config)
 
 # set up argparse
 parser = argparse.ArgumentParser(
@@ -139,7 +134,6 @@ def find_submissions():
 
     # Walk through all assignments and find submissions
     submissions = []
-    sub_len = 0
 
     assignments = [a for a in course.get_assignments()
                    if a.name in args.assignment]

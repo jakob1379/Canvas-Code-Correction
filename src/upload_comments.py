@@ -1,20 +1,22 @@
 # Import the Canvas class
-import progressbar as Pbar
 import argparse
+import configparser
 import os
 import re
+import sys
 from glob import glob
-from p_tqdm import p_map
+from multiprocessing import cpu_count
+
+import progressbar as Pbar
 from canvas_helpers import bcolors
 from canvas_helpers import download_url
 from canvas_helpers import extract_comment_filenames
 from canvas_helpers import file_to_string
+from canvas_helpers import init_canvas_course
 from canvas_helpers import md5sum
-from canvasapi import Canvas
+from p_tqdm import p_map
 from tabulate import tabulate
-from multiprocessing import cpu_count
-import sys
-import configparser
+
 config = configparser.ConfigParser()
 config.read('config.ini')
 
@@ -158,15 +160,9 @@ def main():
     if args.verbose:
         print('Initialising canvas...')
 
-    # Initialize a new Canvas object
-    canvas = Canvas(config.get('DEFAULT', 'apiurl'),
-                    config.get('DEFAULT', 'token'))
+    # Initialize a new Canvas course object
+    course = init_canvas_course(config)
 
-    # init course
-    course_id = config.get('DEFAULT', 'courseid')
-    course = canvas.get_course(course_id)
-    # assignments_as_dict = {ass.name.capitalize().replace(' ', ''): ass
-    #                        for ass in course.get_assignments()}
     assignments_as_dict = {ass.name: ass
                            for ass in course.get_assignments()}
     # get local submissions

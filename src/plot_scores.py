@@ -1,6 +1,6 @@
 import configparser
 from matplotlib.lines import Line2D
-from canvas_helpers import file_to_string
+from canvas_helpers import file_to_string, init_canvas_course
 from canvasapi import Canvas
 from datetime import datetime
 from functools import partial
@@ -233,12 +233,8 @@ def main():
     if args.verbose:
         print("setting up connection to absalon...")
 
-    # Initialize a new Canvas object
-    canvas = Canvas(config['DEFAULT']['apiurl'], config['DEFAULT']['token'])
-
-    # init course
-    course_id = config['DEFAULT']['courseid']
-    course = canvas.get_course(course_id)
+    # Initialize a new Canvas course object
+    course = init_canvas_course(config)
 
     df = load_data(course)
     if args.verbose:
