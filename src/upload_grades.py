@@ -90,7 +90,7 @@ def grade_submission(sub, assignment):
     handin_name = sub.split(os.sep)[-2]
 
     # get points and user id
-    fname = sub + handin_name + '_points.txt'
+    fname = os.path.join(sub, handin_name + '_points.txt')
     if not Path(fname).exists():
         print(bcolors.WARNING + "FILE DOES NOT EXIST: " + bcolors.ENDC, fname)
         return
@@ -122,7 +122,7 @@ def grade_submission(sub, assignment):
             scoreColor = bcolors.OKBLUE
 
         print(30*'-')
-        print(file_to_string(sub + handin_name + '.txt'))
+        print(file_to_string(os.path.join(sub, handin_name + '.txt')))
 
         print(f"\nPoints in file: {scoreColor}{points}{bcolors.ENDC}/{points_needed}")
 

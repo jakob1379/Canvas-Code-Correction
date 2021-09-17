@@ -94,8 +94,10 @@ def upload_comments(sub, assignment):
         try:
             latest_comment_url = submission.submission_comments[-1]['attachments'][0]['url']
             fname = submission.submission_comments[-1]['attachments'][0]['display_name']
-            download_url(latest_comment_url, 'tmp/' + fname)
-            previous_md5 = md5sum('tmp/' + fname)
+            download_url(
+                latest_comment_url,
+                os.path.join('tmp', fname))
+            previous_md5 = md5sum(os.path.join('tmp', fname))
         except KeyError or FileNotFoundError:
             previous_md5 = ""
     else:
@@ -192,7 +194,7 @@ def main():
             upload_comments(rep, assignment)
 
     # clear temporary files
-    files = glob("tmp/*")
+    files = glob(os.path.join("tmp", "*"))
     for fname in files:
         os.remove(fname)
 
