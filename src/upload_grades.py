@@ -1,20 +1,21 @@
 # Import the Canvas class
 import argparse
+import configparser
 import os
 import re
+import sys
 from glob import glob
 from multiprocessing import cpu_count
 from pathlib import Path
 
 import numpy as np
-import progressbar as Pbar
-from canvasapi import Canvas
-from p_tqdm import p_map
-import sys
-from canvas_helpers import bcolors
-from canvas_helpers import file_to_string, init_canvas_course
 
-import configparser
+import progressbar as Pbar
+from canvas_helpers import bcolors
+from canvas_helpers import file_to_string
+from canvas_helpers import init_canvas_course
+from p_tqdm import p_map
+
 config = configparser.ConfigParser()
 config.read('config.ini')
 
