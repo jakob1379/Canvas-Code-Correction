@@ -1,19 +1,22 @@
+import argparse
 import configparser
-from matplotlib.lines import Line2D
-from canvas_helpers import file_to_string, init_canvas_course
-from canvasapi import Canvas
+import multiprocessing
 from datetime import datetime
 from functools import partial
 from itertools import chain
-from tabulate import tabulate
-import argparse
+
 import matplotlib.pyplot as plt
-import multiprocessing
+import numpy as np
 import pandas as pd
 import progressbar as Pbar
 import seaborn as sns
+from canvasapi import Canvas
+from matplotlib.lines import Line2D
 from p_tqdm import p_map
-import numpy as np
+from tabulate import tabulate
+
+from canvas_helpers import init_canvas_course
+
 plt.style.use('ggplot')
 config = configparser.ConfigParser()
 config.read('config.ini')
@@ -34,6 +37,9 @@ parser.add_argument("-n", "--num-cores",
                     type=int,
                     nargs='?',
                     default=multiprocessing.cpu_count())
+parser.add_argument("-i", "--interactive",
+                    help="Open the dataframe in an interactive window",
+                    action='store_true')
 
 parser.add_argument("-v", "--verbose",
                     help="set verbose",
@@ -85,15 +91,25 @@ def load_data(course):
                                'score',
                                'user_id',
                                "uname"])
+
     # replace nan with not handed in
     df.entered_grade.fillna('Not handed in', inplace=True)
+
     df.attempts.fillna(0, inplace=True)
     df = (
         df.apply(pd.to_numeric, errors="coerce")
         .fillna(df)
         .reset_index(drop=True)
     )
-
+    df['passed'] = (
+        df.groupby("Assignment")
+        .apply(lambda group:
+               config.getfloat("scores_to_complete", group.name) *
+               group.entered_score >=
+               config.getfloat("scores_to_complete", group.name))
+        .reset_index(drop=True))
+    df['entered_score'] = df.entered_score.astype(np.float64)
+    df['score'] = df.score.astype(np.float64)
     return df
 
 
@@ -111,13 +127,13 @@ def plot_scores(df_in):
 
     plot_data = (
         df
-        .groupby(["Assignment", "entered_grade"])
+        .groupby(["Assignment", "passed"])
         .apply(lambda group: len(group)/df.user_id.nunique())
         .to_frame("percentage")
         .reset_index()
         .sort_values(by="Assignment"))
     df2 = (
-        df[df.entered_grade == "complete"]
+        df[df["passed"] == True]
         .groupby("Assignment")
         .agg({"attempts": ["median", "mad", "mean", "var", "max"]})
         .reset_index()
@@ -129,14 +145,14 @@ def plot_scores(df_in):
     df2.columns = df2.columns.droplevel(0)
 
     if args.verbose:
-        print("Counting students who have passed...")
+        print("Counting students who have passed assignments...")
         # Count how many have passed the course
     nunique_students = df.user_id.nunique()
     num_students_passed = df.groupby('user_id').filter(lambda group: all(
         group.entered_grade == 'complete')).user_id.nunique()
     students_passed = (num_students_passed / nunique_students)
     num_students_no_handins = df.groupby('user_id').filter(
-        lambda group: all(group.grade == 'Not handed in')).user_id.nunique()
+        lambda group: all(group.entered_grade == 'Not handed in')).user_id.nunique()
     students_no_handins = (num_students_no_handins / nunique_students)
     students_attempted_and_passed = (
         num_students_passed / (nunique_students - num_students_no_handins))
@@ -153,7 +169,7 @@ def plot_scores(df_in):
         data=plot_data,
         x="percentage",
         y="Assignment",
-        hue="entered_grade",
+        hue="passed",
         ax=ax1)
     ax1.axis('tight')
 
@@ -188,7 +204,7 @@ def plot_scores(df_in):
                prop={'size': 6})
 
     sns.violinplot(
-        data=df[df.entered_grade == "complete"],
+        data=df[df['passed'] == True],
         y="Assignment",
         x="attempts",
         ax=ax2,
@@ -206,7 +222,7 @@ def plot_scores(df_in):
         alpha=0.25
     )
 
-    ax2.text(0.98, 0.27,
+    ax2.text(0.98, 0.0,
              tabulate(df2, headers=df2.columns),
              horizontalalignment='right',
              verticalalignment='top',
@@ -215,6 +231,7 @@ def plot_scores(df_in):
              bbox=dict(boxstyle="square", alpha=0.10),
              fontfamily='monospace')
 
+    ax2.set_xlabel("Attemps used for passed assignments")
     ax2.axis('tight')
 
     fig.suptitle(datetime.now().strftime("%b %d %Y %T"))
@@ -241,6 +258,10 @@ def main():
         print("Aggregating data for plotting...")
     plot_scores(df)
     print("Done!")
+
+    if args.interactive:
+        import dtale
+        dtale.show(df, open_browser=True)
 
 
 if __name__ == '__main__':

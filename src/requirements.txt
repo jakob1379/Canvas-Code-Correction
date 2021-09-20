@@ -1,11 +1,13 @@
 canvasapi
+dtale
 joblib
 matplotlib
 multiprocess
 numpy
+p-tqdm
 pandas
 plotly
-p-tqdm
+possum
 progressbar2
 requests
 scipy
@@ -13,4 +15,3 @@ seaborn
 tabulate
 tqdm
 urllib3
-possum
