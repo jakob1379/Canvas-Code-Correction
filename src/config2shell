@@ -30,4 +30,4 @@ while read -r line; do
     fi
 done < config.ini
 
-export config
+declare -p config > .config_array
