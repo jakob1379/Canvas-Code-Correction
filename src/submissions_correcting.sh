@@ -103,7 +103,7 @@ function correction_routine {
 	    timeout $maxtime sh main.sh 2> /dev/null && exit_code=0 ||  exit_code="$?"
 	fi
     fi
-    echo "###### FINISHED RUNNING CODE ######## "
+    echo "###### FINISHED RUNNING CODE $exit_code ######## "
     if [[ "$exit_code" == "124" ]]; then
 	timout_write_points_and_comments
 	echo "###### WRITING TIMEOUT MESSAGE ######## "
