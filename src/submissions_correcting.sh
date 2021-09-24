@@ -99,16 +99,11 @@ function correction_routine {
 	if [ "$sandbox" == 'yes' ]; then
 	    timeout $maxtime firejail sh main.sh 2> /dev/null
 	else
-	    timeout $maxtime sh main.sh 2> /dev/null || false
+	    timeout $maxtime sh main.sh 2> /dev/null || exit_code="$?"
 	fi
     fi
-    exit_code="$?"
 
-    if [[ "$exit_code" != "0" ]]; then
-	timout_write_points_and_comments
-    fi
-
-    if [[ "$?" != "0" ]]; then
+    if [[ "$exit_code" == "124" ]]; then
 	timout_write_points_and_comments
     fi
 
