@@ -69,7 +69,7 @@ maxtime="$(awk -F '=' -e '/^MAXTIME/{print $2}' config.ini)"
 
 
 function timout-write-points-and-comments {
-    bname=basename "$PWD"
+    bname=$(basename "$PWD")
     echo "0" > "$bname_points.txt"
     echo "########################################
 # Timeout reached! Code did not finish #
@@ -104,7 +104,7 @@ function correction_routine {
 	fi
     fi
     echo "###### FINISHED RUNNING CODE $exit_code ######## "
-    if [[ "$exit_code" == "124" ]]; then
+    if [ "$exit_code" -eq "124" ]; then
 	echo "###### WRITING TIMEOUT MESSAGE ######## "
 	timout-write-points-and-comments
     fi
