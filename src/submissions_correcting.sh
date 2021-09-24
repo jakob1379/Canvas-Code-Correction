@@ -71,7 +71,8 @@ maxtime="$(awk -F '=' -e '/^MAXTIME/{print $2}' config.ini)"
 function timout-write-points-and-comments {
     bname=$(basename "$PWD")
     echo "0" > "$bname""_points.txt"
-    echo "########################################
+    echo "
+########################################
 # Timeout reached! Code did not finish #
 ########################################" >> "$bname.txt"
 }
@@ -87,7 +88,6 @@ function correction_routine {
     /usr/bin/cp -rf "$folder"/code/. "$submission"/ # copy everything including hidden files
     cd "$submission"
 
-    echo "###### RUNNING CODE ######## "
     start=$(date +%s)
     if $show_time
     then
@@ -103,9 +103,7 @@ function correction_routine {
 	    timeout $maxtime sh main.sh 2> /dev/null && exit_code=0 ||  exit_code="$?"
 	fi
     fi
-    echo "###### FINISHED RUNNING CODE $exit_code ######## "
     if [ "$exit_code" -eq "124" ]; then
-	echo "###### WRITING TIMEOUT MESSAGE ######## "
 	timout-write-points-and-comments
     fi
 
