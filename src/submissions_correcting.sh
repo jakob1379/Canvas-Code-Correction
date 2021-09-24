@@ -91,9 +91,9 @@ function correction_routine {
     if $show_time
     then
 	if [ "$sandbox" == 'yes' ]; then
-	    time timeout $maxtime firejail sh main.sh 2> /dev/null
+	    timeout $maxtime time firejail sh main.sh 2> /dev/null
 	else
-	    time timeout $maxtime sh main.sh 2> /dev/null
+	    timeout $maxtime time sh main.sh 2> /dev/null
 	fi
     else
 	if [ "$sandbox" == 'yes' ]; then
@@ -101,6 +101,11 @@ function correction_routine {
 	else
 	    timeout $maxtime sh main.sh 2> /dev/null
 	fi
+    fi
+    exit_code="$?"
+
+    if [[ "$exit_code" != "0" ]]; then
+	timout_write_points_and_comments
     fi
 
     # delete test files
