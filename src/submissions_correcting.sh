@@ -103,6 +103,10 @@ function correction_routine {
 	fi
     fi
 
+    if [[ "$?" != "0" ]]; then
+	timout_write_points_and_comments
+    fi
+
     # delete test files
     for fname in $orig_file_names; do
 	rm -rf "$fname"
