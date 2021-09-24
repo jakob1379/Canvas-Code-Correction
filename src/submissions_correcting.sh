@@ -2,7 +2,9 @@
 set -euo pipefail
 IFS=$'\n\t'
 
-
+# init config to bash array
+bash config2shell
+find . -type d -wholename '*/code' -exec cp '.config_array' '{}' \;
 
 displayUsage() {
     echo '
@@ -63,6 +65,17 @@ submission=$1
 corrected=0
 skipped=0
 sandbox="$(awk -F '=' -e '/^sandbox/{print $2}' config.ini)"
+maxtime="$(awk -F '=' -e '/^MAXTIME/{print $2}' config.ini)"
+
+
+function timout-write-points-and-comments {
+    bname=$(basename "$PWD")
+    echo "0" > "$bname""_points.txt"
+    echo "
+########################################
+# Timeout reached! Code did not finish #
+########################################" >> "$bname.txt"
+}
 
 function correction_routine {
     # init variables
@@ -72,23 +85,26 @@ function correction_routine {
     $verbose && echo "evaluating..."
     dir="$PWD"
     orig_file_names=$(find "$folder"/code/ -maxdepth 1 -mindepth 1 -exec basename {} \;)
-    /usr/bin/cp -rf "$folder"/code/* "$submission"/
+    /usr/bin/cp -rf "$folder"/code/. "$submission"/ # copy everything including hidden files
     cd "$submission"
 
     start=$(date +%s)
     if $show_time
     then
 	if [ "$sandbox" == 'yes' ]; then
-	    time firejail sh main.sh 2> /dev/null
+	    timeout $maxtime time firejail sh main.sh 2> /dev/null
 	else
-	    time sh main.sh 2> /dev/null
+	    timeout $maxtime time sh main.sh 2> /dev/null
 	fi
     else
 	if [ "$sandbox" == 'yes' ]; then
-	    firejail sh main.sh 2> /dev/null
+	    timeout $maxtime firejail sh main.sh 2> /dev/null
 	else
-	    sh main.sh 2> /dev/null
+	    timeout $maxtime sh main.sh 2> /dev/null && exit_code=0 ||  exit_code="$?"
 	fi
+    fi
+    if [ "$exit_code" -eq "124" ]; then
+	timout-write-points-and-comments
     fi
 
     # delete test files

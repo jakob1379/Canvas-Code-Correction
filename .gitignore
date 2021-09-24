@@ -46,3 +46,4 @@ __pycache__/
 /server/
 \#*
 /package-lock.json
+/src/config.ini.bak

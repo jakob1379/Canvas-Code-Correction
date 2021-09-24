@@ -2,6 +2,37 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.5.0](https://github.com/jakob1379/Canvas-Code-Correction/compare/v1.4.4...v1.5.0) (2021-09-24)
+
+
+### Features
+
+* added timeout for submissions and init-config ([65c8d82](https://github.com/jakob1379/Canvas-Code-Correction/commits/65c8d82ad3e0ae684d303cc6c3ce5da3ca0b13c5))
+* added timeout for submissions and init-config ([15257e5](https://github.com/jakob1379/Canvas-Code-Correction/commits/15257e5b73d7bdfe10489fab05f60a29f25f44d7))
+* feature: added config variables to shell, so main.sh can use them ([448e788](https://github.com/jakob1379/Canvas-Code-Correction/commits/448e78899d304fb432bad06cba3649b42fbd4fd9))
+
+
+### Bug Fixes
+
+* bad string concat ([7259135](https://github.com/jakob1379/Canvas-Code-Correction/commits/7259135e76df84823c7b0c44cfccbaab0c204165))
+* changed behaviour when reaching timeout ([d145363](https://github.com/jakob1379/Canvas-Code-Correction/commits/d1453637865bb4cfea9beac2acca7b4dca896972))
+* changed behaviour when reaching timeout ([ff10220](https://github.com/jakob1379/Canvas-Code-Correction/commits/ff102204d6a2dcfd9a0eab088f7c6c7f0a4a2b82))
+* changed logic to save exit_code ([7ec319f](https://github.com/jakob1379/Canvas-Code-Correction/commits/7ec319ff4ba33140ab6ac044b6ef0f4ddd6aea6c))
+* corrected boolean comparison ([f9105c9](https://github.com/jakob1379/Canvas-Code-Correction/commits/f9105c9d90be9b6164e358197c7dd52901c49efe))
+* didn't save basename ([dd7707a](https://github.com/jakob1379/Canvas-Code-Correction/commits/dd7707a15215487ed54302b24a03d40f475cb8f5))
+* echo test-message ([0ed9c32](https://github.com/jakob1379/Canvas-Code-Correction/commits/0ed9c3299650365db61cfc393475c2a4fa80b17a))
+* fixed percent formatting ([793609c](https://github.com/jakob1379/Canvas-Code-Correction/commits/793609c4ec493099d1726fd7c6240f8051b8d3d1))
+* generalized plotting further and added interactive session ([90ae7df](https://github.com/jakob1379/Canvas-Code-Correction/commits/90ae7dfbe9c2a4199551c28c16db2dc8c70da017))
+* minor edit ([35595a5](https://github.com/jakob1379/Canvas-Code-Correction/commits/35595a5f898a86a39eac814576d37026e0b680c7))
+* minor edit ([8f8dc8f](https://github.com/jakob1379/Canvas-Code-Correction/commits/8f8dc8f8e4ee723adcdb8d883520a201a43eef4d))
+* more testing ([b1ca8a5](https://github.com/jakob1379/Canvas-Code-Correction/commits/b1ca8a5b106ecc5e9049f4ec662e743a55e74923))
+* more testing ([2f01fec](https://github.com/jakob1379/Canvas-Code-Correction/commits/2f01fec6756513259773d7be63c7da259a205b86))
+* path joining made systemless ([27ca0ec](https://github.com/jakob1379/Canvas-Code-Correction/commits/27ca0eccb1fb3d9464c0e218e32f3935bb0fbdf7))
+* removed stupid space ([1dabd6e](https://github.com/jakob1379/Canvas-Code-Correction/commits/1dabd6ecc54f5fe0329d49929401115fe4a0132c))
+* removed testing lines and corrected timeout message ([91a2f35](https://github.com/jakob1379/Canvas-Code-Correction/commits/91a2f3561c47004bd30f0c4dbddfd1b1da65f838))
+* simplified printings ([256cdcf](https://github.com/jakob1379/Canvas-Code-Correction/commits/256cdcf4fcf454f9b105d2a9b989d572f1996d17))
+* try with altered exit_code writing ([de32489](https://github.com/jakob1379/Canvas-Code-Correction/commits/de32489549a67d861130c3753da79bf842d6e587))
+
 ### [1.4.4](https://github.com/jakob1379/Canvas-Code-Correction/compare/v1.4.3...v1.4.4) (2021-09-16)
 
 

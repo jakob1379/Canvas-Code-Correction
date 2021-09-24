@@ -1,4 +1,5 @@
 # Import the Canvas class
+from canvasapi import Canvas
 import re
 from pathlib import Path
 import os
@@ -154,3 +155,12 @@ def create_file_name(submission, course, method='name'):
 
     # Combine to finale output user_name
     return '_'.join([str(i) for i in file_name])
+
+
+def init_canvas_course(config):
+    canvas = Canvas(config['DEFAULT']['apiurl'], config['DEFAULT']['token'])
+
+    # init course
+    course_id = config['DEFAULT']['courseid']
+    course = canvas.get_course(course_id)
+    return course

@@ -1,20 +1,21 @@
 # Import the Canvas class
 import argparse
+import configparser
 import os
 import re
+import sys
 from glob import glob
 from multiprocessing import cpu_count
 from pathlib import Path
 
 import numpy as np
+
 import progressbar as Pbar
-from canvasapi import Canvas
-from p_tqdm import p_map
-import sys
 from canvas_helpers import bcolors
 from canvas_helpers import file_to_string
+from canvas_helpers import init_canvas_course
+from p_tqdm import p_map
 
-import configparser
 config = configparser.ConfigParser()
 config.read('config.ini')
 
@@ -89,7 +90,7 @@ def grade_submission(sub, assignment):
     handin_name = sub.split(os.sep)[-2]
 
     # get points and user id
-    fname = sub + handin_name + '_points.txt'
+    fname = os.path.join(sub, handin_name + '_points.txt')
     if not Path(fname).exists():
         print(bcolors.WARNING + "FILE DOES NOT EXIST: " + bcolors.ENDC, fname)
         return
@@ -121,7 +122,7 @@ def grade_submission(sub, assignment):
             scoreColor = bcolors.OKBLUE
 
         print(30*'-')
-        print(file_to_string(sub + handin_name + '.txt'))
+        print(file_to_string(os.path.join(sub, handin_name + '.txt')))
 
         print(f"\nPoints in file: {scoreColor}{points}{bcolors.ENDC}/{points_needed}")
 
@@ -145,12 +146,9 @@ def main():
     if args.verbose:
         print('Initialising canvas...')
 
-    # Initialize a new Canvas object
-    canvas = Canvas(config['DEFAULT']['apiurl'], config['DEFAULT']['token'])
+    # Initialize a new Canvas course object
+    course = init_canvas_course(config)
 
-    # init course
-    course_id = config.get('DEFAULT', 'courseid')
-    course = canvas.get_course(course_id)
     # assignments_as_dict = {ass.name.capitalize().replace(' ', ''): ass
     #                        for ass in course.get_assignments()}
     assignments_as_dict = {ass.name: ass
