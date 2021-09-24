@@ -69,7 +69,7 @@ maxtime="$(awk -F '=' -e '/^MAXTIME/{print $2}' config.ini)"
 
 
 function timout_write_points_and_comments {
-    bname = basename "$PWD"
+    bname=basename "$PWD"
     echo "0" > "$bname_points.txt"
     echo "########################################
 # Timeout reached! Code did not finish #
