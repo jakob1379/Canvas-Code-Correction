@@ -65,6 +65,16 @@ submission=$1
 corrected=0
 skipped=0
 sandbox="$(awk -F '=' -e '/^sandbox/{print $2}' config.ini)"
+maxtime="$(awk -F '=' -e '/^MAXTIME/{print $2}' config.ini)"
+
+
+function timout_write_points_and_comments {
+    bname = basename "$PWD"
+    echo "0" > "$bname_points.txt"
+    echo "########################################
+# Timeout reached! Code did not finish #
+########################################" >> "$bname.txt"
+}
 
 function correction_routine {
     # init variables
@@ -81,15 +91,15 @@ function correction_routine {
     if $show_time
     then
 	if [ "$sandbox" == 'yes' ]; then
-	    time firejail sh main.sh 2> /dev/null
+	    time timeout $maxtime firejail sh main.sh 2> /dev/null
 	else
-	    time sh main.sh 2> /dev/null
+	    time timeout $maxtime sh main.sh 2> /dev/null
 	fi
     else
 	if [ "$sandbox" == 'yes' ]; then
-	    firejail sh main.sh 2> /dev/null
+	    timeout $maxtime firejail sh main.sh 2> /dev/null
 	else
-	    sh main.sh 2> /dev/null
+	    timeout $maxtime sh main.sh 2> /dev/null
 	fi
     fi
 
