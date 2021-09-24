@@ -87,6 +87,7 @@ function correction_routine {
     /usr/bin/cp -rf "$folder"/code/. "$submission"/ # copy everything including hidden files
     cd "$submission"
 
+    echo "###### RUNNING CODE ######## "
     start=$(date +%s)
     if $show_time
     then
@@ -102,9 +103,10 @@ function correction_routine {
 	    timeout $maxtime sh main.sh 2> /dev/null; exit_code="$?"
 	fi
     fi
-
+    echo "###### FINISHED RUNNING CODE ######## "
     if [[ "$exit_code" == "124" ]]; then
 	timout_write_points_and_comments
+	echo "###### WRITING TIMEOUT MESSAGE ######## "
     fi
 
     # delete test files
