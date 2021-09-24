@@ -68,7 +68,7 @@ sandbox="$(awk -F '=' -e '/^sandbox/{print $2}' config.ini)"
 maxtime="$(awk -F '=' -e '/^MAXTIME/{print $2}' config.ini)"
 
 
-function timout_write_points_and_comments {
+function timout-write-points-and-comments {
     bname=basename "$PWD"
     echo "0" > "$bname_points.txt"
     echo "########################################
@@ -105,8 +105,8 @@ function correction_routine {
     fi
     echo "###### FINISHED RUNNING CODE $exit_code ######## "
     if [[ "$exit_code" == "124" ]]; then
-	timout_write_points_and_comments
 	echo "###### WRITING TIMEOUT MESSAGE ######## "
+	timout-write-points-and-comments
     fi
 
     # delete test files
