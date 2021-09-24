@@ -59,6 +59,15 @@ else
     firejailAvailable='no'
 fi
 
+echo "Setting up max-time for scripts..."
+maxtime="30s"
+re='^[0-9]*d?[0-9]*h?[0-9]*m?[0-9]*s?$'
+read -p "What is the max time for running each student as WdXhYmZs? [30s] " ans
+if [[ "$ans" =~ $re ]]; then
+    echo "$ans"
+else
+    echo "default: $maxtime"
+fi
 
 text="[DEFAULT]
 APIURL=https://absalon.ku.dk/
@@ -66,6 +75,7 @@ TOKEN=$token
 COURSEID=$courseid
 UPLOAD_SCORE=no
 SANDBOX=$firejailAvailable
+MAXTIME=$maxtime
 
 [plagiarism]
 # This framework is using moss (https://theory.stanford.edu/~aiken/moss/)
