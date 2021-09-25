@@ -115,7 +115,7 @@ def upload_comments(sub, assignment):
 
     # Only upload if it isn't already there.
     # or (previous_md5 != new_md5):
-    if (handin_name+'.zip' not in comment_files) or args.all:
+    if (handin_name+'.zip' not in comment_files) or (previous_md5 != new_md5) or args.all:
         if args.verbose:
             print("Upload: uploading feedback\n", file_to_upload)
 
@@ -131,8 +131,8 @@ def upload_comments(sub, assignment):
                     showindex='always'), '\n')
             else:
                 print(None)
-            print(f"New comment:   {upload_name}")
             print(f"Old comment:   {fname}\n")
+            print(f"New comment:   {upload_name}")
 
             if previous_md5 == new_md5:
                 md5string = f"{bcolors.OKBLUE}Yes{bcolors.ENDC}"
