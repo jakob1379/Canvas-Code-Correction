@@ -115,7 +115,7 @@ def upload_comments(sub, assignment):
 
     # Only upload if it isn't already there.
     # or (previous_md5 != new_md5):
-    if (handin_name+'.zip' not in comment_files) or args.all:
+    if (handin_name+'.zip' not in comment_files) or (previous_md5 != new_md5) or args.all:
         if args.verbose:
             print("Upload: uploading feedback\n", file_to_upload)
 
