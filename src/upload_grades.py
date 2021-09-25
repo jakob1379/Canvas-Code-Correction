@@ -124,6 +124,7 @@ def grade_submission(sub, assignment):
         print(30*'-')
         print(file_to_string(os.path.join(sub, handin_name + '.txt')))
 
+        print(f"Handin: {assignment_name}")
         print(f"\nPoints in file: {scoreColor}{points}{bcolors.ENDC}/{points_needed}")
 
         color = bcolors.OKBLUE if current_grade == 'complete' else bcolors.FAIL

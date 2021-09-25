@@ -9,4 +9,4 @@ for name in $assignmentNames; do
     mkdir -p "$name/code"
 done
 
-mkdir tmp
+mkdir -p tmp

@@ -47,3 +47,4 @@ __pycache__/
 \#*
 /package-lock.json
 /src/config.ini.bak
+/src/.config_array
