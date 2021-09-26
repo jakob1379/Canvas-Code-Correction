@@ -176,7 +176,7 @@ def main():
 
     # Create a list ofcorresponding canvas assignment objects
     assignment_for_reports = [
-        assignments_as_dict[rep[0].split(os.sep)[0]] for rep in reports]
+        assignments_as_dict[rep.split(os.sep)[0]] for rep in reports]
 
     # Let's start grading!
     if args.parallel:
