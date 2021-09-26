@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [1.5.2](https://github.com/jakob1379/Canvas-Code-Correction/compare/v1.5.1...v1.5.2) (2021-09-26)
+
+
+### Bug Fixes
+
+* checking md5sum ([3c354c4](https://github.com/jakob1379/Canvas-Code-Correction/commits/3c354c4b0b30dfc47dc4ecc65e8b4c763e6473fe))
+* counting elements of array ([2deff9b](https://github.com/jakob1379/Canvas-Code-Correction/commits/2deff9b62f96a8847a2cc58c704d3367c95165e1))
+
 ### [1.5.1](https://github.com/jakob1379/Canvas-Code-Correction/compare/v1.5.0...v1.5.1) (2021-09-25)
 
 ## [1.5.0](https://github.com/jakob1379/Canvas-Code-Correction/compare/v1.4.4...v1.5.0) (2021-09-24)
