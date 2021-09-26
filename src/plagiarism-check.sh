@@ -36,7 +36,6 @@ function check_assignment {
 	    echo "Found: $ext"
 	    mapfile -d $'\0' tmp_paths < \
 		    <(find "$assignment/submissions" -type f -name "*$ext" -print0)
-	    echo "${tmp_paths[@]}"
 	    paths_to_check+=( "${paths_to_check[@]}" "${tmp_paths[@]}" )
 	fi
 	IFS=' '
@@ -80,18 +79,21 @@ function check_assignment {
 	    --title "$url" \
 	    "$url"
     fi
+    return $?
 }
 
 function routine {
     folder="$(basename $1)"
-    check_assignment "$folder/"
+    check_assignment "$folder/" || return $?
     python hclust.py "$folder/similarity.txt"
+
+    return $?
 }
 
 # combine folders and extensions into regexes for moss
 for folder in $@; do
     echo "Checking: $folder"
-    routine "$folder" &
+    routine "$folder"
 done
 
 wait
