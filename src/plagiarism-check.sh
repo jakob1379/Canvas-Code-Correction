@@ -43,7 +43,7 @@ function check_assignment {
     done
 
     # return if nothing found
-    if [ -z "$paths_to_check" ]
+    if (( "${#paths_to_check[@]}" == 0 ))
     then
 	echo "No files found. skipping $1"
 	return
