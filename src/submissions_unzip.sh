@@ -10,14 +10,6 @@ folder=$1
 
 cd "$folder"
 
-# zipCount=$(ls -1 submissions/*.zip 2>/dev/null | wc -l)
-# if [ $zipCount -gt 0 ]; then
-#     # To extract all zips:
-#     for i in submissions/*.zip; do
-#	unzip -q -n "$i" -d "${i%%.zip}";
-#     done
-#     rm -f submissions/*.zip
-# fi
 find \
     submissions/*/ -maxdepth 1 -type f -name '*.zip' \
     -exec sh -c 'unzip -q -n "{}" -d "$(dirname "{}")" && rm -rf "{}"' \;
