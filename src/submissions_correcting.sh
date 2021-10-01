@@ -77,6 +77,16 @@ function timout-write-points-and-comments {
 ########################################" >> "$bname.txt"
 }
 
+function crarsh-write-points-and-comments {
+    bname=$(basename "$PWD")
+    echo "0" > "$bname""_points.txt"
+    echo "
+ ###################
+ # Program crashed #
+ ###################
+" >> "$bname.txt"
+}
+
 function correction_routine {
     # init variables
     submission="$1"
@@ -103,6 +113,7 @@ function correction_routine {
 	    timeout $maxtime sh main.sh 2> /dev/null && exit_code=0 ||  exit_code="$?"
 	fi
     fi
+
     if [ "$exit_code" -eq "124" ]; then
 	timout-write-points-and-comments
     fi
@@ -162,7 +173,7 @@ fi
 
 num_folders=$(echo "$folders" | wc -l)
 count=1
-max_children=1
+max_children=3
 for d in $folders; do
     if [ "$(pgrep -c -P$$)" -le "$(( max_children - 1 ))" ]; then
 	echo "Correcting: $d"
