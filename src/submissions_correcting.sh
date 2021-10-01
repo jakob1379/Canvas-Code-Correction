@@ -4,7 +4,7 @@ IFS=$'\n\t'
 
 # init config to bash array
 bash config2shell
-find . -type d -wholename '*/code' -exec cp '.config_array' '{}' \;
+find . -maxdepth 1 -type d -wholename '*/code' -exec cp '.config_array' '{}' \;
 
 displayUsage() {
     echo '
