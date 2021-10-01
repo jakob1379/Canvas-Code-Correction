@@ -4,7 +4,7 @@ IFS=$'\n\t'
 
 # init config to bash array
 bash config2shell
-find . -type d -wholename '*/code' -exec cp '.config_array' '{}' \;
+find . -maxdepth 1 -type d -wholename '*/code' -exec cp '.config_array' '{}' \;
 
 displayUsage() {
     echo '
@@ -144,12 +144,13 @@ folder="$1"
 assignment=$(basename -- "$folder")
 totalPath="$assignment/submissions/"
 
-if [[ $always ]]
+if [[ "$always" == "true" ]]
 then
     echo "Correcting all!"
     folders=$(find "$totalPath" -mindepth 1 -maxdepth 1 -type d |\
 	   shuf)
 else
+    echo "finding uncorrected..."
     folders=$(find "$totalPath" \
 		   -mindepth 1 \
 		   -maxdepth 1 \
@@ -160,12 +161,17 @@ else
 fi
 
 num_folders=$(echo "$folders" | wc -l)
-count=0
+count=1
+max_children=1
 for d in $folders; do
-    echo "Correcting: $d"
-    correction_routine "$totalPath$(basename "$d")"
-    echo $count | tqdm --update-to --total=$num_folders > /dev/null
-    ((count+=1))
+    if [ "$(pgrep -c -P$$)" -le "$(( max_children - 1 ))" ]; then
+	echo "Correcting: $d"
+	((count+=1))
+	echo $count | tqdm --update-to --total=$num_folders > /dev/null
+	correction_routine "$totalPath$(basename "$d")" &
+    else
+	wait -n $(pgrep -P$$) # Wait until a any subprocess terminates
+    fi
 done
-
+wait
 echo "Done!"

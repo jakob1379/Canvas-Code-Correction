@@ -204,12 +204,12 @@ def plot_scores(df_in):
                prop={'size': 6})
 
     sns.violinplot(
-        data=df[df['passed'] == True],
+        data=df[df['passed']],
         y="Assignment",
         x="attempts",
-        ax=ax2,
+        color=".8",
         linewidth=0,
-        color=".8"
+        ax=ax2
     )
 
     sns.stripplot(
@@ -218,8 +218,8 @@ def plot_scores(df_in):
         y="Assignment",
         jitter=True,
         zorder=1,
-        ax=ax2,
-        alpha=0.25
+        alpha=0.4,
+        ax=ax2
     )
 
     ax2.text(0.98, 0.0,

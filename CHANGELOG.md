@@ -2,6 +2,23 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [1.6.1](https://github.com/jakob1379/Canvas-Code-Correction/compare/v1.6.0...v1.6.1) (2021-10-01)
+
+## [1.6.0](https://github.com/jakob1379/Canvas-Code-Correction/compare/v1.5.3...v1.6.0) (2021-10-01)
+
+
+### Features
+
+* implemented parallel code correction ([d21f7d7](https://github.com/jakob1379/Canvas-Code-Correction/commits/d21f7d733f587d7254210a8b9066f30ebca92a5e))
+* moved bcolors to own module with new methods for easy format ([83bfc6f](https://github.com/jakob1379/Canvas-Code-Correction/commits/83bfc6fcc00c5fb4a71830dce03bb58ab45618ef))
+
+
+### Bug Fixes
+
+* fix for correct index in submissions ([705d970](https://github.com/jakob1379/Canvas-Code-Correction/commits/705d970e918223ef1cb0e9785465084f47c909dc))
+* more robust clearing of submissions ([03c7a45](https://github.com/jakob1379/Canvas-Code-Correction/commits/03c7a459185504d612098a689763fe0e7eac35d6))
+* restricted depth of find ([ed29510](https://github.com/jakob1379/Canvas-Code-Correction/commits/ed29510c9a2946515987279745eebbb0718c697a))
+
 ### [1.5.3](https://github.com/jakob1379/Canvas-Code-Correction/compare/v1.5.2...v1.5.3) (2021-09-26)
 
 ### [1.5.2](https://github.com/jakob1379/Canvas-Code-Correction/compare/v1.5.1...v1.5.2) (2021-09-26)

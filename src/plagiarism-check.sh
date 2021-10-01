@@ -8,8 +8,6 @@ then
     exit 2
 fi
 
-# folders="$(find -wholename "*/submissions")"
-# extensions=$(awk -F '=' -e '/^ext/{print $2}' config.ini)
 extensions=$(awk -F '=' '/^extensions/{print $2}' config.ini)
 cutoff=$(awk -F '=' 'BEGIN{ORS=""}/cutoff/{print $2}' config.ini)
 language=$(awk -F '=' 'BEGIN{ORS=""}/lang/{print $2}' config.ini )
@@ -19,13 +17,9 @@ function check_assignment {
     assignment=$(basename "$1")
     mossPath=$(basename "$1" | sed 's/ /\\ /g')
 
-    # # download all the handins
-    # rm -rf "$assignment/submissions/*"
-    # python download_submissions.py -d all -a "$assignment"
-    # bash submissions_unzip.sh "$assignment/"
-
     # Construct the paths for moss by checking each presence of each extension
     paths_to_check=()
+    used_exts=()
     echo "checking extensions..."
     IFS=' '
     for ext in $extensions
@@ -36,8 +30,8 @@ function check_assignment {
 	    echo "Found: $ext"
 	    mapfile -d $'\0' tmp_paths < \
 		    <(find "$assignment/submissions" -type f -name "*$ext" -print0)
-	    echo "${tmp_paths[@]}"
 	    paths_to_check+=( "${paths_to_check[@]}" "${tmp_paths[@]}" )
+	    used_exts+=( "$ext" )
 	fi
 	IFS=' '
     done
@@ -77,21 +71,24 @@ function check_assignment {
 	    --format pdf \
 	    --transformer '.*/submissions/(.*)_.*_.*_(.*).*/' \
 	    --output "$assignment/similarity_graph" \
-	    --title "$url" \
+	    --title "$url types:${used_exts[*]}" \
 	    "$url"
     fi
+    return $?
 }
 
 function routine {
     folder="$(basename $1)"
-    check_assignment "$folder/"
+    check_assignment "$folder/" || return $?
     python hclust.py "$folder/similarity.txt"
+
+    return $?
 }
 
 # combine folders and extensions into regexes for moss
 for folder in $@; do
     echo "Checking: $folder"
-    routine "$folder" &
+    routine "$folder"
 done
 
 wait

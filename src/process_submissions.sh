@@ -44,7 +44,7 @@ done
 shift $((OPTIND-1))
 
 if [ $# -eq 0 ];  then
-    assigments=$(find -type d -wholename "*/submissions" | grep -oP "\w+.*/")
+    assigments=$(find -maxdepth 2 -type d  -wholename "*/submissions" | grep -oP "\w+.*/")
 else
     assigments=$@
 fi
@@ -72,11 +72,11 @@ for folder in $assigments; do
     else
 	bash submissions_correcting.sh "$folder"
     fi
-    echo "INFO: Done!"
 done
 
 echo "INFO: zipping answers"
 bash zip_submission
 echo "INFO: Done!"
 
+wait
 echo "INFO: Done with whole routine!"
