@@ -177,8 +177,6 @@ while true; do
 
 	# While loop for creating a rotating /-\
 	sleep "$w"
-	kill $!
-	trap 'kill $!' SIGTERM
 
 	run_time=$(convert-secs $SECONDS)
 	echo -e "\nDaemon has been running for: $run_time"

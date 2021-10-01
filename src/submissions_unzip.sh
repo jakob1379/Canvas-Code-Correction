@@ -13,7 +13,7 @@ cd "$folder"
 find \
     submissions/*/ -maxdepth 1 -type f -name '*.zip' \
     -exec sh -c 'unzip -q -n "{}" -d "$(dirname "{}")" && rm -rf "{}"' \;
-find submissions/*/ -type d -name '__MACOSX' -exec sh -c 'rm -rf "{}"' \;
+find submissions/*/ -maxdepth 1 -type d -name '__MACOSX' -exec sh -c 'rm -rf "{}"' \;
 
 # find files and move to top folder
 for d in submissions/*/; do
