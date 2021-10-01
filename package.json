@@ -17,7 +17,7 @@
   },
   "name": "canvas-code-correction",
   "description": "*Canvas Submission Correction* aims to make it easier for course administrators to automate correction of assignments on a local machine by handling the download, unzipping and uploading of the corrections. What is left is for the user to supply the code needed to correct the assignment. That's it!",
-  "version": "1.6.1",
+  "version": "1.6.2",
   "main": "index.js",
   "repository": {
     "type": "git",
