@@ -176,14 +176,7 @@ while true; do
 	! $daemon && date && echo "Runs left: $n"
 
 	# While loop for creating a rotating /-\
-	while :;
-	do
-	    for s in / - \\ \|; do
-			printf "\r$s"
-			sleep 0.2
-	    done;
-	done &
-	sleep $w
+	sleep "$w"
 	kill $!
 	trap 'kill $!' SIGTERM
 

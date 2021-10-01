@@ -187,5 +187,6 @@ for d in $folders; do
 	# wait -n $(pgrep -P$$) # Wait until a any subprocess terminates
     fi
 done
+
 wait
 echo "Done!"

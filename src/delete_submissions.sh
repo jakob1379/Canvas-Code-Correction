@@ -6,5 +6,5 @@ IFS=$'\n\t'
 to_delete=$(find -mindepth 3 -maxdepth 3 -wholename "*/submissions/*")
 
 for f in $to_delete;do
-    rm -rf "$f" > /dev/null 2>&1  || echo "Cannot delete: $f"
+    rm -rf "$f" || true #echo "Cannot delete: $f"
 done
