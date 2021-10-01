@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [1.6.2](https://github.com/jakob1379/Canvas-Code-Correction/compare/v1.6.1...v1.6.2) (2021-10-01)
+
+
+### Bug Fixes
+
+* using /usr/rm instead of find to delete ([a222f20](https://github.com/jakob1379/Canvas-Code-Correction/commits/a222f20b36c2f97eed025131411c1fcd786af0c3))
+
 ### [1.6.1](https://github.com/jakob1379/Canvas-Code-Correction/compare/v1.6.0...v1.6.1) (2021-10-01)
 
 ## [1.6.0](https://github.com/jakob1379/Canvas-Code-Correction/compare/v1.5.3...v1.6.0) (2021-10-01)
