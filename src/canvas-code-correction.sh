@@ -175,7 +175,9 @@ while true; do
 	################################################################################"
 	! $daemon && date && echo "Runs left: $n"
 
-	# While loop for creating a rotating /-\
+	# While
+	echo "waiting for $w"
+	date
 	sleep "$w"
 
 	run_time=$(convert-secs $SECONDS)
