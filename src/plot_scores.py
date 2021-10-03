@@ -14,7 +14,7 @@ from canvasapi import Canvas
 from matplotlib.lines import Line2D
 from p_tqdm import p_map
 from tabulate import tabulate
-
+from pathlib import Path
 from canvas_helpers import init_canvas_course
 
 plt.style.use('ggplot')
@@ -44,6 +44,13 @@ parser.add_argument("-i", "--interactive",
 parser.add_argument("-v", "--verbose",
                     help="set verbose",
                     action='store_true')
+parser.add_argument("--save-data",
+                    help="Save user data to a temporary file",
+                    action='store_true')
+parser.add_argument("--load-data",
+                    help="Load previous data if any available",
+                    action='store_true')
+
 args = parser.parse_args()
 
 
@@ -55,6 +62,10 @@ def load_data(course):
     :rtype: pd.DataFrame
 
     """
+
+    if args.load_data and Path("tmp").joinpath("data.csv").exists():
+        df = pd.read_csv(Path("tmp").joinpath("data.csv"))
+        return df
 
     assignments = list(course.get_assignments())
 
@@ -108,8 +119,14 @@ def load_data(course):
                group.entered_score >=
                config.getfloat("scores_to_complete", group.name))
         .reset_index(drop=True))
+    df.loc[df['passed'] == True, 'passed'] = 'Passed'
+    df.loc[df['passed'] == False, 'passed'] = 'Not passed'
+    df.loc[df['entered_grade'] == "Not handed in", 'passed'] = 'Not handed in'
     df['entered_score'] = df.entered_score.astype(np.float64)
     df['score'] = df.score.astype(np.float64)
+
+    if args.save_data:
+        df.to_csv(Path("tmp").joinpath("data.csv"), index=False)
     return df
 
 
@@ -125,6 +142,7 @@ def plot_scores(df_in):
 
     df = df_in.copy()
 
+    # calc how many
     plot_data = (
         df
         .groupby(["Assignment", "passed"])
@@ -132,8 +150,9 @@ def plot_scores(df_in):
         .to_frame("percentage")
         .reset_index()
         .sort_values(by="Assignment"))
+
     df2 = (
-        df[df["passed"] == True]
+        df[df["passed"] == "Passed"]
         .groupby("Assignment")
         .agg({"attempts": ["median", "mad", "mean", "var", "max"]})
         .reset_index()
@@ -148,8 +167,8 @@ def plot_scores(df_in):
         print("Counting students who have passed assignments...")
         # Count how many have passed the course
     nunique_students = df.user_id.nunique()
-    num_students_passed = df.groupby('user_id').filter(lambda group: all(
-        group.entered_grade == 'complete')).user_id.nunique()
+    num_students_passed = df.groupby('user_id').filter(
+        lambda group: len(set(group.entered_grade)) == 1).user_id.nunique()
     students_passed = (num_students_passed / nunique_students)
     num_students_no_handins = df.groupby('user_id').filter(
         lambda group: all(group.entered_grade == 'Not handed in')).user_id.nunique()
@@ -162,7 +181,7 @@ def plot_scores(df_in):
     fig, (ax1, ax2) = plt.subplots(
         nrows=1, ncols=2,
         sharex=False, sharey=True,
-        figsize=(9, 4)
+        figsize=(12, 9)
     )
 
     ax1 = sns.barplot(
@@ -201,13 +220,13 @@ def plot_scores(df_in):
     ax1.legend(handles=list(line_handles) + list(bar_handles),
                title="Submissions", loc=4,
                framealpha=0.3,
-               prop={'size': 6})
+               prop={'size': 8})
 
     sns.violinplot(
-        data=df[df['passed']],
+        data=df[df['passed'] == 'Passed'],
         y="Assignment",
         x="attempts",
-        color=".8",
+        color=".75",
         linewidth=0,
         ax=ax2
     )
@@ -219,15 +238,17 @@ def plot_scores(df_in):
         jitter=True,
         zorder=1,
         alpha=0.4,
+        linewidth=1,
+        edgecolor='black',
         ax=ax2
     )
 
-    ax2.text(0.98, 0.0,
+    ax2.text(1, 0,
              tabulate(df2, headers=df2.columns),
              horizontalalignment='right',
-             verticalalignment='top',
+             verticalalignment='bottom',
              transform=ax2.transAxes,
-             color='black', fontsize=6,
+             color='black', fontsize=8,
              bbox=dict(boxstyle="square", alpha=0.10),
              fontfamily='monospace')
 
@@ -254,6 +275,7 @@ def main():
     course = init_canvas_course(config)
 
     df = load_data(course)
+
     if args.verbose:
         print("Aggregating data for plotting...")
     plot_scores(df)
