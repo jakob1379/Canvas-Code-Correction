@@ -71,8 +71,10 @@ def print_as_dict(dd):
     """
 
     d = vars(dd)
+    keys = sorted(d.keys())
+    values = [d[keys] for key in keys]
     max_key = len(max(d.keys(), key=len))
-    for k, v in d.items():
+    for k, v in zip(keys, values):
         print(k.ljust(max_key) + ' : ' + str(v))
     print()
 

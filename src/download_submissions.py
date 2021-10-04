@@ -36,8 +36,18 @@ parser = argparse.ArgumentParser(
     """Tool to download assignments.
 Default behaviour is to only download handins that have been changed""",
     formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-parser.add_argument("-v", "--verbose",
-                    help="sets verbosity",
+parser.add_argument("-a", "--assignment",
+                    help="Specific assignments to download",
+                    metavar="assignement",
+                    default=[a.name for a in course.get_assignments()],
+                    nargs='*',
+                    choices=[a.name for a in course.get_assignments()],
+                    type=str)
+parser.add_argument("-i", "--ignore-attampts",
+                    help="Downloads assignments violating max attempts",
+                    action='store_true')
+parser.add_argument("-l", "--list-assignments",
+                    help="list assignments for course and exit",
                     action='store_true')
 parser.add_argument("-p", "--parallel",
                     help="download in parallel",
@@ -48,13 +58,6 @@ parser.add_argument("-n", "--num-cores",
                     type=int,
                     nargs='?',
                     default=multiprocessing.cpu_count())
-parser.add_argument("-a", "--assignment",
-                    help="Specific assignments to download",
-                    metavar="assignement",
-                    default=[a.name for a in course.get_assignments()],
-                    nargs='*',
-                    choices=[a.name for a in course.get_assignments()],
-                    type=str)
 parser.add_argument("-s", "--student-id",
                     help="Specific student-id to download",
                     metavar="student-id",
@@ -67,8 +70,8 @@ parser.add_argument("-t", "--type",
                     # nargs='?',
                     default="new",
                     choices=["failed", "uncommented", "all", "new"])
-parser.add_argument("-l", "--list-assignments",
-                    help="list assignments for course and exit",
+parser.add_argument("-v", "--verbose",
+                    help="sets verbosity",
                     action='store_true')
 parser.add_argument("--dry",
                     help="dry run where nothing is downloaded",
@@ -131,46 +134,48 @@ def find_submissions():
     :rtype: list
 
     """
-
     # Walk through all assignments and find submissions
     submissions = []
-
     assignments = [a for a in course.get_assignments()
                    if a.name in args.assignment]
     for assignment in assignments:
+        subs = []
         if args.verbose:
             print("Checking " + assignment.name + "...")
         if args.download == "all":
-            submissions += list(assignment.get_submissions())
+            subs = list(assignment.get_submissions())
         elif args.download == "failed":
-            submissions += [sub for sub in assignment.get_submissions()
-                            if (sub.grade == 'incomplete') or (sub.grade == 0) or sub.grade == '0%']
+            subs = [sub for sub in assignment.get_submissions()
+                    if sub.grade in ('incomplete', 0, '0%')]
         elif args.download == "uncommented":
+            subs = []
             for sub in assignment.get_submissions(include='submission_comments'):
-
                 if not list(sub.submission_comments):
-                    submissions.append(sub)
+                    subs.append(sub)
                     continue
-
                 comment_files = extract_comment_filenames(
                     sub.submission_comments)
-
                 submission_fname = create_file_name(sub, course) + '.zip'
                 if submission_fname not in comment_files:
-                    submissions.append(sub)
+                    subs.append(sub)
         elif args.download == "new":
             for sub in assignment.get_submissions():
                 if (vars(sub).get('attachments') is not None and
-                        (not sub.grade_matches_current_submission
-                         or sub.grade is None)):
-                    submissions.append(sub)
+                    (not sub.grade_matches_current_submission
+                     or sub.grade is None)):
+                    subs.append(sub)
         else:
-            submissions += list(assignment.get_submissions())
+            subs.append(list(assignment.get_submissions()))
+        submissions += [sub for sub in subs
+                        if (assignment.allowed_attempts == -1
+                            or sub.attempt <= assignment.allowed_attempts)]
     # if specific students where chosen filter them
     if args.student_id:
         submissions = [sub for sub in submissions if sub.user_id in args.student_id]
+
     # Filter out those that do not have any attachments
-    submissions = [sub for sub in submissions if 'attachments' in vars(sub).keys()]
+    submissions = [
+        sub for sub in submissions if 'attachments' in vars(sub).keys()]
 
     if args.verbose:
         print("Submissions to correct:", len(submissions))
