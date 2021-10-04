@@ -67,8 +67,6 @@ def load_data(course):
         df = pd.read_csv(Path("tmp").joinpath("data.csv"))
         return df
 
-    assignments = list(course.get_assignments())
-
     if args.verbose:
         print("Fetching submissions from each assignment...")
 
@@ -76,8 +74,8 @@ def load_data(course):
     pbar = Pbar.ProgressBar(redirect_stdout=True,
                             max_value=Pbar.UnknownLength)
     counter = 0
-    for assignment in assignments:
-        for sub in assignment.get_submissions():
+    for assignment in course.get_assignments():
+        for sub in list(assignment.get_submissions()):
             pbar.update(counter)
             scores.append(
                 (assignment.name,
@@ -127,6 +125,7 @@ def load_data(course):
 
     if args.save_data:
         df.to_csv(Path("tmp").joinpath("data.csv"), index=False)
+
     return df
 
 
@@ -189,6 +188,7 @@ def plot_scores(df_in):
         x="percentage",
         y="Assignment",
         hue="passed",
+        edgecolor='0.2',
         ax=ax1)
     ax1.axis('tight')
 
