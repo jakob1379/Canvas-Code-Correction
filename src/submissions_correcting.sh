@@ -173,19 +173,15 @@ fi
 
 num_folders=$(echo "$folders" | wc -l)
 count=1
-max_children=2
+max_children=1
 for d in $folders; do
-    if [ "$(pgrep -c -P$$)" -le "$(( max_children - 1 ))" ]; then
-	echo "Correcting: $d"
-	((count+=1))
-	echo $count | tqdm --update-to --total=$num_folders > /dev/null
-	correction_routine "$totalPath$(basename "$d")" &
-    else
-	while [ "$(pgrep -c -P$$)" -ge "$max_children" ]; do
-	    sleep 0.1
-	done
-	# wait -n $(pgrep -P$$) # Wait until a any subprocess terminates
-    fi
+    ((count+=1))
+    echo $count | tqdm --update-to --total=$num_folders > /dev/null
+    while [ "$(pgrep -c -P$$)" -ge "$max_children" ]; do
+	sleep 0.1
+    done
+    echo "Correcting: $d"
+    correction_routine "$totalPath$(basename "$d")" &
 done
 
 wait
