@@ -1,4 +1,5 @@
 # Import the Canvas class
+import time
 import argparse
 import configparser
 import multiprocessing
@@ -192,6 +193,7 @@ def main():
         else:
             pbar = Pbar.ProgressBar(redirect_stdout=True)
             for sub in pbar(submissions):
+                time.sleep(1)
                 download_submission(sub)
     else:
         print("No submissions to download...")

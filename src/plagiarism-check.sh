@@ -47,7 +47,6 @@ function check_assignment {
     echo "uploading to moss..."
     url=$(./moss -l $language -d "${paths_to_check[@]}" | grep -oP 'http://moss.stanford.edu/results.*')/
     echo "$url"
-    # # url="http://moss.stanford.edu/results/8/4255768150604/" # a test url
 
     # Create table for local inspection
     echo "creating table..."
