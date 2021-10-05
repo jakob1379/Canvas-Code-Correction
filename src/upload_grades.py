@@ -7,7 +7,7 @@ import sys
 from glob import glob
 from multiprocessing import cpu_count
 from pathlib import Path
-
+import time
 import numpy as np
 
 import progressbar as Pbar
@@ -177,6 +177,7 @@ def main():
     else:
         pbar = Pbar.ProgressBar(redirect_stdout=not args.question)
         for rep, assignment in pbar(zip(reports, assignment_for_reports)):
+            time.sleep(1)
             grade_submission(rep, assignment)
 
 

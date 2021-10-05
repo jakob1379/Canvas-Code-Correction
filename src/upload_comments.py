@@ -6,7 +6,7 @@ import re
 import sys
 from glob import glob
 from multiprocessing import cpu_count
-
+import time
 import progressbar as Pbar
 from canvas_helpers import bcolors
 from canvas_helpers import download_url
@@ -191,6 +191,7 @@ def main():
     else:
         pbar = Pbar.ProgressBar(redirect_stdout=not args.question)
         for rep, assignment in pbar(zip(reports, assignment_for_reports)):
+            time.sleep(1)
             upload_comments(rep, assignment)
 
     # clear temporary files
