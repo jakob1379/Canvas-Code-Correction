@@ -85,7 +85,7 @@ if args.list_assignments:
     sys.exit()
 
 
-def download_submission(sub, old_files=glob(os.path.join("*", 'submissions', '*', ''))):
+def download_submission(sub):
     """ Downloads a submissions and delete local files if any previous attempts
     are present
 
@@ -93,8 +93,8 @@ def download_submission(sub, old_files=glob(os.path.join("*", 'submissions', '*'
     :param old_files: list of paths to local submissions
 
     """
-
     try:
+        old_files = glob(os.path.join("*", 'submissions', '*', ''))
         url = sub.attachments[0]['url']
         if url:
             file_name = create_file_name(sub, course)
@@ -115,8 +115,8 @@ def download_submission(sub, old_files=glob(os.path.join("*", 'submissions', '*'
                 attachments_with_url = [
                     att for att in sub.attachments if att.get("url")]
                 for att in attachments_with_url:
-                    final_path = os.path.join(
-                        directory, file_name, att.get("filename"))
+                    final_path = os.path.join(directory, file_name,
+                                              att.get("filename"))
                     if args.verbose:
                         print("Saving to:", final_path)
                     if not args.dry:
