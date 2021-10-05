@@ -21,5 +21,5 @@ curl -s "$url" \
     | hxselect 'table' \
     | w3m -dump -cols 2000 -T 'text/html' \
     | awk '(NR>1) {print $1,$3,$2}' \
-    | sed -e 's/%//' -e 's/(//' -e 's/)//' \
+    | sed -e 's/%//' -e 's/(//g' -e 's/)//g' \
     | sort -k 3,3 -k 1,1 -h -r
