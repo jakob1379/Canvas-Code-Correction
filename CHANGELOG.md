@@ -2,6 +2,26 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.7.0](https://github.com/jakob1379/Canvas-Code-Correction/compare/v1.6.3...v1.7.0) (2021-10-05)
+
+
+### Features
+
+* added cache options and improved plotting ([09bd817](https://github.com/jakob1379/Canvas-Code-Correction/commits/09bd8170089258890493a78b32dfa464092b588e))
+* added clause checking for attempts allowed violation ([a247532](https://github.com/jakob1379/Canvas-Code-Correction/commits/a2475328fe50867281debbefcf0bf87301a903a3))
+* download now saves data for later use ([fe8e587](https://github.com/jakob1379/Canvas-Code-Correction/commits/fe8e5873d5dd9a60f8a86468c2a5f55f5cb5f992))
+
+
+### Bug Fixes
+
+* added delay for communication with absalon to prevent 504 ([2e5253a](https://github.com/jakob1379/Canvas-Code-Correction/commits/2e5253aa6f1a72775e442cf94c5482d78b8979ee))
+* continues when encountering undeletable files ([32e0eed](https://github.com/jakob1379/Canvas-Code-Correction/commits/32e0eed3f513fc9aa3c0fac268740ffe8bc57af1))
+* didn't spawm process if max was reached, thus skipping many ([1d763cc](https://github.com/jakob1379/Canvas-Code-Correction/commits/1d763cc4fffe19c9fdfb8666e7994f216180ba8d))
+* hopefully fixed issue with permission denied files ([b636ea1](https://github.com/jakob1379/Canvas-Code-Correction/commits/b636ea17430f77d64855f03c6cf8ff4158dd237e))
+* implemented a simple wait for older systems ([6e0d71a](https://github.com/jakob1379/Canvas-Code-Correction/commits/6e0d71a494692ebf777c4cb965b877dc1ff73e14))
+* improved path handling when downloading from url ([868f94b](https://github.com/jakob1379/Canvas-Code-Correction/commits/868f94b64cec63312b66508af83585c2d4bb5c0e))
+* secured rm for breaking if it meets weird permissions ([c460b2c](https://github.com/jakob1379/Canvas-Code-Correction/commits/c460b2cf5c78bde7ebeb11c0f43a798faf38e8f7))
+
 ### [1.6.3](https://github.com/jakob1379/Canvas-Code-Correction/compare/v1.6.2...v1.6.3) (2021-10-01)
 
 ### [1.6.2](https://github.com/jakob1379/Canvas-Code-Correction/compare/v1.6.1...v1.6.2) (2021-10-01)
