@@ -6,7 +6,7 @@ import os
 import urllib.request
 from hashlib import md5
 import bcolors
-
+from pathlib import Path
 # class bcolors:
 #     HEADER = '\033[95m'
 #     OKBLUE = '\033[94m'
@@ -26,11 +26,8 @@ def download_url(url, save_path):
 
     # Make sure destination folder exists
     end_folder = os.sep.join(save_path.split(os.sep)[:-1])
-    if end_folder:
-        (
-            Path(end_folder)
-            .mkdir(parents=True, exist_ok=True)
-        )
+    Path(end_folder).mkdir(parents=True, exist_ok=True)
+
     with urllib.request.urlopen(url) as dl_file:
         with open(save_path, 'wb') as out_file:
             out_file.write(dl_file.read())
