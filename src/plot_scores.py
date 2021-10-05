@@ -22,8 +22,8 @@ config = configparser.ConfigParser()
 config.read('config.ini')
 
 parser = argparse.ArgumentParser()
-parser.add_argument("-s", "--show",
-                    help="Show resulting plot",
+parser.add_argument("-i", "--interactive",
+                    help="Open the dataframe in an interactive window",
                     action='store_true')
 parser.add_argument("-o", "--out",
                     help="outname for resulting image",
@@ -31,21 +31,17 @@ parser.add_argument("-o", "--out",
                     type=str,
                     nargs='?',
                     default="scores.pdf")
+parser.add_argument("-s", "--show",
+                    help="Show resulting plot",
+                    action='store_true')
 parser.add_argument("-n", "--num-cores",
                     help="Number of cores to use and run in parallel",
                     metavar="cores",
                     type=int,
                     nargs='?',
                     default=multiprocessing.cpu_count())
-parser.add_argument("-i", "--interactive",
-                    help="Open the dataframe in an interactive window",
-                    action='store_true')
-
 parser.add_argument("-v", "--verbose",
                     help="set verbose",
-                    action='store_true')
-parser.add_argument("--save-data",
-                    help="Save user data to a temporary file",
                     action='store_true')
 parser.add_argument("--load-data",
                     help="Load previous data if any available",
@@ -123,7 +119,7 @@ def load_data(course):
     df['entered_score'] = df.entered_score.astype(np.float64)
     df['score'] = df.score.astype(np.float64)
 
-    if args.save_data:
+    if not args.load_data:
         df.to_csv(Path("tmp").joinpath("data.csv"), index=False)
 
     return df
