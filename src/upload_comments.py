@@ -191,7 +191,7 @@ def main():
     else:
         pbar = Pbar.ProgressBar(redirect_stdout=not args.question)
         for rep, assignment in pbar(zip(reports, assignment_for_reports)):
-            time.sleep(1)
+            time.sleep(0.5)
             upload_comments(rep, assignment)
 
     # clear temporary files

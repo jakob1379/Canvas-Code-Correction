@@ -193,7 +193,7 @@ def main():
         else:
             pbar = Pbar.ProgressBar(redirect_stdout=True)
             for sub in pbar(submissions):
-                time.sleep(1)
+                time.sleep(0.5)
                 download_submission(sub)
     else:
         print("No submissions to download...")
