@@ -44,7 +44,11 @@ done
 shift $((OPTIND-1))
 
 if [ $# -eq 0 ];  then
-    assigments=$(find -maxdepth 2 -type d  -wholename "*/submissions" | grep -oP "\w+.*/")
+    # Find assigments with correction code and submissions
+    not_empty=$(find -maxdepth 2 -type d -wholename "*/code" -not -empty | cut -d '/' -f 2)
+    assigments=$(find -maxdepth 2 -type d  -wholename "*/submissions" -not -empty | cut -d '/' -f 2)
+    assignmentsWithSubsAndCode=$(comm -12 <(echo "$not_empty" | sort) <(echo "$assigments" | sort))
+    assignments=$(sed -e 's/$/\/submissions/' <(echo "$assignmentsWithSubsAndCode"))
 else
     assigments=$@
 fi
