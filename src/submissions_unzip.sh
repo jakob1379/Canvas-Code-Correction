@@ -10,13 +10,13 @@ folder=$1
 
 cd "$folder"
 
-find 'submissions/*/' \
-     -maxdepth 1 \
+find 'submissions/' \
+     -maxdepth 2 \
      -type f \
      -name '*.zip' \
      -exec sh -c 'unzip -q -n "{}" -d "$(dirname "{}")" && rm -rf "{}"' \;
-find 'submissions/*/' \
-     -maxdepth 1 \
+find 'submissions/' \
+     -maxdepth 2 \
      -type d \
      -name '__MACOSX' \
      -exec sh -c 'rm -rf "{}" || true' \;
