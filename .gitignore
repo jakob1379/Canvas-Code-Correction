@@ -4,22 +4,15 @@
 *.log
 *_scores.txt
 .python-version
-Week*
-Week*/submissions/*
-Week*/upload_me/
-Week*/*.zip
-backup
-correction_status
 *.pdf
-tmp/
 **/code/
-/config.ini
-*similarity.txt
+src/config.ini
+similarity.txt
 similarity*.pdf
 suspicious.txt
-TODO.org
 src/moss
 src/config.ini
+/src/.config_array
 
 ##############
 # versioning #
@@ -27,7 +20,6 @@ src/config.ini
 /.commitlintrc.json
 /.husky/
 /node_modules/
-/.versionrc.json
 get-next-version
 
 ###############
@@ -47,4 +39,4 @@ __pycache__/
 \#*
 /package-lock.json
 /src/config.ini.bak
-/src/.config_array
+/src/tmp/
