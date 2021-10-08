@@ -109,9 +109,9 @@ def load_data(course):
     df['passed'] = (
         df.groupby("Assignment")
         .apply(lambda group:
-               config.getfloat("scores_to_complete", group.name) *
+               config.getfloat("scores_to_complete", group.name, fallback=0) *
                group.entered_score >=
-               config.getfloat("scores_to_complete", group.name))
+               config.getfloat("scores_to_complete", group.name, fallback=0))
         .reset_index(drop=True))
     df.loc[df['passed'] == True, 'passed'] = 'Passed'
     df.loc[df['passed'] == False, 'passed'] = 'Not passed'
