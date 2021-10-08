@@ -185,6 +185,7 @@ def plot_scores(df_in):
         y="Assignment",
         hue="passed",
         edgecolor='0.2',
+        palette='RdBu',
         ax=ax1)
     ax1.axis('tight')
 
@@ -228,12 +229,12 @@ def plot_scores(df_in):
     )
 
     sns.stripplot(
-        data=df,
+        data=df[df['passed'] == 'Passed'],
         x="attempts",
         y="Assignment",
         jitter=True,
         zorder=1,
-        alpha=0.4,
+        alpha=0.15,
         linewidth=1,
         edgecolor='black',
         ax=ax2
