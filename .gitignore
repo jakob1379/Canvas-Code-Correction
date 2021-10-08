@@ -1,18 +1,19 @@
 ##########################
 # project specific files #
 ##########################
+**/code/
 *.log
+*.pdf
 *_scores.txt
 .python-version
-*.pdf
-**/code/
-src/config.ini
-similarity.txt
-similarity*.pdf
-suspicious.txt
-src/moss
-src/config.ini
 /src/.config_array
+/src/tmp/
+similarity*.pdf
+similarity.txt
+src/config.ini
+src/config.ini
+src/moss
+suspicious.txt
 
 ##############
 # versioning #
@@ -38,5 +39,3 @@ __pycache__/
 /server/
 \#*
 /package-lock.json
-/src/config.ini.bak
-/src/tmp/
