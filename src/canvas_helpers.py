@@ -4,7 +4,7 @@ import re
 from pathlib import Path
 import os
 import urllib.request
-from hashlib import md5
+import hashlib
 import bcolors
 from pathlib import Path
 # class bcolors:
@@ -76,21 +76,22 @@ def print_as_dict(dd):
     print()
 
 
-def md5sum(fname):
+def md5sum(filename, block_size=2**20):
     """ Calculates the md5sum of a given file
 
-    :param fname: path to file
+    :param filename: path to file
     :returns: md5sum
     :rtype: str
 
     """
-
-    m = md5()
-    with open(fname, "rb") as f:
-        # read file in chunk and call update on each chunk if file is large.
-        data = f.read()
-        m.update(data)
-    return m.hexdigest()
+    md5 = hashlib.md5()
+    with open(filename, "rb") as f:
+        while True:
+            data = f.read(block_size)
+            if not data:
+                break
+            md5.update(data)
+    return md5.digest()
 
 
 def extract_comment_filenames(comments):
