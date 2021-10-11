@@ -67,6 +67,12 @@ skipped=0
 sandbox="$(awk -F '=' -e '/^sandbox/{print $2}' config.ini)"
 maxtime="$(awk -F '=' -e '/^MAXTIME/{print $2}' config.ini)"
 
+config_children="$(awk -F '=' -e '/^MAXPROC/{print $2}' config.ini)"
+if [ ! -z "$config_children" ];then
+    max_children=$config_children
+else
+    max_children=1
+fi
 
 function timout-write-points-and-comments {
     bname=$(basename "$PWD")
@@ -102,13 +108,13 @@ function correction_routine {
     if $show_time
     then
 	if [ "$sandbox" == 'yes' ]; then
-	    timeout $maxtime time firejail sh main.sh 2> /dev/null
+	    timeout $maxtime time firejail bash main.sh 2> /dev/null
 	else
 	    timeout $maxtime time sh main.sh 2> /dev/null
 	fi
     else
 	if [ "$sandbox" == 'yes' ]; then
-	    timeout $maxtime firejail sh main.sh 2> /dev/null
+	    timeout $maxtime firejail bash main.sh 2> /dev/null
 	else
 	    timeout $maxtime sh main.sh 2> /dev/null && exit_code=0 ||  exit_code="$?"
 	fi
@@ -172,8 +178,8 @@ else
 fi
 
 num_folders=$(echo "$folders" | wc -l)
-count=1
-max_children=1
+count=0
+echo "Max concurrent processes: $max_children"
 for d in $folders; do
     ((count+=1))
     echo $count | tqdm --update-to --total=$num_folders > /dev/null
@@ -183,6 +189,6 @@ for d in $folders; do
     echo "Correcting: $d"
     correction_routine "$totalPath$(basename "$d")" &
 done
-
+echo $num_folders | tqdm --update-to --total=$num_folders > /dev/null
 wait
 echo "Done!"
