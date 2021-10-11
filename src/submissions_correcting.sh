@@ -101,7 +101,7 @@ function correction_routine {
     $verbose && echo "evaluating..."
     dir="$PWD"
     orig_file_names=$(find "$folder"/code/ -maxdepth 1 -mindepth 1 -exec basename {} \;)
-    /usr/bin/cp -rf "$folder"/code/. "$submission"/ # copy everything including hidden files
+    /bin/cp -af "$folder"/code/. "$submission"/ # copy everything including hidden files
     cd "$submission"
 
     start=$(date +%s)
@@ -116,7 +116,7 @@ function correction_routine {
 	if [ "$sandbox" == 'yes' ]; then
 	    timeout $maxtime firejail sh main.sh 2> /dev/null
 	else
-	    timeout $maxtime sh main.sh 2> /dev/null && exit_code=0 ||  exit_code="$?"
+	    timeout $maxtime sh main.sh 2> /dev/null && exit_code=0 || exit_code="$?"
 	fi
     fi
 
