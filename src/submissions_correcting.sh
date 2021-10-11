@@ -108,13 +108,13 @@ function correction_routine {
     if $show_time
     then
 	if [ "$sandbox" == 'yes' ]; then
-	    timeout $maxtime time firejail bash main.sh 2> /dev/null
+	    timeout $maxtime time firejail sh main.sh 2> /dev/null
 	else
 	    timeout $maxtime time sh main.sh 2> /dev/null
 	fi
     else
 	if [ "$sandbox" == 'yes' ]; then
-	    timeout $maxtime firejail bash main.sh 2> /dev/null
+	    timeout $maxtime firejail sh main.sh 2> /dev/null
 	else
 	    timeout $maxtime sh main.sh 2> /dev/null && exit_code=0 ||  exit_code="$?"
 	fi
@@ -181,14 +181,14 @@ num_folders=$(echo "$folders" | wc -l)
 count=0
 echo "Max concurrent processes: $max_children"
 for d in $folders; do
-    ((count+=1))
     echo $count | tqdm --update-to --total=$num_folders > /dev/null
     while [ "$(pgrep -c -P$$)" -ge "$max_children" ]; do
 	sleep 0.1
     done
     echo "Correcting: $d"
     correction_routine "$totalPath$(basename "$d")" &
+    ((count+=1))
 done
-echo $num_folders | tqdm --update-to --total=$num_folders > /dev/null
 wait
+echo $num_folders | tqdm --update-to --total=$num_folders > /dev/null
 echo "Done!"
