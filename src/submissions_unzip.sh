@@ -26,15 +26,17 @@ find 'submissions/' \
 for d in submissions/*/; do
     folder_count=$(find "$d"/* -maxdepth 0 -type d -print 2>/dev/null | wc -l)
     file_count=$(find "$d"/* -maxdepth 0 -type f -print 2>/dev/null | wc -l)
+
     # Check if folder only has a single folder
     if [ "$folder_count" -eq "1" ] && [ "$file_count" -eq "0" ]; then
+	folder=$(find "$d" -mindepth 1 -maxdepth 1 -type d)
 	# Only touch files that are writable
 	for thing in $(find "$d" -mindepth 2 -maxdepth 2); do
 	    if [[ "$(stat -c "%A" "$thing")" =~ 'w' ]]; then
 		destination=$(rev <(echo "$thing") | cut -d '/' -f 3- | rev)
 		mv "$thing" "$destination/"
-		rm -fr "$thing"
 	    fi
 	done
+	rm -rf "$folder" || true
     fi
 done
