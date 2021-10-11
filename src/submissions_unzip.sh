@@ -1,4 +1,6 @@
-#!/bin/bash
+#!/usr/bin/env bash
+set -euo pipefail
+IFS=$'\n\t'
 
 if [ $# -ne 1 ] || [ ! -d "$1" ]
 then
