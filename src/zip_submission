@@ -9,7 +9,6 @@ for submission in $(find -mindepth 3 -maxdepth 3  -type d -wholename "*submissio
     bname=$(basename "$submission")
     zip_name=$(basename "$submission" | sed 's/ /+/g')
 
-
     if [ -f "$bname.txt" ] || [ ! -z "$(find -type f -name '*.log')" ]; then
        zip -X -q "$zip_name.zip" "$bname.txt" *.log
     fi
