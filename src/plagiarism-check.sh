@@ -46,9 +46,10 @@ function check_assignment {
 
     # Catch result url
     echo "uploading to moss..."
-    output=$(./moss -l $language -d "${paths_to_check[@]}" | tee ./tmp/moss.log)
-    url=$(echo "$output" | grep -oP 'http://moss.stanford.edu/results.*')/
-    echo "$url"
+    # output=$(./moss -l $language -d "${paths_to_check[@]}" 2>&1 | tee tmp/moss.log)
+    # url=$(echo "$output" | grep -oP 'http://moss.stanford.edu/results.*')/
+    # echo "$url"
+    url="http://moss.stanford.edu/results/5/4697031321443/"
 
     # Create table for local inspection
     echo "creating table..."
