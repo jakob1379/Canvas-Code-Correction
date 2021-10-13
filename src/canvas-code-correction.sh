@@ -96,7 +96,7 @@ function routine {
     ################################################################################
     #                           deleting old submissions                           #
     ################################################################################"
-    bash delete_submissions.sh
+    python3 delete_submissions.py
     echo "Done deleting old submissions!"
 
     echo "
