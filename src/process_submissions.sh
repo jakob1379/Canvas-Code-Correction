@@ -61,7 +61,7 @@ for folder in $assigments; do
     fi
     echo "INFO: Unzipping"
     # bash submissions_unzip.sh "$folder"
-    python3 submission_unzip.py "$folder"
+    python3 submissions_unzip.py "$folder"
     echo "INFO: Done!"
 
     if [ ! -z "$plagiarism" ]

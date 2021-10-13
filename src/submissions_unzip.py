@@ -14,8 +14,8 @@ def setup():
     parser.add_argument("assignments",
                         help="Select assignments to unzip submissions within. Multiple may be selected and/or usage of wildcards for assignment names only",
                         metavar="assignments",
-                        nargs='+',
-                        choices=sorted([i.split(os.sep)[0]
+                        nargs='*',
+                        default=sorted([i.split(os.sep)[0]
                                         for i in glob('*/submissions/')]),
                         type=str)
     parser.add_argument("-p", "--parallel",
@@ -65,7 +65,10 @@ def main():
         if tmp_files:
             files += tmp_files
 
-    p_map(unzip, files)
+    if files:
+        p_map(unzip, files)
+    else:
+        print("No files to unzip...")
 
 
 if __name__ == '__main__':
