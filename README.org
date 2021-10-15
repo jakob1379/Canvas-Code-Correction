@@ -16,12 +16,14 @@
 
 * Setup
   The following steps are needed before being able to easily use the framework as intended.
-  1. Install the requirements
-  2. Run ~init-config.sh~ to initialize the config file.
-  3. Run ~setup-assignment-folders.sh~ to initialize the assignment folders, names as the assignments on Canvas. Each assignment folder has a folder called "code". The content will be copied to and executed within each submissions. As such the code to correct has to be designed around this assumption.
+  1. Please setup the assignments on Canvas. This will make
+  2. Install the requirements
+  3. Run ~init-config.sh~ to initialize the config file.
+  4. Run ~setup-assignment-folders.sh~ to initialize the assignment folders with names taken from Canvas.
+  5. Each assignment folder has a folder called "code". The code to correct the corresponding should be placed in here and a single ~main.sh~ should exists that initializes the test(s). The content of the code folder will be copied to each students submission. As such the code to correct has to be designed around this assumption.
 
 * Config variables
-  The variables in the `config.ini` are copied to the folders and can be sourced with `. .config_array` to be used in the `main.sh`. This loads a bash array called `config` to the shell, which can be called like `${config[<section>/<variable name>]}` The naming is exactly like in config, even with spaces if any. An example could be to retrieve the token `echo "${config[DEFAULT/TOKEN]}"`.
+  The variables in the `config.ini` are copied to the folders and can be sourced with `. .config_array` to be used in the `main.sh`. This loads a bash array called `config` to the shell, which can be called like `${config[<section>/<variable name>]}` The naming is exactly like in config, even with spaces if any e.g. retrieving the token `echo "${config[DEFAULT/TOKEN]}"`.
 
 * Example usage
   Now you should be ready to run stuff!
