@@ -114,7 +114,12 @@ def grade_submission(sub, assignment):
             return
 
     #  %% Print question and retrieve answer
-    points_needed = config.getfloat('scores_to_complete', assignment_name)
+    try:
+        points_needed = config.getfloat('scores_to_complete', assignment_name)
+    except configparser.NoOptionError as e:
+        print(bcolors.warning("WARNING:"), e)
+        return
+
     if args.question and not args.parallel:
         if int(points - points_needed) < 0:
             scoreColor = bcolors.FAIL
