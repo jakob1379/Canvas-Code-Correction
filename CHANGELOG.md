@@ -2,6 +2,30 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.8.0](https://github.com/jakob1379/Canvas-Code-Correction/compare/v1.7.0...v1.8.0) (2021-10-15)
+
+
+### Features
+
+* reads max subprocesses from config ([94b9b30](https://github.com/jakob1379/Canvas-Code-Correction/commits/94b9b30045ff1085824606d1b2a0ced29e5c9c9e))
+* rewritten unzip script in python ([7dbbf10](https://github.com/jakob1379/Canvas-Code-Correction/commits/7dbbf105aa8805f0198f714cb1a3952f10a1be5e))
+* rewritten unzip script in python ([ea9ec8c](https://github.com/jakob1379/Canvas-Code-Correction/commits/ea9ec8c24fd69655c3a2a33156c8a5223b8f762b))
+* rewrote delete_submissions to python ([cc96234](https://github.com/jakob1379/Canvas-Code-Correction/commits/cc96234e25e7cb4ac2fdb9f00834421d074b135f))
+* rewrote delete_submissions to python ([5775d65](https://github.com/jakob1379/Canvas-Code-Correction/commits/5775d658f092f1f34223108a19fc8b44a4098a08))
+
+
+### Bug Fixes
+
+* added default values to config.getfloat ([5225690](https://github.com/jakob1379/Canvas-Code-Correction/commits/5225690663c1117b8c8f74f26306b553a8180041))
+* copies as archice and dereference links ([167c6a0](https://github.com/jakob1379/Canvas-Code-Correction/commits/167c6a0de23eca20961332305a7e096e39cf6ed0))
+* find didn't find properly ([d500af6](https://github.com/jakob1379/Canvas-Code-Correction/commits/d500af68dd3202860bcb8afaf6634a1119073ad8))
+* imrproved unpacking ([55c3865](https://github.com/jakob1379/Canvas-Code-Correction/commits/55c3865d136fc1e2c01e7ee7182165a48bc71548))
+* now handles unwritable files properly ([e3a6ddd](https://github.com/jakob1379/Canvas-Code-Correction/commits/e3a6ddd20ea17abf844dbc9095e314d0444b948c))
+* protection for config nooptions errors ([8f57706](https://github.com/jakob1379/Canvas-Code-Correction/commits/8f577060ca137b479411b92d0b699f788209a98b))
+* secure settings ([d1c6e70](https://github.com/jakob1379/Canvas-Code-Correction/commits/d1c6e704216e022e9a2ac84b38075ea8a84bba92))
+* updated md5sum to stream byte data for larger files ([e194201](https://github.com/jakob1379/Canvas-Code-Correction/commits/e194201b1c63a37a0c016ac0965f1718ed9fcdca))
+* updated unzipping number of positional args ([3a13f36](https://github.com/jakob1379/Canvas-Code-Correction/commits/3a13f36fe05069ecc6f84a97c8d5818601c69a35))
+
 ## [1.7.0](https://github.com/jakob1379/Canvas-Code-Correction/compare/v1.6.3...v1.7.0) (2021-10-05)
 
 

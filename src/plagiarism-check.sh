@@ -34,6 +34,7 @@ function check_assignment {
 	    used_exts+=( "$ext" )
 	fi
 	IFS=' '
+
     done
 
     # return if nothing found
@@ -45,8 +46,10 @@ function check_assignment {
 
     # Catch result url
     echo "uploading to moss..."
-    url=$(./moss -l $language -d "${paths_to_check[@]}" | grep -oP 'http://moss.stanford.edu/results.*')/
-    echo "$url"
+    # output=$(./moss -l $language -d "${paths_to_check[@]}" 2>&1 | tee tmp/moss.log)
+    # url=$(echo "$output" | grep -oP 'http://moss.stanford.edu/results.*')/
+    # echo "$url"
+    url="http://moss.stanford.edu/results/5/4697031321443/"
 
     # Create table for local inspection
     echo "creating table..."
@@ -78,7 +81,7 @@ function check_assignment {
 
 function routine {
     folder="$(basename $1)"
-    check_assignment "$folder/" || return $?
+    check_assignment "$folder/"
     python hclust.py "$folder/similarity.txt"
 
     return $?

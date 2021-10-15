@@ -13,7 +13,8 @@ operations:
     correct {-h help} shows this dialogue
     correct {-a always} always corect assigments
     correct {-p paralllel} run in parallel
-
+    correct {-t time} time corrections
+    correct {-v verbose} verbose
 '
 }
 always=false
@@ -139,6 +140,7 @@ function correction_routine {
     zip_name=$(basename "$PWD" | sed 's/ /+/g')
     zip "$zip_name" "$bname.txt" "errors.log"
 
+    # No clue what this is used for
     cd "$dir"
     corrected=$(( corrected+1 ))
 
@@ -183,7 +185,7 @@ echo "Max concurrent processes: $max_children"
 for d in $folders; do
     echo $count | tqdm --update-to --total=$num_folders > /dev/null
     while [ "$(pgrep -c -P$$)" -ge "$max_children" ]; do
-	sleep 0.1
+	sleep 0.2
     done
     echo "Correcting: $d"
     correction_routine "$totalPath$(basename "$d")" &
