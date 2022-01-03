@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 import argparse
 import configparser
 import multiprocessing
@@ -125,7 +126,7 @@ def load_data(course):
     return df
 
 
-def plot_scores(df_in):
+def plot_scores(df_in, course):
     """ Creates a statistical overview of the submissions for the course
 
     :param df_in: Dataframe to use
@@ -160,10 +161,11 @@ def plot_scores(df_in):
 
     if args.verbose:
         print("Counting students who have passed assignments...")
-        # Count how many have passed the course
+    # Vertical indication bars
     nunique_students = df.user_id.nunique()
+    passed_needed = 5  # len(list(course.get_assignments()))
     num_students_passed = df.groupby('user_id').filter(
-        lambda group: len(set(group.entered_grade)) == 1).user_id.nunique()
+        lambda group: sum(group.passed == "Passed") >= passed_needed).user_id.nunique()
     students_passed = (num_students_passed / nunique_students)
     num_students_no_handins = df.groupby('user_id').filter(
         lambda group: all(group.entered_grade == 'Not handed in')).user_id.nunique()
@@ -249,7 +251,7 @@ def plot_scores(df_in):
              bbox=dict(boxstyle="square", alpha=0.10),
              fontfamily='monospace')
 
-    ax2.set_xlabel("Attemps used for passed assignments")
+    ax2.set_xlabel("Attempts used for passed assignments")
     ax2.axis('tight')
 
     fig.suptitle(datetime.now().strftime("%b %d %Y %T"))
@@ -275,12 +277,14 @@ def main():
 
     if args.verbose:
         print("Aggregating data for plotting...")
-    plot_scores(df)
-    print("Done!")
+    plot_scores(df, course)
+    if args.verbose:
+        print("Done!")
 
     if args.interactive:
+        print("Starting interactive session")
         import dtale
-        dtale.show(df, open_browser=True)
+        dtale.show(df, open_browser=True, subprocess=False)
 
 
 if __name__ == '__main__':

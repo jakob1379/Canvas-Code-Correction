@@ -9,8 +9,9 @@ then
 else
     # Check if url is seemingly valid
     url="$1"
-    substring="http://moss.stanford.edu/results"
-    if [ ! -z "${url##*$substring*}" ]; then
+    regex="http://moss.stanford.edu/results/\d+/\d+/"
+    if ! echo "$url" | grep -qoP "$regex"
+    then
 	echo "invalid url!"
 	exit 2
     fi

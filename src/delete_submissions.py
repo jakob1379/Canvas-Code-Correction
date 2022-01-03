@@ -1,28 +1,33 @@
+#!/usr/bin/env python
 import argparse
 import os
-import shutil
 from glob import glob
 from multiprocessing import cpu_count
-
-from p_tqdm import p_map
-
+from pathlib import Path
+import shutil
 
 def setup():
-    choices = sorted([i.split(os.sep)[0] for i in glob('*/submissions/')])
+    choices = sorted([i.split(os.sep)[0] for i in glob("*/submissions/")])
     parser = argparse.ArgumentParser(
-        formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    parser.add_argument("-p", "--parallel",
-                        help="Set number of cores to use for parallel execution. Set 1 for sequential",
-                        metavar="num cores",
-                        type=int,
-                        nargs='?',
-                        default=cpu_count())
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter
+    )
+    parser.add_argument(
+        "-p",
+        "--parallel",
+        help="Set number of cores to use for parallel execution. Set 1 for sequential",
+        metavar="num cores",
+        type=int,
+        nargs="?",
+        default=cpu_count(),
+    )
 
-    parser.add_argument("assignments",
-                        help="Select assignments to unzip submissions within. Multiple may be selected and/or usage of wildcards for assignment names only",
-                        metavar="assignments",
-                        nargs='*',
-                        default=choices)
+    parser.add_argument(
+        "assignments",
+        help="Select assignments to unzip submissions within. Multiple may be selected and/or usage of wildcards for assignment names only",
+        metavar="assignments",
+        nargs="*",
+        default=choices,
+    )
     return parser.parse_args()
 
 
@@ -36,9 +41,12 @@ def find_files(assignments):
     return files
 
 
-def rmfiles(files, cores=cpu_count()):
-    p_map(shutil.rmtree, files)
-
+def rmfiles(files, *args, **kwargs):
+    for path in files:
+        if Path(path).is_file():
+            Path(path).unlink()
+        elif Path(path).is_dir():
+            shutil.rmtree(path)
 
 def main():
     args = setup()
@@ -50,5 +58,5 @@ def main():
         print("Found no files. Exiting...")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

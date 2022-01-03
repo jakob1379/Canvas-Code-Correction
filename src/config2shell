@@ -16,18 +16,24 @@ declare -A config
 # done
 
 while read -r line; do
+    # if line is header
     if [[ "$line" =~ ^\[.*\]$ ]]
     then
-	section=$(echo "$line" | tr --delete '\[\]')
+        section=$(echo "$line" | tr --delete '\[\]')
+    # if line is comment
     elif [[ "$line" =~ ^# ]]
     then
-	continue
-	echo "COMMENT: $line"
+        continue
+        echo "COMMENT: $line"
+    # else is content
     else
-	index=$(echo "$line" | awk -F '=' '{print $1}')
-	value=$(echo "$line" | awk -F '=' '{print $2}')
-	config[$section/$index]="$value"
+        index=$(echo "$line" | awk -F '=' '{print $1}')
+        value=$(echo "$line" | cut -f1 -d '#' | awk -F '=' '{print $2}')
+        config[$section/$index]="$value"
     fi
 done < config.ini
+
+echo "converted the config to the following:"
+paste <(printf "%s\n" "${!config[@]}") <(printf "%s\n" "${config[@]}")
 
 declare -p config > .config_array

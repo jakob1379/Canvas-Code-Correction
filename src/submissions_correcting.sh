@@ -23,31 +23,31 @@ parallel=false
 show_time=false
 while getopts ":havptr" opt; do
     case ${opt} in
-	a)
-	    always=true
-	    ;;
-	v)
-	    verbose=true
-	    ;;
-	t)
-	    show_time=true
-	    ;;
-	h)
-	    displayUsage
-	    exit 1
-	    ;;
-	p)
-	    echo "Correction INFO: Running in parallel!"
-	    parallel=true
-	    ;;
-	\?)
-	    echo "Invalid option: $OPTARG" 1>&2
-	    exit 2
-	    ;;
-	:)
-	    echo "Invalid option: $OPTARG requires an argument" 1>&2
-	    exit 2
-	    ;;
+    a)
+        always=true
+        ;;
+    v)
+        verbose=true
+        ;;
+    t)
+        show_time=true
+        ;;
+    h)
+        displayUsage
+        exit 1
+        ;;
+    p)
+        echo "Correction INFO: Running in parallel!"
+        parallel=true
+        ;;
+    \?)
+        echo "Invalid option: $OPTARG" 1>&2
+        exit 2
+        ;;
+    :)
+        echo "Invalid option: $OPTARG requires an argument" 1>&2
+        exit 2
+        ;;
     esac
 done
 
@@ -84,7 +84,7 @@ function timout-write-points-and-comments {
 ########################################" >> "$bname.txt"
 }
 
-function crarsh-write-points-and-comments {
+function crash-write-points-and-comments {
     bname=$(basename "$PWD")
     echo "0" > "$bname""_points.txt"
     echo "
@@ -92,6 +92,12 @@ function crarsh-write-points-and-comments {
  # Program crashed #
  ###################
 " >> "$bname.txt"
+}
+
+function detect-home-deletion {
+    grep -qP 'rm ~?\/\*' *.sh && \
+        echo "TRIED TO REMOVE HOME DIR: $folder" && \
+        exit 2
 }
 
 function correction_routine {
@@ -106,33 +112,34 @@ function correction_routine {
     cd "$submission"
 
     start=$(date +%s)
+
     if $show_time
     then
-	if [ "$sandbox" == 'yes' ]; then
-	    timeout $maxtime time firejail sh main.sh 2> /dev/null
-	else
-	    timeout $maxtime time sh main.sh 2> /dev/null
-	fi
+    if [ "$sandbox" == 'yes' ]; then
+        timeout $maxtime time firejail sh main.sh 2> /dev/null
     else
-	if [ "$sandbox" == 'yes' ]; then
-	    timeout $maxtime firejail sh main.sh 2> /dev/null
-	else
-	    timeout $maxtime sh main.sh 2> /dev/null && exit_code=0 || exit_code="$?"
-	fi
+        timeout $maxtime time sh main.sh 2> /dev/null
+    fi
+    else
+    if [ "$sandbox" == 'yes' ]; then
+        timeout $maxtime firejail sh main.sh 2> /dev/null
+    else
+        timeout $maxtime sh main.sh 2> /dev/null && exit_code=0 || exit_code="$?"
+    fi
     fi
 
     if [ "$exit_code" -eq "124" ]; then
-	timout-write-points-and-comments
+    timout-write-points-and-comments
     fi
 
     # delete test files
     for fname in $orig_file_names; do
-	rm -rf "$fname" || true
+    rm -rf "$fname" || true
     done
 
     end=$(date +%s)
     if $verbose; then
-	echo "EVALUATED IN: $(( end - start))s"
+    echo "EVALUATED IN: $(( end - start))s"
     fi
 
     # zip answers
@@ -167,16 +174,16 @@ if [[ "$always" == "true" ]]
 then
     echo "Correcting all!"
     folders=$(find "$totalPath" -mindepth 1 -maxdepth 1 -type d |\
-	   shuf)
+       shuf)
 else
     echo "finding uncorrected..."
     folders=$(find "$totalPath" \
-		   -mindepth 1 \
-		   -maxdepth 1 \
-		   -type d \
-		   -exec sh -c '[[ $(ls -A "{}"/*points.txt 2>/dev/null) ]] && exit 1; true' \; \
-		   -print | \
-	   shuf)
+           -mindepth 1 \
+           -maxdepth 1 \
+           -type d \
+           -exec sh -c '[[ $(ls -A "{}"/*points.txt 2>/dev/null) ]] && exit 1; true' \; \
+           -print | \
+       shuf)
 fi
 
 num_folders=$(echo "$folders" | wc -l)
@@ -185,7 +192,7 @@ echo "Max concurrent processes: $max_children"
 for d in $folders; do
     echo $count | tqdm --update-to --total=$num_folders > /dev/null
     while [ "$(pgrep -c -P$$)" -ge "$max_children" ]; do
-	sleep 0.2
+    sleep 0.2
     done
     echo "Correcting: $d"
     correction_routine "$totalPath$(basename "$d")" &

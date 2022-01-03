@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 # Import the Canvas class
 import time
 import argparse
@@ -165,6 +167,10 @@ def find_submissions():
                         (not sub.grade_matches_current_submission
                          or sub.grade is None)):
                     submissions.append(sub)
+            # One liner recipe with datafrom from all submissions
+            # subs = [vars(sub) for sub in submissions]
+            # df = pd.DataFrame.from_records(subs)
+            # df[(~df.attachments.isna()) & ((~df.grade_matches_current_submission) | df.grade.isna()) ].user_id
         else:
             submissions += list(assignment.get_submissions())
     # if specific students where chosen filter them
