@@ -1,11 +1,15 @@
-#+TITLE: Automated Correction Framework for Applied Programming at Univeristy of Copenhagen
+#+TITLE: Automated Correction Framework for Applied Programming at University of Copenhagen
 #+AUTHOR: Jakob G. Aaes
 #+EMAIL: (concat "jakob1379" at-sign "gmail.com")
 #+OPTIONS: toc:2
 
-* Total Revamp!!!
+* Total Revamp - The Plan
 
-This repo has been on hiatus for a long time, and since its inception, I have learned *A TON*. This means that I can finally see how to properly structure this project in an API-oriented way, integrating smoother with Canvas. For now the main branch will be locked for no changes and all development will happen on another branch.
+Instead of having a single script do it all the project will be split into different agents all deployed as separate docker services:
+ - [ ] /webhook/: Canvas is able to integrate with webhooks dramatically reducing the number of API calls to Canvas
+ - [ ] /queue/: Celery will be used as the main async agent to handle the queue which is rabbitMQ (if I remember to correct)
+ - [ ] /database/: previously scores and other metrics was were stored in text-files, this should ofcause be in a database.
+ - [ ] /correction/: A sample image to run the correction of hand-ins alternatively the correction should be able to run any image as anyone should be able to build their own image to correct assignments
 
 -----
 
