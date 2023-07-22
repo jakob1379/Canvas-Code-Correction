@@ -3,6 +3,12 @@
 #+EMAIL: (concat "jakob1379" at-sign "gmail.com")
 #+OPTIONS: toc:2
 
+* Total Revamp!!!
+
+This repo has been on hiatus for a long time, and since its inception, I have learned *A TON*. This means that I can finally see how to properly structure this project in an API-oriented way, integrating smoother with Canvas. For now the main branch will be locked for no changes and all development will happen on another branch.
+
+-----
+
 *Canvas Submission Correction* aims to make it easier for course administrators to automate correction of assignments on a local machine by handling the download, unzipping and uploading of the corrections. What is left is for the user to supply the code needed to correct the assignment. That's it!
 
 
@@ -64,5 +70,35 @@ specified by the sum of their values.
    ~plagiarism-check.sh <assignment name>~ uses =moss= to calculate the similarity between the local assignments by uploading files with the specified extension from the =config.ini= file, and lastly create a graph to easily inspect for groups of similarity.
 ** Uploading comments
    The ~upload_comments.py~ find submission folders which have a =<submission name>_points.txt=. The =config.ini= determines whether the actual score or a complete/incomplete is used on Canvas.
+
 ** Contributing
-   Do not hesitate to file issues or feature requests or send pull-requests with improvements!
+
+We warmly welcome contributions from the community. If you're interested in contributing, here's how you can help:
+
+1. /Fork the Repository/: Start by forking this repository to your own GitHub account. This will create a copy of the repository that you can modify without affecting the original project.
+
+2. /Clone the Repository/: After forking, clone the repository to your local machine to start making changes.
+
+3. /Create a New Branch/: Always create a new branch for each feature or fix you're working on. This keeps your changes organized and separated from the main project.
+
+4. /Make Your Changes/: Make your changes or additions to the project. Please ensure your code adheres to the existing style to maintain consistency across the project.
+
+5. /Commit Your Changes/: Once you're satisfied with your changes, commit them with a clear and descriptive commit message.
+
+6. /Push to Your Fork/: Push your changes to the forked repository on your GitHub account.
+
+7. /Submit a Pull Request/: Finally, navigate to the original repository and submit a pull request. In the pull request description, explain your changes and why you believe they should be included in the project.
+
+Before contributing, please read our [[LINK_TO_CODE_OF_CONDUCT][Code of Conduct]]. This helps ensure a welcoming and respectful environment for all contributors. If you have any questions or need help with something, feel free to open an issue.
+
+** Donations
+
+Maintaining and improving this project requires a significant amount of time and effort. If you find this project useful and want to show your appreciation, you can support us by buying us a cup of coffee!
+
+Your donation will help us keep the project alive and thriving. It will also fuel our late-night coding sessions, which are often powered by caffeine.
+
+To donate, simply click on the "Buy Me a Coffee" button below. Any amount, big or small, is greatly appreciated and will be put to good use.
+
+[[https://ko-fi.com/jakob1379][Buy Me a Coffee]]
+
+Thank you for your support and for being a part of our community!
