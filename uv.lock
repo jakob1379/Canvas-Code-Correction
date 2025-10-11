@@ -204,7 +204,7 @@ requires-dist = [
     { name = "docker", specifier = ">=7.0.0" },
     { name = "httpx", specifier = ">=0.27.0" },
     { name = "mkdocs", marker = "extra == 'docs'" },
-    { name = "mkdocs-glightbox", marker = "extra == 'docs'" },
+    { name = "mkdocs-glightbox", marker = "extra == 'docs'", specifier = ">=0.5.1" },
     { name = "mkdocs-material", marker = "extra == 'docs'" },
     { name = "mkdocs-mermaid2-plugin", marker = "extra == 'docs'" },
     { name = "pre-commit", marker = "extra == 'dev'" },
@@ -227,7 +227,7 @@ dev = [
 ]
 docs = [
     { name = "mkdocs" },
-    { name = "mkdocs-glightbox" },
+    { name = "mkdocs-glightbox", specifier = ">=0.5.1" },
     { name = "mkdocs-material" },
     { name = "mkdocs-mermaid2-plugin" },
 ]

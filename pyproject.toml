@@ -36,7 +36,7 @@ tests = [
 ]
 docs = [
     "mkdocs",
-    "mkdocs-glightbox",
+    "mkdocs-glightbox>=0.5.1",
     "mkdocs-material",
     "mkdocs-mermaid2-plugin",
 ]
@@ -57,7 +57,7 @@ tests = [
 ]
 docs = [
     "mkdocs",
-    "mkdocs-glightbox",
+    "mkdocs-glightbox>=0.5.1",
     "mkdocs-material",
     "mkdocs-mermaid2-plugin",
 ]

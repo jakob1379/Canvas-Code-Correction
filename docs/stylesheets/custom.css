@@ -1,0 +1,14 @@
+:root {
+  --md-primary-fg-color: #1f6feb;
+  --md-primary-fg-color--light: #4f8ff0;
+  --md-primary-fg-color--dark: #174bb5;
+  --md-accent-fg-color: #f0883e;
+}
+
+.md-typeset h1 {
+  font-weight: 650;
+}
+
+.md-typeset .admonition {
+  border-radius: 0.4rem;
+}
