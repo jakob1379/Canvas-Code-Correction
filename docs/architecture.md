@@ -41,7 +41,7 @@ sequenceDiagram
     Runner->>Runner: execute instructor tests, create feedback zip & points
     Runner->>Canvas: upload feedback & grade
     Runner->>Prefect: report artefacts & logs
-    Prefect->>Receiver: completion callback (optional)
+    Prefect->>WebhookEndpoint: completion callback (optional)
 ```
 
 ## Component Diagram
