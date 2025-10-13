@@ -1,6 +1,7 @@
 # Local Prefect Agent Guide
 
-This guide explains how to run Prefect locally to orchestrate Canvas correction flows.
+This guide explains how to run Prefect locally to orchestrate Canvas correction
+flows.
 
 1. Start Prefect Orion:
    ```bash
@@ -11,7 +12,8 @@ This guide explains how to run Prefect locally to orchestrate Canvas correction 
    uv run prefect work-pool create --type process canvas-corrections
    uv run prefect agent start --pool canvas-corrections
    ```
-3. Deploy the flow defined in `canvas_code_correction.flows.correct_submission` and trigger it via
-   CLI (`uv run ccc run-once ...`) or webhook.
+3. Deploy the flow defined in `canvas_code_correction.flows.correct_submission`
+   and trigger it via CLI (`uv run ccc run-once ...`) or webhook.
 
-Ensure environment variables for Canvas credentials are exported or provided via a `.env` file.
+Ensure environment variables for Canvas credentials are exported or provided via
+a `.env` file.

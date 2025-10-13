@@ -44,17 +44,17 @@ done
 shift $((OPTIND-1))
 
 if [ $# -eq 0 ];  then
-    # Find assigments with correction code and submissions
+    # Find assignments with correction code and submissions
     not_empty=$(find -maxdepth 2 -type d -wholename "*/code" -not -empty | cut -d '/' -f 2)
-    assigments=$(find -maxdepth 2 -type d  -wholename "*/submissions" -not -empty | cut -d '/' -f 2)
-    assignmentsWithSubsAndCode=$(comm -12 <(echo "$not_empty" | sort) <(echo "$assigments" | sort))
+    assignments=$(find -maxdepth 2 -type d  -wholename "*/submissions" -not -empty | cut -d '/' -f 2)
+    assignmentsWithSubsAndCode=$(comm -12 <(echo "$not_empty" | sort) <(echo "$assignments" | sort))
     assignments=$(sed -e 's/$/\/submissions/' <(echo "$assignmentsWithSubsAndCode"))
 else
-    assigments=$@
+    assignments=$@
 fi
 
 # Check arguments
-for folder in $assigments; do
+for folder in $assignments; do
     if [ ! -d "$folder" ]; then
 	echo "WARNING! input does not exist: $folder"
 	continue

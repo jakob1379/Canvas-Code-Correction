@@ -3,10 +3,11 @@
 from __future__ import annotations
 
 import os
-from pathlib import Path
-from typing import Any, Mapping
-
 import tomllib
+from collections.abc import Mapping
+from pathlib import Path
+from typing import Any
+
 from pydantic import BaseModel, Field, ValidationError
 
 
@@ -29,14 +30,14 @@ class Settings(BaseModel):
     working_dir: Path = Field(default_factory=lambda: Path.cwd() / "var" / "runs")
 
     @classmethod
-    def from_file(cls, path: Path | None) -> "Settings":
+    def from_file(cls, path: Path | None) -> Settings:
         if path is None:
             return cls.from_env()
         data = tomllib.loads(path.read_bytes())
         return cls.model_validate(data)
 
     @classmethod
-    def from_env(cls) -> "Settings":
+    def from_env(cls) -> Settings:
         raw: Mapping[str, Any] = {
             "canvas": {
                 "api_url": os.getenv("CANVAS_API_URL", "https://canvas.example"),
