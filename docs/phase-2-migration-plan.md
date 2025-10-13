@@ -78,17 +78,15 @@ Event / trigger (manual CLI, webhook, schedule)
 
 ## 4. Incremental implementation steps
 
-1. **Configuration groundwork (Day 0–1)**
-   - Load settings solely from `.env` / `pyproject` (remove `config2shell`).
-   - Validate required entries (API URL, token, course ID, runner image).
-2. **Canvas client & download (Day 1–2)**
-   - Implement `canvas_code_correction.canvas.CanvasClient` replicating
-     `download_submissions.py` behaviour (filters, md5 naming).
-   - Unit tests with mocked responses.
-3. **Workspace preparation (Day 2)**
-   - Recreate unzip/normalise logic in Python (use `zipfile`, ensure
-     compatibility with legacy expectations).
-   - Fixture tests using synthetic zips.
+1. **Configuration groundwork (Day 0–1)** ✅
+   - Settings now sourced exclusively from environment variables (with Canvas
+     Cloud defaults) and validated via `Settings` models.
+2. **Canvas client & download (Day 1–2)** ✅
+   - `CanvasClient` now wraps `canvasapi` objects for submission metadata and
+     attachment download with accompanying unit tests.
+3. **Workspace preparation (Day 2)** ✅
+   - `SubmissionStore` handles extraction/normalisation with coverage via
+     synthetic zip fixtures.
 4. **Runner integration (Day 3–4)**
    - Prototype Prefect task that spins up Docker container (`docker SDK` or
      Prefect Docker task collection) with workspace mount and env vars.
@@ -98,12 +96,13 @@ Event / trigger (manual CLI, webhook, schedule)
    - Port `upload_comments.py` and `upload_grades.py` into reusable async tasks
      with retries.
    - Maintain md5/idempotency checks.
-6. **End-to-end Prefect flow (Day 5–6)**
-   - Compose tasks into `correct_submission_flow`.
-   - Manual dry-run against dev course (single submission).
-7. **Testing & docs (Day 6–7)**
-   - Add pytest suite (unit & smoke), GitHub Actions workflow.
-   - Document manual course reset steps, runner image contract, and CLI usage.
+6. **End-to-end Prefect flow (Day 5–6)** ⏳
+   - Flow skeleton in place (`correct_submission_flow`) with download and
+     workspace staging; grader container execution still stubbed pending runner
+     integration.
+7. **Testing & docs (Day 6–7)** ⏳
+   - Unit tests cover settings, Canvas client, flows, and submission store; CI
+     workflow and operational docs still outstanding.
 
 ## 5. Non-goals for this iteration
 
