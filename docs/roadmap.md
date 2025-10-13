@@ -8,6 +8,9 @@ architecture.
 
 - [x] **Phase 1 – Bootstrap**: Core scaffolding, uv-managed dependencies,
       Prefect flow skeleton. _(Complete)_
+- [x] Phase 1.5 - **Setup a test/dev environment**: use the shared Canvas cloud
+      course at https://canvas.instructure.com/courses/13121974 for development
+      validation
 - [ ] **Phase 2 – Canvas Client Migration**: Port download/upload helpers, add
       retries and observability.
 - [ ] **Phase 3 – Container Runner**: Harden Docker execution, add resource
