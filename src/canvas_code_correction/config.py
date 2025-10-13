@@ -62,7 +62,11 @@ class Settings(BaseModel):
     @classmethod
     def _from_mapping(cls, mapping: Mapping[str, Any]) -> Settings:
         canvas_section = {
-            "api_url": cls._coalesce(mapping, cls.ENV_URL_KEYS, "https://canvas.example"),
+            "api_url": cls._coalesce(
+                mapping,
+                cls.ENV_URL_KEYS,
+                "https://canvas.instructure.com",
+            ),
             "token": cls._coalesce(mapping, cls.ENV_TOKEN_KEYS, "changeme"),
             "course_id": cls._coalesce_int(mapping, cls.ENV_COURSE_KEYS, 0),
         }
