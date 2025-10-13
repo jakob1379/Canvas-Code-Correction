@@ -1,4 +1,4 @@
-#+TITLE: Automated Correction Framework for Applied Programming at Univeristy of Copenhagen
+#+TITLE: Automated Correction Framework for Applied Programming at University of Copenhagen
 #+AUTHOR: Jakob G. Aaes
 #+EMAIL: (concat "jakob1379" at-sign "gmail.com")
 #+OPTIONS: toc:2

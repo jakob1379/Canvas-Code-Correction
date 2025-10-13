@@ -11,8 +11,8 @@ displayUsage() {
 usage:  name <operation> [...]
 operations:
     correct {-h help} shows this dialogue
-    correct {-a always} always corect assigments
-    correct {-p paralllel} run in parallel
+    correct {-a always} always correct assignments
+    correct {-p parallel} run in parallel
     correct {-t time} time corrections
     correct {-v verbose} verbose
 '

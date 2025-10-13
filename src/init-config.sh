@@ -31,16 +31,16 @@ read -p "please insert the used language.
 Supported languages are (\"c\", \"cc\", \"java\", \"ml\", \"pascal\", \"ada\", \"lisp\", \"scheme\", \"haskell\", \"fortran\", \"ascii\", \"vhdl\", \"perl\", \"matlab\", \"python\", \"mips\", \"prolog\", \"spice\", \"vb\", \"csharp\", \"modula2\", \"a8086\", \"javascript\", \"plsql\", \"verilog\"): " lang
 lang="$(echo "$lang" | tr '[:upper:]' '[:lower:]'))"
 
-read -p "please insert the extension to check for plagiarism, multiple should be seperated with space e.g. .cpp .h .hpp " exts
-echo "Similarity has been set to defaul 50%. This can be changed manually in config.ini"
+read -p "please insert the extension to check for plagiarism, multiple should be separated with space e.g. .cpp .h .hpp " exts
+echo "Similarity has been set to default 50%. This can be changed manually in config.ini"
 
 echo "Setting up sandboxing..."
 if command -v firejail &> /dev/null
 then
     while true; do
-	read -p "Should the programs be run in a sandbox? [y/N] " ans
-	ans="$(echo "$ans" | tr '[:upper:]' '[:lower:]')"
-	case "$ans" in
+	read -p "Should the programs be run in a sandbox? [y/N] " and
+	and="$(echo "$and" | tr '[:upper:]' '[:lower:]')"
+	case "$and" in
 	    'y' )
 		firejailAvailable='yes'
 		break
@@ -62,9 +62,9 @@ fi
 echo "Setting up max-time for scripts..."
 maxtime="30s"
 re='^[0-9]*d?[0-9]*h?[0-9]*m?[0-9]*s?$'
-read -p "What is the max time for running each student as WdXhYmZs? [30s] " ans
-if [[ "$ans" =~ $re ]]; then
-    echo "$ans"
+read -p "What is the max time for running each student as WdXhYmZs? [30s] " and
+if [[ "$and" =~ $re ]]; then
+    echo "$and"
 else
     echo "default: $maxtime"
 fi
@@ -126,9 +126,9 @@ $scores
 echo "$text" >> config.ini
 
 while true; do
-    read -p "Should scores be uploaded to absalon [y/N]: " ans
-    ans="$(echo "$ans" | tr '[:upper:]' '[:lower:]')"
-    case "$ans" in
+    read -p "Should scores be uploaded to absalon [y/N]: " and
+    and="$(echo "$and" | tr '[:upper:]' '[:lower:]')"
+    case "$and" in
 	'y' )
 	    sed -i 's/UPLOAD_SCORE=no/UPLOAD_SCORE=yes/' config.ini
 	    break
