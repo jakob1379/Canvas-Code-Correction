@@ -1,0 +1,132 @@
+# Phase 2 – Canvas Client Migration Plan
+
+This document captures the current state of the legacy automation, the canonical
+data/flow requirements we must preserve, and the concrete steps for the
+Prefect-based rewrite.
+
+## 1. Legacy feature inventory
+
+The existing bash + Python tooling in `src/` provides the reference behaviour we
+need parity with:
+
+| Scope                                   | Current implementation                                                                             | Notes for parity                                                                                       |
+| --------------------------------------- | -------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------ |
+| Assignment discovery & folder bootstrap | `setup-assignment-folders.sh`, `init-config.sh`                                                    | Reads Canvas via `canvas_helpers` and populates local directories + `.config_array`.                   |
+| Submission download                     | `download_submissions.py`                                                                          | Supports filtering (state, assignment, student), pagination, md5-based file naming.                    |
+| Extraction/normalisation                | `submissions_unzip.py`, `process_submissions.sh`                                                   | Handles zip unpacking, flattens nested folders.                                                        |
+| Grading execution                       | `submissions_correcting.sh`, user-provided `code/main.sh`, optional firejail, timeout, parallelism | Consumes config values, copies instructor `code/` into each submission, captures logs/points/comments. |
+| Result packaging                        | `zip_submission`, `submissions_correcting.sh`                                                      | Produces `<handin>+.zip` artefacts and `<handin>_points.txt`.                                          |
+| Comment upload                          | `upload_comments.py`                                                                               | Idempotent via md5 + filename checks; attaches zipped feedback.                                        |
+| Grade upload                            | `upload_grades.py`                                                                                 | Reads points file(s), applies config-specified grading mode (score vs complete).                       |
+| Cleanup                                 | `delete_submissions.py`                                                                            | Removes local submissions when desired.                                                                |
+| Analytics                               | `plot_scores.py`, `hclust.py`, `plagiarism-check.sh`                                               | Non-critical for MVP but worth preserving hooks.                                                       |
+
+Supporting utilities:
+
+- `canvas_helpers.py` – shared Canvas API helper (init course, get assignments,
+  md5 hashing).
+- `config2shell`/`.config_array` – bridges INI → bash arrays.
+- `canvas-code-correction.sh` – end-to-end orchestrator (daemon/batch modes).
+
+## 2. Course fixture & test data
+
+- Treat `ccc-testing-course-export.imscc` as the authoritative course dump.
+- Manual process (for now):
+  1. Import `ccc-testing-course-export.imscc` into the Canvas dev course at
+     <https://canvas.instructure.com/courses/13121974> whenever state drift
+     occurs.
+  2. Record the resulting assignment IDs in `.env` for test runs.
+- Short-term goal: document manual reset steps clearly; automated re-import is
+  **out-of-scope** for this iteration.
+
+## 3. Target architecture (Prefect-driven)
+
+Core components to implement in Python:
+
+1. **CanvasClient** – thin wrapper around Canvas REST API with retry/backoff and
+   typed responses (leveraging `canvasapi` or `httpx`).
+2. **SubmissionStore** – manages local filesystem workspace
+   (`var/runs/<assignment>/<submission>`), mirrors download/unzip contract.
+3. **Runner** – executes grading inside a clean container (Docker image
+   configurable in `.env`/settings). Responsible for:
+   - Mounting the workspace read/write.
+   - Injecting instructor correction code and student submission.
+   - Enforcing time/resource limits (CPU, memory, network toggle).
+4. **ResultCollector** – normalises grader outputs into the expected
+   `points.txt`, `comments.txt`, `artifacts/` structure.
+5. **Uploader** – uploads comments and grades idempotently, maintaining audit
+   logs.
+6. **Reporter** – optional analytics hook (e.g., grade summary CSV, plot
+   triggers).
+
+Prefect orchestration outline:
+
+```text
+Event / trigger (manual CLI, webhook, schedule)
+  → Flow: correct_submission_flow
+      → Task: fetch_submission_metadata
+      → Task: prepare_workspace
+      → Task: download_submission_files (CanvasClient → SubmissionStore)
+      → Task: stage_instructor_code (from repo or artifact registry)
+      → Task: run_grader_container (Runner)
+      → Task: collect_results
+      → Task: upload_comment
+      → Task: upload_grade
+      → Task: publish_run_summary
+```
+
+## 4. Incremental implementation steps
+
+1. **Configuration groundwork (Day 0–1)**
+   - Load settings solely from `.env` / `pyproject` (remove `config2shell`).
+   - Validate required entries (API URL, token, course ID, runner image).
+2. **Canvas client & download (Day 1–2)**
+   - Implement `canvas_code_correction.canvas.CanvasClient` replicating
+     `download_submissions.py` behaviour (filters, md5 naming).
+   - Unit tests with mocked responses.
+3. **Workspace preparation (Day 2)**
+   - Recreate unzip/normalise logic in Python (use `zipfile`, ensure
+     compatibility with legacy expectations).
+   - Fixture tests using synthetic zips.
+4. **Runner integration (Day 3–4)**
+   - Prototype Prefect task that spins up Docker container (`docker SDK` or
+     Prefect Docker task collection) with workspace mount and env vars.
+   - Ensure results contract (`points.txt`, `comments.txt`, zipped feedback)
+     matches legacy output.
+5. **Uploader tasks (Day 4–5)**
+   - Port `upload_comments.py` and `upload_grades.py` into reusable async tasks
+     with retries.
+   - Maintain md5/idempotency checks.
+6. **End-to-end Prefect flow (Day 5–6)**
+   - Compose tasks into `correct_submission_flow`.
+   - Manual dry-run against dev course (single submission).
+7. **Testing & docs (Day 6–7)**
+   - Add pytest suite (unit & smoke), GitHub Actions workflow.
+   - Document manual course reset steps, runner image contract, and CLI usage.
+
+## 5. Non-goals for this iteration
+
+- Automated Canvas course cloning/reset (remains manual).
+- Webhook listener/service deployment (can follow once core workflow is stable).
+- Full analytics/visualisation parity (plotting, similarity) — defer until core
+  grading loop is stable.
+- Multi-run scheduling/daemon replacement — to be addressed after single-run
+  path is reliable.
+
+## 6. Open questions / follow-ups
+
+1. **Instructor code packaging** – store in repo, S3, or separate artifact?
+   (short-term: repository folder copied into workspace).
+2. **Secrets management** – continue with local `.env`, but plan migration to
+   Prefect blocks / Vault later.
+3. **Container image build pipeline** – need CI job to build/publish grader
+   image tagged with repo commit.
+4. **Student code limits** – confirm CPU/memory/time defaults with teaching
+   team; codify in settings.
+5. **Roll-forward strategy** – plan data migration for existing feedback
+   archives (if needed).
+
+---
+
+This plan keeps scope narrow, focuses on essential parity, and paves the way for
+Prefect-based orchestration without overengineering.
