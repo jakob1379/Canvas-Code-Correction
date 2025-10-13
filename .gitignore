@@ -21,6 +21,8 @@ coverage.xml
 site/
 dist/
 build/
+containers/canvas/.env
+containers/canvas/canvas-lms/
 
 ##############
 # versioning #

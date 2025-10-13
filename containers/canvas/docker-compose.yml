@@ -1,0 +1,108 @@
+---
+# prettier-ignore
+version: '3.9'
+services:
+  canvas-web:
+    build:
+      context: ./canvas-lms
+      args:
+        USER_ID: ${CANVAS_HOST_UID:-1000}
+    command: bundle exec rails server -b 0.0.0.0 -p 3000
+    env_file: [.env]
+    environment:
+      RAILS_ENV: development
+      NODE_ENV: development
+      CANVAS_DATABASE_HOST: postgres
+      CANVAS_DATABASE_USERNAME: ${CANVAS_DATABASE_USERNAME:-canvas}
+      CANVAS_DATABASE_DEVELOPMENT: ${CANVAS_DATABASE_DEVELOPMENT:-canvas_development}
+      CANVAS_LMS_ACCOUNT_NAME: ${CANVAS_LMS_ACCOUNT_NAME:-Canvas Dev Sandbox}
+      CANVAS_LMS_ADMIN_EMAIL: ${CANVAS_LMS_ADMIN_EMAIL:-admin@example.com}
+      CANVAS_LMS_ADMIN_PASSWORD: ${CANVAS_LMS_ADMIN_PASSWORD:-canvas-admin-password}
+      CANVAS_LMS_STATS_COLLECTION: ${CANVAS_LMS_STATS_COLLECTION:-opt_out}
+      ENCRYPTION_KEY: ${ENCRYPTION_KEY}
+    ports: ['${CANVAS_WEB_PORT:-3000}:3000']
+    volumes:
+      - ./canvas-lms:/usr/src/app
+      - canvas-bundle:/home/docker/.bundle
+      - canvas-gems:/home/docker/.gem
+      - canvas-node_modules:/usr/src/app/node_modules
+      - canvas-yarn-cache:/home/docker/.cache/yarn
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+  canvas-worker:
+    build:
+      context: ./canvas-lms
+      args:
+        USER_ID: ${CANVAS_HOST_UID:-1000}
+    command: bundle exec script/delayed_job run
+    env_file: [.env]
+    environment:
+      RAILS_ENV: development
+      NODE_ENV: development
+      CANVAS_DATABASE_HOST: postgres
+      CANVAS_DATABASE_USERNAME: ${CANVAS_DATABASE_USERNAME:-canvas}
+      CANVAS_DATABASE_DEVELOPMENT: ${CANVAS_DATABASE_DEVELOPMENT:-canvas_development}
+      ENCRYPTION_KEY: ${ENCRYPTION_KEY}
+    volumes:
+      - ./canvas-lms:/usr/src/app
+      - canvas-bundle:/home/docker/.bundle
+      - canvas-gems:/home/docker/.gem
+      - canvas-node_modules:/usr/src/app/node_modules
+      - canvas-yarn-cache:/home/docker/.cache/yarn
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+  webpack:
+    build:
+      context: ./canvas-lms
+      args:
+        USER_ID: ${CANVAS_HOST_UID:-1000}
+    command: yarn run webpack --watch
+    env_file: [.env]
+    environment:
+      NODE_ENV: development
+    volumes:
+      - ./canvas-lms:/usr/src/app
+      - canvas-bundle:/home/docker/.bundle
+      - canvas-gems:/home/docker/.gem
+      - canvas-node_modules:/usr/src/app/node_modules
+      - canvas-yarn-cache:/home/docker/.cache/yarn
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_DB: ${CANVAS_DATABASE_DEVELOPMENT:-canvas_development}
+      POSTGRES_USER: ${CANVAS_DATABASE_USERNAME:-canvas}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    healthcheck:
+      test: [CMD-SHELL, 'pg_isready -U ${CANVAS_DATABASE_USERNAME:-canvas}']
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    volumes:
+      - type: volume
+        source: canvas-postgres
+        target: /var/lib/postgresql/data
+  redis:
+    image: redis:7-alpine
+    command: redis-server --appendonly yes
+    volumes:
+      - type: volume
+        source: canvas-redis
+        target: /data
+volumes:
+  canvas-postgres:
+  canvas-redis:
+  canvas-bundle:
+  canvas-gems:
+  canvas-node_modules:
+  canvas-yarn-cache:
