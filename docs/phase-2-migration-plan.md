@@ -30,14 +30,15 @@ Supporting utilities:
 
 ## 2. Course fixture & test data
 
-- Treat `ccc-testing-course-export.imscc` as the authoritative course dump.
-- Manual process (for now):
-  1. Import `ccc-testing-course-export.imscc` into the Canvas dev course at
-     <https://canvas.instructure.com/courses/13121974> whenever state drift
-     occurs.
-  2. Record the resulting assignment IDs in `.env` for test runs.
-- Short-term goal: document manual reset steps clearly; automated re-import is
-  **out-of-scope** for this iteration.
+- All functional tests rely on the shared Canvas dev course at
+  <https://canvas.instructure.com/courses/13121974>.
+- Tokens and course identifiers are provided via the project-level `.env` (e.g.
+  `CANVAS_API_TOKEN`, `CANVAS_COURSE_ID`).
+- The repository should not depend on static IMSCC exports; instead, test data
+  is retrieved dynamically from the dev course via the Canvas API.
+- When additional fixtures are required, seed data using Canvas API calls or
+  manual setup in the dev course, then capture the resulting IDs in `.env` for
+  repeatability.
 
 ## 3. Target architecture (Prefect-driven)
 

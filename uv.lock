@@ -193,20 +193,20 @@ requires-dist = [
 
 [package.metadata.requires-dev]
 dev = [
-    { name = "pre-commit", specifier = ">=0.0.0" },
-    { name = "ruff", specifier = ">=0.0.0" },
+    { name = "pre-commit", specifier = ">=4.3.0" },
+    { name = "ruff", specifier = ">=0.14.0" },
 ]
 docs = [
-    { name = "mkdocs", specifier = ">=0.0.0" },
+    { name = "mkdocs", specifier = ">=1.6.1" },
     { name = "mkdocs-glightbox", specifier = ">=0.5.1" },
-    { name = "mkdocs-material", specifier = ">=0.0.0" },
-    { name = "mkdocs-mermaid2-plugin", specifier = ">=0.0.0" },
+    { name = "mkdocs-material", specifier = ">=9.6.21" },
+    { name = "mkdocs-mermaid2-plugin", specifier = ">=1.2.2" },
 ]
 tests = [
-    { name = "pytest", specifier = ">=0.0.0" },
-    { name = "pytest-cov", specifier = ">=0.0.0" },
-    { name = "pytest-datadir", specifier = ">=0.0.0" },
-    { name = "pytest-xdist", specifier = ">=0.0.0" },
+    { name = "pytest", specifier = ">=8.4.2" },
+    { name = "pytest-cov", specifier = ">=7.0.0" },
+    { name = "pytest-datadir", specifier = ">=1.8.0" },
+    { name = "pytest-xdist", specifier = ">=3.8.0" },
 ]
 
 [[package]]

@@ -48,6 +48,9 @@ dependencies = [
 [project.scripts]
 ccc = "canvas_code_correction.cli:app"
 
+[tool.bandit]
+exclude_dirs = ["tests"]
+
 [tool.commitizen]
 name = "cz_conventional_commits"
 tag_format = "v$version"
