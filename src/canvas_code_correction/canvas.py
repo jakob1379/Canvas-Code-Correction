@@ -1,7 +1,5 @@
 """Canvas API client utilities for the Prefect-based orchestration."""
 
-from __future__ import annotations
-
 from collections.abc import Iterable
 from contextlib import AbstractContextManager
 from pathlib import Path
@@ -41,7 +39,7 @@ class CanvasClient(AbstractContextManager["CanvasClient"]):
         self.close()
 
     @classmethod
-    def from_settings(cls, settings: Settings, **kwargs: Any) -> CanvasClient:
+    def from_settings(cls, settings: Settings, **kwargs: Any) -> "CanvasClient":
         return cls(
             base_url=settings.canvas.api_url,
             token=settings.canvas.token,

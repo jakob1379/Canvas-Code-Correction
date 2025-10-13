@@ -1,8 +1,6 @@
 # bandit: disable=B101,B105,B106
 """Tests for the Canvas client."""
 
-from __future__ import annotations
-
 from pathlib import Path
 
 from canvas_code_correction.canvas import CanvasClient

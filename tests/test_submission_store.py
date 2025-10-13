@@ -1,8 +1,6 @@
 # bandit: disable=B101,B105,B106
 """Submission store tests."""
 
-from __future__ import annotations
-
 import zipfile
 from pathlib import Path
 

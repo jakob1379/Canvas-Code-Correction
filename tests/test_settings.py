@@ -1,8 +1,6 @@
 # bandit: disable=B101,B105,B106
 """Settings model tests."""
 
-from __future__ import annotations
-
 import os
 from pathlib import Path
 

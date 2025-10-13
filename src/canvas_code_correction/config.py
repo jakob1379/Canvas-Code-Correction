@@ -1,7 +1,5 @@
 """Configuration models for Canvas Code Correction v2."""
 
-from __future__ import annotations
-
 import os
 import tomllib
 from collections.abc import Iterable, Mapping
@@ -35,7 +33,7 @@ class Settings(BaseModel):
     ENV_COURSE_KEYS: ClassVar[tuple[str, ...]] = ("CANVAS_COURSE_ID",)
 
     @classmethod
-    def from_file(cls, path: Path | None) -> Settings:
+    def from_file(cls, path: Path | None) -> "Settings":
         if path is None:
             return cls.from_env()
 
@@ -53,14 +51,14 @@ class Settings(BaseModel):
         raise RuntimeError(f"Unsupported configuration format for {path}")
 
     @classmethod
-    def from_env(cls) -> Settings:
+    def from_env(cls) -> "Settings":
         # Load local .env without overriding explicit environment values unless disabled
         if os.getenv("CCC_SKIP_DOTENV") not in {"1", "true", "TRUE", "True"}:
             load_dotenv(override=False)
         return cls._from_mapping(os.environ)
 
     @classmethod
-    def _from_mapping(cls, mapping: Mapping[str, Any]) -> Settings:
+    def _from_mapping(cls, mapping: Mapping[str, Any]) -> "Settings":
         canvas_section = {
             "api_url": cls._coalesce(
                 mapping,

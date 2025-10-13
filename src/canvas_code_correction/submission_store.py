@@ -1,7 +1,5 @@
 """Utilities for managing submission workspaces on the local filesystem."""
 
-from __future__ import annotations
-
 import shutil
 import zipfile
 from collections.abc import Iterable
