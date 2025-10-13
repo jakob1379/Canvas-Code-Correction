@@ -2,48 +2,20 @@
 
 from __future__ import annotations
 
-from collections.abc import Iterable, Mapping
+from collections.abc import Iterable
 from contextlib import AbstractContextManager
 from pathlib import Path
 from typing import Any
 
-import httpx
 from canvasapi import Canvas as CanvasAPI
-from pydantic import BaseModel, Field, HttpUrl, NonNegativeInt
+from canvasapi.file import File as CanvasFile
+from canvasapi.submission import Submission as CanvasSubmission
 
 from .config import Settings
 
 
-class Attachment(BaseModel):
-    """Subset of Canvas attachment fields used by the pipeline."""
-
-    id: NonNegativeInt
-    filename: str | None = None
-    display_name: str | None = None
-    url: HttpUrl | None = None
-    content_type: str | None = None
-    size: int | None = None
-
-    @property
-    def suggested_name(self) -> str:
-        if self.filename:
-            return self.filename
-        if self.display_name:
-            return self.display_name
-        return f"attachment-{self.id}"
-
-
-class Submission(BaseModel):
-    id: NonNegativeInt
-    user_id: NonNegativeInt
-    assignment_id: NonNegativeInt
-    attempt: int | None = None
-    late: bool | None = None
-    attachments: list[Attachment] = Field(default_factory=list)
-
-
 class CanvasClient(AbstractContextManager["CanvasClient"]):
-    """Lightweight Canvas REST client."""
+    """Lightweight helper around :mod:`canvasapi`."""
 
     def __init__(
         self,
@@ -51,34 +23,19 @@ class CanvasClient(AbstractContextManager["CanvasClient"]):
         token: str,
         course_id: int,
         *,
-        timeout: float = 30.0,
-        transport: httpx.BaseTransport | None = None,
         canvas: CanvasAPI | None = None,
-        http_client: httpx.Client | None = None,
     ) -> None:
         self._base_url = base_url.rstrip("/")
         self._course_id = course_id
         self._canvas = canvas or CanvasAPI(self._base_url, token)
         self._course = self._canvas.get_course(course_id)
 
-        if http_client is not None and transport is not None:
-            raise ValueError("Specify either http_client or transport, not both")
-
-        if http_client is not None:
-            self._http_client = http_client
-            self._owns_http_client = False
-        else:
-            headers = {"Authorization": f"Bearer {token}"}
-            self._http_client = httpx.Client(timeout=timeout, headers=headers, transport=transport)
-            self._owns_http_client = True
-
     @property
     def course_id(self) -> int:
         return self._course_id
 
-    def close(self) -> None:
-        if self._owns_http_client:
-            self._http_client.close()
+    def close(self) -> None:  # pragma: no cover - no resources to release presently
+        return None
 
     def __exit__(self, *exc_info: object) -> None:
         self.close()
@@ -98,56 +55,41 @@ class CanvasClient(AbstractContextManager["CanvasClient"]):
         submission_id: int,
         *,
         include: Iterable[str] | None = None,
-    ) -> Submission:
+    ) -> CanvasSubmission:
         assignment = self._course.get_assignment(assignment_id)
         include_params = list(include) if include is not None else None
-        submission_obj = assignment.get_submission(submission_id, include=include_params)
-        payload = submission_obj.to_dict()
+        return assignment.get_submission(submission_id, include=include_params)
 
-        attachment_payloads = payload.get("attachments") or []
-        attachments = [
-            Attachment.model_validate(self._normalize_attachment(item))
-            for item in attachment_payloads
-        ]
-
-        return Submission(
-            id=payload["id"],
-            user_id=payload["user_id"],
-            assignment_id=payload["assignment_id"],
-            attempt=payload.get("attempt"),
-            late=payload.get("late"),
-            attachments=attachments,
-        )
+    def get_submission_files(self, submission: CanvasSubmission) -> list[CanvasFile]:
+        attachments = getattr(submission, "attachments", None) or []
+        files: list[CanvasFile] = []
+        for attachment in attachments:
+            attachment_id = attachment.get("id")
+            if attachment_id is None:
+                continue
+            files.append(self._canvas.get_file(attachment_id))
+        return files
 
     def download_attachment(
         self,
-        attachment: Attachment,
+        attachment: CanvasFile,
         destination_dir: Path,
         *,
         filename: str | None = None,
     ) -> Path:
-        if attachment.url is None:
-            raise ValueError(f"Attachment {attachment.id} does not expose a download URL")
+        name = (
+            filename
+            or getattr(attachment, "filename", None)
+            or getattr(
+                attachment,
+                "display_name",
+                None,
+            )
+        )
+        if not name:
+            name = f"attachment-{getattr(attachment, 'id', 'unknown')}"
 
-        file_name = filename or attachment.suggested_name
-        local_path = destination_dir / file_name
+        local_path = destination_dir / name
         local_path.parent.mkdir(parents=True, exist_ok=True)
-
-        with self._http_client.stream("GET", str(attachment.url)) as response:
-            response.raise_for_status()
-            with local_path.open("wb") as file_handle:
-                for chunk in response.iter_bytes():
-                    file_handle.write(chunk)
+        attachment.download(str(local_path))
         return local_path
-
-    @staticmethod
-    def _normalize_attachment(raw: Mapping[str, Any]) -> Mapping[str, Any]:
-        content_type = raw.get("content_type") or raw.get("content-type")
-        return {
-            "id": raw["id"],
-            "filename": raw.get("filename"),
-            "display_name": raw.get("display_name"),
-            "url": raw.get("url"),
-            "content_type": content_type,
-            "size": raw.get("size"),
-        }

@@ -5,9 +5,10 @@ from __future__ import annotations
 import logging
 from pathlib import Path
 
+from canvasapi.submission import Submission as CanvasSubmission
 from prefect import flow, get_run_logger, task
 
-from ..canvas import CanvasClient, Submission
+from ..canvas import CanvasClient
 from ..config import Settings
 from ..submission_store import SubmissionStore
 
@@ -19,7 +20,11 @@ def prepare_workspace(settings: Settings, assignment_id: int, submission_id: int
 
 
 @task
-def fetch_submission(settings: Settings, assignment_id: int, submission_id: int) -> Submission:
+def fetch_submission(
+    settings: Settings,
+    assignment_id: int,
+    submission_id: int,
+) -> CanvasSubmission:
     with CanvasClient.from_settings(settings) as client:
         return client.get_submission(
             assignment_id,
@@ -31,20 +36,27 @@ def fetch_submission(settings: Settings, assignment_id: int, submission_id: int)
 @task
 def download_submission_attachments(
     settings: Settings,
-    submission: Submission,
+    submission: CanvasSubmission,
     workspace: Path,
 ) -> list[Path]:
-    if not submission.attachments:
-        return []
-
     store = SubmissionStore(settings.working_dir)
     attachment_dir = store.attachments_dir(workspace)
 
     saved_paths: list[Path] = []
     with CanvasClient.from_settings(settings) as client:
-        for attachment in submission.attachments:
+        for attachment in client.get_submission_files(submission):
             saved_paths.append(client.download_attachment(attachment, attachment_dir))
     return saved_paths
+
+
+@task
+def normalise_submission_workspace(
+    settings: Settings,
+    workspace: Path,
+    attachments: list[Path],
+) -> list[Path]:
+    store = SubmissionStore(settings.working_dir)
+    return store.stage_attachments(workspace, attachments)
 
 
 @task
@@ -76,7 +88,9 @@ def correct_submission_flow(
     workspace = prepare_workspace(settings, assignment_id, submission_id)
     submission = fetch_submission(settings, assignment_id, submission_id)
     attachments = download_submission_attachments(settings, submission, workspace)
+    staged_files = normalise_submission_workspace(settings, workspace, attachments)
     outcome = run_grader_container(workspace, settings)
     outcome["attachments"] = [str(path) for path in attachments]
+    outcome["submission_files"] = [str(path) for path in staged_files]
     outcome["submission_id"] = str(submission.id)
     return outcome
