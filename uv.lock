@@ -163,24 +163,6 @@ dependencies = [
     { name = "typer" },
 ]
 
-[package.optional-dependencies]
-dev = [
-    { name = "pre-commit" },
-    { name = "ruff" },
-]
-docs = [
-    { name = "mkdocs" },
-    { name = "mkdocs-glightbox" },
-    { name = "mkdocs-material" },
-    { name = "mkdocs-mermaid2-plugin" },
-]
-tests = [
-    { name = "pytest" },
-    { name = "pytest-cov" },
-    { name = "pytest-datadir" },
-    { name = "pytest-xdist" },
-]
-
 [package.dev-dependencies]
 dev = [
     { name = "pre-commit" },
@@ -201,41 +183,30 @@ tests = [
 
 [package.metadata]
 requires-dist = [
-    { name = "docker", specifier = ">=7.0.0" },
-    { name = "httpx", specifier = ">=0.27.0" },
-    { name = "mkdocs", marker = "extra == 'docs'" },
-    { name = "mkdocs-glightbox", marker = "extra == 'docs'", specifier = ">=0.5.1" },
-    { name = "mkdocs-material", marker = "extra == 'docs'" },
-    { name = "mkdocs-mermaid2-plugin", marker = "extra == 'docs'" },
-    { name = "pre-commit", marker = "extra == 'dev'" },
-    { name = "prefect", specifier = ">=2.16.0" },
-    { name = "pydantic", specifier = ">=2.7.0" },
-    { name = "pytest", marker = "extra == 'tests'" },
-    { name = "pytest-cov", marker = "extra == 'tests'" },
-    { name = "pytest-datadir", marker = "extra == 'tests'" },
-    { name = "pytest-xdist", marker = "extra == 'tests'" },
-    { name = "python-dotenv", specifier = ">=1.0.1" },
-    { name = "ruff", marker = "extra == 'dev'" },
-    { name = "typer", specifier = ">=0.12.3" },
+    { name = "docker", specifier = ">=7.1.0" },
+    { name = "httpx", specifier = ">=0.28.1" },
+    { name = "prefect", specifier = ">=3.4.23" },
+    { name = "pydantic", specifier = ">=2.12.0" },
+    { name = "python-dotenv", specifier = ">=1.1.1" },
+    { name = "typer", specifier = ">=0.19.2" },
 ]
-provides-extras = ["tests", "docs", "dev"]
 
 [package.metadata.requires-dev]
 dev = [
-    { name = "pre-commit" },
-    { name = "ruff" },
+    { name = "pre-commit", specifier = ">=0.0.0" },
+    { name = "ruff", specifier = ">=0.0.0" },
 ]
 docs = [
-    { name = "mkdocs" },
+    { name = "mkdocs", specifier = ">=0.0.0" },
     { name = "mkdocs-glightbox", specifier = ">=0.5.1" },
-    { name = "mkdocs-material" },
-    { name = "mkdocs-mermaid2-plugin" },
+    { name = "mkdocs-material", specifier = ">=0.0.0" },
+    { name = "mkdocs-mermaid2-plugin", specifier = ">=0.0.0" },
 ]
 tests = [
-    { name = "pytest" },
-    { name = "pytest-cov" },
-    { name = "pytest-datadir" },
-    { name = "pytest-xdist" },
+    { name = "pytest", specifier = ">=0.0.0" },
+    { name = "pytest-cov", specifier = ">=0.0.0" },
+    { name = "pytest-datadir", specifier = ">=0.0.0" },
+    { name = "pytest-xdist", specifier = ">=0.0.0" },
 ]
 
 [[package]]

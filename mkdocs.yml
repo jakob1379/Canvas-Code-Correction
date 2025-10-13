@@ -1,12 +1,10 @@
+---
 site_name: Canvas Code Correction v2
 site_author: Canvas Code Correction Maintainers
-site_description: "Prefect-based automation for Canvas submission correction"
+site_description: Prefect-based automation for Canvas submission correction
 repo_url: https://github.com/jakob1379/Canvas-Code-Correction
 repo_name: Canvas-Code-Correction
-
-extra_css:
-  - stylesheets/custom.css
-
+extra_css: [stylesheets/custom.css]
 nav:
   - Overview: index.md
   - Architecture: architecture.md
@@ -17,19 +15,18 @@ nav:
   - Reference:
       - Configuration: reference/configuration.md
       - API Clients: reference/api-clients.md
-
 theme:
   name: material
   favicon: https://www-media.stanford.edu/assets/favicon/apple-touch-icon-57x57.png
   palette:
-    - media: "(prefers-color-scheme: light)"
+    - media: '(prefers-color-scheme: light)'
       scheme: default
       primary: custom
       accent: custom
       toggle:
         icon: material/weather-night
         name: Switch to dark mode
-    - media: "(prefers-color-scheme: dark)"
+    - media: '(prefers-color-scheme: dark)'
       scheme: slate
       primary: custom
       accent: custom
@@ -54,7 +51,6 @@ theme:
     - search.highlight
     - search.suggest
     - toc.follow
-
 markdown_extensions:
   - toc:
       permalink: true
@@ -75,8 +71,4 @@ markdown_extensions:
   - pymdownx.emoji:
       emoji_index: !!python/name:material.extensions.emoji.twemoji
       emoji_generator: !!python/name:material.extensions.emoji.to_svg
-
-plugins:
-  - search
-  - mermaid2
-  - glightbox
+plugins: [search, mermaid2, glightbox]
