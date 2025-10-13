@@ -9,21 +9,24 @@ from p_tqdm import p_map
 
 
 def setup():
-    parser = argparse.ArgumentParser(
-        formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    parser.add_argument("assignments",
-                        help="Select assignments to unzip submissions within. Multiple may be selected and/or usage of wildcards for assignment names only",
-                        metavar="assignments",
-                        nargs='*',
-                        default=sorted([i.split(os.sep)[0]
-                                        for i in glob('*/submissions/')]),
-                        type=str)
-    parser.add_argument("-p", "--parallel",
-                        help="Set number of cores for parallel execution. Set cores to 1 for sequential",
-                        metavar="parallel",
-                        type=int,
-                        nargs='?',
-                        default=cpu_count())
+    parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    parser.add_argument(
+        "assignments",
+        help="Select assignments to unzip submissions within. Multiple may be selected and/or usage of wildcards for assignment names only",
+        metavar="assignments",
+        nargs="*",
+        default=sorted([i.split(os.sep)[0] for i in glob("*/submissions/")]),
+        type=str,
+    )
+    parser.add_argument(
+        "-p",
+        "--parallel",
+        help="Set number of cores for parallel execution. Set cores to 1 for sequential",
+        metavar="parallel",
+        type=int,
+        nargs="?",
+        default=cpu_count(),
+    )
 
     return parser.parse_args()
 
@@ -44,7 +47,7 @@ def unzip(zipfile):
     file.unlink(missing_ok=True)
 
     # If content is packed as a single folder - move files one up
-    subfiles = list(sub_name.glob('*'))
+    subfiles = list(sub_name.glob("*"))
     if len(subfiles) == 1:
         subfolder = subfiles[0]
         if not subfolder.is_dir():
@@ -71,5 +74,5 @@ def main():
         print("No files to unzip...")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

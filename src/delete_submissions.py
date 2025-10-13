@@ -8,21 +8,25 @@ from p_tqdm import p_map
 
 
 def setup():
-    choices = sorted([i.split(os.sep)[0] for i in glob('*/submissions/')])
-    parser = argparse.ArgumentParser(
-        formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    parser.add_argument("-p", "--parallel",
-                        help="Set number of cores to use for parallel execution. Set 1 for sequential",
-                        metavar="num cores",
-                        type=int,
-                        nargs='?',
-                        default=cpu_count())
+    choices = sorted([i.split(os.sep)[0] for i in glob("*/submissions/")])
+    parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    parser.add_argument(
+        "-p",
+        "--parallel",
+        help="Set number of cores to use for parallel execution. Set 1 for sequential",
+        metavar="num cores",
+        type=int,
+        nargs="?",
+        default=cpu_count(),
+    )
 
-    parser.add_argument("assignments",
-                        help="Select assignments to unzip submissions within. Multiple may be selected and/or usage of wildcards for assignment names only",
-                        metavar="assignments",
-                        nargs='*',
-                        default=choices)
+    parser.add_argument(
+        "assignments",
+        help="Select assignments to unzip submissions within. Multiple may be selected and/or usage of wildcards for assignment names only",
+        metavar="assignments",
+        nargs="*",
+        default=choices,
+    )
     return parser.parse_args()
 
 
@@ -50,5 +54,5 @@ def main():
         print("Found no files. Exiting...")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

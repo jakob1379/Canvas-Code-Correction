@@ -1,7 +1,6 @@
 """Command-line interface for Canvas Code Correction v2."""
 
 from pathlib import Path
-from typing import Optional
 
 import typer
 
@@ -14,7 +13,7 @@ app = typer.Typer(help="Canvas Code Correction orchestration utilities.")
 @app.callback()
 def load_settings(
     ctx: typer.Context,
-    config_path: Optional[Path] = typer.Option(
+    config_path: Path | None = typer.Option(
         None,
         "--config",
         help="Path to a TOML or ENV configuration file overriding defaults.",
@@ -25,11 +24,7 @@ def load_settings(
 ) -> None:
     """Load shared configuration before executing commands."""
 
-    settings = (
-        Settings.from_file(config_path)
-        if config_path is not None
-        else Settings.from_env()
-    )
+    settings = Settings.from_file(config_path) if config_path is not None else Settings.from_env()
     ctx.obj = settings
 
 

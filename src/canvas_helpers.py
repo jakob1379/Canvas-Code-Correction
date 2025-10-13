@@ -1,12 +1,12 @@
 # Import the Canvas class
-from canvasapi import Canvas
-import re
-from pathlib import Path
-import os
-import urllib.request
 import hashlib
-import bcolors
+import os
+import re
+import urllib.request
 from pathlib import Path
+
+from canvasapi import Canvas
+
 # class bcolors:
 #     HEADER = '\033[95m'
 #     OKBLUE = '\033[94m'
@@ -19,7 +19,7 @@ from pathlib import Path
 
 
 def download_url(url, save_path):
-    """ files files at url to the given path
+    """files files at url to the given path
     :param url: target url
     :param save_path: target path
     """
@@ -28,13 +28,12 @@ def download_url(url, save_path):
     end_folder = os.sep.join(save_path.split(os.sep)[:-1])
     Path(end_folder).mkdir(parents=True, exist_ok=True)
 
-    with urllib.request.urlopen(url) as dl_file:
-        with open(save_path, 'wb') as out_file:
-            out_file.write(dl_file.read())
+    with urllib.request.urlopen(url) as dl_file, open(save_path, "wb") as out_file:
+        out_file.write(dl_file.read())
 
 
 def file_to_string(file_name):
-    """ reads entire file into a single string
+    """reads entire file into a single string
 
     :param file_name: path
     :returns: file content as string
@@ -42,13 +41,13 @@ def file_to_string(file_name):
 
     """
 
-    with open(file_name, "r") as f:
+    with open(file_name) as f:
         content = f.read()
     return content.strip()
 
 
 def print_dict(d):
-    """ pretty prints a dictionary
+    """pretty prints a dictionary
 
     :param d: dictionary to print
 
@@ -56,12 +55,12 @@ def print_dict(d):
 
     max_key = len(max(d.keys(), key=len))
     for k, v in d.items():
-        print(k.ljust(max_key) + ' : ' + str(v))
+        print(k.ljust(max_key) + " : " + str(v))
     print()
 
 
 def print_as_dict(dd):
-    """ Function that takes an input and tries to pretty print its variables and methods. __dict__ must be defined
+    """Function that takes an input and tries to pretty print its variables and methods. __dict__ must be defined
 
     :param dd: any input that has a __dict__ defined
 
@@ -71,13 +70,13 @@ def print_as_dict(dd):
     keys = sorted(d.keys())
     values = [d[keys] for key in keys]
     max_key = len(max(d.keys(), key=len))
-    for k, v in zip(keys, values):
-        print(k.ljust(max_key) + ' : ' + str(v))
+    for k, v in zip(keys, values, strict=False):
+        print(k.ljust(max_key) + " : " + str(v))
     print()
 
 
 def md5sum(filename, block_size=2**20):
-    """ Calculates the md5sum of a given file
+    """Calculates the md5sum of a given file
 
     :param filename: path to file
     :returns: md5sum
@@ -95,7 +94,7 @@ def md5sum(filename, block_size=2**20):
 
 
 def extract_comment_filenames(comments):
-    """ extract all filenames from submission comments
+    """extract all filenames from submission comments
 
     :param comments:
     :returns: list of filenames
@@ -113,8 +112,8 @@ def extract_comment_filenames(comments):
     return fileNames
 
 
-def create_file_name(submission, course, method='name'):
-    """ constructs the basename for a submission
+def create_file_name(submission, course, method="name"):
+    """constructs the basename for a submission
 
     :param submission: canvas submission object
     :param course: canvas course object
@@ -128,38 +127,36 @@ def create_file_name(submission, course, method='name'):
     uid = submission.user_id
 
     # Get users name as sur/first/middle
-    if method == 'sortable':
-        user_name = re.sub(
-            "[, ]", "", course.get_user(uid).sortable_name.lower())
-    elif method == 'name':
-        user_name = course.get_user(uid).name.lower().split(' ')
-        user_name = ''.join(user_name[-1:] + user_name[:-1])
+    if method == "sortable":
+        user_name = re.sub("[, ]", "", course.get_user(uid).sortable_name.lower())
+    elif method == "name":
+        user_name = course.get_user(uid).name.lower().split(" ")
+        user_name = "".join(user_name[-1:] + user_name[:-1])
     file_name.append(user_name)
 
     # add if late
     if submission.late:
-        file_name.append('LATE')
+        file_name.append("LATE")
 
     # get student id
     file_name.append(uid)
 
     # attachment id
     attachment = submission.attachments[0]
-    file_name.append(attachment['id'])
+    file_name.append(attachment["id"])
 
     # also filename from absalon
-    tmp_fname = '.'.join(
-        attachment['display_name'].split('.')[:-1])
+    tmp_fname = ".".join(attachment["display_name"].split(".")[:-1])
     file_name.append(tmp_fname)
 
     # Combine to finale output user_name
-    return '_'.join([str(i) for i in file_name])
+    return "_".join([str(i) for i in file_name])
 
 
 def init_canvas_course(config):
-    canvas = Canvas(config['DEFAULT']['apiurl'], config['DEFAULT']['token'])
+    canvas = Canvas(config["DEFAULT"]["apiurl"], config["DEFAULT"]["token"])
 
     # init course
-    course_id = config['DEFAULT']['courseid']
+    course_id = config["DEFAULT"]["courseid"]
     course = canvas.get_course(course_id)
     return course

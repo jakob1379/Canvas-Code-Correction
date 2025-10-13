@@ -61,7 +61,7 @@ function check_assignment {
     suspecious_handins=$(awk -v cutoff="$cutoff" '{ if ($3 >= cutoff) { print } }' "$assignment/similarity.txt")
     if [ ! -z "$suspecious_handins" ]
     then
-	echo "*** PEOPLE ABOVE THE THRESHOLD THE THESHOLD!: ***"
+	echo "*** PEOPLE ABOVE THE THRESHOLD THE THRESHOLD!: ***"
 	echo "$suspecious_handins"
 	echo ""
 	echo "$suspecious_handins" > "$assignment/suspicious.txt"
