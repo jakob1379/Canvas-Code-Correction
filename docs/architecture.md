@@ -17,8 +17,9 @@ system modular, testable, and secure by default.
   template using a non-root UID/GID, memory/CPU limits, and optionally network isolation.
 - **Submission Store** – temporary workspace on the host (or object storage) used to exchange
   artefacts with the runner.
-- **Webhook Receiver** – optional FastAPI shim that validates Canvas webhooks and schedules Prefect
-  flow runs.
+- **Prefect Webhook** – Canvas events call Prefect's native webhook endpoint, which queues a flow
+  run without additional services. Optional custom shims can be added later only if advanced
+  preprocessing is required.
 
 ## Prefect Flow (UML Sequence)
 
@@ -26,14 +27,14 @@ system modular, testable, and secure by default.
 sequenceDiagram
     autonumber
     participant Webhook as Canvas Webhook
-    participant Receiver as Webhook Receiver (FastAPI)
+    participant WebhookEndpoint as Prefect Webhook Endpoint
     participant Prefect as Prefect Orion
     participant Agent as Prefect Agent
     participant Runner as Docker Runner
     participant Canvas as Canvas API
 
-    Webhook->>Receiver: submission_created payload
-    Receiver->>Prefect: create flow run (assignment_id, submission_id)
+    Webhook->>WebhookEndpoint: submission_created payload
+    WebhookEndpoint->>Prefect: create flow run (assignment_id, submission_id)
     Prefect->>Agent: dispatch run
     Agent->>Runner: start grader container (non-root UID/GID)
     Runner->>Canvas: fetch submission artefacts
@@ -61,7 +62,7 @@ graph TD
     C1[CanvasClient]
     R1[RunnerService]
     S1[SubmissionStore]
-    W1[Webhook Receiver]
+    W1[Prefect Webhook]
   end
 
   Canvas[(Canvas API)]

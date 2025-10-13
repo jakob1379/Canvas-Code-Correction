@@ -7,22 +7,19 @@ name = "canvas-code-correction"
 version = "2.0.0a0"
 description = "Framework for orchestrating Canvas assignment corrections with Prefect, Docker, and automated uploads."
 readme = { file = "README.org", content-type = "text/plain" }
-requires-python = ">=3.11"
+requires-python = ">=3.13"
 authors = [
     { name = "Canvas Code Correction Maintainers" },
 ]
 license = { text = "MIT" }
 classifiers = [
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.11",
-    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
     "License :: OSI Approved :: MIT License",
     "Operating System :: POSIX :: Linux",
 ]
 dependencies = [
     "prefect>=2.16.0",
-    "fastapi>=0.112.0",
-    "uvicorn[standard]>=0.30.0",
     "httpx>=0.27.0",
     "docker>=7.0.0",
     "pydantic>=2.7.0",
@@ -39,6 +36,7 @@ tests = [
 ]
 docs = [
     "mkdocs",
+    "mkdocs-glightbox",
     "mkdocs-material",
     "mkdocs-mermaid2-plugin",
 ]
@@ -59,6 +57,7 @@ tests = [
 ]
 docs = [
     "mkdocs",
+    "mkdocs-glightbox",
     "mkdocs-material",
     "mkdocs-mermaid2-plugin",
 ]
@@ -88,5 +87,5 @@ quote-style = "double"
 
 [tool.commitizen]
 name = "cz_conventional_commits"
-version = "2.0.0a0"
 tag_format = "v$version"
+version_provider = "pep621"
