@@ -1,21 +1,74 @@
+---
 site_name: Canvas Code Correction v2
+site_author: Canvas Code Correction Maintainers
 site_description: Prefect-based automation for Canvas submission correction
-theme:
-  name: material
-  palette:
-    scheme: slate
-  features:
-    - navigation.instant
-    - navigation.tracking
-    - content.action.edit
-markdown_extensions:
-  - admonition
-  - pymdownx.superfences
-  - pymdownx.details
-  - pymdownx.highlight
-plugins:
-  - search
-  - mermaid2
+repo_url: https://github.com/jakob1379/Canvas-Code-Correction
+repo_name: Canvas-Code-Correction
+extra_css: [stylesheets/custom.css]
 nav:
   - Overview: index.md
   - Architecture: architecture.md
+  - Roadmap: roadmap.md
+  - Guides:
+      - Local Prefect Agent: guides/prefect-agent.md
+      - Grader Image: guides/grader-image.md
+  - Reference:
+      - Configuration: reference/configuration.md
+      - API Clients: reference/api-clients.md
+theme:
+  name: material
+  favicon: https://www-media.stanford.edu/assets/favicon/apple-touch-icon-57x57.png
+  palette:
+    - media: '(prefers-color-scheme: light)'
+      scheme: default
+      primary: custom
+      accent: custom
+      toggle:
+        icon: material/weather-night
+        name: Switch to dark mode
+    - media: '(prefers-color-scheme: dark)'
+      scheme: slate
+      primary: custom
+      accent: custom
+      toggle:
+        icon: material/weather-sunny
+        name: Switch to light mode
+  features:
+    - content.code.annotate
+    - content.code.copy
+    - content.tabs.link
+    - navigation.expand
+    - navigation.footer
+    - navigation.instant
+    - navigation.instant.prefetch
+    - navigation.instant.progress
+    - navigation.prune
+    - navigation.sections
+    - navigation.tabs
+    - navigation.tabs.sticky
+    - navigation.top
+    - navigation.tracking
+    - search.highlight
+    - search.suggest
+    - toc.follow
+markdown_extensions:
+  - toc:
+      permalink: true
+  - admonition
+  - attr_list
+  - md_in_html
+  - pymdownx.details
+  - pymdownx.snippets
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.superfences
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+  - pymdownx.inlinehilite
+  - pymdownx.blocks.caption
+  - pymdownx.emoji:
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
+plugins: [search, mermaid2, glightbox]
