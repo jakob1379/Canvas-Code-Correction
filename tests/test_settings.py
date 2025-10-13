@@ -13,8 +13,9 @@ from canvas_code_correction.config import Settings
 
 def test_settings_from_env(monkeypatch: MonkeyPatch) -> None:
     monkeypatch.setenv("CCC_SKIP_DOTENV", "1")
-    monkeypatch.setenv("CANVAS_URL", "https://canvas.test")
-    monkeypatch.setenv("CANVAS_TOKE", "token-value")
+    monkeypatch.delenv("CANVAS_API_TOKEN", raising=False)
+    monkeypatch.setenv("CANVAS_API_URL", "https://canvas.test")
+    monkeypatch.setenv("CANVAS_API_TOKEN", "token-value")
     monkeypatch.setenv("CANVAS_COURSE_ID", "42")
 
     settings = Settings.from_env()

@@ -30,12 +30,8 @@ class Settings(BaseModel):
     runner: RunnerSettings = Field(default_factory=RunnerSettings)
     working_dir: Path = Field(default_factory=lambda: Path.cwd() / "var" / "runs")
 
-    ENV_URL_KEYS: ClassVar[tuple[str, ...]] = ("CANVAS_API_URL", "CANVAS_URL")
-    ENV_TOKEN_KEYS: ClassVar[tuple[str, ...]] = (
-        "CANVAS_API_TOKEN",
-        "CANVAS_TOKEN",
-        "CANVAS_TOKE",
-    )
+    ENV_URL_KEYS: ClassVar[tuple[str, ...]] = ("CANVAS_API_URL",)
+    ENV_TOKEN_KEYS: ClassVar[tuple[str, ...]] = ("CANVAS_API_TOKEN",)
     ENV_COURSE_KEYS: ClassVar[tuple[str, ...]] = ("CANVAS_COURSE_ID",)
 
     @classmethod
