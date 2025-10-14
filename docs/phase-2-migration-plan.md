@@ -91,9 +91,9 @@ Event / trigger (manual CLI, webhook, schedule)
    - Prefect flow now launches the grader Docker image via the new
      `RunnerService`, wiring in workspace mounts, resource limits, and course
      specific configuration from Prefect blocks.
-   - Result collector and artifact packaging tasks remain to be implemented so
-     the flow can persist structured outputs (`points.txt`, `comments.txt`,
-     zipped feedback) for downstream upload.
+   - Result collector now packages grader outputs (`points.txt`, `comments.txt`,
+     zipped feedback, `results.json`) for downstream upload and metadata
+     tracking.
 5. **Uploader tasks (Day 4–5)** ✅
    - Feedback and grade uploads now run via Prefect tasks that wrap the new
      `Uploader` helper, skipping duplicate attachments and reusing
@@ -101,10 +101,10 @@ Event / trigger (manual CLI, webhook, schedule)
 6. **End-to-end Prefect flow (Day 5–6)** ✅
    - `correct_submission_flow` stitches together download, runner execution,
      result collection, and uploads, returning structured metadata for each run.
-7. **Testing & docs (Day 6–7)** ⏳
-   - New unit tests exercise the runner service, result collector, uploader, and
-     flow wiring. CI/doc updates for operational runbooks remain to be
-     completed.
+7. **Testing & docs (Day 6–7)** ✅
+   - Unit test suite (`uv run --group tests pytest`) and full pre-commit hooks
+     executed successfully on 2025-10-14; coverage spans runner service, result
+     collector, uploader, and flow orchestration.
    - Prefect Assets integration investigated: dynamic per-submission asset keys
      are not yet required for MVP; revisit in Phase 3 when run cataloguing is
      prioritised.
@@ -132,6 +132,8 @@ Event / trigger (manual CLI, webhook, schedule)
    archives (if needed).
 6. **Prefect assets cataloguing** – revisit in Phase 3 once long-term run
    lineage requirements are defined.
+7. **CI & operational runbooks** – document Prefect agent setup and add CI
+   pipelines to execute tests/linters before Phase 3 launch.
 
 ---
 
