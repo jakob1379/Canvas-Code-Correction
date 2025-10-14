@@ -94,17 +94,17 @@ Event / trigger (manual CLI, webhook, schedule)
    - Result collector and artifact packaging tasks remain to be implemented so
      the flow can persist structured outputs (`points.txt`, `comments.txt`,
      zipped feedback) for downstream upload.
-5. **Uploader tasks (Day 4–5)**
-   - Port `upload_comments.py` and `upload_grades.py` into reusable async tasks
-     with retries.
-   - Maintain md5/idempotency checks.
-6. **End-to-end Prefect flow (Day 5–6)** ⏳
-   - Flow skeleton in place (`correct_submission_flow`) with download and
-     workspace staging; grader container execution still stubbed pending runner
-     integration.
+5. **Uploader tasks (Day 4–5)** ✅
+   - Feedback and grade uploads now run via Prefect tasks that wrap the new
+     `Uploader` helper, skipping duplicate attachments and reusing
+     `CanvasClient`.
+6. **End-to-end Prefect flow (Day 5–6)** ✅
+   - `correct_submission_flow` stitches together download, runner execution,
+     result collection, and uploads, returning structured metadata for each run.
 7. **Testing & docs (Day 6–7)** ⏳
-   - Unit tests cover settings, Canvas client, flows, and submission store; CI
-     workflow and operational docs still outstanding.
+   - New unit tests exercise the runner service, result collector, uploader, and
+     flow wiring. CI/doc updates for operational runbooks remain to be
+     completed.
 
 ## 5. Non-goals for this iteration
 

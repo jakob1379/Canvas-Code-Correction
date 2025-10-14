@@ -85,11 +85,37 @@ class _StubRunnerService:
         )
 
 
+class _StubCollected:
+    def as_payload(self) -> dict[str, object]:
+        return {
+            "points": 10.0,
+            "points_breakdown": [10.0],
+            "comment": "Great job!\n",
+            "feedback_zip": None,
+            "metadata": {"custom": True},
+        }
+
+
+class _StubUploader:
+    def __init__(self, client) -> None:  # noqa: D401
+        self.client = client
+
+    def upload_feedback(self, *args, **kwargs):  # noqa: D401
+        return True, False
+
+    def upload_grade(self, *args, **kwargs):  # noqa: D401
+        return True
+
+
 def test_correct_submission_flow(tmp_path: Path, monkeypatch: MonkeyPatch) -> None:
     monkeypatch.setenv("PREFECT_API_URL", "")
     monkeypatch.setattr(SyncPrefectClient, "raise_for_api_version_mismatch", lambda self: None)
     monkeypatch.setattr(correct_submission, "CanvasClient", _StubCanvasClient)
     monkeypatch.setattr(correct_submission, "RunnerService", _StubRunnerService)
+    monkeypatch.setattr(
+        correct_submission, "collect_results", lambda workspace, payload: _StubCollected()
+    )
+    monkeypatch.setattr(correct_submission, "Uploader", _StubUploader)
 
     settings = Settings.model_validate(
         {
@@ -112,5 +138,6 @@ def test_correct_submission_flow(tmp_path: Path, monkeypatch: MonkeyPatch) -> No
     assert (tmp_path / "1" / "42").exists()  # nosec B101
     assert result["attachments"]  # nosec B101
     assert result["submission_files"]  # nosec B101
-    assert (tmp_path / "1" / "42" / "submission" / "submission.zip").exists()  # nosec B101
-    assert Path(result["points_file"]).read_text(encoding="utf-8") == "10\n"  # nosec B101
+    assert result["points"] == 10.0  # nosec B101
+    assert result["grade_uploaded"] is True  # nosec B101
+    assert result["feedback_uploaded"] == {"comment_uploaded": True, "feedback_uploaded": False}  # nosec B101

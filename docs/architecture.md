@@ -19,6 +19,10 @@ architecture that keeps the system modular, testable, and secure by default.
 - **Grader Configuration Blocks** – Prefect JSON blocks capture course-specific
   grader images, resource limits, and environment variables so each course can
   bring its own grading environment without modifying the shared codebase.
+- **Result Collector** – extracts `points.txt`, `comments.txt`, artefacts, and
+  metadata produced by the grader and prepares zipped feedback for upload.
+- **Uploader** – posts comments and grades back to Canvas while skipping
+  duplicate attachments.
 - **Submission Store** – temporary workspace on the host (or object storage)
   used to exchange artefacts with the runner.
 - **Prefect Webhook** – Canvas events call Prefect's native webhook endpoint,

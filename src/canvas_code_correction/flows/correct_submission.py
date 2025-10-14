@@ -7,8 +7,10 @@ from prefect import flow, get_run_logger, task
 
 from ..canvas import CanvasClient
 from ..config import Settings
+from ..result_collector import collect_results
 from ..runner_service import RunnerService
 from ..submission_store import SubmissionStore
+from ..uploader import Uploader
 
 
 @task
@@ -74,6 +76,49 @@ def run_grader_container(workspace: Path, settings: Settings) -> dict[str, objec
     return payload
 
 
+@task
+def collect_results_task(workspace: Path, runner_payload: dict[str, object]) -> dict[str, object]:
+    results = collect_results(workspace, runner_payload)
+    return results.as_payload()
+
+
+@task
+def upload_feedback_task(
+    settings: Settings,
+    assignment_id: int,
+    submission_id: int,
+    collected: dict[str, object],
+) -> dict[str, bool]:
+    with CanvasClient.from_settings(settings) as client:
+        uploader = Uploader(client)
+        comment = str(collected.get("comment") or "").strip()
+        feedback_zip = collected.get("feedback_zip")
+        feedback_path = Path(feedback_zip) if feedback_zip else None
+        comment_uploaded, feedback_uploaded = uploader.upload_feedback(
+            assignment_id,
+            submission_id,
+            comment,
+            feedback_path,
+        )
+    return {
+        "comment_uploaded": comment_uploaded,
+        "feedback_uploaded": feedback_uploaded,
+    }
+
+
+@task
+def upload_grade_task(
+    settings: Settings,
+    assignment_id: int,
+    submission_id: int,
+    collected: dict[str, object],
+) -> bool:
+    points = float(collected.get("points", 0.0))
+    with CanvasClient.from_settings(settings) as client:
+        uploader = Uploader(client)
+        return uploader.upload_grade(assignment_id, submission_id, points)
+
+
 @flow
 def correct_submission_flow(
     assignment_id: int,
@@ -84,8 +129,32 @@ def correct_submission_flow(
     submission = fetch_submission(settings, assignment_id, submission_id)
     attachments = download_submission_attachments(settings, submission, workspace)
     staged_files = normalise_submission_workspace(settings, workspace, attachments)
-    outcome = run_grader_container(workspace, settings)
-    outcome["attachments"] = [str(path) for path in attachments]
-    outcome["submission_files"] = [str(path) for path in staged_files]
-    outcome["submission_id"] = str(submission.id)
-    return outcome
+    runner_payload = run_grader_container(workspace, settings)
+    collected = collect_results_task(workspace, runner_payload)
+    feedback_outcome = upload_feedback_task(
+        settings,
+        assignment_id,
+        submission_id,
+        collected,
+    )
+    grade_uploaded = upload_grade_task(
+        settings,
+        assignment_id,
+        submission_id,
+        collected,
+    )
+
+    return {
+        "status": runner_payload.get("status", "unknown"),
+        "exit_code": runner_payload.get("exit_code"),
+        "attachments": [str(path) for path in attachments],
+        "submission_files": [str(path) for path in staged_files],
+        "submission_id": str(submission.id),
+        "points": collected.get("points"),
+        "points_breakdown": collected.get("points_breakdown"),
+        "comment": collected.get("comment"),
+        "feedback_zip": collected.get("feedback_zip"),
+        "metadata": collected.get("metadata"),
+        "feedback_uploaded": feedback_outcome,
+        "grade_uploaded": grade_uploaded,
+    }
