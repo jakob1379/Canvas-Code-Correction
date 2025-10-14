@@ -105,6 +105,9 @@ Event / trigger (manual CLI, webhook, schedule)
    - New unit tests exercise the runner service, result collector, uploader, and
      flow wiring. CI/doc updates for operational runbooks remain to be
      completed.
+   - Prefect Assets integration investigated: dynamic per-submission asset keys
+     are not yet required for MVP; revisit in Phase 3 when run cataloguing is
+     prioritised.
 
 ## 5. Non-goals for this iteration
 
@@ -127,6 +130,8 @@ Event / trigger (manual CLI, webhook, schedule)
    team; codify in settings.
 5. **Roll-forward strategy** – plan data migration for existing feedback
    archives (if needed).
+6. **Prefect assets cataloguing** – revisit in Phase 3 once long-term run
+   lineage requirements are defined.
 
 ---
 
