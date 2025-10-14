@@ -87,11 +87,15 @@ Event / trigger (manual CLI, webhook, schedule)
 3. **Workspace preparation (Day 2)** ✅
    - `SubmissionStore` handles extraction/normalisation with coverage via
      synthetic zip fixtures.
-4. **Runner integration (Day 3–4)**
+4. **Runner integration (Day 3–4)** ⏳
    - Prototype Prefect task that spins up Docker container (`docker SDK` or
      Prefect Docker task collection) with workspace mount and env vars.
    - Ensure results contract (`points.txt`, `comments.txt`, zipped feedback)
      matches legacy output.
+   - Phase 1.5 Compose sandbox work (PR
+     [#1313](https://github.com/jakob1379/Canvas-Code-Correction/pull/1313))
+     merged; Prefect task still needs to invoke the runner image instead of
+     returning a placeholder payload.
 5. **Uploader tasks (Day 4–5)**
    - Port `upload_comments.py` and `upload_grades.py` into reusable async tasks
      with retries.

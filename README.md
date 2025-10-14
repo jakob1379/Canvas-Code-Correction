@@ -70,8 +70,5 @@ maintainers.
 
 ## License
 
-This project is distributed under the
-[PolyForm Noncommercial License 1.0.0](https://polyformproject.org/licenses/noncommercial/1.0.0/).
-The license allows anyone to use, modify, and share the software for
-non-commercial purposes while prohibiting use that generates direct commercial
-revenue.
+This project is distributed under the terms of the MIT License. See
+[`LICENSE`](LICENSE) for details.
