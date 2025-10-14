@@ -9,6 +9,7 @@ from pytest import MonkeyPatch
 from canvas_code_correction.config import Settings
 from canvas_code_correction.flows import correct_submission
 from canvas_code_correction.flows.correct_submission import correct_submission_flow
+from canvas_code_correction.runner_service import RunnerResult
 
 
 class _StubCanvasClient:
@@ -61,10 +62,34 @@ class _StubCanvasClient:
         return target
 
 
-def test_correct_submission_flow(tmp_path: Path, monkeypatch: MonkeyPatch):
+class _StubRunnerService:
+    def __init__(self, settings, logger=None) -> None:  # noqa: D401 - simple stub
+        self.settings = settings
+        self.logger = logger
+
+    def run(self, workspace: Path) -> RunnerResult:
+        results_file = workspace / "results.json"
+        results_file.write_text("{}", encoding="utf-8")
+        points_file = workspace / "points.txt"
+        points_file.write_text("10\n", encoding="utf-8")
+        comments_file = workspace / "comments.txt"
+        comments_file.write_text("Great job!\n", encoding="utf-8")
+        return RunnerResult(
+            status="success",
+            exit_code=0,
+            stdout="ok",
+            stderr="",
+            results_file=results_file,
+            points_file=points_file,
+            comments_file=comments_file,
+        )
+
+
+def test_correct_submission_flow(tmp_path: Path, monkeypatch: MonkeyPatch) -> None:
     monkeypatch.setenv("PREFECT_API_URL", "")
     monkeypatch.setattr(SyncPrefectClient, "raise_for_api_version_mismatch", lambda self: None)
     monkeypatch.setattr(correct_submission, "CanvasClient", _StubCanvasClient)
+    monkeypatch.setattr(correct_submission, "RunnerService", _StubRunnerService)
 
     settings = Settings.model_validate(
         {
@@ -83,8 +108,9 @@ def test_correct_submission_flow(tmp_path: Path, monkeypatch: MonkeyPatch):
         settings=settings,
     )
 
-    assert result["status"] == "pending"  # nosec B101
+    assert result["status"] == "success"  # nosec B101
     assert (tmp_path / "1" / "42").exists()  # nosec B101
     assert result["attachments"]  # nosec B101
     assert result["submission_files"]  # nosec B101
     assert (tmp_path / "1" / "42" / "submission" / "submission.zip").exists()  # nosec B101
+    assert Path(result["points_file"]).read_text(encoding="utf-8") == "10\n"  # nosec B101

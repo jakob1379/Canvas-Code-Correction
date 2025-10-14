@@ -16,6 +16,9 @@ architecture that keeps the system modular, testable, and secure by default.
 - **Runner** – executes student submissions inside a Docker container derived
   from the provided template using a non-root UID/GID, memory/CPU limits, and
   optionally network isolation.
+- **Grader Configuration Blocks** – Prefect JSON blocks capture course-specific
+  grader images, resource limits, and environment variables so each course can
+  bring its own grading environment without modifying the shared codebase.
 - **Submission Store** – temporary workspace on the host (or object storage)
   used to exchange artefacts with the runner.
 - **Prefect Webhook** – Canvas events call Prefect's native webhook endpoint,

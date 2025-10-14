@@ -1,6 +1,5 @@
 """Prefect flow for correcting a single Canvas submission."""
 
-import logging
 from pathlib import Path
 
 from canvasapi.submission import Submission as CanvasSubmission
@@ -8,6 +7,7 @@ from prefect import flow, get_run_logger, task
 
 from ..canvas import CanvasClient
 from ..config import Settings
+from ..runner_service import RunnerService
 from ..submission_store import SubmissionStore
 
 
@@ -59,10 +59,7 @@ def normalise_submission_workspace(
 
 @task
 def run_grader_container(workspace: Path, settings: Settings) -> dict[str, object]:
-    try:
-        logger = get_run_logger()
-    except RuntimeError:
-        logger = logging.getLogger("canvas_code_correction")
+    logger = get_run_logger()
     logger.info(
         "Launching grader container",
         extra={
@@ -70,11 +67,11 @@ def run_grader_container(workspace: Path, settings: Settings) -> dict[str, objec
             "image": settings.runner.docker_image,
         },
     )
-    return {
-        "workspace": str(workspace),
-        "image": settings.runner.docker_image,
-        "status": "pending",
-    }
+    service = RunnerService(settings, logger=logger)
+    result = service.run(workspace)
+    payload = result.as_dict()
+    payload["workspace"] = str(workspace)
+    return payload
 
 
 @flow

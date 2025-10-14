@@ -96,6 +96,8 @@ Event / trigger (manual CLI, webhook, schedule)
      [#1313](https://github.com/jakob1379/Canvas-Code-Correction/pull/1313))
      merged; Prefect task still needs to invoke the runner image instead of
      returning a placeholder payload.
+   - Runner configuration (image, limits) resolves from Prefect blocks so each
+     course can bring its own grading environment without code changes.
 5. **Uploader tasks (Day 4–5)**
    - Port `upload_comments.py` and `upload_grades.py` into reusable async tasks
      with retries.

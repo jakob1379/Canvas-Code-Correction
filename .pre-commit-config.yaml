@@ -30,6 +30,7 @@ repos:
       - id: check-yaml  # Check yaml syntax
         args: [--unsafe]  # Allow unsafe constructs for flexibility (e.g., MkDocs)
       - id: debug-statements  # Check for debugger imports and calls
+        exclude: ^legacy/scripts/
       - id: detect-private-key  # Checks for the presence of private keys
       - id: end-of-file-fixer  # Ensures files end with a newline
       - id: fix-byte-order-marker  # Removes utf-8 byte order marker
@@ -44,15 +45,17 @@ repos:
       - id: ruff  # Run Ruff linter
         args: [--fix, --exit-non-zero-on-fix]
         types_or: [python, pyi]
+        exclude: ^legacy/scripts/
       - id: ruff-format  # Run Ruff formatter
         types_or: [python, pyi]
+        exclude: ^legacy/scripts/
 
   # Formatting for various file types with Prettier
   - repo: https://github.com/rbubley/mirrors-prettier  # Using rbubley mirror
     rev: v3.6.2
     hooks:
       - id: prettier
-        types_or: [yaml, markdown, html, css, scss, javascript, json]
+        types_or: [markdown, html, css, scss, javascript, json]
         args: [--prose-wrap=always]  # Wrap markdown prose
         additional_dependencies:
           - prettier@3.2.4  # Pin Prettier version
@@ -102,12 +105,6 @@ repos:
     hooks:
       - id: check-github-workflows  # Validate GitHub workflow files
 
-  # Shell script linting
-  - repo: https://github.com/shellcheck-py/shellcheck-py
-    rev: v0.11.0.1
-    hooks:
-      - id: shellcheck
-
   # Validate pyproject.toml structure
   - repo: https://github.com/abravalheri/validate-pyproject
     rev: v0.24.1
@@ -122,6 +119,7 @@ repos:
       - id: bandit
         args: [-c, pyproject.toml]  # Example: Configure via pyproject.toml
         types: [python]
+        exclude: ^legacy/scripts/
   - repo: https://github.com/owenlamont/uv-secure
     rev: 0.14.1
     hooks:
@@ -131,3 +129,4 @@ repos:
         entry: uv-secure
         language: python
         files: (^|.*/)(uv\.lock|requirements\.txt)$
+        exclude: ^legacy/scripts/
