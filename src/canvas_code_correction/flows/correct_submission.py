@@ -71,14 +71,14 @@ def run_grader_container(workspace: Path, settings: Settings) -> dict[str, objec
     logger.info(
         "Launching grader container",
         extra={
-            "workspace": str(workspace),
+            "workspace": workspace.as_posix(),
             "image": settings.runner.docker_image,
         },
     )
     service = RunnerService(settings, logger=logger)
     result = service.run(workspace)
     payload = result.as_dict()
-    payload["workspace"] = str(workspace)
+    payload["workspace"] = workspace.as_posix()
     return payload
 
 
@@ -99,7 +99,11 @@ def upload_feedback_task(
         uploader = Uploader(client)
         comment = str(collected.get("comment") or "").strip()
         feedback_zip = collected.get("feedback_zip")
-        feedback_path = Path(feedback_zip) if feedback_zip else None
+        feedback_path = None
+        if feedback_zip:
+            feedback_path = Path(str(feedback_zip))
+            if not feedback_path.exists():
+                raise FileNotFoundError(f"Feedback archive missing at {feedback_path.as_posix()}")
         comment_uploaded, feedback_uploaded = uploader.upload_feedback(
             assignment_id,
             submission_id,
@@ -153,8 +157,8 @@ def correct_submission_flow(
     return {
         "status": runner_payload.get("status", "unknown"),
         "exit_code": runner_payload.get("exit_code"),
-        "attachments": [str(path) for path in attachments],
-        "submission_files": [str(path) for path in staged_files],
+        "attachments": [path.as_posix() for path in attachments],
+        "submission_files": [path.as_posix() for path in staged_files],
         "submission_id": str(submission.id),
         "points": collected.get("points"),
         "points_breakdown": collected.get("points_breakdown"),

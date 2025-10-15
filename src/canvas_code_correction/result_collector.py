@@ -29,7 +29,7 @@ class CollectedResults:
             "points": self.points,
             "points_breakdown": self.points_breakdown,
             "comment": self.comment,
-            "feedback_zip": str(self.feedback_zip) if self.feedback_zip else None,
+            "feedback_zip": self.feedback_zip.as_posix() if self.feedback_zip else None,
         }
         if self.metadata:
             payload["metadata"] = self.metadata
