@@ -4,7 +4,7 @@
 from pathlib import Path
 
 from prefect.client.orchestration import SyncPrefectClient
-from pytest import MonkeyPatch
+from pytest import MonkeyPatch, approx
 
 from canvas_code_correction.config import Settings
 from canvas_code_correction.flows import correct_submission
@@ -138,6 +138,6 @@ def test_correct_submission_flow(tmp_path: Path, monkeypatch: MonkeyPatch) -> No
     assert (tmp_path / "1" / "42").exists()  # nosec B101
     assert result["attachments"]  # nosec B101
     assert result["submission_files"]  # nosec B101
-    assert result["points"] == 10.0  # nosec B101
+    assert result["points"] == approx(10.0)  # nosec B101
     assert result["grade_uploaded"] is True  # nosec B101
     assert result["feedback_uploaded"] == {"comment_uploaded": True, "feedback_uploaded": False}  # nosec B101

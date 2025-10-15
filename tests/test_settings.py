@@ -4,7 +4,7 @@
 import os
 from pathlib import Path
 
-from pytest import MonkeyPatch
+from pytest import MonkeyPatch, approx
 
 from canvas_code_correction.config import Settings
 
@@ -72,7 +72,7 @@ def test_settings_runner_block(monkeypatch: MonkeyPatch) -> None:
     assert settings.runner.docker_image == "ghcr.io/example/course-a:latest"  # nosec B101
     assert settings.runner.network_disabled is False  # nosec B101
     assert settings.runner.memory_limit == "2g"  # nosec B101
-    assert settings.runner.cpu_limit == 2.5  # nosec B101
+    assert settings.runner.cpu_limit == approx(2.5)  # nosec B101
     assert settings.runner.env == {"EXTRA": "value"}  # nosec B101
     assert settings.runner.config_block == "grader-config/course-a"  # nosec B101
 
@@ -102,7 +102,7 @@ def test_settings_runner_env_override(monkeypatch: MonkeyPatch) -> None:
     settings = Settings.from_env()
 
     assert settings.runner.docker_image == "ghcr.io/example/override:1.0"  # nosec B101
-    assert settings.runner.cpu_limit == 3.0  # nosec B101
+    assert settings.runner.cpu_limit == approx(3.0)  # nosec B101
     assert settings.runner.memory_limit == "3g"  # nosec B101
     assert settings.runner.network_disabled is False  # nosec B101
 
