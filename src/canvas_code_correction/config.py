@@ -21,6 +21,7 @@ class RunnerSettings(BaseModel):
     network_disabled: bool = True
     memory_limit: str = "1g"
     cpu_limit: float = 1.0
+    gpu_enabled: bool = False
     env: dict[str, str] = Field(default_factory=dict)
     config_block: str | None = None
 
@@ -53,6 +54,10 @@ class Settings(BaseModel):
     ENV_RUNNER_CPU_KEYS: ClassVar[tuple[str, ...]] = (
         "CCC_RUNNER_CPU_LIMIT",
         "CCC_GRADER_CPU_LIMIT",
+    )
+    ENV_RUNNER_GPU_KEYS: ClassVar[tuple[str, ...]] = (
+        "CCC_RUNNER_GPU_ENABLED",
+        "CCC_GRADER_GPU_ENABLED",
     )
 
     @classmethod
@@ -114,7 +119,13 @@ class Settings(BaseModel):
         else:
             runner_section.setdefault("cpu_limit", runner_defaults.cpu_limit)
 
-        runner_section.setdefault("env", runner_defaults.env)
+        gpu_override = cls._lookup(mapping, cls.ENV_RUNNER_GPU_KEYS)
+        if gpu_override is not None:
+            runner_section["gpu_enabled"] = cls._parse_bool(gpu_override)
+        else:
+            runner_section.setdefault("gpu_enabled", runner_defaults.gpu_enabled)
+
+        runner_section.setdefault("env", runner_defaults.env.copy())
 
         canvas_section = {
             "api_url": cls._coalesce(

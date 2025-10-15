@@ -1,7 +1,5 @@
 """Utilities for collecting grader results from the workspace."""
 
-from __future__ import annotations
-
 import json
 import shutil
 from dataclasses import dataclass, field

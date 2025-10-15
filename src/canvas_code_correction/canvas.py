@@ -89,5 +89,5 @@ class CanvasClient(AbstractContextManager["CanvasClient"]):
 
         local_path = destination_dir / name
         local_path.parent.mkdir(parents=True, exist_ok=True)
-        attachment.download(str(local_path))
+        attachment.download(local_path.as_posix())
         return local_path

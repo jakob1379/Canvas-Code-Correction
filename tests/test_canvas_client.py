@@ -1,4 +1,3 @@
-# bandit: disable=B101,B105,B106
 """Tests for the Canvas client."""
 
 from pathlib import Path
@@ -78,7 +77,7 @@ def test_get_submission_and_download(tmp_path: Path) -> None:
 
     with CanvasClient(
         base_url="https://canvas.example",
-        token="token",  # nosec B106
+        token="token",
         course_id=1,
         canvas=dummy_canvas,  # type: ignore[arg-type]
     ) as client:
@@ -88,11 +87,11 @@ def test_get_submission_and_download(tmp_path: Path) -> None:
             include=["attachments"],
         )
 
-        assert assignment.last_include == ["attachments"]  # nosec B101
+        assert assignment.last_include == ["attachments"]
         files = client.get_submission_files(submission)
-        assert files  # nosec B101
+        assert files
 
         target = client.download_attachment(files[0], tmp_path)
 
-    assert target.name == "submission.zip"  # nosec B101
-    assert target.read_bytes() == b"payload"  # nosec B101
+    assert target.name == "submission.zip"
+    assert target.read_bytes() == b"payload"

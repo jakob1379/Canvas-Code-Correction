@@ -1,4 +1,3 @@
-# bandit: disable=B101,B105,B106
 """Configuration helper tests."""
 
 from canvas_code_correction.config import Settings
@@ -12,6 +11,6 @@ def test_settings_from_env_defaults(monkeypatch):
 
     settings = Settings.from_env()
 
-    assert settings.canvas.api_url == "https://canvas.instructure.com"  # nosec B101
-    assert settings.canvas.token == "changeme"  # nosec B101,B105
-    assert settings.canvas.course_id == 0  # nosec B101
+    assert settings.canvas.api_url == "https://canvas.instructure.com"
+    assert settings.canvas.token == "changeme"
+    assert settings.canvas.course_id == 0

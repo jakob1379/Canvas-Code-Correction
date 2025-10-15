@@ -1,7 +1,5 @@
 """Execution utilities for running grader containers via Docker."""
 
-from __future__ import annotations
-
 import json
 import logging
 from dataclasses import dataclass, field
@@ -10,6 +8,7 @@ from typing import Any
 
 import docker
 from docker.errors import DockerException
+from docker.types import DeviceRequest
 
 from .config import Settings
 
@@ -35,7 +34,7 @@ class RunnerResult:
 
     def as_dict(self) -> dict[str, Any]:
         def _opt_path(path: Path | None) -> str | None:
-            return str(path) if path is not None else None
+            return path.as_posix() if path is not None else None
 
         payload: dict[str, Any] = {
             "status": self.status,
@@ -82,16 +81,22 @@ class RunnerService:
         client = docker.from_env()
         container = None
         try:
+            device_requests = self._device_requests(self.settings.runner.gpu_enabled)
+            run_kwargs: dict[str, Any] = {
+                "image": self.settings.runner.docker_image,
+                "command": command,
+                "environment": env,
+                "working_dir": CONTAINER_WORKDIR,
+                "volumes": volumes,
+                "detach": True,
+                "network_disabled": self.settings.runner.network_disabled,
+                "mem_limit": self.settings.runner.memory_limit,
+                "nano_cpus": self._nano_cpus(self.settings.runner.cpu_limit),
+            }
+            if device_requests:
+                run_kwargs["device_requests"] = device_requests
             container = client.containers.run(
-                image=self.settings.runner.docker_image,
-                command=command,
-                environment=env,
-                working_dir=CONTAINER_WORKDIR,
-                volumes=volumes,
-                detach=True,
-                network_disabled=self.settings.runner.network_disabled,
-                mem_limit=self.settings.runner.memory_limit,
-                nano_cpus=self._nano_cpus(self.settings.runner.cpu_limit),
+                **run_kwargs,
             )
             wait_result = container.wait()
             exit_code = int(wait_result.get("StatusCode", 1))
@@ -103,6 +108,7 @@ class RunnerService:
                 "container_id": container.id,
                 "image": self.settings.runner.docker_image,
                 "command": command,
+                "gpu_enabled": self.settings.runner.gpu_enabled,
             }
 
             results_file = self._existing_path(workspace / RESULTS_FILENAME)
@@ -145,3 +151,9 @@ class RunnerService:
     @staticmethod
     def _existing_path(path: Path) -> Path | None:
         return path if path.exists() else None
+
+    @staticmethod
+    def _device_requests(gpu_enabled: bool) -> list[DeviceRequest] | None:
+        if not gpu_enabled:
+            return None
+        return [DeviceRequest(count=-1, capabilities=[["gpu"]])]

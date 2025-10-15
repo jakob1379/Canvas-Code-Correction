@@ -1,4 +1,3 @@
-# bandit: disable=B101,B105,B106
 """Submission store tests."""
 
 import zipfile
@@ -13,8 +12,8 @@ def test_submission_store_layout(tmp_path: Path) -> None:
 
     attachment_path = store.attachment_path(workspace, "file.txt")
 
-    assert attachment_path.parent.exists()  # nosec B101
-    assert attachment_path.name == "file.txt"  # nosec B101
+    assert attachment_path.parent.exists()
+    assert attachment_path.name == "file.txt"
 
 
 def test_stage_attachments_unzips_and_flattens(tmp_path: Path) -> None:
@@ -36,10 +35,10 @@ def test_stage_attachments_unzips_and_flattens(tmp_path: Path) -> None:
     code_file = submission_root / "code.py"
     note_file = submission_root / "notes.txt"
 
-    assert code_file.exists()  # nosec B101
-    assert note_file.exists()  # nosec B101
-    assert code_file.read_text(encoding="utf-8") == "print('hi')\n"  # nosec B101
+    assert code_file.exists()
+    assert note_file.exists()
+    assert code_file.read_text(encoding="utf-8") == "print('hi')\n"
 
     relative = {path.relative_to(submission_root).as_posix() for path in files}
-    assert relative == {"code.py", "notes.txt"}  # nosec B101
-    assert not any("__MACOSX" in str(path) for path in submission_root.rglob("*"))  # nosec B101
+    assert relative == {"code.py", "notes.txt"}
+    assert not any("__MACOSX" in str(path) for path in submission_root.rglob("*"))

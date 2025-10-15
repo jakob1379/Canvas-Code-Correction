@@ -38,7 +38,15 @@ def load_settings(
 ) -> None:
     """Load shared configuration before executing commands."""
 
-    settings = Settings.from_file(config_path) if config_path is not None else Settings.from_env()
+    if config_path is not None:
+        config_path = config_path.expanduser()
+        if not config_path.exists():
+            raise typer.BadParameter(f"Configuration file not found: {config_path}")
+        if not config_path.is_file():
+            raise typer.BadParameter(f"Configuration path must be a file: {config_path}")
+        settings = Settings.from_file(config_path)
+    else:
+        settings = Settings.from_env()
     ctx.obj = settings
 
 
@@ -78,6 +86,11 @@ def configure_grader_block(
     cpu_limit: float = typer.Option(
         1.0, "--cpu-limit", help="CPU shares/limit for the grader container."
     ),
+    gpu_enabled: bool = typer.Option(
+        False,
+        "--gpu-enabled/--gpu-disabled",
+        help="Allow grader containers to access GPU devices.",
+    ),
     env: list[str] | None = GRADER_ENV_OPTION,
     overwrite: bool = typer.Option(False, "--overwrite", help="Overwrite existing Prefect block."),
 ) -> None:
@@ -100,6 +113,7 @@ def configure_grader_block(
         "network_disabled": network_disabled,
         "memory_limit": memory_limit,
         "cpu_limit": cpu_limit,
+        "gpu_enabled": gpu_enabled,
         "env": env_map,
     }
 

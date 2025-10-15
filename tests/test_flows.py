@@ -1,4 +1,3 @@
-# bandit: disable=B101,B105,B106
 """Flow orchestration tests."""
 
 from pathlib import Path
@@ -134,10 +133,13 @@ def test_correct_submission_flow(tmp_path: Path, monkeypatch: MonkeyPatch) -> No
         settings=settings,
     )
 
-    assert result["status"] == "success"  # nosec B101
-    assert (tmp_path / "1" / "42").exists()  # nosec B101
-    assert result["attachments"]  # nosec B101
-    assert result["submission_files"]  # nosec B101
-    assert result["points"] == approx(10.0)  # nosec B101
-    assert result["grade_uploaded"] is True  # nosec B101
-    assert result["feedback_uploaded"] == {"comment_uploaded": True, "feedback_uploaded": False}  # nosec B101
+    assert result["status"] == "success"
+    assert (tmp_path / "1" / "42").exists()
+    assert result["attachments"]
+    assert result["submission_files"]
+    assert result["points"] == approx(10.0)
+    assert result["grade_uploaded"] is True
+    assert result["feedback_uploaded"] == {
+        "comment_uploaded": True,
+        "feedback_uploaded": False,
+    }

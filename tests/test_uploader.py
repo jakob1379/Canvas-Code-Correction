@@ -1,4 +1,3 @@
-# bandit: disable=B101,B105
 """Tests for the Canvas uploader helpers."""
 
 from pathlib import Path
@@ -39,9 +38,9 @@ def test_upload_feedback_with_file(tmp_path: Path) -> None:
 
     comment_uploaded, feedback_uploaded = uploader.upload_feedback(1, 2, "Nice!", zip_path)
 
-    assert comment_uploaded is True  # nosec B101
-    assert feedback_uploaded is True  # nosec B101
-    assert submission.upload_calls[-1] == ("Nice!", str(zip_path))  # nosec B101
+    assert comment_uploaded is True
+    assert feedback_uploaded is True
+    assert submission.upload_calls[-1] == ("Nice!", str(zip_path))
 
 
 def test_upload_feedback_skips_duplicate(tmp_path: Path) -> None:
@@ -54,9 +53,9 @@ def test_upload_feedback_skips_duplicate(tmp_path: Path) -> None:
 
     comment_uploaded, feedback_uploaded = uploader.upload_feedback(1, 2, "Repeat", zip_path)
 
-    assert feedback_uploaded is False  # nosec B101
-    assert comment_uploaded is True  # nosec B101
-    assert submission.upload_calls[-1] == ("Repeat", None)  # nosec B101
+    assert feedback_uploaded is False
+    assert comment_uploaded is True
+    assert submission.upload_calls[-1] == ("Repeat", None)
 
 
 def test_upload_grade_sets_posted_grade(tmp_path: Path) -> None:
@@ -65,5 +64,5 @@ def test_upload_grade_sets_posted_grade(tmp_path: Path) -> None:
 
     outcome = uploader.upload_grade(1, 2, 9.5)
 
-    assert outcome is True  # nosec B101
-    assert submission.grade_payload == {"posted_grade": "9.5"}  # nosec B101
+    assert outcome is True
+    assert submission.grade_payload == {"posted_grade": "9.5"}

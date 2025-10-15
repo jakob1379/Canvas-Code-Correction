@@ -1,4 +1,3 @@
-# bandit: disable=B101,B105,B106
 """Tests for the Docker runner service."""
 
 from pathlib import Path
@@ -69,16 +68,18 @@ def test_runner_service_executes_container(tmp_path: Path, monkeypatch) -> None:
     service = RunnerService(settings)
     result = service.run(tmp_path)
 
-    assert isinstance(result, RunnerResult)  # nosec B101
-    assert result.status == "success"  # nosec B101
-    assert result.exit_code == 0  # nosec B101
-    assert result.stdout == "stdout"  # nosec B101
-    assert result.stderr == "stderr"  # nosec B101
-    assert result.results_file and result.results_file.exists()  # nosec B101
-    assert result.points_file and result.points_file.exists()  # nosec B101
-    assert result.comments_file and result.comments_file.exists()  # nosec B101
-    assert result.metadata["image"] == settings.runner.docker_image  # nosec B101
-    assert dummy_client.last_kwargs["environment"]["CCC_RESULTS_FILE"].endswith("results.json")  # nosec B101
+    assert isinstance(result, RunnerResult)
+    assert result.status == "success"
+    assert result.exit_code == 0
+    assert result.stdout == "stdout"
+    assert result.stderr == "stderr"
+    assert result.results_file and result.results_file.exists()
+    assert result.points_file and result.points_file.exists()
+    assert result.comments_file and result.comments_file.exists()
+    assert result.metadata["image"] == settings.runner.docker_image
+    assert result.metadata["gpu_enabled"] is False
+    assert dummy_client.last_kwargs["environment"]["CCC_RESULTS_FILE"].endswith("results.json")
+    assert "device_requests" not in dummy_client.last_kwargs
 
 
 def test_runner_service_handles_failed_exit(tmp_path: Path, monkeypatch):
@@ -99,5 +100,23 @@ def test_runner_service_handles_failed_exit(tmp_path: Path, monkeypatch):
     service = RunnerService(settings)
     result = service.run(tmp_path)
 
-    assert result.status == "failed"  # nosec B101
-    assert result.exit_code == 2  # nosec B101
+    assert result.status == "failed"
+    assert result.exit_code == 2
+
+
+def test_runner_service_gpu_request(tmp_path: Path, monkeypatch) -> None:
+    settings = _base_settings(tmp_path)
+    settings.runner.gpu_enabled = True
+    dummy_client = _DummyClient(tmp_path)
+    monkeypatch.setattr(
+        "canvas_code_correction.runner_service.docker.from_env", lambda: dummy_client
+    )
+
+    service = RunnerService(settings)
+    result = service.run(tmp_path)
+
+    requests = dummy_client.last_kwargs.get("device_requests")
+    assert requests is not None
+    assert requests[0].count == -1
+    assert requests[0].capabilities == [["gpu"]]
+    assert result.metadata["gpu_enabled"] is True

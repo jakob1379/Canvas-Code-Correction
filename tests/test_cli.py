@@ -1,4 +1,3 @@
-# bandit: disable=B101
 """CLI tests."""
 
 import types
@@ -39,22 +38,24 @@ def test_configure_grader_creates_prefect_block(monkeypatch: MonkeyPatch) -> Non
             "--cpu-limit",
             "1.5",
             "--network-enabled",
+            "--gpu-enabled",
             "--env",
             "FOO=bar",
             "--overwrite",
         ],
     )
 
-    assert result.exit_code == 0  # nosec B101
-    assert saved["name"] == "custom-block"  # nosec B101
+    assert result.exit_code == 0
+    assert saved["name"] == "custom-block"
     assert saved["value"] == {
         "docker_image": "ghcr.io/example/course:1.2",
         "network_disabled": False,
         "memory_limit": "2g",
         "cpu_limit": 1.5,
+        "gpu_enabled": True,
         "env": {"FOO": "bar"},
-    }  # nosec B101
-    assert saved["overwrite"] is True  # nosec B101
+    }
+    assert saved["overwrite"] is True
 
 
 def test_configure_grader_invalid_env(monkeypatch: MonkeyPatch) -> None:
@@ -66,4 +67,4 @@ def test_configure_grader_invalid_env(monkeypatch: MonkeyPatch) -> None:
         ["configure-grader", "course", "--docker-image", "img:latest", "--env", "INVALID"],
     )
 
-    assert result.exit_code != 0  # nosec B101
+    assert result.exit_code != 0

@@ -1,4 +1,3 @@
-# bandit: disable=B101,B105,B106
 """Settings model tests."""
 
 import os
@@ -18,9 +17,10 @@ def test_settings_from_env(monkeypatch: MonkeyPatch) -> None:
 
     settings = Settings.from_env()
 
-    assert settings.canvas.api_url == "https://canvas.test"  # nosec B101
-    assert settings.canvas.token == "token-value"  # nosec B101,B105
-    assert settings.canvas.course_id == 42  # nosec B101
+    assert settings.canvas.api_url == "https://canvas.test"
+    assert settings.canvas.token == "token-value"
+    assert settings.canvas.course_id == 42
+    assert settings.runner.gpu_enabled is False
 
 
 def test_settings_from_env_file(tmp_path: Path) -> None:
@@ -40,9 +40,9 @@ def test_settings_from_env_file(tmp_path: Path) -> None:
 
     settings = Settings.from_file(env_file)
 
-    assert settings.canvas.api_url == "https://canvas.file"  # nosec B101
-    assert settings.canvas.token == "file-token"  # nosec B101,B105
-    assert settings.canvas.course_id == 21  # nosec B101
+    assert settings.canvas.api_url == "https://canvas.file"
+    assert settings.canvas.token == "file-token"
+    assert settings.canvas.course_id == 21
 
     if original is not None:
         os.environ["CCC_SKIP_DOTENV"] = original
@@ -63,18 +63,20 @@ def test_settings_runner_block(monkeypatch: MonkeyPatch) -> None:
             "memory_limit": "2g",
             "cpu_limit": 2.5,
             "env": {"EXTRA": "value"},
+            "gpu_enabled": True,
         }
 
     monkeypatch.setattr(Settings, "_load_runner_block", staticmethod(fake_load))
 
     settings = Settings.from_env()
 
-    assert settings.runner.docker_image == "ghcr.io/example/course-a:latest"  # nosec B101
-    assert settings.runner.network_disabled is False  # nosec B101
-    assert settings.runner.memory_limit == "2g"  # nosec B101
-    assert settings.runner.cpu_limit == approx(2.5)  # nosec B101
-    assert settings.runner.env == {"EXTRA": "value"}  # nosec B101
-    assert settings.runner.config_block == "grader-config/course-a"  # nosec B101
+    assert settings.runner.docker_image == "ghcr.io/example/course-a:latest"
+    assert settings.runner.network_disabled is False
+    assert settings.runner.memory_limit == "2g"
+    assert settings.runner.cpu_limit == approx(2.5)
+    assert settings.runner.env == {"EXTRA": "value"}
+    assert settings.runner.config_block == "grader-config/course-a"
+    assert settings.runner.gpu_enabled is True
 
 
 def test_settings_runner_env_override(monkeypatch: MonkeyPatch) -> None:
@@ -87,6 +89,7 @@ def test_settings_runner_env_override(monkeypatch: MonkeyPatch) -> None:
     monkeypatch.setenv("CCC_RUNNER_CPU_LIMIT", "3.0")
     monkeypatch.setenv("CCC_RUNNER_MEMORY_LIMIT", "3g")
     monkeypatch.setenv("CCC_RUNNER_NETWORK_DISABLED", "0")
+    monkeypatch.setenv("CCC_RUNNER_GPU_ENABLED", "1")
 
     def fake_load(block_name: str):  # type: ignore[override]
         assert block_name == "grader-config/course-b"
@@ -95,16 +98,18 @@ def test_settings_runner_env_override(monkeypatch: MonkeyPatch) -> None:
             "network_disabled": True,
             "memory_limit": "1g",
             "cpu_limit": 1.0,
+            "gpu_enabled": False,
         }
 
     monkeypatch.setattr(Settings, "_load_runner_block", staticmethod(fake_load))
 
     settings = Settings.from_env()
 
-    assert settings.runner.docker_image == "ghcr.io/example/override:1.0"  # nosec B101
-    assert settings.runner.cpu_limit == approx(3.0)  # nosec B101
-    assert settings.runner.memory_limit == "3g"  # nosec B101
-    assert settings.runner.network_disabled is False  # nosec B101
+    assert settings.runner.docker_image == "ghcr.io/example/override:1.0"
+    assert settings.runner.cpu_limit == approx(3.0)
+    assert settings.runner.memory_limit == "3g"
+    assert settings.runner.network_disabled is False
+    assert settings.runner.gpu_enabled is True
 
 
 def test_settings_working_dir_override(monkeypatch: MonkeyPatch, tmp_path: Path) -> None:
@@ -116,4 +121,4 @@ def test_settings_working_dir_override(monkeypatch: MonkeyPatch, tmp_path: Path)
 
     settings = Settings.from_env()
 
-    assert settings.working_dir == tmp_path  # nosec B101
+    assert settings.working_dir == tmp_path

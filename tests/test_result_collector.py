@@ -1,4 +1,3 @@
-# bandit: disable=B101
 """Tests for the result collector."""
 
 from pathlib import Path
@@ -21,12 +20,12 @@ def test_collect_results(tmp_path: Path) -> None:
 
     payload = collect_results(workspace, {"status": "success"}).as_payload()
 
-    assert payload["points"] == 8  # nosec B101
-    assert payload["points_breakdown"] == [5.0, 3.0]  # nosec B101
-    assert payload["comment"] == "Great job!"  # nosec B101
-    assert payload["feedback_zip"]  # nosec B101
-    assert Path(payload["feedback_zip"]).exists()  # nosec B101
-    assert payload["metadata"]["results"]["status"] == "ok"  # nosec B101
+    assert payload["points"] == 8
+    assert payload["points_breakdown"] == [5.0, 3.0]
+    assert payload["comment"] == "Great job!"
+    assert payload["feedback_zip"]
+    assert Path(payload["feedback_zip"]).exists()
+    assert payload["metadata"]["results"]["status"] == "ok"
 
 
 def test_collect_results_missing_files(tmp_path: Path) -> None:
@@ -35,6 +34,6 @@ def test_collect_results_missing_files(tmp_path: Path) -> None:
 
     payload = collect_results(workspace, {}).as_payload()
 
-    assert payload["points"] == 0  # nosec B101
-    assert payload["comment"] == ""  # nosec B101
-    assert payload["feedback_zip"]  # nosec B101
+    assert payload["points"] == 0
+    assert payload["comment"] == ""
+    assert payload["feedback_zip"]
