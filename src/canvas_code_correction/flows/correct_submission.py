@@ -12,6 +12,12 @@ from ..runner_service import RunnerService
 from ..submission_store import SubmissionStore
 from ..uploader import Uploader
 
+PERSISTED_TASK_OPTIONS = {
+    "persist_result": True,
+    "result_serializer": "json",
+    "cache_result_in_memory": False,
+}
+
 
 @task
 def prepare_workspace(settings: Settings, assignment_id: int, submission_id: int) -> Path:
@@ -59,7 +65,7 @@ def normalise_submission_workspace(
     return store.stage_attachments(workspace, attachments)
 
 
-@task
+@task(**PERSISTED_TASK_OPTIONS)
 def run_grader_container(workspace: Path, settings: Settings) -> dict[str, object]:
     logger = get_run_logger()
     logger.info(
@@ -76,13 +82,13 @@ def run_grader_container(workspace: Path, settings: Settings) -> dict[str, objec
     return payload
 
 
-@task
+@task(**PERSISTED_TASK_OPTIONS)
 def collect_results_task(workspace: Path, runner_payload: dict[str, object]) -> dict[str, object]:
     results = collect_results(workspace, runner_payload)
     return results.as_payload()
 
 
-@task
+@task(**PERSISTED_TASK_OPTIONS)
 def upload_feedback_task(
     settings: Settings,
     assignment_id: int,
@@ -106,7 +112,7 @@ def upload_feedback_task(
     }
 
 
-@task
+@task(**PERSISTED_TASK_OPTIONS)
 def upload_grade_task(
     settings: Settings,
     assignment_id: int,
