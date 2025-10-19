@@ -31,3 +31,15 @@ uv run mkdocs serve
 The CLI is exposed through `uv run ccc`. Use
 `ccc run-once <assignment-id> <submission-id>` for a local dry-run of the
 Prefect flow.
+
+For course-specific environments, register a Prefect grader block:
+
+```bash
+uv run ccc configure-grader <course-slug> \
+  --docker-image ghcr.io/your-org/course-grader:latest \
+  --env EXTRA_REQUIREMENT=1
+```
+
+Each course can supply its own Docker image and environment variables without
+touching the shared orchestration code; flows resolve the configuration from the
+stored Prefect block at runtime.

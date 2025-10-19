@@ -12,6 +12,7 @@ nav:
   - Guides:
       - Local Prefect Agent: guides/prefect-agent.md
       - Grader Image: guides/grader-image.md
+      - Authoring Grader Tests: guides/authoring-grader-tests.md
   - Reference:
       - Configuration: reference/configuration.md
       - API Clients: reference/api-clients.md
