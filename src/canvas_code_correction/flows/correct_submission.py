@@ -1,14 +1,15 @@
 """Prefect flow for correcting a single Canvas submission."""
 
 from pathlib import Path
+from typing import Any
 
 from canvasapi.submission import Submission as CanvasSubmission
 from prefect import flow, get_run_logger, task
 
 from ..canvas import CanvasClient
 from ..config import Settings
+from ..grader_executor import GraderExecutor
 from ..result_collector import collect_results
-from ..runner_service import RunnerService
 from ..submission_store import SubmissionStore
 from ..uploader import Uploader
 
@@ -66,19 +67,43 @@ def normalise_submission_workspace(
 
 
 @task(**PERSISTED_TASK_OPTIONS)
-def run_grader_container(workspace: Path, settings: Settings) -> dict[str, object]:
+def resolve_assignment_command(settings: Settings, assignment_id: int) -> dict[str, Any]:
+    command = settings.runner.command_for_assignment(assignment_id)
+    if command is None:
+        raise RuntimeError(f"No assignment command configured for assignment {assignment_id}")
+    payload = command.model_dump(mode="json")
+    payload["assignment_id"] = assignment_id
+    return payload
+
+
+@task(**PERSISTED_TASK_OPTIONS)
+def run_grader_command(
+    workspace: Path,
+    settings: Settings,
+    assignment_command: dict[str, Any],
+) -> dict[str, object]:
     logger = get_run_logger()
+    command = assignment_command.get("command")
+    env_overrides = assignment_command.get("env") or {}
+    workdir = assignment_command.get("workdir")
     logger.info(
-        "Launching grader container",
+        "Executing grader command",
         extra={
             "workspace": workspace.as_posix(),
             "image": settings.runner.docker_image,
+            "command": command,
         },
     )
-    service = RunnerService(settings, logger=logger)
-    result = service.run(workspace)
+    executor = GraderExecutor(settings, logger=logger)
+    result = executor.run(
+        workspace,
+        command=command,
+        extra_env={str(k): str(v) for k, v in env_overrides.items()},
+        workdir=workdir,
+    )
     payload = result.as_dict()
     payload["workspace"] = workspace.as_posix()
+    payload["command"] = command
     return payload
 
 
@@ -139,7 +164,8 @@ def correct_submission_flow(
     submission = fetch_submission(settings, assignment_id, submission_id)
     attachments = download_submission_attachments(settings, submission, workspace)
     staged_files = normalise_submission_workspace(settings, workspace, attachments)
-    runner_payload = run_grader_container(workspace, settings)
+    assignment_command = resolve_assignment_command(settings, assignment_id)
+    runner_payload = run_grader_command(workspace, settings, assignment_command)
     collected = collect_results_task(workspace, runner_payload)
     feedback_outcome = upload_feedback_task(
         settings,
