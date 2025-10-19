@@ -13,18 +13,20 @@ architecture that keeps the system modular, testable, and secure by default.
   tasks. Runs entirely locally via Prefect Orion/agent.
 - **CanvasClient** – encapsulates Canvas API access (download submissions,
   upload comments, post grades) with retries and structured logging.
-- **Runner** – executes student submissions inside a Docker container derived
-  from the provided template using a non-root UID/GID, memory/CPU limits, and
-  optionally network isolation.
+- **Grader Executor** – runs the instructor-provided command inside the
+  Prefect-managed worker container using a dedicated workspace (no nested Docker
+  required).
 - **Grader Configuration Blocks** – Prefect JSON blocks capture course-specific
-  grader images, resource limits, and environment variables so each course can
-  bring its own grading environment without modifying the shared codebase.
+  grader images, resource limits, per-assignment commands, and environment
+  variables so each course can bring its own grading environment without
+  modifying the shared codebase. Each course provisions a dedicated Prefect
+  Docker work pool bound to its grader image.
 - **Result Collector** – extracts `points.txt`, `comments.txt`, artefacts, and
   metadata produced by the grader and prepares zipped feedback for upload.
 - **Uploader** – posts comments and grades back to Canvas while skipping
   duplicate attachments.
-- **Submission Store** – temporary workspace on the host (or object storage)
-  used to exchange artefacts with the runner.
+- **Submission Workspace** – transient directory inside the worker container
+  where submission attachments are staged and grader artefacts are produced.
 - **Prefect Webhook** – Canvas events call Prefect's native webhook endpoint,
   which queues a flow run without additional services. Optional custom shims can
   be added later only if advanced preprocessing is required.
@@ -44,7 +46,7 @@ sequenceDiagram
     Webhook->>WebhookEndpoint: submission_created payload
     WebhookEndpoint->>Prefect: create flow run (assignment_id, submission_id)
     Prefect->>Agent: dispatch run
-    Agent->>Runner: start grader container (non-root UID/GID)
+    Agent->>Runner: start course worker container (non-root UID/GID)
     Runner->>Canvas: fetch submission artefacts
     Runner->>Runner: execute instructor tests, create feedback zip & points
     Runner->>Canvas: upload feedback & grade
@@ -93,9 +95,9 @@ graph TD
 2. **Download** – CanvasClient fetches the submission attachment(s) into an
    isolated workspace (or object storage). Metadata persists alongside artefacts
    for traceability.
-3. **Execute** – Runner launches the grader Docker image using a non-root user,
-   network isolation, and resource quotas. Feedback artefacts are generated
-   in-place.
+3. **Execute** – Prefect starts a course-specific Docker worker container
+   (non-root UID/GID, resource quotas) and invokes the grader command directly
+   inside the container. All artefacts stay within the container filesystem.
 4. **Collect** – Prefect captures stdout/stderr, collects the feedback zip,
    points, and logs, and stores them for inspection.
 5. **Upload** – Feedback and grades are pushed back to Canvas idempotently (md5
@@ -103,8 +105,9 @@ graph TD
 
 ## Security Considerations
 
-- Every container run uses an unprivileged UID/GID configurable in settings; the
-  Dockerfile ensures ownership alignment for mounted volumes.
+- Each worker container runs as an unprivileged UID/GID baked into the base
+  grader image. The filesystem vanishes when the container exits, so no
+  submissions persist on the host.
 - Network is disabled by default unless explicitly required for dependencies.
 - Canvas API tokens are stored using Prefect blocks or environment
   variables—never committed to the repository.

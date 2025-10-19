@@ -2,13 +2,17 @@
 
 from pathlib import Path
 
+import pytest
 from prefect.client.orchestration import SyncPrefectClient
 from pytest import MonkeyPatch, approx
 
 from canvas_code_correction.config import Settings
 from canvas_code_correction.flows import correct_submission
-from canvas_code_correction.flows.correct_submission import correct_submission_flow
-from canvas_code_correction.runner_service import RunnerResult
+from canvas_code_correction.flows.correct_submission import (
+    correct_submission_flow,
+    resolve_assignment_command,
+)
+from canvas_code_correction.grader_executor import ExecutionResult
 
 
 class _StubCanvasClient:
@@ -61,19 +65,25 @@ class _StubCanvasClient:
         return target
 
 
-class _StubRunnerService:
+class _StubGraderExecutor:
     def __init__(self, settings, logger=None) -> None:  # noqa: D401 - simple stub
         self.settings = settings
         self.logger = logger
 
-    def run(self, workspace: Path) -> RunnerResult:
+    def run(
+        self,
+        workspace: Path,
+        command=None,
+        extra_env=None,
+        workdir=None,
+    ) -> ExecutionResult:
         results_file = workspace / "results.json"
         results_file.write_text("{}", encoding="utf-8")
         points_file = workspace / "points.txt"
         points_file.write_text("10\n", encoding="utf-8")
         comments_file = workspace / "comments.txt"
         comments_file.write_text("Great job!\n", encoding="utf-8")
-        return RunnerResult(
+        return ExecutionResult(
             status="success",
             exit_code=0,
             stdout="ok",
@@ -110,7 +120,7 @@ def test_correct_submission_flow(tmp_path: Path, monkeypatch: MonkeyPatch) -> No
     monkeypatch.setenv("PREFECT_API_URL", "")
     monkeypatch.setattr(SyncPrefectClient, "raise_for_api_version_mismatch", lambda self: None)
     monkeypatch.setattr(correct_submission, "CanvasClient", _StubCanvasClient)
-    monkeypatch.setattr(correct_submission, "RunnerService", _StubRunnerService)
+    monkeypatch.setattr(correct_submission, "GraderExecutor", _StubGraderExecutor)
     monkeypatch.setattr(
         correct_submission, "collect_results", lambda workspace, payload: _StubCollected()
     )
@@ -124,6 +134,14 @@ def test_correct_submission_flow(tmp_path: Path, monkeypatch: MonkeyPatch) -> No
                 "course_id": 123,
             },
             "working_dir": tmp_path,
+            "runner": {
+                "commands": {
+                    "1": {
+                        "command": ["python", "grader.py"],
+                        "env": {"ASSIGN": "one"},
+                    }
+                }
+            },
         }
     )
 
@@ -143,3 +161,20 @@ def test_correct_submission_flow(tmp_path: Path, monkeypatch: MonkeyPatch) -> No
         "comment_uploaded": True,
         "feedback_uploaded": False,
     }
+
+
+def test_resolve_assignment_command_missing() -> None:
+    settings = Settings.model_validate(
+        {
+            "canvas": {
+                "api_url": "https://canvas.example",
+                "token": "token",
+                "course_id": 123,
+            },
+            "runner": {"commands": {}},
+        }
+    )
+
+    with pytest.raises(RuntimeError) as excinfo:
+        resolve_assignment_command.fn(settings=settings, assignment_id=99)
+    assert "No assignment command" in str(excinfo.value)

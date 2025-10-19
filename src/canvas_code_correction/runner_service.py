@@ -51,7 +51,7 @@ class RunnerResult:
 
 
 class RunnerService:
-    """Encapsulates Docker execution of the grader image."""
+    """Deprecated runner wrapper retained for backward compatibility."""
 
     def __init__(self, settings: Settings, logger: logging.Logger | None = None) -> None:
         self.settings = settings
