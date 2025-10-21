@@ -133,7 +133,7 @@ Event / trigger (manual CLI, webhook, schedule)
    archives (if needed).
 6. **Prefect assets cataloguing** – revisit in Phase 3 once long-term run
    lineage requirements are defined.
-7. **CI & operational runbooks** – document Prefect agent setup and add CI
+7. **CI & operational runbooks** – document Prefect worker setup and add CI
    pipelines to execute tests/linters before Phase 3 launch.
 
 ---
