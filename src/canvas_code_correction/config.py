@@ -10,6 +10,12 @@ from dotenv import dotenv_values, load_dotenv
 from pydantic import BaseModel, Field, ValidationError
 
 
+class RunnerCommand(BaseModel):
+    command: list[str]
+    env: dict[str, str] = Field(default_factory=dict)
+    workdir: str | None = None
+
+
 class CanvasSettings(BaseModel):
     api_url: str = Field(..., alias="api_url")
     token: str
@@ -24,6 +30,10 @@ class RunnerSettings(BaseModel):
     gpu_enabled: bool = False
     env: dict[str, str] = Field(default_factory=dict)
     config_block: str | None = None
+    commands: dict[str, RunnerCommand] = Field(default_factory=dict, frozen=True)
+
+    def command_for_assignment(self, assignment_id: int) -> RunnerCommand | None:
+        return self.commands.get(str(assignment_id))
 
 
 class Settings(BaseModel):
