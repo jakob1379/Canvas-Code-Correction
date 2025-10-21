@@ -15,7 +15,8 @@ architecture that keeps the system modular, testable, and secure by default.
   upload comments, post grades) with retries and structured logging.
 - **Grader Executor** – runs the instructor-provided command inside the
   Prefect-managed worker container using a dedicated workspace (no nested Docker
-  required).
+  required). Legacy integrations call the thin `RunnerService` adapter, which
+  simply delegates to the executor.
 - **Grader Configuration Blocks** – Prefect JSON blocks capture course-specific
   grader images, resource limits, per-assignment commands, and environment
   variables so each course can bring its own grading environment without
@@ -70,7 +71,7 @@ graph TD
 
   subgraph Application
     C1[CanvasClient]
-    R1[RunnerService]
+    R1[RunnerService (adapter)]
     S1[SubmissionStore]
     W1[Prefect Webhook]
   end
