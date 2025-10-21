@@ -71,7 +71,7 @@ graph TD
 
   subgraph Application
     C1[CanvasClient]
-    R1[RunnerService (adapter)]
+    R1["RunnerService (adapter)"]
     S1[SubmissionStore]
     W1[Prefect Webhook]
   end
