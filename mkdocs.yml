@@ -10,9 +10,10 @@ nav:
   - Architecture: architecture.md
   - Roadmap: roadmap.md
   - Guides:
-      - Local Prefect Agent: guides/prefect-agent.md
+      - Local Prefect Worker: guides/prefect-agent.md
       - Grader Image: guides/grader-image.md
       - Authoring Grader Tests: guides/authoring-grader-tests.md
+      - Deploying Tests to CCC: guides/deploying-tests-to-ccc.md
   - Reference:
       - Configuration: reference/configuration.md
       - API Clients: reference/api-clients.md
@@ -62,7 +63,11 @@ markdown_extensions:
   - pymdownx.snippets
   - pymdownx.tabbed:
       alternate_style: true
-  - pymdownx.superfences
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
   - pymdownx.highlight:
       anchor_linenums: true
       line_spans: __span

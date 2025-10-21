@@ -10,7 +10,7 @@ architecture that keeps the system modular, testable, and secure by default.
 ## Component Responsibilities
 
 - **Prefect Flow** – coordinates the download, execution, upload, and reporting
-  tasks. Runs entirely locally via Prefect Orion/agent.
+  tasks. Runs entirely locally via Prefect Orion/worker.
 - **CanvasClient** – encapsulates Canvas API access (download submissions,
   upload comments, post grades) with retries and structured logging.
 - **Grader Executor** – runs the instructor-provided command inside the
@@ -40,14 +40,14 @@ sequenceDiagram
     participant Webhook as Canvas Webhook
     participant WebhookEndpoint as Prefect Webhook Endpoint
     participant Prefect as Prefect Orion
-    participant Agent as Prefect Agent
+    participant Worker as Prefect Worker
     participant Runner as Docker Runner
     participant Canvas as Canvas API
 
     Webhook->>WebhookEndpoint: submission_created payload
     WebhookEndpoint->>Prefect: create flow run (assignment_id, submission_id)
-    Prefect->>Agent: dispatch run
-    Agent->>Runner: start course worker container (non-root UID/GID)
+    Prefect->>Worker: dispatch run
+    Worker->>Runner: start course worker container (non-root UID/GID)
     Runner->>Canvas: fetch submission artefacts
     Runner->>Runner: execute instructor tests, create feedback zip & points
     Runner->>Canvas: upload feedback & grade

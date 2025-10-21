@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1.7
 
-ARG PYTHON_VERSION=3.11-slim-bookworm
+ARG PYTHON_VERSION=3.13-slim-bookworm
 FROM python:${PYTHON_VERSION} AS base
 
 ENV PYTHONUNBUFFERED=1 \
@@ -9,9 +9,9 @@ WORKDIR /app
 
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
 
-COPY pyproject.toml uv.lock ./
-
-RUN uv sync --frozen --group tests
+COPY pyproject.toml uv.lock README.md ./
+COPY src ./src
+RUN uv sync --no-managed-python --frozen
 
 FROM python:${PYTHON_VERSION} AS runner
 

@@ -99,7 +99,7 @@ def configure_grader_block(
     if JSON is None:  # pragma: no cover - Prefect import guard
         raise typer.BadParameter("Prefect must be installed to manage grader configuration blocks")
 
-    block_id = block_name or f"grader-config/{course}"
+    block_id = block_name or f"grader-config-{course}"
 
     env_map: dict[str, str] = {}
     for item in env or []:
