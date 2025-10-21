@@ -69,7 +69,7 @@ Event / trigger (manual CLI, webhook, schedule)
       → Task: prepare_workspace
       → Task: download_submission_files (CanvasClient → SubmissionStore)
       → Task: stage_instructor_code (from repo or artifact registry)
-      → Task: run_grader_container (Runner)
+      → Task: run_grader_command (GraderExecutor)
       → Task: collect_results
       → Task: upload_comment
       → Task: upload_grade
@@ -88,9 +88,10 @@ Event / trigger (manual CLI, webhook, schedule)
    - `SubmissionStore` handles extraction/normalisation with coverage via
      synthetic zip fixtures.
 4. **Runner integration (Day 3–4)** ✅
-   - Prefect flow now launches the grader Docker image via the new
-     `RunnerService`, wiring in workspace mounts, resource limits, and course
-     specific configuration from Prefect blocks.
+   - Prefect flow now executes instructor commands via the new `GraderExecutor`,
+     wiring in workspace mounts, resource limits, and course-specific
+     configuration from Prefect blocks. A thin `RunnerService` adapter remains
+     for legacy automation scripts.
    - Result collector now packages grader outputs (`points.txt`, `comments.txt`,
      zipped feedback, `results.json`) for downstream upload and metadata
      tracking.
@@ -103,8 +104,8 @@ Event / trigger (manual CLI, webhook, schedule)
      result collection, and uploads, returning structured metadata for each run.
 7. **Testing & docs (Day 6–7)** ✅
    - Unit test suite (`uv run --group tests pytest`) and full pre-commit hooks
-     executed successfully on 2025-10-14; coverage spans runner service, result
-     collector, uploader, and flow orchestration.
+     executed successfully on 2025-10-14; coverage spans the execution layer,
+     result collector, uploader, and flow orchestration.
    - Prefect Assets integration investigated: dynamic per-submission asset keys
      are not yet required for MVP; revisit in Phase 3 when run cataloguing is
      prioritised.
