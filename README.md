@@ -48,7 +48,7 @@ using Prefect, Docker, and reproducible local workspaces.
 Execute the full test suite and lint before opening a pull request:
 
 ```bash
-uv run pre-commit run
+uv run prek run
 uv run pytest
 uv run ruff check
 ```

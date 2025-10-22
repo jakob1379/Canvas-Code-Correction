@@ -71,8 +71,27 @@ def test_get_submission_and_download(tmp_path: Path) -> None:
         ],
     }
 
+    submissions = [3, 4, 5]
     assignment = DummyAssignment(submission_payload)
-    dummy_canvas = DummyCanvas(DummyCourse(assignment))
+    dummy_course = DummyCourse(assignment)
+
+    class AssignmentAdapter:
+        def get_submission(self, submission_id: int, include=None):  # type: ignore[override]
+            return assignment.get_submission(submission_id, include=include)
+
+        def get_submissions(self):  # type: ignore[override]
+            for sid in submissions:
+                yield DummySubmission(
+                    {
+                        "id": sid,
+                        "user_id": 0,
+                        "assignment_id": 2,
+                        "attachments": [],
+                    }
+                )
+
+    dummy_course.get_assignment = lambda _: AssignmentAdapter()  # type: ignore[assignment]
+    dummy_canvas = DummyCanvas(dummy_course)
     dummy_canvas._files[10] = DummyFile(10, "submission.zip")  # type: ignore[attr-defined]
 
     with CanvasClient(
@@ -81,6 +100,9 @@ def test_get_submission_and_download(tmp_path: Path) -> None:
         course_id=1,
         canvas=dummy_canvas,  # type: ignore[arg-type]
     ) as client:
+        ids = client.list_submission_ids(assignment_id=2)
+        assert ids == submissions
+
         submission = client.get_submission(
             assignment_id=2,
             submission_id=3,

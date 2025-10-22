@@ -13,7 +13,9 @@ flows.
    uv run prefect worker start --pool canvas-corrections
    ```
 3. Deploy the flow defined in `canvas_code_correction.flows.correct_submission`
-   and trigger it via CLI (`uv run ccc run-once ...`) or webhook.
+   and trigger it via CLI (e.g., `uv run ccc run-once <assignment-id>`) or
+   webhook.
 
-Ensure environment variables for Canvas credentials are exported or provided via
-a `.env` file.
+Ensure Prefect blocks already store Canvas credentials, runner configuration,
+and the S3 assets block referenced by `configure-course`; locally you only need
+`PREFECT_API_KEY` when invoking deployments.

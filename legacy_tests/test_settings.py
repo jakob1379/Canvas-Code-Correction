@@ -3,9 +3,8 @@
 import os
 from pathlib import Path
 
-from pytest import MonkeyPatch, approx
-
 from canvas_code_correction.config import Settings
+from pytest import MonkeyPatch, approx
 
 
 def test_settings_from_env(monkeypatch: MonkeyPatch) -> None:

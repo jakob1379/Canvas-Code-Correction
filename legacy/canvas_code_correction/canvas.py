@@ -58,6 +58,10 @@ class CanvasClient(AbstractContextManager["CanvasClient"]):
         include_params = list(include) if include is not None else None
         return assignment.get_submission(submission_id, include=include_params)
 
+    def list_submission_ids(self, assignment_id: int) -> list[int]:
+        assignment = self._course.get_assignment(assignment_id)
+        return [submission.id for submission in assignment.get_submissions()]
+
     def get_submission_files(self, submission: CanvasSubmission) -> list[CanvasFile]:
         attachments = getattr(submission, "attachments", None) or []
         files: list[CanvasFile] = []

@@ -3,16 +3,17 @@
 from pathlib import Path
 
 import pytest
-from prefect.client.orchestration import SyncPrefectClient
-from pytest import MonkeyPatch, approx
-
+from canvas_code_correction.assets import CourseAssetMaterialization
 from canvas_code_correction.config import Settings
 from canvas_code_correction.flows import correct_submission
+from canvas_code_correction.flows import provision as provision_flows
 from canvas_code_correction.flows.correct_submission import (
     correct_submission_flow,
     resolve_assignment_command,
 )
 from canvas_code_correction.grader_executor import ExecutionResult
+from prefect.client.orchestration import SyncPrefectClient
+from pytest import MonkeyPatch, approx
 
 
 class _StubCanvasClient:
@@ -117,7 +118,7 @@ class _StubUploader:
 
 
 def test_correct_submission_flow(tmp_path: Path, monkeypatch: MonkeyPatch) -> None:
-    monkeypatch.setenv("PREFECT_API_URL", "")
+    monkeypatch.setenv("PREFECT_API_URL", "mock://local")
     monkeypatch.setattr(SyncPrefectClient, "raise_for_api_version_mismatch", lambda self: None)
     monkeypatch.setattr(correct_submission, "CanvasClient", _StubCanvasClient)
     monkeypatch.setattr(correct_submission, "GraderExecutor", _StubGraderExecutor)
@@ -178,3 +179,57 @@ def test_resolve_assignment_command_missing() -> None:
     with pytest.raises(RuntimeError) as excinfo:
         resolve_assignment_command.fn(settings=settings, assignment_id=99)
     assert "No assignment command" in str(excinfo.value)
+
+
+def test_provision_course_flow(monkeypatch: MonkeyPatch, tmp_path: Path) -> None:
+    monkeypatch.setenv("PREFECT_API_URL", "")
+
+    async def _mock_ensure_work_pool(*_args, **_kwargs):
+        return None
+
+    slug = "sample-course"
+    assets_dir = tmp_path / "assets"
+    assets_dir.mkdir(exist_ok=True)
+    (assets_dir / "content.txt").write_text("data", encoding="utf-8")
+
+    class _SyncResult:
+        def __init__(self, value):
+            self._value = value
+
+        def result(self):
+            return self._value
+
+    monkeypatch.setattr(
+        "canvas_code_correction.flows.provision.ensure_work_pool_task.submit",
+        lambda *args, **kwargs: _SyncResult("course-work-pool-sample-course"),
+    )
+    monkeypatch.setattr(
+        "canvas_code_correction.flows.provision.materialize_assets_task.submit",
+        lambda *args, **kwargs: _SyncResult(
+            CourseAssetMaterialization(
+                asset_key="assets/sample-course",
+                materialization_id="mat-7",
+                manifest={"files": []},
+            )
+        ),
+    )
+    monkeypatch.setattr(
+        "canvas_code_correction.flows.provision.persist_course_config_task.submit",
+        lambda *args, **kwargs: _SyncResult(None),
+    )
+    monkeypatch.setattr(
+        "canvas_code_correction.flows.provision.slugify_course.submit",
+        lambda value: _SyncResult(value),
+    )
+    result = provision_flows.provision_course_flow.fn(
+        course_slug=slug,
+        course_id=7,
+        docker_image="example/grader:latest",
+        assets_path=str(assets_dir),
+        bucket_block="dummy-bucket",
+        runner_env={"ENV": "1"},
+    )
+
+    assert result["slug"] == slug
+    assert result["work_pool"] == f"course-work-pool-{slug}"
+    assert result["config_block"] == f"course-config-{slug}"

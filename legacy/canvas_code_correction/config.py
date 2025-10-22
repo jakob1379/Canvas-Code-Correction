@@ -7,7 +7,7 @@ from pathlib import Path
 from typing import Any, ClassVar
 
 from dotenv import dotenv_values, load_dotenv
-from pydantic import BaseModel, Field, ValidationError
+from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
 
 class RunnerCommand(BaseModel):
@@ -34,6 +34,25 @@ class RunnerSettings(BaseModel):
 
     def command_for_assignment(self, assignment_id: int) -> RunnerCommand | None:
         return self.commands.get(str(assignment_id))
+
+
+class CourseAssets(BaseModel):
+    """Prefect asset metadata for course grader resources."""
+
+    asset_key: str
+    materialization_id: str
+    manifest: dict[str, Any] = Field(default_factory=dict)
+
+
+class CourseConfig(BaseModel):
+    """Course-level Prefect configuration metadata."""
+
+    model_config = ConfigDict(extra="allow")
+
+    course_slug: str
+    work_pool: str
+    runner: RunnerSettings
+    assets: CourseAssets
 
 
 class Settings(BaseModel):
@@ -147,7 +166,10 @@ class Settings(BaseModel):
             "course_id": cls._coalesce_int(mapping, cls.ENV_COURSE_KEYS, 0),
         }
 
-        raw: dict[str, Any] = {"canvas": canvas_section, "runner": runner_section}
+        raw: dict[str, Any] = {
+            "canvas": canvas_section,
+            "runner": runner_section,
+        }
 
         working_dir_override = cls._lookup(mapping, cls.ENV_WORKING_DIR_KEYS)
         if working_dir_override is not None:
