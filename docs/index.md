@@ -28,18 +28,26 @@ uv run pytest
 uv run mkdocs serve
 ```
 
-The CLI is exposed through `uv run ccc`. Use
-`ccc run-once <assignment-id> <submission-id>` for a local dry-run of the
-Prefect flow.
+The CLI is exposed through `uv run ccc`. Use `ccc run-once <assignment-id>` for
+an assignment-wide dry-run of the Prefect flow, or pass `--submission` to focus
+on specific submissions.
 
-For course-specific environments, register a Prefect grader block:
+For course-specific environments, provision an S3 bucket that stores immutable
+grader assets (tests, fixtures, helper scripts) and register a Prefect S3 Bucket
+block that points at the bucket/prefix. The block name must be passed to
+`configure-course` and is reused by the flows at runtime.
 
 ```bash
-uv run ccc configure-grader <course-slug> \
-  --docker-image ghcr.io/your-org/course-grader:latest \
+# Example: create/update course configuration to use S3-backed grader assets
+uv run ccc configure-course <course-slug> \
+  --docker-image jakob1379/canvas-grader:latest \
+  --assets-block course-assets-<course-slug> \
+  --s3-bucket <course-assets-bucket> \
+  --s3-prefix graders/<course-slug>/ \
   --env EXTRA_REQUIREMENT=1
 ```
 
-Each course can supply its own Docker image and environment variables without
-touching the shared orchestration code; flows resolve the configuration from the
-stored Prefect block at runtime.
+Each course supplies its own Docker image, Prefect work pool, and Prefect S3
+block without touching the shared orchestration code; flows resolve the
+configuration from the stored Prefect blocks at runtime. Ensure the block has
+permission to read the bucket (and optional prefix) before invoking flows.

@@ -5,8 +5,8 @@ Build the image using the provided Dockerfile:
 
 ```bash
 docker build \
-  -t ghcr.io/your-org/canvas-grader:latest \
-  -f containers/grader/Dockerfiledocker .
+  -t jakob1379/canvas-grader:latest \
+  -f containers/grader/Dockerfile .
 ```
 
 Key hardening steps:
@@ -56,26 +56,37 @@ docker push <registry>/grader:latest  # optional but recommended
 
 ## Configure CCC to Use the Image
 
-Register the grader configuration so the orchestrator uses the image:
+Provision the course through the Prefect flow/deployment instead of the former
+CLI. The provisioning flow will:
 
-```bash
-uv run ccc configure-grader <course-slug> --docker-image <registry>/grader:latest
+1. Create (or overwrite) the course work pool.
+2. Upload the grader asset folder to S3 via the configured Prefect S3 block.
+3. Persist a `course-config-<course_name>` JSON block referencing the Docker
+   image and latest asset materialization.
+
+Example Python snippet using the provisioning flow directly:
+
+```python
+from pathlib import Path
+
+from canvas_code_correction.flows.provision import provision_course_flow
+
+provision_course_flow(
+    course_name="my-course",
+    course_id=42,
+    docker_image="jakob1379/canvas-grader:latest",
+    assets_path=str(Path("grader-assets")),
+    bucket_block="course-assets-my-course",
+)
 ```
 
-!!! tip "Override runtime command"
-
-    Pass `--env` flags to supply additional environment variables if you
-    need to modify the container command or pass configuration knobs to your
-    grading script.
+Alternatively, build and apply the provided deployment script under
+`canvas_code_correction/deployments/provision.py` so operators can trigger
+provisioning from Prefect Cloud/UI.
 
 ## Validating the Setup
 
-Trigger a dry run for a single submission to validate the setup:
-
-    ```bash
-    uv run ccc run-once <assignment-id> <submission-id>
-    ```
-
-`run-once` downloads the submission, mounts it at `/workspace/submission`, runs
-the container, and collects the outputs. Review the returned points and comments
-to iterate on your grading logic.
+Once provisioning completes and the correction deployment is active, trigger a
+test run via Prefect (UI, CLI, or API). The correction flow downloads the course
+assets materialization into the grader container and executes the command
+defined in the course configuration.

@@ -9,10 +9,9 @@ import numpy as np
 import pandas as pd
 import progressbar as Pbar
 import seaborn as sns
+from canvas_helpers import init_canvas_course
 from matplotlib.lines import Line2D
 from tabulate import tabulate
-
-from canvas_helpers import init_canvas_course
 
 plt.style.use("ggplot")
 config = configparser.ConfigParser()

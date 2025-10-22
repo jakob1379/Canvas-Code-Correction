@@ -11,14 +11,13 @@ from glob import glob
 from pathlib import Path
 
 import progressbar as Pbar
-from p_tqdm import p_umap
-
 from canvas_helpers import (
     create_file_name,
     download_url,
     extract_comment_filenames,
     init_canvas_course,
 )
+from p_tqdm import p_umap
 
 config = configparser.ConfigParser()
 config.read("config.ini")

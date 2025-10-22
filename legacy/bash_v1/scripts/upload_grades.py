@@ -11,9 +11,8 @@ from pathlib import Path
 
 import numpy as np
 import progressbar as Pbar
-from p_tqdm import p_map
-
 from canvas_helpers import bcolors, file_to_string, init_canvas_course
+from p_tqdm import p_map
 
 config = configparser.ConfigParser()
 config.read("config.ini")
