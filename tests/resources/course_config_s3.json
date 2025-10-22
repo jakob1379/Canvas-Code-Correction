@@ -1,0 +1,26 @@
+{
+  "course_name": "course-123",
+  "work_pool": "pool",
+  "runner": {
+    "docker_image": "example/grader:latest",
+    "network_disabled": true,
+    "memory_limit": "1g",
+    "cpu_limit": 1.0,
+    "gpu_enabled": false,
+    "env": {
+      "EXTRA": "value"
+    },
+    "config_block": "course-config-course-123",
+    "commands": {}
+  },
+  "assets": {
+    "mode": "s3",
+    "block_name": "course-assets-course-123",
+    "bucket": "ccc-course-bucket",
+    "prefix": "course-123",
+    "endpoint_url": "https://s3.example",
+    "region": "us-east-1",
+    "use_ssl": true,
+    "verify_ssl": true
+  }
+}

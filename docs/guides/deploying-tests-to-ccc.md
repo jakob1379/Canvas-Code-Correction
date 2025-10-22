@@ -12,7 +12,7 @@ rewrite from this repository.
 - Canvas API token and course ID stored in `.env` or Prefect blocks.
 - uv installed (used to run project commands).
 
-!!! tip Export `PREFECT_API_URL`, `PREFECT_API_KEY`, and Canvas credentials
+!!! tip "Export `PREFECT_API_URL`, `PREFECT_API_KEY`, and Canvas credentials"
 
     before running CLI commands, or update your Prefect profile to include them.
 
@@ -22,26 +22,30 @@ rewrite from this repository.
    the necessary dependencies and entrypoint.
 2. Build and optionally push the image:
 
-   ```bash
-   docker build -t ghcr.io/<org>/<course>-grader:latest containers/grader
-   docker push ghcr.io/<org>/<course>-grader:latest
-   ```
+```bash
+docker build -t jakob1379/canvas-grader:latest containers/grader
+docker push jakob1379/canvas-grader:latest
+```
 
 ## 2. Configure Prefect Blocks
 
-Use the CLI to create or update the grader configuration block. This stores the
-image reference, runtime limits, and optional environment variables.
+Use the CLI to configure the course. This provisions a Prefect work pool,
+records runner settings, and associates the grader S3 assets block that points
+at the bucket/prefix containing immutable grader tests.
 
 ```bash
-uv run ccc configure-grader <course-slug> \
-  --docker-image ghcr.io/<org>/<course>-grader:latest \
+uv run ccc configure-course <course-slug> \
+  --docker-image jakob1379/canvas-grader:latest \
   --memory-limit 2g \
   --cpu-limit 2.0 \
-  --env PYTHONUNBUFFERED=1
+  --env PYTHONUNBUFFERED=1 \
+  --assets-block course-assets-<course-slug> \
+  --s3-bucket <course-assets-bucket> \
+  --s3-prefix graders/<course-slug>/
 ```
 
-The command saves a Prefect JSON block named `grader-config/<course-slug>` by
-default. You can inspect or edit the block from the Prefect UI as needed.
+This command saves a Prefect JSON block named `course-config-<course-slug>` (by
+default) and creates or reuses a work pool `course-work-pool-<course-slug>`.
 
 ## 3. Register / Update the Prefect Deployment
 
@@ -88,9 +92,9 @@ With the deployment active and a worker online, you can:
 
 - Execute a one-off run targeting a specific submission:
 
-  ```bash
-  uv run ccc run-once <assignment-id> <submission-id>
-  ```
+```bash
+uv run ccc run-once <assignment-id>
+```
 
 - Configure the Canvas webhook to call the Prefect webhook URL for automatic
   runs.
@@ -100,8 +104,9 @@ With the deployment active and a worker online, you can:
 1. Inspect logs in Prefect to ensure the grader command runs successfully.
 2. Review artefacts in the submission workspace (results, points, comments).
 3. Adjust grader tests or container configuration as required.
-4. Rebuild/push the image and re-run `configure-grader` when changes are made to
-   the grader environment.
+4. Rebuild/push the image when the runtime environment changes. To update grader
+   tests, upload new files to the S3 bucket/prefix referenced by the Prefect
+   block; the next flow run will pick up the new assets automatically.
 
 ## Troubleshooting
 
@@ -110,7 +115,7 @@ With the deployment active and a worker online, you can:
 - **Canvas API failures:** verify tokens and course IDs are present in your
   settings (`.env` or Prefect block).
 - **Timeouts / resource issues:** adjust `--memory-limit`, `--cpu-limit`, or
-  `--gpu-enabled` flags when running `configure-grader`.
+  `--gpu-enabled` flags when running `configure-course`.
 - **No runs start:** confirm the work pool name in the deployment matches the
   running worker and that the worker log shows it is connected.
 

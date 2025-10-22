@@ -16,7 +16,9 @@ docs = [
   "mkdocs-mermaid2-plugin>=1.2.3"
 ]
 dev = [
-  "pre-commit>=4.3.0",
+  "ipython>=9.6.0",
+  "poethepoet>=0.37.0",
+  "prek>=0.2.10",
   "ruff>=0.14.1"
 ]
 
@@ -37,7 +39,7 @@ classifiers = [
   "Operating System :: POSIX :: Linux"
 ]
 dependencies = [
-  "prefect>=3.4.24",
+  "prefect[docker]>=3.4.24",
   "httpx>=0.28.1",
   "docker>=7.1.0",
   "pydantic>=2.12.3",
@@ -56,6 +58,11 @@ exclude_dirs = ["tests"]
 name = "cz_conventional_commits"
 tag_format = "v$version"
 version_provider = "pep621"
+
+[tool.poe.tasks]
+docker-publish = {sequence = ["_docker_build", "_docker_push"], help = "Build and push docker image for base runner"}
+_docker_build.cmd = "docker build -t jakob1379/canvas-grader:latest . -f containers/grader/Dockerfile"
+_docker_push.cmd = "docker push jakob1379/canvas-grader:latest"
 
 [tool.pytest.ini_options]
 minversion = "8.3"
