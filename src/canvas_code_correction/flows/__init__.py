@@ -1,9 +1,8 @@
-"""Canvas Code Correction public API surface."""
+"""Prefect flow scaffolding exports."""
 
 from __future__ import annotations
 
-from .clients import CanvasResources, build_canvas_resources
-from .flows import (
+from .correction import (
     CorrectSubmissionPayload,
     FlowArtifacts,
     collect_results,
@@ -16,8 +15,6 @@ from .flows import (
 )
 
 __all__ = [
-    "CanvasResources",
-    "build_canvas_resources",
     "CorrectSubmissionPayload",
     "FlowArtifacts",
     "collect_results",

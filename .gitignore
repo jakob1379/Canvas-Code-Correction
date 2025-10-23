@@ -11,7 +11,6 @@
 similarity*.pdf
 similarity.txt
 src/config.ini
-src/config.ini
 src/moss
 suspicious.txt
 .venv/
@@ -29,7 +28,6 @@ build/
 /.husky/
 /node_modules/
 get-next-version
-
 ###############
 # Emacs files #
 ###############
@@ -46,4 +44,9 @@ __pycache__/
 /server/
 \#*
 /package-lock.json
+
+##########
+# direnv #
+##########
 /.envrc
+.direnv/
