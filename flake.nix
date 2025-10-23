@@ -11,7 +11,7 @@
         devShell = pkgs.mkShell {
           buildInputs = with pkgs; [
             uv
-            versitygw
+            seaweedfs
           ];
 
           LD_LIBRARY_PATH = "${pkgs.lib.makeLibraryPath [
@@ -19,7 +19,7 @@
 
 
           shellHook = ''
-            export SSL_CERT_FILE=$(pkgs.cacert)/etc/ssl/certs/ca-bundle.crt
+            export SSL_CERT_FILE=${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt
             '';
         };
       }
