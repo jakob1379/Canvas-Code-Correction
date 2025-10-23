@@ -191,6 +191,10 @@ dev = [
     { name = "ipython" },
     { name = "poethepoet" },
     { name = "prek" },
+    { name = "pytest" },
+    { name = "pytest-cov" },
+    { name = "pytest-datadir" },
+    { name = "pytest-xdist" },
     { name = "ruff" },
 ]
 docs = [
@@ -198,12 +202,6 @@ docs = [
     { name = "mkdocs-glightbox" },
     { name = "mkdocs-material" },
     { name = "mkdocs-mermaid2-plugin" },
-]
-tests = [
-    { name = "pytest" },
-    { name = "pytest-cov" },
-    { name = "pytest-datadir" },
-    { name = "pytest-xdist" },
 ]
 
 [package.metadata]
@@ -222,6 +220,10 @@ dev = [
     { name = "ipython", specifier = ">=9.6.0" },
     { name = "poethepoet", specifier = ">=0.37.0" },
     { name = "prek", specifier = ">=0.2.10" },
+    { name = "pytest", specifier = ">=8.4.2" },
+    { name = "pytest-cov", specifier = ">=7.0.0" },
+    { name = "pytest-datadir", specifier = ">=1.8.0" },
+    { name = "pytest-xdist", specifier = ">=3.8.0" },
     { name = "ruff", specifier = ">=0.14.1" },
 ]
 docs = [
@@ -229,12 +231,6 @@ docs = [
     { name = "mkdocs-glightbox", specifier = ">=0.5.1" },
     { name = "mkdocs-material", specifier = ">=9.6.22" },
     { name = "mkdocs-mermaid2-plugin", specifier = ">=1.2.3" },
-]
-tests = [
-    { name = "pytest", specifier = ">=8.4.2" },
-    { name = "pytest-cov", specifier = ">=7.0.0" },
-    { name = "pytest-datadir", specifier = ">=1.8.0" },
-    { name = "pytest-xdist", specifier = ">=3.8.0" },
 ]
 
 [[package]]
