@@ -5,22 +5,22 @@
 *.log
 *.pdf
 *_scores.txt
+.coverage
+.pytest_cache/
 .python-version
+.venv/
 /src/.config_array
 /src/tmp/
+build/
+coverage.xml
+dist/
 similarity*.pdf
 similarity.txt
+site/
 src/config.ini
 src/moss
 suspicious.txt
-.venv/
-.pytest_cache/
-.coverage
-coverage.xml
-site/
-dist/
-build/
-
+workspace/
 ##############
 # versioning #
 ##############
@@ -49,4 +49,5 @@ __pycache__/
 # direnv #
 ##########
 /.envrc
+.direnv/
 .direnv/
