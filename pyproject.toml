@@ -5,7 +5,7 @@ build-backend = "uv_build"
 [dependency-groups]
 docs = [
   "mkdocs>=1.6.1",
-  "mkdocs-glightbox>=0.5.1",
+  "mkdocs-glightbox>=0.5.2",
   "mkdocs-material>=9.6.22",
   "mkdocs-mermaid2-plugin>=1.2.3"
 ]
@@ -16,8 +16,8 @@ dev = [
   "pytest-cov>=7.0.0",
   "ipython>=9.6.0",
   "poethepoet>=0.37.0",
-  "prek>=0.2.10",
-  "ruff>=0.14.1"
+  "prek>=0.2.12",
+  "ruff>=0.14.2"
 ]
 
 [project]
@@ -37,13 +37,16 @@ classifiers = [
   "Operating System :: POSIX :: Linux"
 ]
 dependencies = [
-  "prefect[docker]>=3.4.24",
+  "prefect[docker]>=3.4.25",
+  "prefect-aws>=0.6.0",
   "httpx>=0.28.1",
   "docker>=7.1.0",
   "pydantic>=2.12.3",
   "typer>=0.19.2",
-  "python-dotenv>=1.1.1",
-  "canvasapi>=3.3.0"
+  "python-dotenv>=1.2.1",
+  "canvasapi>=3.3.0",
+  "prefect-aws>=0.6.0",
+  "boto3>=1.40.49"
 ]
 
 [project.scripts]
@@ -61,11 +64,17 @@ version_provider = "pep621"
 docker-publish = {sequence = ["_docker_build", "_docker_push"], help = "Build and push docker image for base runner"}
 _docker_build.cmd = "docker build -t jakob1379/canvas-grader:latest . -f containers/grader/Dockerfile"
 _docker_push.cmd = "docker push jakob1379/canvas-grader:latest"
+clean.shell = "uvx pyclean --debris=all --verbose --ignore=.direnv ."
+prefect.shell = 'prefect server start'
+s3.shell = "mkdir -p workspace && weed server -s3 -dir ./workspace -volume.max=5"
 
 [tool.pytest.ini_options]
 minversion = "8.3"
 addopts = "-ra --strict-markers"
 testpaths = ["tests"]
+markers = [
+  "integration: marks tests that exercise live Canvas API"
+]
 filterwarnings = [
   "error::DeprecationWarning"
 ]

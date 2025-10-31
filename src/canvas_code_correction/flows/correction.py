@@ -4,13 +4,17 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
 from prefect import flow, task
 
-if TYPE_CHECKING:  # pragma: no cover - typing helpers only
-    from canvas_code_correction.clients import CanvasResources
-    from canvas_code_correction.config import Settings
+from canvas_code_correction.clients import CanvasResources, build_canvas_resources
+from canvas_code_correction.config import Settings
+from canvas_code_correction.workspace import (
+    WorkspacePaths,
+    build_workspace_config,
+    prepare_workspace,
+)
 
 
 @dataclass(frozen=True)
@@ -28,6 +32,7 @@ class FlowArtifacts:
 
     submission_metadata: dict[str, Any]
     downloaded_files: list[Path]
+    workspace: WorkspacePaths | None
     results: dict[str, Any]
     uploads: dict[str, Any]
 
@@ -41,8 +46,36 @@ def fetch_submission_metadata(
 
     Prefect will handle retries and logging around this task.
     """
+    assignment = resources.course.get_assignment(payload.assignment_id)
+    submission = assignment.get_submission(
+        payload.submission_id,
+        include=[
+            "submission_comments",
+            "submission_history",
+            "full_rubric_assessment",
+            "rubric_assessment",
+        ],
+    )
 
-    raise NotImplementedError
+    return {
+        "assignment": _canvas_object_to_dict(assignment),
+        "submission": _canvas_object_to_dict(submission),
+    }
+
+
+def _canvas_object_to_dict(obj: Any) -> dict[str, Any]:
+    if hasattr(obj, "attributes"):
+        attributes = obj.attributes
+        if isinstance(attributes, dict) and attributes:
+            return attributes
+
+    raw = getattr(obj, "__dict__", {})
+    result: dict[str, Any] = {}
+    for key, value in raw.items():
+        if key.startswith("_"):
+            continue
+        result[key] = value
+    return result
 
 
 @task
@@ -52,8 +85,72 @@ def download_submission_files(
     destination: Path,
 ) -> list[Path]:
     """Download submission attachments into the provided destination."""
+    destination.mkdir(parents=True, exist_ok=True)
 
-    raise NotImplementedError
+    assignment = resources.course.get_assignment(payload.assignment_id)
+    submission = assignment.get_submission(payload.submission_id)
+
+    attachments = getattr(submission, "attachments", None) or []
+    downloaded_files: list[Path] = []
+
+    for attachment in attachments:
+        attachment_id = _extract_attachment_id(attachment)
+        if attachment_id is None:
+            continue
+
+        file_obj = resources.canvas.get_file(attachment_id)
+        filename = _resolve_attachment_name(attachment, file_obj)
+        local_path = destination / filename
+        local_path.parent.mkdir(parents=True, exist_ok=True)
+        file_obj.download(local_path.as_posix())
+        downloaded_files.append(local_path)
+
+    return downloaded_files
+
+
+@task
+def prepare_workspace_task(
+    resources: CanvasResources,
+    payload: CorrectSubmissionPayload,
+    submission_files: list[Path],
+) -> WorkspacePaths:
+    """Materialize a workspace that combines submission files with course assets."""
+
+    config = build_workspace_config(
+        resources.settings,
+        assignment_id=payload.assignment_id,
+        submission_id=payload.submission_id,
+    )
+    return prepare_workspace(config, submission_files)
+
+
+def _extract_attachment_id(attachment: Any) -> int | None:
+    if isinstance(attachment, dict):
+        value = attachment.get("id")
+        return int(value) if value is not None else None
+    return getattr(attachment, "id", None)
+
+
+def _resolve_attachment_name(attachment: Any, file_obj: Any) -> str:
+    candidates = []
+
+    if isinstance(attachment, dict):
+        candidates.extend([attachment.get("filename"), attachment.get("display_name")])
+    else:
+        candidates.extend(
+            [getattr(attachment, "filename", None), getattr(attachment, "display_name", None)]
+        )
+
+    candidates.extend(
+        [getattr(file_obj, "filename", None), getattr(file_obj, "display_name", None)]
+    )
+
+    for candidate in candidates:
+        if isinstance(candidate, str) and candidate:
+            return candidate
+
+    identifier = _extract_attachment_id(attachment) or getattr(file_obj, "id", "attachment")
+    return f"attachment-{identifier}"
 
 
 @task
@@ -101,7 +198,17 @@ def post_grade(
 def correct_submission_flow(
     payload: CorrectSubmissionPayload,
     settings: Settings,
+    *,
+    download_dir: Path | None = None,
 ) -> FlowArtifacts:
     """Prefect flow orchestrating the CCC correction stages."""
+    resources = build_canvas_resources(settings)
+    metadata = fetch_submission_metadata(resources, payload)
+
+    if download_dir is None:
+        raise NotImplementedError("download directory must be provided")
+
+    downloaded = download_submission_files(resources, payload, download_dir)
+    workspace = prepare_workspace_task(resources, payload, downloaded)
 
     raise NotImplementedError
