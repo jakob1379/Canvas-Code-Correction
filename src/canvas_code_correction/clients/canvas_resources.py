@@ -3,13 +3,11 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import TYPE_CHECKING
 
 from canvasapi import Canvas
 from canvasapi.course import Course
 
-if TYPE_CHECKING:  # pragma: no cover - import for type checkers only
-    from canvas_code_correction.config import Settings
+from canvas_code_correction.config import Settings
 
 
 @dataclass(frozen=True)
@@ -36,6 +34,16 @@ def build_canvas_resources(
         Optional preconfigured :class:`~canvasapi.Canvas` instance for testing.
     """
 
-    api_client = canvas or Canvas(settings.canvas.api_url, settings.canvas.token)
+    token = settings.canvas.token.get_secret_value()
+    api_client = canvas or Canvas(str(settings.canvas.api_url), token)
     course = api_client.get_course(settings.canvas.course_id)
     return CanvasResources(canvas=api_client, course=course, settings=settings)
+
+
+def build_canvas_resources_from_course_block(
+    block_name: str,
+    *,
+    canvas: Canvas | None = None,
+) -> CanvasResources:
+    settings = Settings.from_course_block(block_name)
+    return build_canvas_resources(settings, canvas=canvas)
