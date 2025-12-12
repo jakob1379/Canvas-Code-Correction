@@ -1,4 +1,4 @@
-# Deploying Grader Tests to Cartography Canvas Correction (CCC)
+# Deploying Grader Tests to Canvas Code Correction (CCC)
 
 This guide walks through publishing instructor grader tests to CCC so Prefect
 workers can execute them for a course. It assumes you are using the Prefect v2
