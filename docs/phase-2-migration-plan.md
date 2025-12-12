@@ -96,8 +96,8 @@ Event / trigger (manual CLI, webhook, schedule)
      `comments.txt`, zipped feedback, `results.json`) for downstream upload and
      metadata tracking.
 5. **Uploader tasks (Day 4–5)** [ ]
-   - Planned: Feedback and grade uploads will run via Prefect tasks that wrap
-     an `Uploader` helper, skipping duplicate attachments and reusing
+   - Planned: Feedback and grade uploads will run via Prefect tasks that wrap an
+     `Uploader` helper, skipping duplicate attachments and reusing
      `CanvasClient`.
 6. **End-to-end Prefect flow (Day 5–6)** [ ]
    - Partially implemented: `correct_submission_flow` currently handles download
