@@ -140,6 +140,21 @@ Event / trigger (manual CLI, webhook, schedule)
 7. **CI & operational runbooks** – document Prefect worker setup and add CI
    pipelines to execute tests/linters before Phase 3 launch.
 
+## 7. Recent Updates (January 2026)
+
+- **RustFS Integration**: Added configurable RustFS S3-compatible storage support
+  via environment variables (`RUSTFS_ENDPOINT`, `RUSTFS_ACCESS_KEY`, `RUSTFS_SECRET_KEY`,
+  `RUSTFS_BUCKET_NAME`, `RUSTFS_PREFIX`). Updated `setup-rustfs.py` script and
+  documentation.
+- **Comprehensive Test Suite**: Added end-to-end test suite (`tests/e2e/`) with
+  pytest fixtures for docker-compose stack (RustFS, Prefect). Tests verify full
+  pipeline: Canvas download → workspace preparation → Docker execution → result
+  collection → Canvas upload.
+- **CI/CD Pipeline**: Added GitHub Actions workflow for automated testing with
+  RustFS service, unit tests, integration tests, and e2e tests.
+- **Production Configuration**: Updated Prefect S3 block registration to support
+  custom endpoints via `AwsClientParameters`.
+
 ---
 
 This plan keeps scope narrow, focuses on essential parity, and paves the way for

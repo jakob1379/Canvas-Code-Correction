@@ -26,7 +26,7 @@ using Prefect, Docker, and reproducible local workspaces.
    uv sync
    ```
 
-3. Create a `.env` file (copy `.envrc` or request credentials) and provide the
+3. Create a `.env` file (copy `.env.example` or request credentials) and provide the
    following values:
 
    ```dotenv
@@ -35,6 +35,12 @@ using Prefect, Docker, and reproducible local workspaces.
    CANVAS_COURSE_ID=123456
    # optional overrides
    CCC_WORKING_DIR=/absolute/path/to/var/runs
+   # RustFS configuration (for integration tests)
+   # RUSTFS_ENDPOINT=http://localhost:9000
+   # RUSTFS_ACCESS_KEY=rustfsadmin
+   # RUSTFS_SECRET_KEY=rustfsadmin
+   # RUSTFS_BUCKET_NAME=test-assets
+   # RUSTFS_PREFIX=dev
    ```
 
 4. Run project commands through uv to guarantee the environment is active:
@@ -53,6 +59,32 @@ uv run pytest
 uv run ruff check
 ```
 
+#### Integration Tests with RustFS
+
+For end-to-end integration tests, start the local RustFS S3-compatible storage:
+
+```bash
+uv run poe s3
+uv run poe rustfs-setup
+uv run pytest -m integration
+```
+
+#### End-to-End Tests
+
+Comprehensive e2e tests require a running RustFS server and Prefect server. Use docker-compose:
+
+```bash
+docker-compose up -d rustfs postgres redis prefect-server prefect-services
+uv run pytest -m e2e
+```
+
+Configuration via environment variables:
+- `RUSTFS_ENDPOINT`: S3 endpoint URL (default: `http://localhost:9000`)
+- `RUSTFS_ACCESS_KEY`: Access key (default: `rustfsadmin`)
+- `RUSTFS_SECRET_KEY`: Secret key (default: `rustfsadmin`)
+- `RUSTFS_BUCKET_NAME`: Bucket name (default: `test-assets`)
+- `RUSTFS_PREFIX`: Path prefix for assets (default: `dev`)
+
 ## Contributing
 
 We welcome contributions that improve reliability, performance, or ergonomics.
@@ -63,6 +95,7 @@ We welcome contributions that improve reliability, performance, or ergonomics.
 3. Implement changes, matching existing code style and Prefect-oriented patterns
    already in use.
 4. Validate locally (`uv run pytest` and any relevant flows or scripts).
+   For integration tests, ensure RustFS server is running (`uv run poe s3`).
 5. Submit a pull request describing the change, expected impact, and any
    follow-up work.
 

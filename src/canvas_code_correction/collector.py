@@ -10,6 +10,8 @@ from typing import Any
 
 from pydantic import BaseModel
 
+ERRORS_LOG_FILENAME = "errors.log"
+
 
 class GradingResult(BaseModel):
     """Structured result of a grading run ready for upload."""
@@ -38,6 +40,47 @@ class ResultCollector:
     def __init__(self, workspace_root: Path):
         self.workspace_root = workspace_root
 
+    def _find_points_file(self, submission_dir: Path) -> Path:
+        """Find points file in submission directory."""
+        points_files = list(submission_dir.glob("*_points.txt"))
+        if not points_files:
+            points_files = list(submission_dir.glob("points.txt"))
+        if not points_files:
+            raise FileNotFoundError(f"No points file found in {submission_dir}")
+        return points_files[0]
+
+    def _find_comments_file(
+        self, submission_dir: Path, submission_dir_name: str | None
+    ) -> tuple[Path | None, str | None]:
+        """Find comments file and read its content."""
+        comments_file = None
+        comments = None
+        if submission_dir_name:
+            comments_file_candidate = submission_dir / f"{submission_dir_name}.txt"
+            if comments_file_candidate.exists():
+                comments_file = comments_file_candidate
+        else:
+            txt_files = [
+                f
+                for f in submission_dir.glob("*.txt")
+                if not f.name.endswith("_points.txt") and f.name != ERRORS_LOG_FILENAME
+            ]
+            if txt_files:
+                comments_file = txt_files[0]
+        if comments_file and comments_file.exists():
+            comments = comments_file.read_text(encoding="utf-8", errors="replace")
+        return comments_file, comments
+
+    def _find_artifacts_zip(self, submission_dir: Path) -> Path | None:
+        """Find artifacts zip file."""
+        zip_files = list(submission_dir.glob("*.zip"))
+        return zip_files[0] if zip_files else None
+
+    def _find_errors_log(self, submission_dir: Path) -> Path | None:
+        """Find errors log file."""
+        errors_log = submission_dir / ERRORS_LOG_FILENAME
+        return errors_log if errors_log.exists() else None
+
     def collect(self, submission_dir_name: str | None = None) -> CollectionResult:
         """Collect all grader outputs from the workspace."""
         submission_dir = self.workspace_root / "submission"
@@ -52,48 +95,18 @@ class ResultCollector:
         # Find all relevant files
         discovered_files = list(submission_dir.glob("*"))
 
-        # Look for points file
-        points_files = list(submission_dir.glob("*_points.txt"))
-        if not points_files:
-            # Try alternative pattern
-            points_files = list(submission_dir.glob("points.txt"))
-        if not points_files:
-            raise FileNotFoundError(f"No points file found in {submission_dir}")
-
-        points_file = points_files[0]
+        # Find points file and parse points
+        points_file = self._find_points_file(submission_dir)
         points = self._parse_points_file(points_file)
 
-        # Look for comments file
-        comments_file = None
-        comments = None
-        # Try basename.txt pattern first
-        if submission_dir_name:
-            comments_file_candidate = submission_dir / f"{submission_dir_name}.txt"
-            if comments_file_candidate.exists():
-                comments_file = comments_file_candidate
-        else:
-            # Try to find any .txt file that's not points or errors
-            txt_files = [
-                f
-                for f in submission_dir.glob("*.txt")
-                if not f.name.endswith("_points.txt") and f.name != "errors.log"
-            ]
-            if txt_files:
-                comments_file = txt_files[0]
+        # Find comments file and content
+        comments_file, comments = self._find_comments_file(submission_dir, submission_dir_name)
 
-        if comments_file and comments_file.exists():
-            comments = comments_file.read_text(encoding="utf-8", errors="replace")
+        # Find artifacts zip
+        artifacts_zip = self._find_artifacts_zip(submission_dir)
 
-        # Look for artifacts zip
-        artifacts_zip: Path | None = None
-        zip_files = list(submission_dir.glob("*.zip"))
-        if zip_files:
-            artifacts_zip = zip_files[0]
-
-        # Look for errors log
-        errors_log = submission_dir / "errors.log"
-        if not errors_log.exists():
-            errors_log = None
+        # Find errors log
+        errors_log = self._find_errors_log(submission_dir)
 
         # Create grading result
         grading_result = GradingResult(
@@ -177,7 +190,7 @@ class ResultCollector:
 
             # Add errors log if exists and requested
             if include_errors_log and result.errors_log_path and result.errors_log_path.exists():
-                zipf.write(result.errors_log_path, "errors.log")
+                zipf.write(result.errors_log_path, ERRORS_LOG_FILENAME)
 
             # Add metadata as JSON
             metadata = {

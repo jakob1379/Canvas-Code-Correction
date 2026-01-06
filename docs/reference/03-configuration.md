@@ -27,3 +27,20 @@ into `Settings`:
 Configuration files can be supplied via `ccc --config path/to/settings.toml` and
 must follow the same structure as the `Settings` model defined in
 `canvas_code_correction.config`.
+
+### RustFS Integration
+
+For local development and testing with RustFS S3-compatible storage, use the
+following environment variables with the `setup-rustfs.py` script:
+
+| Environment Variable | Default Value           | Description                               |
+| -------------------- | ----------------------- | ----------------------------------------- |
+| `RUSTFS_ENDPOINT`    | `http://localhost:9000` | RustFS S3 endpoint URL                    |
+| `RUSTFS_ACCESS_KEY`  | `rustfsadmin`           | Access key for RustFS                     |
+| `RUSTFS_SECRET_KEY`  | `rustfsadmin`           | Secret key for RustFS                     |
+| `RUSTFS_BUCKET_NAME` | `test-assets`           | Bucket name for test assets               |
+| `RUSTFS_PREFIX`      | `dev`                   | Path prefix for assets within the bucket  |
+
+The main application uses the standard S3 configuration variables (`CCC_ASSETS_S3_ENDPOINT`,
+`CCC_ASSETS_S3_ACCESS_KEY`, etc.) which can point to RustFS or any S3-compatible
+service.

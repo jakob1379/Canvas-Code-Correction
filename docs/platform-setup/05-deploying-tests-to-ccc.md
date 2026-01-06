@@ -1,5 +1,8 @@
 # Deploying Grader Tests to Canvas Code Correction (CCC)
 
+> **Audience**: CCC platform operators  
+> **Prerequisites**: Grader Docker image built, grader tests ready
+
 This guide walks through publishing instructor grader tests to CCC so Prefect
 workers can execute them for a course. It assumes you are using the Prefect v2
 rewrite from this repository.
@@ -15,6 +18,50 @@ rewrite from this repository.
 !!! tip "Export `PREFECT_API_URL`, `PREFECT_API_KEY`, and Canvas credentials"
 
     before running CLI commands, or update your Prefect profile to include them.
+
+## Local Development Setup
+
+For local development and testing, CCC includes a local S3-compatible server using RustFS. To start it:
+
+```bash
+uv run poe s3
+```
+
+This starts a RustFS server on `http://localhost:9000` with credentials `rustfsadmin`/`rustfsadmin`. The server stores data in the `./workspace` directory.
+
+To configure the local S3 server for integration tests:
+
+```bash
+uv run poe rustfs-setup
+```
+
+This script:
+1. Verifies RustFS is running
+2. Creates a `test-assets` bucket
+3. Uploads a test asset file
+4. Registers a Prefect S3 block named `local-rustfs`
+
+After setup, you can use `--assets-block local-rustfs` when configuring courses for local testing.
+
+### Configuration via environment variables
+
+The RustFS setup can be customized using environment variables:
+
+- `RUSTFS_ENDPOINT`: S3 endpoint URL (default: `http://localhost:9000`)
+- `RUSTFS_ACCESS_KEY`: Access key (default: `rustfsadmin`)
+- `RUSTFS_SECRET_KEY`: Secret key (default: `rustfsadmin`)
+- `RUSTFS_BUCKET_NAME`: Bucket name (default: `test-assets`)
+- `RUSTFS_PREFIX`: Path prefix for assets (default: `dev`)
+
+Example for production setup:
+```bash
+export RUSTFS_ENDPOINT="https://rustfs.example.com"
+export RUSTFS_ACCESS_KEY="your-access-key"
+export RUSTFS_SECRET_KEY="your-secret-key"
+export RUSTFS_BUCKET_NAME="course-assets"
+export RUSTFS_PREFIX="graders/cs101"
+uv run poe rustfs-setup
+```
 
 ## 1. Build and Publish the Grader Image
 

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import importlib.metadata
 import json
 import tempfile
 from pathlib import Path
@@ -221,8 +222,11 @@ def list_courses() -> None:
 @app.command()
 def version() -> None:
     """Show version information."""
-    # TODO: Read version from package metadata
-    console.print("Canvas Code Correction v2.0.0a0")
+    try:
+        version = importlib.metadata.version("canvas-code-correction")
+    except importlib.metadata.PackageNotFoundError:
+        version = "v2.0.0a0"
+    console.print(f"Canvas Code Correction {version}")
 
 
 if __name__ == "__main__":
