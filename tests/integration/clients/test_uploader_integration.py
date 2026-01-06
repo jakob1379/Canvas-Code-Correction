@@ -82,10 +82,10 @@ def test_upload_feedback_dry_run_live() -> None:
             zf.writestr("feedback.txt", "Test feedback content")
 
     try:
-        config = UploadConfig(dry_run=True, enable_comments=True)
+        config = UploadConfig(dry_run=True, upload_comments=True)
         result = uploader.upload_feedback(tmp_path, config=config)
         assert result.success is True
-        assert result.dry_run is True
+        assert result.details.get("dry_run") is True
         assert "dry run" in result.message.lower()
         assert result.duplicate is False  # Should not check duplicates in dry_run
     finally:
@@ -99,10 +99,10 @@ def test_upload_grade_dry_run_live() -> None:
 
     uploader = CanvasUploader(submission)
 
-    config = UploadConfig(dry_run=True, enable_grades=True)
+    config = UploadConfig(dry_run=True, upload_grades=True)
     result = uploader.upload_grade("85.5", config=config)
     assert result.success is True
-    assert result.dry_run is True
+    assert result.details.get("dry_run") is True
     assert "dry run" in result.message.lower()
     assert result.duplicate is False
 
@@ -121,7 +121,7 @@ def test_upload_feedback_and_grade_dry_run_live() -> None:
             zf.writestr("feedback.txt", "Test feedback content")
 
     try:
-        config = UploadConfig(dry_run=True, enable_comments=True, enable_grades=True)
+        config = UploadConfig(dry_run=True, upload_comments=True, upload_grades=True)
         feedback_result, grade_result = uploader.upload_feedback_and_grade(
             feedback_file=tmp_path, grade="90.0", config=config
         )
@@ -129,7 +129,7 @@ def test_upload_feedback_and_grade_dry_run_live() -> None:
         assert grade_result is not None
         assert feedback_result.success is True
         assert grade_result.success is True
-        assert feedback_result.dry_run is True
-        assert grade_result.dry_run is True
+        assert feedback_result.details.get("dry_run") is True
+        assert grade_result.details.get("dry_run") is True
     finally:
         tmp_path.unlink(missing_ok=True)

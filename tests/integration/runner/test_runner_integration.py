@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-import os
-import sys
 import tempfile
 from pathlib import Path
 
@@ -19,6 +17,7 @@ def docker_available() -> bool:
     """Check if Docker is available and running."""
     try:
         import docker
+
         client = docker.from_env()
         client.ping()
         return True
@@ -26,24 +25,10 @@ def docker_available() -> bool:
         return False
 
 
-def skip_if_resources_unsupported():
-    """Skip test if Docker Python SDK doesn't support 'resources' parameter."""
-    try:
-        import docker
-        # Try to create a container with resources to see if it fails
-        client = docker.from_env()
-        # This is a lightweight check: we'll just see if the run method accepts resources
-        # by inspecting its signature (not perfect). We'll just let the test run and catch error.
-        pass
-    except Exception:
-        pytest.skip("Docker SDK incompatible")
-
-
 @pytest.mark.integration
 @pytest.mark.skipif(not docker_available(), reason="Docker not available")
 def test_grader_executor_simple_command() -> None:
     """Test executing a simple command in a Docker container."""
-    import docker
 
     # Use a small, widely available image
     config = GraderConfig(
@@ -71,7 +56,6 @@ def test_grader_executor_simple_command() -> None:
 @pytest.mark.skipif(not docker_available(), reason="Docker not available")
 def test_grader_executor_with_mounts() -> None:
     """Test executing a command with mounted directories."""
-    import docker
 
     with tempfile.TemporaryDirectory() as tmpdir:
         submission_dir = Path(tmpdir) / "submission"
@@ -84,15 +68,9 @@ def test_grader_executor_with_mounts() -> None:
 
         mounts = [
             MountPoint(
-                source=submission_dir, 
-                target=Path("/workspace/submission"), 
-                read_only=False
+                source=submission_dir, target=Path("/workspace/submission"), read_only=False
             ),
-            MountPoint(
-                source=assets_dir, 
-                target=Path("/workspace/assets"), 
-                read_only=True
-            ),
+            MountPoint(source=assets_dir, target=Path("/workspace/assets"), read_only=True),
         ]
 
         config = GraderConfig(
@@ -117,13 +95,11 @@ def test_grader_executor_with_mounts() -> None:
 @pytest.mark.skipif(not docker_available(), reason="Docker not available")
 def test_grader_executor_timeout() -> None:
     """Test that timeout kills the container."""
-    import docker
 
     config = GraderConfig(
         docker_image="alpine:latest",
         command=["sleep", "10"],
-        resource_limits=ResourceLimits(),
-        timeout_seconds=1,
+        resource_limits=ResourceLimits(timeout_seconds=1),
     )
     executor = GraderExecutor()
 
@@ -143,7 +119,6 @@ def test_grader_executor_timeout() -> None:
 @pytest.mark.skipif(not docker_available(), reason="Docker not available")
 def test_grader_executor_invalid_image() -> None:
     """Test error handling for invalid Docker image."""
-    import docker
 
     config = GraderConfig(
         docker_image="nonexistent_image:999999",
@@ -168,7 +143,6 @@ def test_grader_executor_invalid_image() -> None:
 @pytest.mark.skipif(not docker_available(), reason="Docker not available")
 def test_execute_in_workspace() -> None:
     """Test the convenience method that sets up mounts automatically."""
-    import docker
 
     with tempfile.TemporaryDirectory() as tmpdir:
         submission_dir = Path(tmpdir) / "submission"

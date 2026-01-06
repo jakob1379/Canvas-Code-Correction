@@ -38,6 +38,7 @@ def _make_resources(course: Mock, settings: Settings) -> CanvasResources:
     return CanvasResources(canvas=Mock(), course=course, settings=settings)
 
 
+@pytest.mark.local
 def test_download_submission_files(tmp_path: Path, settings: Settings) -> None:
     attachment = {"id": 101, "filename": "code.py"}
 
@@ -68,6 +69,7 @@ def test_download_submission_files(tmp_path: Path, settings: Settings) -> None:
     assert result == [expected_path]
 
 
+@pytest.mark.local
 def test_download_submission_files_missing_filename(tmp_path: Path, settings: Settings) -> None:
     attachment = {"id": 202}
 
@@ -96,6 +98,7 @@ def test_download_submission_files_missing_filename(tmp_path: Path, settings: Se
     assert result == [expected_path]
 
 
+@pytest.mark.local
 def test_download_submission_files_no_attachments(tmp_path: Path, settings: Settings) -> None:
     submission = Mock()
     submission.attachments = None

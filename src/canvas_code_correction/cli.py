@@ -11,6 +11,7 @@ import typer
 from rich.console import Console
 from rich.table import Table
 
+from canvas_code_correction.clients import build_canvas_resources
 from canvas_code_correction.config import resolve_settings_from_block
 from canvas_code_correction.flows import CorrectSubmissionPayload, correct_submission_flow
 from canvas_code_correction.prefect_blocks import CourseConfigBlock
@@ -61,24 +62,59 @@ def run_once(
             f"submission {submission_id}[/blue]"
         )
     else:
-        # TODO: Implement batch mode for all submissions
-        console.print("[red]Batch mode (all submissions) not yet implemented[/red]")
-        raise typer.Exit(1)
+        # Batch mode: process all submissions
+        console.print(
+            f"[blue]Batch mode: processing all submissions for assignment {assignment_id}[/blue]"
+        )
+        resources = build_canvas_resources(settings)
+        assignment = resources.course.get_assignment(assignment_id)
+        submissions = assignment.get_submissions()
+        for submission in submissions:
+            sub_id = submission.id
+            console.print(f"[blue]Processing submission {sub_id}[/blue]")
+            payload = CorrectSubmissionPayload(
+                assignment_id=assignment_id,
+                submission_id=sub_id,
+            )
+            try:
+                result = correct_submission_flow(
+                    payload,
+                    settings,
+                    download_dir=download_dir,
+                    dry_run=dry_run,
+                )
+                console.print(f"[green]Submission {sub_id} processed successfully[/green]")
+                # Optional: collect summary
+            except Exception as e:
+                console.print(f"[red]Error processing submission {sub_id}: {e}[/red]")
+                # Continue with next submission
+                continue
+
+        console.print("[green]Batch processing completed![/green]")
+        raise typer.Exit(0)
 
     if dry_run:
         console.print("[yellow]Dry run enabled - no actual grading or upload will occur[/yellow]")
-        # TODO: Implement dry run mode
-        raise typer.Exit(0)
 
     try:
-        result = correct_submission_flow(payload, settings, download_dir=download_dir)
+        result = correct_submission_flow(
+            payload,
+            settings,
+            download_dir=download_dir,
+            dry_run=dry_run,
+        )
         console.print("[green]Correction flow completed successfully![/green]")
-        console.print(json.dumps({
-            "submission_metadata_keys": list(result.submission_metadata.keys()),
-            "downloaded_files_count": len(result.downloaded_files),
-            "workspace": str(result.workspace.root) if result.workspace else None,
-            "results_keys": list(result.results.keys()),
-        }, indent=2))
+        console.print(
+            json.dumps(
+                {
+                    "submission_metadata_keys": list(result.submission_metadata.keys()),
+                    "downloaded_files_count": len(result.downloaded_files),
+                    "workspace": str(result.workspace.root) if result.workspace else None,
+                    "results_keys": list(result.results.keys()),
+                },
+                indent=2,
+            )
+        )
     except Exception as e:
         console.print(f"[red]Error running correction flow: {e}[/red]")
         raise typer.Exit(1) from e

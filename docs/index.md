@@ -17,15 +17,22 @@ documentation tracks the rewrite and the evolving design decisions.
 
 ## Current Status (January 2026)
 
-Phase 2 of the v2 rewrite is now complete. The following key components have been implemented and tested:
+Phase 2 of the v2 rewrite is now complete. The following key components have
+been implemented and tested:
 
-- **GraderExecutor**: Secure Docker-based execution with resource limits and timeout handling
-- **ResultCollector**: Robust parsing of grader outputs and feedback zip creation  
-- **CanvasUploader**: Idempotent feedback and grade uploads with duplicate detection
-- **Prefect Flow Integration**: Complete end-to-end flow with `execute_grader`, `collect_results`, `upload_feedback`, and `post_grade` tasks
-- **Enhanced CLI**: New `ccc` commands for `run-once`, `configure-course`, and `list-courses`
+- **GraderExecutor**: Secure Docker-based execution with resource limits and
+  timeout handling
+- **ResultCollector**: Robust parsing of grader outputs and feedback zip
+  creation
+- **CanvasUploader**: Idempotent feedback and grade uploads with duplicate
+  detection
+- **Prefect Flow Integration**: Complete end-to-end flow with `execute_grader`,
+  `collect_results`, `upload_feedback`, and `post_grade` tasks
+- **Enhanced CLI**: New `ccc` commands for `run-once`, `configure-course`, and
+  `list-courses`
 
-All unit tests pass, and the system is ready for integration testing with the Canvas Cloud development course.
+All unit tests pass, and the system is ready for integration testing with the
+Canvas Cloud development course.
 
 ## Getting Started
 

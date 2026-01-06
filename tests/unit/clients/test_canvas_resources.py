@@ -3,6 +3,7 @@ from __future__ import annotations
 from pathlib import Path
 from unittest.mock import Mock
 
+import pytest
 from pydantic import SecretStr
 
 from canvas_code_correction.clients import canvas_resources
@@ -29,6 +30,7 @@ def _make_settings() -> Settings:
     )
 
 
+@pytest.mark.local
 def test_build_canvas_resources_uses_settings(monkeypatch):
     fake_canvas = Mock()
     fake_course = Mock()
@@ -50,6 +52,7 @@ def test_build_canvas_resources_uses_settings(monkeypatch):
     assert resources.course is fake_course
 
 
+@pytest.mark.local
 def test_settings_from_course_block(monkeypatch):
     block = CourseConfigBlock(
         canvas_api_url="https://block.canvas.test",

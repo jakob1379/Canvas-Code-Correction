@@ -6,19 +6,20 @@ build-backend = "uv_build"
 docs = [
   "mkdocs>=1.6.1",
   "mkdocs-glightbox>=0.5.2",
-  "mkdocs-material>=9.6.22",
+  "mkdocs-material>=9.7.1",
   "mkdocs-mermaid2-plugin>=1.2.3"
 ]
 dev = [
-  "pytest>=8.4.2",
+  "pytest>=9.0.2",
   "pytest-datadir>=1.8.0",
   "pytest-xdist>=3.8.0",
   "pytest-cov>=7.0.0",
-  "ipython>=9.6.0",
-  "poethepoet>=0.37.0",
-  "prek>=0.2.12",
-  "ruff>=0.14.2",
+  "ipython>=9.9.0",
+  "poethepoet>=0.40.0",
+  "prek>=0.2.25",
+  "ruff>=0.14.10",
   "mypy>=1.19.1",
+  "pre-commit>=3.7.0"
 ]
 
 [project]
@@ -38,16 +39,16 @@ classifiers = [
   "Operating System :: POSIX :: Linux"
 ]
 dependencies = [
-  "prefect[docker]>=3.4.25",
-  "prefect-aws>=0.6.0",
+  "prefect[docker]>=3.6.9",
+  "prefect-aws>=0.7.2",
   "httpx>=0.28.1",
   "docker>=7.1.0",
-  "pydantic>=2.12.3",
-  "typer>=0.19.2",
+  "pydantic>=2.12.5",
+  "typer>=0.20.1",
   "python-dotenv>=1.2.1",
-  "canvasapi>=3.3.0",
-  "prefect-aws>=0.6.0",
-  "boto3>=1.40.49"
+  "canvasapi>=3.4.0",
+  "prefect-aws>=0.7.2",
+  "boto3>=1.42.19"
 ]
 
 [project.scripts]
@@ -74,10 +75,12 @@ minversion = "8.3"
 addopts = "-ra --strict-markers"
 testpaths = ["tests"]
 markers = [
-  "integration: marks tests that exercise live Canvas API"
+  "integration: marks tests that exercise live Canvas API",
+  "local: marks tests that can run locally without external dependencies"
 ]
 filterwarnings = [
-  "error::DeprecationWarning"
+  "error::DeprecationWarning",
+  "ignore::DeprecationWarning:coolname"
 ]
 
 [tool.ruff]
