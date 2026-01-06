@@ -6,20 +6,35 @@ repo_url: https://github.com/jakob1379/Canvas-Code-Correction
 repo_name: Canvas-Code-Correction
 extra_css: [stylesheets/custom.css]
 nav:
-  - Overview: index.md
-  - Architecture: architecture.md
-  - Roadmap: roadmap.md
-  - Guides:
-      - Local Prefect Worker: guides/prefect-agent.md
-      - Grader Image: guides/grader-image.md
-      - Authoring Grader Tests: guides/authoring-grader-tests.md
-      - Deploying Tests to CCC: guides/deploying-tests-to-ccc.md
-  - Reference:
+  - Tutorial (for Professors):
+      - Introduction: tutorial/index.md
+      - Prerequisites: tutorial/prerequisites.md
+      - Creating a Grader Image: tutorial/creating-grader-image.md
+      - Writing Grader Tests: tutorial/writing-grader-tests.md
+  - Platform Setup (for Operators):
+      - Configuring a Course: tutorial/configuring-course.md
+      - Setting up Prefect: tutorial/setting-up-prefect.md
+      - Scheduling Corrections: tutorial/scheduling-corrections.md
+      - Monitoring Results: tutorial/monitoring-results.md
+      - Deploying CCC: guides/deploying-tests-to-ccc.md
+      - Prefect Agent: guides/prefect-agent.md
+      - RustFS Storage: guides/rustfs-storage.md
+  - Reference (Framework Docs):
+      - Overview: index.md
+      - Architecture: architecture.md
+      - CLI Reference: reference/cli.md
       - Configuration: reference/configuration.md
       - API Clients: reference/api-clients.md
+      - Grader Image Reference: guides/grader-image.md
+      - Authoring Grader Tests Reference: guides/authoring-grader-tests.md
+  - Current Development:
+      - Roadmap: roadmap.md
+      - Phase 2 Migration Plan: phase-2-migration-plan.md
+      - Contributing: CONTRIBUTING.md
 theme:
   name: material
-  favicon: https://www-media.stanford.edu/assets/favicon/apple-touch-icon-57x57.png
+  favicon: assets/logo.svg
+  logo: assets/logo.svg
   palette:
     - media: '(prefers-color-scheme: light)'
       scheme: default
@@ -53,6 +68,11 @@ theme:
     - search.highlight
     - search.suggest
     - toc.follow
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/jakob1379/Canvas-Code-Correction
+copyright: Copyright &copy; 2026 Canvas Code Correction Maintainers
 markdown_extensions:
   - toc:
       permalink: true
@@ -63,18 +83,12 @@ markdown_extensions:
   - pymdownx.snippets
   - pymdownx.tabbed:
       alternate_style: true
-  - pymdownx.superfences:
-      custom_fences:
-        - name: mermaid
-          class: mermaid
-          format: !!python/name:pymdownx.superfences.fence_code_format
+  - pymdownx.superfences
   - pymdownx.highlight:
       anchor_linenums: true
       line_spans: __span
       pygments_lang_class: true
   - pymdownx.inlinehilite
   - pymdownx.blocks.caption
-  - pymdownx.emoji:
-      emoji_index: !!python/name:material.extensions.emoji.twemoji
-      emoji_generator: !!python/name:material.extensions.emoji.to_svg
+  - pymdownx.emoji
 plugins: [search, mermaid2, glightbox]

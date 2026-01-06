@@ -61,7 +61,7 @@ def build_resources_or_skip():
 @pytest.mark.integration
 def test_uploader_initialization_live() -> None:
     """Test that we can initialize CanvasUploader with a real submission."""
-    resources, submission = build_resources_or_skip()
+    _, submission = build_resources_or_skip()
 
     uploader = CanvasUploader(submission)
     assert uploader.submission is submission
@@ -71,7 +71,7 @@ def test_uploader_initialization_live() -> None:
 @pytest.mark.integration
 def test_upload_feedback_dry_run_live() -> None:
     """Test feedback upload dry-run with real Canvas API (no side effects)."""
-    resources, submission = build_resources_or_skip()
+    _, submission = build_resources_or_skip()
 
     uploader = CanvasUploader(submission)
 
@@ -95,7 +95,7 @@ def test_upload_feedback_dry_run_live() -> None:
 @pytest.mark.integration
 def test_upload_grade_dry_run_live() -> None:
     """Test grade upload dry-run with real Canvas API (no side effects)."""
-    resources, submission = build_resources_or_skip()
+    _, submission = build_resources_or_skip()
 
     uploader = CanvasUploader(submission)
 
@@ -110,7 +110,7 @@ def test_upload_grade_dry_run_live() -> None:
 @pytest.mark.integration
 def test_upload_feedback_and_grade_dry_run_live() -> None:
     """Test combined feedback and grade upload dry-run."""
-    resources, submission = build_resources_or_skip()
+    _, submission = build_resources_or_skip()
 
     uploader = CanvasUploader(submission)
 

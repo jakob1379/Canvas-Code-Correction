@@ -57,10 +57,12 @@ def test_collect_basic(tmp_path: Path) -> None:
     assert result.workspace_root == workspace
 
     grading_result = result.grading_result
-    assert grading_result.points == 18.0  # 10.5 + 5.0 + 2.5
+    assert grading_result.points == pytest.approx(18.0)  # 10.5 + 5.0 + 2.5
     assert grading_result.comments == "Good work!\nNeeds improvement.\n"
     assert grading_result.points_file_content == "10.5\n5.0\n2.5\n"
+    assert grading_result.artifacts_zip_path is not None
     assert grading_result.artifacts_zip_path.name == "artifacts.zip"
+    assert grading_result.errors_log_path is not None
     assert grading_result.errors_log_path.name == "errors.log"
 
     # Check discovered files
@@ -84,7 +86,7 @@ def test_collect_no_submission_dir_name(tmp_path: Path) -> None:
     # Should infer from directory structure
     result = collector.collect()
 
-    assert result.grading_result.points == 18.0
+    assert result.grading_result.points == pytest.approx(18.0)
     # Should still find comments file even without explicit name
     assert result.grading_result.comments is not None
 
@@ -119,7 +121,7 @@ def test_collect_alternative_points_file(tmp_path: Path) -> None:
     collector = ResultCollector(workspace)
     result = collector.collect()
 
-    assert result.grading_result.points == 42.0
+    assert result.grading_result.points == pytest.approx(42.0)
 
 
 @pytest.mark.local

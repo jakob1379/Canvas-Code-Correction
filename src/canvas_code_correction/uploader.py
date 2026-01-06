@@ -40,75 +40,51 @@ class CanvasUploader:
     def __init__(self, submission: Submission):
         self.submission = submission
 
-    def upload_feedback(
-        self,
-        feedback_file: Path,
-        config: UploadConfig | None = None,
-    ) -> UploadResult:
-        """Upload feedback file with MD5 duplicate detection."""
-        config = config or UploadConfig()
-        if not feedback_file.exists():
-            return UploadResult(
-                success=False,
-                message=f"Feedback file not found: {feedback_file}",
-            )
-
-        if config.dry_run:
-            return UploadResult(
-                success=True,
-                message=f"Dry run: would upload {feedback_file}",
-                duplicate=False,
-                comment_posted=False,
-                grade_posted=False,
-                details={"file": str(feedback_file), "dry_run": True},
-            )
-
-        # Calculate MD5 of local file
-        local_md5 = self._calculate_md5(feedback_file)
-
-        # Check existing comments for duplicates
-        if config.check_duplicates:
-            try:
-                # Refresh submission to get latest comments
-                self.submission = self.submission.refresh()
-                comments = getattr(self.submission, "submission_comments", []) or []
-
-                # Check each comment's attachments for matching MD5
-                for comment in comments:
-                    attachments = comment.get("attachments", [])
-                    for attachment in attachments:
-                        if not attachment.get("url"):
+    def _check_feedback_duplicate(
+        self, feedback_file: Path, config: UploadConfig
+    ) -> UploadResult | None:
+        """Check if feedback file already exists as a comment attachment."""
+        try:
+            self.submission = self.submission.refresh()
+            comments = getattr(self.submission, "submission_comments", []) or []
+            local_md5 = self._calculate_md5(feedback_file)
+            for comment in comments:
+                attachments = comment.get("attachments", [])
+                for attachment in attachments:
+                    if not attachment.get("url"):
+                        continue
+                    with tempfile.NamedTemporaryFile(delete=True) as tmp:
+                        try:
+                            self._download_attachment(attachment["url"], Path(tmp.name))
+                            remote_md5 = self._calculate_md5(Path(tmp.name))
+                            if remote_md5 == local_md5:
+                                return UploadResult(
+                                    success=True,
+                                    message="Duplicate feedback detected, skipping upload",
+                                    duplicate=True,
+                                    comment_posted=False,
+                                    grade_posted=False,
+                                    details={
+                                        "local_md5": local_md5,
+                                        "remote_md5": remote_md5,
+                                        "attachment": attachment.get("display_name"),
+                                    },
+                                )
+                        except Exception as e:
+                            if config.verbose:
+                                print(f"Warning checking duplicate: {e}")
                             continue
+        except Exception as e:
+            if config.verbose:
+                print(f"Warning checking duplicates: {e}")
+            # Continue with upload even if duplicate check fails
+        return None
 
-                        # Download attachment to temp file and calculate MD5
-                        with tempfile.NamedTemporaryFile(delete=True) as tmp:
-                            try:
-                                self._download_attachment(attachment["url"], Path(tmp.name))
-                                remote_md5 = self._calculate_md5(Path(tmp.name))
-                                if remote_md5 == local_md5:
-                                    return UploadResult(
-                                        success=True,
-                                        message="Duplicate feedback detected, skipping upload",
-                                        duplicate=True,
-                                        comment_posted=False,
-                                        grade_posted=False,
-                                        details={
-                                            "local_md5": local_md5,
-                                            "remote_md5": remote_md5,
-                                            "attachment": attachment.get("display_name"),
-                                        },
-                                    )
-                            except Exception as e:
-                                if config.verbose:
-                                    print(f"Warning checking duplicate: {e}")
-                                continue
-
-            except Exception as e:
-                if config.verbose:
-                    print(f"Warning checking duplicates: {e}")
-                # Continue with upload even if duplicate check fails
-
-        # Upload the feedback file
+    def _upload_feedback_without_duplicate_check(
+        self, feedback_file: Path, config: UploadConfig
+    ) -> UploadResult:
+        """Upload feedback file assuming no duplicate."""
+        local_md5 = self._calculate_md5(feedback_file)
         try:
             if config.upload_comments:
                 self.submission.upload_comment(str(feedback_file))
@@ -133,7 +109,6 @@ class CanvasUploader:
                     grade_posted=False,
                     details={"file": str(feedback_file), "upload_comments": False},
                 )
-
         except Exception as e:
             return UploadResult(
                 success=False,
@@ -143,6 +118,38 @@ class CanvasUploader:
                 grade_posted=False,
                 details={"error": str(e), "file": str(feedback_file)},
             )
+
+    def upload_feedback(
+        self,
+        feedback_file: Path,
+        config: UploadConfig | None = None,
+    ) -> UploadResult:
+        """Upload feedback file with MD5 duplicate detection."""
+        config = config or UploadConfig()
+        if not feedback_file.exists():
+            return UploadResult(
+                success=False,
+                message=f"Feedback file not found: {feedback_file}",
+            )
+
+        if config.dry_run:
+            return UploadResult(
+                success=True,
+                message=f"Dry run: would upload {feedback_file}",
+                duplicate=False,
+                comment_posted=False,
+                grade_posted=False,
+                details={"file": str(feedback_file), "dry_run": True},
+            )
+
+        # Check for duplicates
+        if config.check_duplicates:
+            duplicate_result = self._check_feedback_duplicate(feedback_file, config)
+            if duplicate_result:
+                return duplicate_result
+
+        # Upload feedback
+        return self._upload_feedback_without_duplicate_check(feedback_file, config)
 
     def upload_grade(
         self,

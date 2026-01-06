@@ -84,6 +84,26 @@ Alternatively, build and apply the provided deployment script under
 `canvas_code_correction/deployments/provision.py` so operators can trigger
 provisioning from Prefect Cloud/UI.
 
+### Local Testing with RustFS
+
+For local development and testing, use the RustFS S3-compatible server:
+
+```bash
+# Start RustFS server
+uv run poe s3
+
+# Setup RustFS for testing
+uv run poe rustfs-setup
+
+# Configure course to use local RustFS block
+uv run ccc configure-course <course-slug> \
+  --docker-image jakob1379/canvas-grader:latest \
+  --assets-block local-rustfs \
+  --s3-prefix dev
+```
+
+See the [Deploying Tests to CCC](../b-platform-setup/05-deploying-tests-to-ccc.md) guide for details.
+
 ## Validating the Setup
 
 Once provisioning completes and the correction deployment is active, trigger a

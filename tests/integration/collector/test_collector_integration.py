@@ -34,7 +34,7 @@ def test_collector_with_real_files() -> None:
         collector = ResultCollector(workspace_root)
         result = collector.collect(submission_dir_name=submission_dir_name)
 
-        assert result.grading_result.points == 25.0
+        assert result.grading_result.points == pytest.approx(25.0)
         assert result.grading_result.comments == "Good work!\n"
         assert result.grading_result.points_file_content == "Total: 25/30\n"
         assert result.grading_result.artifacts_zip_path == artifacts_zip
@@ -57,7 +57,7 @@ def test_collector_with_fraction_points() -> None:
         collector = ResultCollector(workspace_root)
         result = collector.collect(submission_dir_name=submission_dir_name)
 
-        assert result.grading_result.points == 25.5
+        assert result.grading_result.points == pytest.approx(25.5)
 
 
 @pytest.mark.integration
