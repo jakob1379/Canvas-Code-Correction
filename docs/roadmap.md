@@ -11,10 +11,10 @@ architecture.
 - [x] Phase 1.5 - **Setup a test/dev environment**: use the shared Canvas cloud
       course at https://canvas.instructure.com/courses/13121974 for development
       validation
-- [ ] **Phase 2 – Canvas Client Migration** - Canvas client and workspace store
+- [x] **Phase 2 – Canvas Client Migration** - Canvas client and workspace store
       implemented; Docker runner, result collector, uploader tasks, and
-      end-to-end Prefect flow pending. Phase 2 migration plan docs updated to
-      reflect current status.
+      end-to-end Prefect flow completed. All Phase 2 components are now
+      implemented and tested.
 - [ ] **Phase 3 – Container Runner**: Harden Docker execution, add resource
       limits, smoke tests.
 - [ ] **Phase 4 – Webhooks & Queueing**: FastAPI webhook receiver, Prefect

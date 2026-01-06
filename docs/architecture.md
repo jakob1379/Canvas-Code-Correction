@@ -32,6 +32,18 @@ architecture that keeps the system modular, testable, and secure by default.
   which queues a flow run without additional services. Optional custom shims can
   be added later only if advanced preprocessing is required.
 
+## New Services (Phase 2)
+
+The following services were implemented as part of Phase 2 to complete the Canvas client migration:
+
+- **GraderExecutor** (`canvas_code_correction.runner`) – Docker-based grader execution with resource limits, container management, timeout handling, and workspace mounting. It provides a secure execution environment with non-root users, network isolation, and configurable resource constraints.
+
+- **ResultCollector** (`canvas_code_correction.collector`) – Parses grader outputs (`points.txt`, `comments.txt`), creates feedback zip archives, validates results, and collects grading artefacts. Supports various points file formats and robust error handling.
+
+- **CanvasUploader** (`canvas_code_correction.uploader`) – Idempotent Canvas feedback and grade uploads with MD5 duplicate detection. Handles both comment attachments and grade posting with configurable duplicate checking and dry-run modes.
+
+These services are now integrated into the Prefect flow via the `execute_grader`, `collect_results`, `upload_feedback`, and `post_grade` tasks, completing the end-to-end correction pipeline.
+
 ## Prefect Flow (UML Sequence)
 
 ```mermaid

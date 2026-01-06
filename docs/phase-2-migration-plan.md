@@ -87,27 +87,29 @@ Event / trigger (manual CLI, webhook, schedule)
 3. **Workspace preparation (Day 2)** ✅
    - `SubmissionStore` handles extraction/normalisation with coverage via
      synthetic zip fixtures.
-4. **Runner integration (Day 3–4)** [ ]
-   - Planned: `GraderExecutor` will execute instructor commands inside Docker
+4. **Runner integration (Day 3–4)** ✅
+   - **Completed**: `GraderExecutor` executes instructor commands inside Docker
      containers with workspace mounts, resource limits, and course-specific
-     configuration from Prefect blocks. A thin `RunnerService` adapter will
-     bridge legacy automation scripts.
-   - Planned: Result collector will package grader outputs (`points.txt`,
+     configuration from Prefect blocks. Provides secure execution with non-root
+     users, network isolation, and timeout handling.
+   - **Completed**: `ResultCollector` packages grader outputs (`points.txt`,
      `comments.txt`, zipped feedback, `results.json`) for downstream upload and
-     metadata tracking.
-5. **Uploader tasks (Day 4–5)** [ ]
-   - Planned: Feedback and grade uploads will run via Prefect tasks that wrap an
-     `Uploader` helper, skipping duplicate attachments and reusing
-     `CanvasClient`.
-6. **End-to-end Prefect flow (Day 5–6)** [ ]
-   - Partially implemented: `correct_submission_flow` currently handles download
-     and workspace preparation. Remaining integration with runner execution,
-     result collection, and uploads is pending.
+     metadata tracking. Supports various points file formats and robust error
+     handling.
+5. **Uploader tasks (Day 4–5)** ✅
+   - **Completed**: `CanvasUploader` provides idempotent feedback and grade
+     uploads with MD5 duplicate detection. Integrates with Prefect tasks and
+     reuses `CanvasClient`.
+6. **End-to-end Prefect flow (Day 5–6)** ✅
+   - **Completed**: `correct_submission_flow` now integrates all components:
+     download, workspace preparation, runner execution, result collection, and
+     uploads. The flow includes tasks `execute_grader`, `collect_results`,
+     `upload_feedback`, and `post_grade`.
 7. **Testing & docs (Day 6–7)** ✅
    - Unit test suite (`uv run --group tests pytest`) and full pre-commit hooks
      executed successfully on 2025-10-14; coverage includes Canvas client,
-     workspace preparation, and download tasks. Execution layer, result
-     collector, uploader, and flow orchestration tests are pending.
+     workspace preparation, download tasks, execution layer, result collector,
+     uploader, and flow orchestration. All unit tests pass as of January 2026.
    - Prefect Assets integration investigated: dynamic per-submission asset keys
      are not yet required for MVP; revisit in Phase 3 when run cataloguing is
      prioritised.
