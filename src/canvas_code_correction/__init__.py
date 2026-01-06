@@ -7,6 +7,11 @@ from .clients import (
     build_canvas_resources,
     build_canvas_resources_from_course_block,
 )
+from .collector import (
+    CollectionResult,
+    GradingResult,
+    ResultCollector,
+)
 from .config import (
     CanvasSettings,
     CourseAssetsSettings,
@@ -26,6 +31,23 @@ from .flows import (
     upload_feedback,
 )
 from .prefect_blocks import CourseConfigBlock
+from .runner import (
+    ExecutionResult,
+    GraderConfig,
+    GraderExecutor,
+    MountPoint,
+    ResourceLimits,
+    create_default_grader_config,
+)
+from .uploader import (
+    CanvasUploader,
+    UploadConfig,
+    UploadResult,
+    create_uploader_from_resources,
+)
+
+# CLI is available as canvas_code_correction.cli.app
+# Importing it here would cause circular imports due to flow dependencies
 
 __all__ = [
     "CanvasResources",
@@ -46,4 +68,17 @@ __all__ = [
     "fetch_submission_metadata",
     "post_grade",
     "upload_feedback",
+    "ExecutionResult",
+    "GraderConfig",
+    "GraderExecutor",
+    "MountPoint",
+    "ResourceLimits",
+    "create_default_grader_config",
+    "CollectionResult",
+    "GradingResult",
+    "ResultCollector",
+    "CanvasUploader",
+    "UploadConfig",
+    "UploadResult",
+    "create_uploader_from_resources",
 ]

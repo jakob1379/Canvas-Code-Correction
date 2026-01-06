@@ -9,7 +9,10 @@ from typing import Any
 from prefect import flow, task
 
 from canvas_code_correction.clients import CanvasResources, build_canvas_resources
+from canvas_code_correction.collector import ResultCollector
 from canvas_code_correction.config import Settings
+from canvas_code_correction.runner import GraderConfig, GraderExecutor, create_default_grader_config
+from canvas_code_correction.uploader import CanvasUploader, UploadConfig
 from canvas_code_correction.workspace import (
     WorkspacePaths,
     build_workspace_config,
@@ -149,27 +152,70 @@ def _resolve_attachment_name(attachment: Any, file_obj: Any) -> str:
         if isinstance(candidate, str) and candidate:
             return candidate
 
-    identifier = _extract_attachment_id(attachment) or getattr(file_obj, "id", "attachment")
+    identifier = _extract_attachment_id(attachment) or getattr(file_obj, "id", None)
     return f"attachment-{identifier}"
 
 
 @task
 def execute_grader(
-    payload: CorrectSubmissionPayload,
-    working_dir: Path,
+    config: GraderConfig,
+    workspace: WorkspacePaths,
 ) -> dict[str, Any]:
     """Run the grader command inside the prepared workspace."""
-
-    raise NotImplementedError
+    executor = GraderExecutor()
+    result = executor.execute_in_workspace(
+        config=config,
+        submission_dir=workspace.submission_dir,
+        assets_dir=workspace.assets_dir,
+    )
+    
+    return {
+        "exit_code": result.exit_code,
+        "timed_out": result.timed_out,
+        "duration_seconds": result.duration_seconds,
+        "stdout": result.stdout,
+        "stderr": result.stderr,
+        "container_id": result.container_id,
+    }
 
 
 @task
 def collect_results(
-    working_dir: Path,
+    workspace: WorkspacePaths,
+    submission_dir_name: str | None = None,
 ) -> dict[str, Any]:
     """Collect grader-produced artefacts ready for upload."""
-
-    raise NotImplementedError
+    collector = ResultCollector(workspace.root)
+    collection_result = collector.collect(submission_dir_name)
+    
+    # Create feedback zip
+    feedback_zip = collector.create_feedback_zip(
+        collection_result.grading_result,
+        workspace.root / "feedback.zip",
+    )
+    
+    # Validate results
+    issues = collector.validate_result(collection_result.grading_result)
+    
+    return {
+        "points": collection_result.grading_result.points,
+        "comments": collection_result.grading_result.comments,
+        "points_file_content": collection_result.grading_result.points_file_content,
+        "feedback_zip_path": str(feedback_zip),
+        "artifacts_zip_path": (
+            str(collection_result.grading_result.artifacts_zip_path) 
+            if collection_result.grading_result.artifacts_zip_path 
+            else None
+        ),
+        "errors_log_path": (
+            str(collection_result.grading_result.errors_log_path) 
+            if collection_result.grading_result.errors_log_path 
+            else None
+        ),
+        "discovered_files": [str(f) for f in collection_result.discovered_files],
+        "validation_issues": issues,
+        "metadata": collection_result.grading_result.metadata,
+    }
 
 
 @task
@@ -177,10 +223,32 @@ def upload_feedback(
     resources: CanvasResources,
     payload: CorrectSubmissionPayload,
     results: dict[str, Any],
+    config: UploadConfig | None = None,
 ) -> dict[str, Any]:
     """Upload comments or feedback files back to Canvas."""
-
-    raise NotImplementedError
+    config = config or UploadConfig()
+    feedback_zip_path = results.get("feedback_zip_path")
+    if not feedback_zip_path:
+        return {
+            "success": False,
+            "message": "No feedback zip path in results",
+            "upload_result": None,
+        }
+    
+    uploader = CanvasUploader(
+        resources.course.get_assignment(payload.assignment_id)
+            .get_submission(payload.submission_id)
+    )
+    
+    upload_result = uploader.upload_feedback(Path(feedback_zip_path), config)
+    
+    return {
+        "success": upload_result.success,
+        "message": upload_result.message,
+        "duplicate": upload_result.duplicate,
+        "comment_posted": upload_result.comment_posted,
+        "details": upload_result.details,
+    }
 
 
 @task
@@ -188,10 +256,34 @@ def post_grade(
     resources: CanvasResources,
     payload: CorrectSubmissionPayload,
     results: dict[str, Any],
+    config: UploadConfig | None = None,
 ) -> dict[str, Any]:
     """Post the grade associated with the submission."""
-
-    raise NotImplementedError
+    config = config or UploadConfig()
+    points = results.get("points")
+    if points is None:
+        return {
+            "success": False,
+            "message": "No points in results",
+            "grade_result": None,
+        }
+    
+    uploader = CanvasUploader(
+        resources.course.get_assignment(payload.assignment_id)
+            .get_submission(payload.submission_id)
+    )
+    
+    # For now, upload raw points. Could be enhanced to support
+    # complete/incomplete or percentage grading based on course config
+    upload_result = uploader.upload_grade(str(points), config)
+    
+    return {
+        "success": upload_result.success,
+        "message": upload_result.message,
+        "duplicate": upload_result.duplicate,
+        "grade_posted": upload_result.grade_posted,
+        "details": upload_result.details,
+    }
 
 
 @flow
@@ -211,4 +303,46 @@ def correct_submission_flow(
     downloaded = download_submission_files(resources, payload, download_dir)
     workspace = prepare_workspace_task(resources, payload, downloaded)
 
-    raise NotImplementedError
+    # Create grader configuration from settings
+    grader_config = create_default_grader_config(
+        docker_image=settings.grader.docker_image or "jakob1379/canvas-grader:latest",
+        command=["sh", "main.sh"],  # Default command, could be configurable
+        timeout_seconds=300,
+        memory_mb=512,
+    )
+    
+    # Execute grader
+    execution_result = execute_grader(grader_config, workspace)
+    
+    # Collect results
+    results = collect_results(workspace)
+    
+    # Upload feedback
+    upload_config = UploadConfig(
+        check_duplicates=True,
+        upload_comments=True,
+        upload_grades=True,
+        dry_run=False,
+        verbose=False,
+    )
+    feedback_result = upload_feedback(resources, payload, results, upload_config)
+    
+    # Post grade
+    grade_result = post_grade(resources, payload, results, upload_config)
+    
+    # Return aggregated artifacts
+    return FlowArtifacts(
+        submission_metadata=metadata,
+        downloaded_files=downloaded,
+        workspace=workspace,
+        results={
+            "execution": execution_result,
+            "collection": results,
+            "feedback_upload": feedback_result,
+            "grade_upload": grade_result,
+        },
+        uploads={
+            "feedback": feedback_result,
+            "grade": grade_result,
+        },
+    )
