@@ -73,8 +73,11 @@ class ResultCollector:
                 comments_file = comments_file_candidate
         else:
             # Try to find any .txt file that's not points or errors
-            txt_files = [f for f in submission_dir.glob("*.txt") 
-                        if not f.name.endswith("_points.txt") and f.name != "errors.log"]
+            txt_files = [
+                f
+                for f in submission_dir.glob("*.txt")
+                if not f.name.endswith("_points.txt") and f.name != "errors.log"
+            ]
             if txt_files:
                 comments_file = txt_files[0]
 
@@ -129,10 +132,11 @@ class ResultCollector:
             except ValueError:
                 # If it's not a number, try to extract numbers
                 import re
+
                 # Special handling for fraction format like "25.5/30"
-                if '/' in line:
+                if "/" in line:
                     # Try to parse as numerator/denominator
-                    parts = line.split('/')
+                    parts = line.split("/")
                     if parts:
                         # Try to extract first number from first part
                         nums = re.findall(r"[-+]?\d*\.?\d+", parts[0])

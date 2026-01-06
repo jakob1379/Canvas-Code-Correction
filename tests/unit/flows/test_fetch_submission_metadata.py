@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from unittest.mock import Mock
 
+import pytest
+
 from canvas_code_correction.clients.canvas_resources import CanvasResources
 from canvas_code_correction.config import Settings
 from canvas_code_correction.flows.correction import (
@@ -34,6 +36,7 @@ def _make_settings() -> Settings:
     )
 
 
+@pytest.mark.local
 def test_fetch_submission_metadata_returns_serializable_dict(monkeypatch):
     assignment = Mock()
     submission = Mock()

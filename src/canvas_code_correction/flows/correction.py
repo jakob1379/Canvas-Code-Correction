@@ -168,7 +168,7 @@ def execute_grader(
         submission_dir=workspace.submission_dir,
         assets_dir=workspace.assets_dir,
     )
-    
+
     return {
         "exit_code": result.exit_code,
         "timed_out": result.timed_out,
@@ -187,29 +187,29 @@ def collect_results(
     """Collect grader-produced artefacts ready for upload."""
     collector = ResultCollector(workspace.root)
     collection_result = collector.collect(submission_dir_name)
-    
+
     # Create feedback zip
     feedback_zip = collector.create_feedback_zip(
         collection_result.grading_result,
         workspace.root / "feedback.zip",
     )
-    
+
     # Validate results
     issues = collector.validate_result(collection_result.grading_result)
-    
+
     return {
         "points": collection_result.grading_result.points,
         "comments": collection_result.grading_result.comments,
         "points_file_content": collection_result.grading_result.points_file_content,
         "feedback_zip_path": str(feedback_zip),
         "artifacts_zip_path": (
-            str(collection_result.grading_result.artifacts_zip_path) 
-            if collection_result.grading_result.artifacts_zip_path 
+            str(collection_result.grading_result.artifacts_zip_path)
+            if collection_result.grading_result.artifacts_zip_path
             else None
         ),
         "errors_log_path": (
-            str(collection_result.grading_result.errors_log_path) 
-            if collection_result.grading_result.errors_log_path 
+            str(collection_result.grading_result.errors_log_path)
+            if collection_result.grading_result.errors_log_path
             else None
         ),
         "discovered_files": [str(f) for f in collection_result.discovered_files],
@@ -234,14 +234,13 @@ def upload_feedback(
             "message": "No feedback zip path in results",
             "upload_result": None,
         }
-    
+
     uploader = CanvasUploader(
-        resources.course.get_assignment(payload.assignment_id)
-            .get_submission(payload.submission_id)
+        resources.course.get_assignment(payload.assignment_id).get_submission(payload.submission_id)
     )
-    
+
     upload_result = uploader.upload_feedback(Path(feedback_zip_path), config)
-    
+
     return {
         "success": upload_result.success,
         "message": upload_result.message,
@@ -267,16 +266,15 @@ def post_grade(
             "message": "No points in results",
             "grade_result": None,
         }
-    
+
     uploader = CanvasUploader(
-        resources.course.get_assignment(payload.assignment_id)
-            .get_submission(payload.submission_id)
+        resources.course.get_assignment(payload.assignment_id).get_submission(payload.submission_id)
     )
-    
+
     # For now, upload raw points. Could be enhanced to support
     # complete/incomplete or percentage grading based on course config
     upload_result = uploader.upload_grade(str(points), config)
-    
+
     return {
         "success": upload_result.success,
         "message": upload_result.message,
@@ -292,6 +290,7 @@ def correct_submission_flow(
     settings: Settings,
     *,
     download_dir: Path | None = None,
+    dry_run: bool = False,
 ) -> FlowArtifacts:
     """Prefect flow orchestrating the CCC correction stages."""
     resources = build_canvas_resources(settings)
@@ -310,26 +309,26 @@ def correct_submission_flow(
         timeout_seconds=300,
         memory_mb=512,
     )
-    
+
     # Execute grader
     execution_result = execute_grader(grader_config, workspace)
-    
+
     # Collect results
     results = collect_results(workspace)
-    
+
     # Upload feedback
     upload_config = UploadConfig(
         check_duplicates=True,
         upload_comments=True,
         upload_grades=True,
-        dry_run=False,
+        dry_run=dry_run,
         verbose=False,
     )
     feedback_result = upload_feedback(resources, payload, results, upload_config)
-    
+
     # Post grade
     grade_result = post_grade(resources, payload, results, upload_config)
-    
+
     # Return aggregated artifacts
     return FlowArtifacts(
         submission_metadata=metadata,

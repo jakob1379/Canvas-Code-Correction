@@ -2,11 +2,13 @@ from __future__ import annotations
 
 import uuid
 
+import pytest
 from pydantic import SecretStr
 
 from canvas_code_correction.prefect_blocks import CourseConfigBlock
 
 
+@pytest.mark.local
 def test_course_config_block_round_trip() -> None:
     block_name = f"test-course-config-{uuid.uuid4()}"
     block = CourseConfigBlock(

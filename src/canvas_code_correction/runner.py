@@ -7,9 +7,9 @@ import subprocess
 import time
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any
 
 import docker
+import requests
 from docker.models.containers import Container
 from pydantic import BaseModel, Field
 
@@ -82,14 +82,16 @@ class GraderExecutor:
                 )
             )
 
-        # Prepare resource constraints
-        resources: dict[str, Any] = {}
+        # Prepare resource constraints for Docker run
+        run_kwargs = {}
         if config.resource_limits.cpu_shares is not None:
-            resources["cpu_shares"] = config.resource_limits.cpu_shares
+            run_kwargs["cpu_shares"] = config.resource_limits.cpu_shares
         if config.resource_limits.memory_mb is not None:
-            resources["memory"] = config.resource_limits.memory_mb * 1024 * 1024
+            run_kwargs["mem_limit"] = config.resource_limits.memory_mb * 1024 * 1024
         if config.resource_limits.memory_swap_mb is not None:
-            resources["memswap"] = config.resource_limits.memory_swap_mb * 1024 * 1024
+            run_kwargs["memswap_limit"] = config.resource_limits.memory_swap_mb * 1024 * 1024
+        run_kwargs["read_only"] = config.resource_limits.read_only_rootfs
+        run_kwargs["network_disabled"] = config.resource_limits.network_disabled
 
         container: Container | None = None
         try:
@@ -108,9 +110,7 @@ class GraderExecutor:
                 environment=config.environment,
                 user=config.user,
                 mounts=docker_mounts,
-                network_disabled=config.resource_limits.network_disabled,
-                read_only=config.resource_limits.read_only_rootfs,
-                resources=resources,
+                **run_kwargs,
                 detach=True,
                 stdout=True,
                 stderr=True,
@@ -121,8 +121,12 @@ class GraderExecutor:
                 result = container.wait(timeout=config.resource_limits.timeout_seconds)
                 exit_code = result["StatusCode"]
                 timed_out = False
-            except subprocess.TimeoutExpired:
-                container.stop(timeout=10)
+            except (
+                requests.exceptions.Timeout,
+                requests.exceptions.ConnectionError,
+                subprocess.TimeoutExpired,
+            ):
+                container.stop(timeout=2)
                 exit_code = 124  # Standard timeout exit code
                 timed_out = True
 
@@ -166,15 +170,9 @@ class GraderExecutor:
         """Convenience method to execute grader in a prepared workspace."""
         mounts = [
             MountPoint(
-                source=submission_dir, 
-                target=Path("/workspace/submission"), 
-                read_only=False
+                source=submission_dir, target=Path("/workspace/submission"), read_only=False
             ),
-            MountPoint(
-                source=assets_dir, 
-                target=Path("/workspace/assets"), 
-                read_only=True
-            ),
+            MountPoint(source=assets_dir, target=Path("/workspace/assets"), read_only=True),
         ]
         return self.execute(config, mounts)
 

@@ -130,3 +130,17 @@ repos:
         language: python
         files: (^|.*/)(uv\.lock|requirements\.txt)$
         exclude: ^legacy/scripts/
+
+  # Run local unit tests
+  - repo: local
+    hooks:
+      - id: pytest-local
+        name: Run local unit tests
+        description: Run unit tests that don't require external dependencies
+        entry: bash -c "PYTHONWARNINGS=ignore uv run pytest -m local --tb=short -p
+          no:warnings"
+        language: system
+        types: [python]
+        pass_filenames: false
+        always_run: true
+        exclude: ^legacy/scripts/

@@ -5,6 +5,8 @@ from __future__ import annotations
 from pathlib import Path
 from unittest.mock import Mock, patch
 
+import pytest
+
 from canvas_code_correction.runner import (
     GraderConfig,
     GraderExecutor,
@@ -14,6 +16,7 @@ from canvas_code_correction.runner import (
 )
 
 
+@pytest.mark.local
 def test_create_default_grader_config() -> None:
     """Test creation of default grader configuration."""
     config = create_default_grader_config(
@@ -22,7 +25,7 @@ def test_create_default_grader_config() -> None:
         timeout_seconds=600,
         memory_mb=1024,
     )
-    
+
     assert config.docker_image == "test/image:latest"
     assert config.command == ["sh", "custom.sh"]
     assert config.resource_limits.timeout_seconds == 600
@@ -31,6 +34,7 @@ def test_create_default_grader_config() -> None:
     assert config.resource_limits.read_only_rootfs is True
 
 
+@pytest.mark.local
 def test_grader_config_defaults() -> None:
     """Test GraderConfig default values."""
     config = GraderConfig(docker_image="test/image:latest")
@@ -40,6 +44,7 @@ def test_grader_config_defaults() -> None:
     assert config.user is None
 
 
+@pytest.mark.local
 def test_resource_limits_defaults() -> None:
     """Test ResourceLimits default values."""
     limits = ResourceLimits()
@@ -51,14 +56,15 @@ def test_resource_limits_defaults() -> None:
 
 
 @patch("canvas_code_correction.runner.docker")
+@pytest.mark.local
 def test_grader_executor_initialization(mock_docker) -> None:
     """Test GraderExecutor initialization."""
     mock_client = Mock()
     mock_docker.from_env.return_value = mock_client
-    
+
     executor = GraderExecutor()
     assert executor.client is mock_client
-    
+
     # Test with provided client
     custom_client = Mock()
     executor2 = GraderExecutor(custom_client)
@@ -66,13 +72,14 @@ def test_grader_executor_initialization(mock_docker) -> None:
 
 
 @patch("canvas_code_correction.runner.docker")
+@pytest.mark.local
 def test_execute_with_mocks(mock_docker) -> None:
     """Test execute method with mocked Docker client."""
     # Setup mocks
     mock_client = Mock()
     mock_container = Mock()
     mock_image = Mock()
-    
+
     mock_docker.from_env.return_value = mock_client
     mock_client.images.get.return_value = mock_image
     mock_client.containers.run.return_value = mock_container
@@ -82,7 +89,7 @@ def test_execute_with_mocks(mock_docker) -> None:
         b"stderr output",
     ]
     mock_container.id = "test-container-id"
-    
+
     # Create executor and config
     executor = GraderExecutor()
     config = GraderConfig(
@@ -90,30 +97,32 @@ def test_execute_with_mocks(mock_docker) -> None:
         command=["sh", "test.sh"],
         resource_limits=ResourceLimits(timeout_seconds=30),
     )
-    
+
     mounts = [
         MountPoint(source=Path("/tmp/src"), target=Path("/workspace/src"), read_only=True),
         MountPoint(source=Path("/tmp/data"), target=Path("/workspace/data"), read_only=False),
     ]
-    
+
     # Execute
     result = executor.execute(config, mounts)
-    
+
     # Verify Docker calls
     mock_client.images.get.assert_called_once_with("test/image:latest")
     mock_client.containers.run.assert_called_once()
     call_kwargs = mock_client.containers.run.call_args.kwargs
-    
+
     assert call_kwargs["image"] == "test/image:latest"
     assert call_kwargs["command"] == ["sh", "test.sh"]
     assert call_kwargs["working_dir"] == "/workspace/submission"
     assert call_kwargs["network_disabled"] is True
-    assert call_kwargs["read_only"] is True
     assert call_kwargs["detach"] is True
-    
+
+    # Verify resource constraints
+    assert call_kwargs["read_only"] is True
+
     # Verify container cleanup
     mock_container.remove.assert_called_once_with(force=True)
-    
+
     # Verify result
     assert result.exit_code == 0
     assert result.stdout == "stdout output"
@@ -123,23 +132,24 @@ def test_execute_with_mocks(mock_docker) -> None:
 
 
 @patch("canvas_code_correction.runner.docker")
+@pytest.mark.local
 def test_execute_timeout(mock_docker) -> None:
     """Test execute method with timeout."""
     import subprocess
-    
+
     # Create a real exception class for DockerException
     class MockDockerException(Exception):
         pass
-    
+
     # Setup mock hierarchy
     mock_errors = Mock()
     mock_errors.DockerException = MockDockerException
     mock_errors.ImageNotFound = MockDockerException
     mock_docker.errors = mock_errors
-    
+
     mock_client = Mock()
     mock_container = Mock()
-    
+
     mock_docker.from_env.return_value = mock_client
     mock_client.images.get.return_value = Mock()
     mock_client.containers.run.return_value = mock_container
@@ -149,18 +159,18 @@ def test_execute_timeout(mock_docker) -> None:
         b"stdout output",
         b"stderr output",
     ]
-    
+
     executor = GraderExecutor()
     config = GraderConfig(
         docker_image="test/image:latest",
         resource_limits=ResourceLimits(timeout_seconds=30),
     )
-    
+
     result = executor.execute(config, [])
-    
+
     # Verify container was stopped
-    mock_container.stop.assert_called_once_with(timeout=10)
-    
+    mock_container.stop.assert_called_once_with(timeout=2)
+
     # Verify timeout result
     assert result.timed_out is True
     assert result.exit_code == 124  # Standard timeout exit code
@@ -169,30 +179,32 @@ def test_execute_timeout(mock_docker) -> None:
 
 
 @patch("canvas_code_correction.runner.docker")
+@pytest.mark.local
 def test_execute_docker_error(mock_docker) -> None:
     """Test execute method handling Docker errors."""
+
     # Create a real exception class for DockerException
     class MockDockerException(Exception):
         pass
-    
+
     # Setup mock hierarchy
     mock_errors = Mock()
     mock_errors.DockerException = MockDockerException
     mock_errors.ImageNotFound = MockDockerException
     mock_docker.errors = mock_errors
-    
+
     mock_client = Mock()
     mock_docker.from_env.return_value = mock_client
-    
+
     # Simulate: image not found, then pull fails with DockerException
     mock_client.images.get.side_effect = mock_errors.ImageNotFound("Image not found")
     mock_client.images.pull.side_effect = MockDockerException("Pull failed")
-    
+
     executor = GraderExecutor()
     config = GraderConfig(docker_image="test/image:latest")
-    
+
     result = executor.execute(config, [])
-    
+
     assert result.exit_code == 1
     assert "Docker error" in result.stderr
     assert "Pull failed" in result.stderr
@@ -200,21 +212,23 @@ def test_execute_docker_error(mock_docker) -> None:
 
 
 @patch("canvas_code_correction.runner.docker")
+@pytest.mark.local
 def test_execute_in_workspace(mock_docker) -> None:
     """Test execute_in_workspace convenience method."""
+
     # Create a real exception class for DockerException
     class MockDockerException(Exception):
         pass
-    
+
     # Setup mock hierarchy
     mock_errors = Mock()
     mock_errors.DockerException = MockDockerException
     mock_errors.ImageNotFound = MockDockerException
     mock_docker.errors = mock_errors
-    
+
     mock_client = Mock()
     mock_container = Mock()
-    
+
     mock_docker.from_env.return_value = mock_client
     mock_client.images.get.return_value = Mock()
     mock_client.containers.run.return_value = mock_container
@@ -224,23 +238,23 @@ def test_execute_in_workspace(mock_docker) -> None:
         b"stderr output",
     ]
     mock_container.id = "test-container"
-    
+
     executor = GraderExecutor()
     config = GraderConfig(docker_image="test/image:latest")
     submission_dir = Path("/tmp/submission")
     assets_dir = Path("/tmp/assets")
-    
+
     # Create the directories so they exist for mounting
     submission_dir.mkdir(parents=True, exist_ok=True)
     assets_dir.mkdir(parents=True, exist_ok=True)
-    
+
     result = executor.execute_in_workspace(config, submission_dir, assets_dir)
-    
+
     # Verify execute was called (implicitly by execute_in_workspace)
     # Check that docker.types.Mount was called correctly
     mount_calls = mock_docker.types.Mount.call_args_list
     assert len(mount_calls) == 2
-    
+
     # Check submission mount (read/write) - called with keyword arguments
     first_call = mount_calls[0]
     first_kwargs = first_call[1]
@@ -248,7 +262,7 @@ def test_execute_in_workspace(mock_docker) -> None:
     assert first_kwargs["target"] == "/workspace/submission"
     assert first_kwargs["type"] == "bind"
     assert first_kwargs["read_only"] is False
-    
+
     # Check assets mount (read-only)
     second_call = mount_calls[1]
     second_kwargs = second_call[1]
@@ -256,17 +270,18 @@ def test_execute_in_workspace(mock_docker) -> None:
     assert second_kwargs["target"] == "/workspace/assets"
     assert second_kwargs["type"] == "bind"
     assert second_kwargs["read_only"] is True
-    
+
     # Check that containers.run was called with correct mounts
     mock_client.containers.run.assert_called_once()
     call_kwargs = mock_client.containers.run.call_args.kwargs
     mounts = call_kwargs.get("mounts", [])
     assert len(mounts) == 2
-    
+
     assert result.exit_code == 0
-    
+
     # Clean up test directories
     import shutil
+
     if submission_dir.exists():
         shutil.rmtree(submission_dir)
     if assets_dir.exists():
