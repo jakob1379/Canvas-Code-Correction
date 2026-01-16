@@ -4,12 +4,15 @@ from __future__ import annotations
 
 import shutil
 from dataclasses import dataclass
-from pathlib import Path
+from typing import TYPE_CHECKING
 from uuid import uuid4
 
 from prefect_aws.s3 import S3Bucket
 
-from canvas_code_correction.config import Settings
+if TYPE_CHECKING:
+    from pathlib import Path
+
+    from canvas_code_correction.config import Settings
 
 
 @dataclass(frozen=True)
@@ -23,6 +26,8 @@ class WorkspacePaths:
 
 @dataclass(frozen=True)
 class WorkspaceConfig:
+    """Configuration for a grading workspace."""
+
     workspace_root: Path
     bucket_block: str
     path_prefix: str
@@ -67,7 +72,8 @@ def prepare_workspace(
     elif hasattr(bucket, "get_directory"):
         bucket.get_directory(local_path=str(assets_dir), **download_kwargs)
     else:  # pragma: no cover - defensive fallback
-        raise AttributeError("S3Bucket block missing download method")
+        msg = "S3Bucket block missing download method"
+        raise AttributeError(msg)
 
     return WorkspacePaths(
         root=workspace_root,

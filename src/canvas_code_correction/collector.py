@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import re
 import zipfile
 from dataclasses import dataclass
 from pathlib import Path
@@ -37,7 +38,10 @@ class CollectionResult:
 class ResultCollector:
     """Collects grader outputs and prepares them for upload."""
 
+    _MAX_POINTS = 1000  # Arbitrary high limit for validation
+
     def __init__(self, workspace_root: Path) -> None:
+        """Initialize collector with workspace root directory."""
         self.workspace_root = workspace_root
 
     def _find_points_file(self, submission_dir: Path) -> Path:
@@ -46,7 +50,8 @@ class ResultCollector:
         if not points_files:
             points_files = list(submission_dir.glob("points.txt"))
         if not points_files:
-            raise FileNotFoundError(f"No points file found in {submission_dir}")
+            msg = f"No points file found in {submission_dir}"
+            raise FileNotFoundError(msg)
         return points_files[0]
 
     def _find_comments_file(
@@ -93,8 +98,9 @@ class ResultCollector:
         """Collect all grader outputs from the workspace."""
         submission_dir = self.workspace_root / "submission"
         if not submission_dir.exists():
+            msg = f"Submission directory not found: {submission_dir}"
             raise ValueError(
-                f"Submission directory not found: {submission_dir}",
+                msg,
             )
 
         # Determine the base name for files (currently unused, reserved for future naming)
@@ -148,7 +154,7 @@ class ResultCollector:
             workspace_root=self.workspace_root,
         )
 
-    def _parse_points_file(self, points_file: Path) -> float:
+    def _parse_points_file(self, points_file: Path) -> float:  # noqa: C901
         """Parse points file, summing all numbers if multiple lines."""
         content = points_file.read_text(
             encoding="utf-8",
@@ -160,19 +166,18 @@ class ResultCollector:
         lines = content.splitlines()
         total = 0.0
         for line in lines:
-            line = line.strip()
-            if not line:
+            cleaned_line = line.strip()
+            if not cleaned_line:
                 continue
             try:
-                total += float(line)
+                total += float(cleaned_line)
             except ValueError:
                 # If it's not a number, try to extract numbers
-                import re
 
                 # Special handling for fraction format like "25.5/30"
-                if "/" in line:
+                if "/" in cleaned_line:
                     # Try to parse as numerator/denominator
-                    parts = line.split("/")
+                    parts = cleaned_line.split("/")
                     if parts:
                         # Try to extract first number from first part
                         nums = re.findall(r"[-+]?\d*\.?\d+", parts[0])
@@ -183,7 +188,7 @@ class ResultCollector:
                             except ValueError:
                                 pass
                 # General case: find all numbers and sum them
-                numbers = re.findall(r"[-+]?\d*\.?\d+", line)
+                numbers = re.findall(r"[-+]?\d*\.?\d+", cleaned_line)
                 for num in numbers:
                     try:
                         total += float(num)
@@ -196,7 +201,7 @@ class ResultCollector:
         self,
         result: GradingResult,
         output_path: Path | None = None,
-        include_errors_log: bool = True,
+        include_errors_log: bool = True,  # noqa: FBT001, FBT002
     ) -> Path:
         """Create a zip file with feedback for upload."""
         if output_path is None:
@@ -234,7 +239,7 @@ class ResultCollector:
         if result.points < 0:
             issues.append(f"Negative points value: {result.points}")
 
-        if result.points > 1000:  # Arbitrary high limit
+        if result.points > self._MAX_POINTS:
             issues.append(f"Unusually high points value: {result.points}")
 
         if result.artifacts_zip_path and not result.artifacts_zip_path.exists():

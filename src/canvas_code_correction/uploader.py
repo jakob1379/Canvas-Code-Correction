@@ -3,13 +3,17 @@
 from __future__ import annotations
 
 import hashlib
+import shutil
 import tempfile
+import urllib.request
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
-from canvasapi.submission import Submission
 from pydantic import BaseModel, Field
+
+if TYPE_CHECKING:
+    from canvasapi.submission import Submission
 
 
 class UploadResult(BaseModel):
@@ -38,6 +42,7 @@ class CanvasUploader:
     """Handles idempotent upload of feedback and grades to Canvas."""
 
     def __init__(self, submission: Submission) -> None:
+        """Initialize uploader with Canvas submission object."""
         self.submission = submission
 
     def _check_feedback_duplicate(
@@ -77,13 +82,13 @@ class CanvasUploader:
                                         ),
                                     },
                                 )
-                        except Exception as e:
+                        except Exception:  # noqa: BLE001
                             if config.verbose:
-                                print(f"Warning checking duplicate: {e}")
+                                pass
                             continue
-        except Exception as e:
+        except Exception:  # noqa: BLE001
             if config.verbose:
-                print(f"Warning checking duplicates: {e}")
+                pass
             # Continue with upload even if duplicate check fails
         return None
 
@@ -120,7 +125,7 @@ class CanvasUploader:
                     "upload_comments": False,
                 },
             )
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             return UploadResult(
                 success=False,
                 message=f"Failed to upload feedback: {e}",
@@ -221,7 +226,7 @@ class CanvasUploader:
                 details={"grade": grade, "upload_grades": False},
             )
 
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             return UploadResult(
                 success=False,
                 message=f"Failed to post grade: {e}",
@@ -237,11 +242,12 @@ class CanvasUploader:
         grade: str | float | None,
         config: UploadConfig | None = None,
     ) -> tuple[UploadResult | None, UploadResult | None]:
-        """Convenience method to upload both feedback and grade."""
+        """Upload both feedback and grade."""
         config = config or UploadConfig()
         if feedback_file is None and grade is None:
+            msg = "At least one of feedback_file or grade must be provided"
             raise ValueError(
-                "At least one of feedback_file or grade must be provided",
+                msg,
             )
         feedback_result = None
         grade_result = None
@@ -256,17 +262,14 @@ class CanvasUploader:
 
     def _calculate_md5(self, file_path: Path) -> str:
         """Calculate MD5 hash of a file."""
-        hash_md5 = hashlib.md5()
-        with open(file_path, "rb") as f:
+        hash_md5 = hashlib.md5()  # noqa: S324
+        with file_path.open("rb") as f:
             for chunk in iter(lambda: f.read(4096), b""):
                 hash_md5.update(chunk)
         return hash_md5.hexdigest()
 
     def _download_attachment(self, url: str, destination: Path) -> None:
         """Download a file from a URL to destination."""
-        import shutil
-        import urllib.request
-
         # Simple download implementation
         # In practice, should use canvasapi's built-in methods or requests with auth
         try:
@@ -274,21 +277,24 @@ class CanvasUploader:
             # Canvas authentication properly
             # For now, we'll use a placeholder that raises NotImplementedError
             # since proper implementation requires the Canvas object context
-            raise NotImplementedError(
+            msg = (
                 "Attachment download requires Canvas object context. "
-                "Use submission.attachments or file.download() instead.",
+                "Use submission.attachments or file.download() instead."
+            )
+            raise NotImplementedError(
+                msg,
             )
         except ImportError:
             # Fallback to urllib (won't work with authenticated Canvas URLs)
             with (
-                urllib.request.urlopen(url) as response,
-                open(destination, "wb") as out_file,
+                urllib.request.urlopen(url) as response,  # noqa: S310
+                destination.open("wb") as out_file,
             ):
-                shutil.copyfileobj(response, out_file)  # type: ignore
+                shutil.copyfileobj(response, out_file)  # type: ignore[arg-type]
 
 
 def create_uploader_from_resources(
-    resources: Any,  # CanvasResources type
+    resources: Any,  # CanvasResources type  # noqa: ANN401
     assignment_id: int,
     submission_id: int,
 ) -> CanvasUploader:

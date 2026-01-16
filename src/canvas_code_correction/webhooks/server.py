@@ -37,7 +37,7 @@ def get_settings(course_block: str) -> Settings:
     try:
         return resolve_settings_from_block(course_block)
     except Exception as e:
-        logger.error("Failed to load course block %s: %s", course_block, e)
+        logger.exception("Failed to load course block %s", course_block)
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Course block '{course_block}' not found or invalid",
@@ -56,7 +56,7 @@ def rate_limit_check(course_block: str, limit_str: str = "10/minute") -> None:
 
 async def validate_webhook(
     request: Request,
-    course_block: str,
+    _course_block: str,
     settings: Settings,
 ) -> CanvasWebhookPayload:
     """Validate webhook signature and parse payload."""
@@ -119,7 +119,7 @@ async def trigger_correction_flow(
 @app.get("/health")
 async def health() -> dict[str, str]:
     """Health check endpoint."""
-    return {"status": "healthy", "timestamp": datetime.now().isoformat()}
+    return {"status": "healthy", "timestamp": datetime.now().isoformat()}  # noqa: DTZ005
 
 
 @app.post("/webhooks/canvas/{course_block}")
@@ -160,7 +160,10 @@ async def handle_canvas_webhook(
     except ValueError:
         return WebhookResponse(
             success=False,
-            message=f"Invalid ID format: assignment={submission_event.assignment_id}, submission={submission_event.submission_id}",
+            message=(
+                f"Invalid ID format: assignment={submission_event.assignment_id}, "
+                f"submission={submission_event.submission_id}"
+            ),
             course_block=course_block,
         )
 

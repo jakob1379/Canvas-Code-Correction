@@ -1,14 +1,16 @@
-"""Proper deployment management for webhook-triggered flows using Prefect 3.x deployment patterns."""
+"""Proper deployment management for webhook-triggered flows using Prefect 3.x."""
 
 from __future__ import annotations
 
 import logging
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from prefect.deployments.flow_runs import run_deployment
 
-from canvas_code_correction.config import Settings
 from canvas_code_correction.webhooks.flows import webhook_correction_flow
+
+if TYPE_CHECKING:
+    from canvas_code_correction.config import Settings
 
 logger = logging.getLogger(__name__)
 
@@ -18,7 +20,7 @@ def get_deployment_name(settings: Settings, course_block: str) -> str:
     if settings.webhook.deployment_name:
         return settings.webhook.deployment_name
 
-    # Default: ccc-{slug}-deployment
+    # Default: ccc-{slug}-deployment  # noqa: ERA001
     # Remove "ccc-course-" prefix if present
     slug = course_block
     if course_block.startswith("ccc-course-"):
@@ -45,7 +47,7 @@ async def ensure_deployment(
     # Deploy the flow
     # flow.deploy() will create or update the deployment
     try:
-        deployment_id = await webhook_correction_flow.deploy(
+        deployment_id = webhook_correction_flow.deploy(  # type: ignore[attr-defined]
             name=deployment_name,
             work_pool_name=work_pool_name,
             parameters={
@@ -67,13 +69,11 @@ async def ensure_deployment(
             work_pool_name,
         )
 
-    except Exception as e:
-        logger.error(
-            "Failed to create deployment %s for course %s: %s",
+    except Exception:
+        logger.exception(
+            "Failed to create deployment %s for course %s",
             deployment_name,
             course_block,
-            e,
-            exc_info=True,
         )
         # If deployment fails, we can still try to run it (might already exist)
         # Don't re-raise, as the deployment might already exist
@@ -96,8 +96,8 @@ async def trigger_deployment(
         deployment_name = await ensure_deployment(course_block, settings)
 
         # Run deployment
-        flow_run = await run_deployment(
-            deployment_name=deployment_name,
+        flow_run = run_deployment(  # type: ignore[attr-defined]
+            name=deployment_name,
             parameters={
                 "assignment_id": assignment_id,
                 "submission_id": submission_id,
@@ -112,24 +112,22 @@ async def trigger_deployment(
             deployment_name,
             assignment_id,
             submission_id,
-            flow_run.id,
+            flow_run.id,  # type: ignore[attr-defined]
         )
 
-        return str(flow_run.id)
+        return str(flow_run.id)  # type: ignore[attr-defined]
 
-    except Exception as e:
-        logger.error(
-            "Failed to trigger deployment for %s (assignment %s, submission %s): %s",
+    except Exception:
+        logger.exception(
+            "Failed to trigger deployment for %s (assignment %s, submission %s)",
             course_block,
             assignment_id,
             submission_id,
-            e,
-            exc_info=True,
         )
         return None
 
 
 # Legacy alias for backward compatibility
-async def trigger_flow(*args: Any, **kwargs: Any) -> str | None:
+async def trigger_flow(*args: Any, **kwargs: Any) -> str | None:  # noqa: ANN401
     """Legacy alias for trigger_deployment."""
     return await trigger_deployment(*args, **kwargs)

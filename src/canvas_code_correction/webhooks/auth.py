@@ -2,11 +2,15 @@
 
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
 import jwt
 from jwt.exceptions import InvalidTokenError
-from pydantic import SecretStr
 
-from canvas_code_correction.config import Settings
+if TYPE_CHECKING:
+    from pydantic import SecretStr
+
+    from canvas_code_correction.config import Settings
 
 
 def validate_jwt_token(token: str, secret: SecretStr | None) -> bool:
@@ -25,14 +29,14 @@ def validate_jwt_token(token: str, secret: SecretStr | None) -> bool:
             algorithms=["HS256"],
             options={"verify_exp": False},  # Canvas JWTs may not have expiry
         )
-        return True
+        return True  # noqa: TRY300
     except InvalidTokenError:
         return False
 
 
 def validate_canvas_signature(
     settings: Settings,
-    payload_body: bytes,
+    _payload_body: bytes,
     signature_header: str | None,
 ) -> bool:
     """Validate Canvas webhook signature using JWT or Canvas API verification.

@@ -7,13 +7,16 @@ import subprocess
 import time
 from dataclasses import dataclass
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 import docker
 import requests
 from docker.errors import DockerException, ImageNotFound
-from docker.models.containers import Container
 from docker.types import Mount
 from pydantic import BaseModel, Field
+
+if TYPE_CHECKING:
+    from docker.models.containers import Container
 
 
 class ExecutionResult(BaseModel):
@@ -65,6 +68,7 @@ class GraderExecutor:
         self,
         docker_client: docker.DockerClient | None = None,
     ) -> None:
+        """Initialize executor with optional Docker client."""
         self.client = docker_client or docker.from_env()
 
     def execute(
@@ -76,16 +80,15 @@ class GraderExecutor:
         start_time = time.monotonic()
 
         # Prepare mount configuration for Docker
-        docker_mounts = []
-        for mount in mounts:
-            docker_mounts.append(
-                Mount(
-                    target=str(mount.target),
-                    source=str(mount.source),
-                    type="bind",
-                    read_only=mount.read_only,
-                ),
+        docker_mounts = [
+            Mount(
+                target=str(mount.target),
+                source=str(mount.source),
+                type="bind",
+                read_only=mount.read_only,
             )
+            for mount in mounts
+        ]
 
         # Prepare resource constraints for Docker run
         run_kwargs = {}
@@ -104,11 +107,10 @@ class GraderExecutor:
             try:
                 self.client.images.get(config.docker_image)
             except ImageNotFound:
-                print(f"Pulling image {config.docker_image}...")
                 self.client.images.pull(config.docker_image)
 
             # Create and run container
-            container = self.client.containers.run(  # type: ignore
+            container = self.client.containers.run(  # type: ignore[call-arg]
                 image=config.docker_image,
                 command=config.command,
                 working_dir=str(config.working_directory),
@@ -180,7 +182,7 @@ class GraderExecutor:
         submission_dir: Path,
         assets_dir: Path,
     ) -> ExecutionResult:
-        """Convenience method to execute grader in a prepared workspace."""
+        """Execute grader in a prepared workspace."""
         mounts = [
             MountPoint(
                 source=submission_dir,

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import importlib.metadata
 import json
 import tempfile
@@ -9,6 +10,7 @@ from pathlib import Path
 from typing import Annotated
 
 import typer
+import uvicorn
 from pydantic import HttpUrl, SecretStr
 from rich.console import Console
 from rich.table import Table
@@ -20,6 +22,8 @@ from canvas_code_correction.flows import (
     correct_submission_flow,
 )
 from canvas_code_correction.prefect_blocks import CourseConfigBlock
+from canvas_code_correction.webhooks.deployments import ensure_deployment
+from canvas_code_correction.webhooks.server import app as webhook_fastapi_app
 
 app = typer.Typer(help="Canvas Code Correction CLI")
 console = Console()
@@ -43,7 +47,7 @@ def run_once(
             help="Directory for downloaded submissions (default: temporary directory)",
         ),
     ] = None,
-    dry_run: Annotated[
+    dry_run: Annotated[  # noqa: FBT002
         bool,
         typer.Option("--dry-run", help="Skip actual grading and upload"),
     ] = False,
@@ -92,7 +96,7 @@ def run_once(
                 )
                 console.print(f"[green]Submission {sub_id} processed successfully[/green]")
                 # Optional: collect summary
-            except Exception as e:
+            except Exception as e:  # noqa: BLE001
                 console.print(f"[red]Error processing submission {sub_id}: {e}[/red]")
                 # Continue with next submission
                 continue
@@ -128,7 +132,7 @@ def run_once(
 
 
 @app.command()
-def configure_course(
+def configure_course(  # noqa: PLR0913
     course_slug: Annotated[str, typer.Argument(help="Unique identifier for the course")],
     canvas_token: Annotated[
         str,
@@ -210,7 +214,7 @@ def configure_course(
 def list_courses() -> None:
     """List all configured course blocks."""
     try:
-        blocks = CourseConfigBlock.find()  # type: ignore
+        blocks = CourseConfigBlock.find()  # type: ignore[attr-defined]
         if not blocks:
             console.print("[yellow]No course configuration blocks found[/yellow]")
             return
@@ -226,11 +230,11 @@ def list_courses() -> None:
                 block = CourseConfigBlock.load(block_slug)
                 table.add_row(
                     block_slug,
-                    str(block.canvas_course_id),  # type: ignore
-                    block.grader_image or "Not set",  # type: ignore
-                    block.asset_bucket_block,  # type: ignore
+                    str(block.canvas_course_id),  # type: ignore[attr-defined]
+                    block.grader_image or "Not set",  # type: ignore[attr-defined]
+                    block.asset_bucket_block,  # type: ignore[attr-defined]
                 )
-            except Exception as e:
+            except Exception as e:  # noqa: BLE001
                 table.add_row(block_slug, f"Error: {e}", "", "")
 
         console.print(table)
@@ -244,14 +248,10 @@ webhook_app = typer.Typer()
 
 @webhook_app.command()
 def serve(
-    host: Annotated[str, typer.Option("--host", help="Host to bind")] = "0.0.0.0",
+    host: Annotated[str, typer.Option("--host", help="Host to bind")] = "0.0.0.0",  # noqa: S104
     port: Annotated[int, typer.Option("--port", help="Port to bind")] = 8080,
 ) -> None:
     """Start webhook server for Canvas submissions."""
-    import uvicorn
-
-    from canvas_code_correction.webhooks.server import app as webhook_fastapi_app
-
     console.print(f"[blue]Starting webhook server on {host}:{port}[/blue]")
     uvicorn.run(webhook_fastapi_app, host=host, port=port)
 
@@ -269,11 +269,6 @@ def create(
     ],
 ) -> None:
     """Create or update a Prefect deployment for webhook-triggered corrections."""
-    import asyncio
-
-    from canvas_code_correction.config import resolve_settings_from_block
-    from canvas_code_correction.webhooks.deployments import ensure_deployment
-
     try:
         settings = resolve_settings_from_block(course_block)
     except Exception as e:
@@ -286,7 +281,8 @@ def create(
         deployment_name = asyncio.run(ensure_deployment(course_block, settings))
         console.print(f"[green]Deployment '{deployment_name}' created/updated successfully[/green]")
         console.print(
-            f"[yellow]Note: Ensure work pool '{settings.grader.work_pool_name or 'local-pool'}' exists and has workers[/yellow]",
+            f"[yellow]Note: Ensure work pool "
+            f"'{settings.grader.work_pool_name or 'local-pool'}' exists and has workers[/yellow]",
         )
     except Exception as e:
         console.print(f"[red]Error creating deployment: {e}[/red]")

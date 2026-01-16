@@ -2,8 +2,7 @@
 
 from __future__ import annotations
 
-from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from prefect import flow, task
 
@@ -12,6 +11,9 @@ from canvas_code_correction.flows import (
     CorrectSubmissionPayload,
     correct_submission_flow,
 )
+
+if TYPE_CHECKING:
+    from pathlib import Path
 
 
 @task
@@ -26,7 +28,7 @@ async def webhook_correction_flow(
     assignment_id: int,
     submission_id: int,
     download_dir: Path | None = None,
-    dry_run: bool = False,
+    dry_run: bool = False,  # noqa: FBT001, FBT002
 ) -> dict[str, Any]:
     """Prefect flow triggered by Canvas webhooks.
 

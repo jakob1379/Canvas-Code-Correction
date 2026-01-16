@@ -3,11 +3,14 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import TYPE_CHECKING
 
 from canvasapi import Canvas
-from canvasapi.course import Course
 
 from canvas_code_correction.config import Settings
+
+if TYPE_CHECKING:
+    from canvasapi.course import Course
 
 
 @dataclass(frozen=True)
@@ -45,5 +48,20 @@ def build_canvas_resources_from_course_block(
     *,
     canvas: Canvas | None = None,
 ) -> CanvasResources:
+    """Construct CanvasResources from a Prefect course configuration block.
+
+    Parameters
+    ----------
+    block_name:
+        Name of the Prefect course configuration block.
+    canvas:
+        Optional preconfigured :class:`~canvasapi.Canvas` instance for testing.
+
+    Returns
+    -------
+    CanvasResources
+        Configured Canvas API resources.
+
+    """
     settings = Settings.from_course_block(block_name)
     return build_canvas_resources(settings, canvas=canvas)
