@@ -4,10 +4,7 @@ build-backend = "uv_build"
 
 [dependency-groups]
 docs = [
-  "mkdocs>=1.6.1",
-  "mkdocs-glightbox>=0.5.2",
-  "mkdocs-material>=9.7.1",
-  "mkdocs-mermaid2-plugin>=1.2.3"
+  "zensical>=0.0.0"
 ]
 dev = [
   "pytest>=9.0.2",
@@ -16,10 +13,10 @@ dev = [
   "pytest-cov>=7.0.0",
   "ipython>=9.9.0",
   "poethepoet>=0.40.0",
-  "prek>=0.2.25",
-  "ruff>=0.14.10",
-  "mypy>=1.19.1",
-  "pre-commit>=3.7.0"
+  "prek>=0.2.27",
+  "ruff>=0.14.11",
+  "pyrefly>=0.0.0",
+  "commitizen>=0.0.0"
 ]
 
 [project]
@@ -39,16 +36,20 @@ classifiers = [
   "Operating System :: POSIX :: Linux"
 ]
 dependencies = [
-  "prefect[docker]>=3.6.9",
-  "prefect-aws>=0.7.2",
+  "prefect[docker]>=3.6.10",
+  "prefect-aws>=0.7.3",
   "httpx>=0.28.1",
   "docker>=7.1.0",
   "pydantic>=2.12.5",
   "typer>=0.20.1",
   "python-dotenv>=1.2.1",
   "canvasapi>=3.4.0",
-  "prefect-aws>=0.7.2",
-  "boto3>=1.42.19"
+  "prefect-aws>=0.7.3",
+  "boto3>=1.42.19",
+  "mkdocs>=1.6.1",
+  "mkdocs-material>=9.7.1",
+  "mkdocs-mermaid2-plugin>=1.2.3",
+  "mkdocs-glightbox>=0.5.2",
 ]
 
 [project.scripts]
@@ -63,33 +64,58 @@ tag_format = "v$version"
 version_provider = "pep621"
 
 [tool.poe.tasks]
+# Development workflow
+fmt = {cmd = "ruff format", help = "Formats Python code using Ruff."}
+lint = {cmd = "ruff check --fix", help = "Lints and fixes Python code using Ruff."}
+check = {cmd = "pyrefly check", help = "Performs static type checking with Pyrefly."}
+test = {cmd = "pytest", help = "Runs project tests using pytest."}
+all = {sequence = ["fmt", "lint", "check", "test"], help = "Runs all development checks: format, lint, type check, and tests."}
+clean = {cmd = "uvx pyclean . --debris", help = "Clean up Python cache files and test artifacts using pyclean."}
+"ci:fmt" = {cmd = "ruff format --check", help = "Checks if code is formatted without making changes (for CI)."}
+"ci:lint" = {cmd = "ruff check", help = "Lints code without applying fixes (for CI)."}
+
+# Project-specific tasks
 docker-publish = {sequence = ["_docker_build", "_docker_push"], help = "Build and push docker image for base runner"}
 _docker_build.cmd = "docker build -t jakob1379/canvas-grader:latest . -f containers/grader/Dockerfile"
 _docker_push.cmd = "docker push jakob1379/canvas-grader:latest"
-clean.shell = "uvx pyclean --debris=all --verbose --ignore=.direnv ."
 prefect.shell = 'prefect server start'
-s3.shell = "mkdir -p workspace && weed server -s3 -dir ./workspace -volume.max=5"
+s3.shell = "mkdir -p workspace && chmod 777 workspace && docker run --rm -p 9000:9000 -p 9001:9001 -v ./workspace:/data -e RUSTFS_ACCESS_KEY=rustfsadmin -e RUSTFS_SECRET_KEY=rustfsadmin rustfs/rustfs:latest /data"
+rustfs-setup.shell = "uv run python scripts/setup-rustfs.py"
+serve-docs = {cmd = "zensical serve", help = "Serve documentation locally."}
 
 [tool.pytest.ini_options]
-minversion = "8.3"
-addopts = "-ra --strict-markers"
-testpaths = ["tests"]
+addopts = "--doctest-modules --numprocesses=auto --cov=src/canvas_code_correction --cov-report=term-missing --cov-report=json"
+testpaths = [
+  "tests",
+]
 markers = [
   "integration: marks tests that exercise live Canvas API",
-  "local: marks tests that can run locally without external dependencies"
-]
-filterwarnings = [
-  "error::DeprecationWarning",
-  "ignore::DeprecationWarning:coolname"
+  "local: marks tests that can run locally without external dependencies",
+  "e2e: marks end-to-end tests that require full docker-compose stack"
 ]
 
 [tool.ruff]
-target-version = "py311"
+target-version = "py313"
 line-length = 100
 
 [tool.ruff.format]
 quote-style = "double"
 
 [tool.ruff.lint]
-select = ["E", "F", "I", "UP", "B", "SIM"]
+select = [
+  "A",    # warn about shadowing built-ins
+  "E",    # style stuff, whitespaces
+  "F",    # important pyflakes lints
+  "I",    # import sorting
+  "N",    # naming
+  "C90",  # No overly complex nested logic
+  "T100", # breakpoints (probably don't want these in prod!)
+]
 ignore = []
+
+[tool.ruff.lint.isort]
+known-first-party = ["canvas_code_correction"]
+
+[tool.pyrefly]
+python-version = "3.13"
+search-path = ["src"]

@@ -32,7 +32,7 @@ def test_build_canvas_resources_live() -> None:
             course_id=int(course_id),
         ),
         assets=CourseAssetsSettings(
-            bucket_block=os.getenv("CCC_ASSET_BUCKET_BLOCK", "course-assets-block"),
+            bucket_block=os.getenv("CCC_ASSET_BUCKET_BLOCK", "local-rustfs"),
             path_prefix=os.getenv("CCC_ASSET_PREFIX", "dev"),
         ),
         grader=GraderSettings(),
