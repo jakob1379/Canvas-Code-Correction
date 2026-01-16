@@ -38,26 +38,26 @@ class Settings(BaseModel):
 
     @classmethod
     def from_course_block(cls, block_name: str) -> Settings:
-        block = CourseConfigBlock.load(block_name)
+        block = CourseConfigBlock.load(block_name)  # type: ignore
         workspace_root = (
-            Path(block.workspace_root).expanduser()
-            if block.workspace_root
+            Path(block.workspace_root).expanduser()  # type: ignore
+            if block.workspace_root  # type: ignore
             else Path("/tmp/ccc/workspaces")
         )
         return cls(
             canvas=CanvasSettings(
-                api_url=block.canvas_api_url,
-                token=block.canvas_token,
-                course_id=block.canvas_course_id,
+                api_url=block.canvas_api_url,  # type: ignore
+                token=block.canvas_token,  # type: ignore
+                course_id=block.canvas_course_id,  # type: ignore
             ),
             assets=CourseAssetsSettings(
-                bucket_block=block.asset_bucket_block,
-                path_prefix=block.asset_path_prefix,
+                bucket_block=block.asset_bucket_block,  # type: ignore
+                path_prefix=block.asset_path_prefix,  # type: ignore
             ),
             grader=GraderSettings(
-                docker_image=block.grader_image,
-                work_pool_name=block.work_pool_name,
-                env=dict(block.grader_env),
+                docker_image=block.grader_image,  # type: ignore
+                work_pool_name=block.work_pool_name,  # type: ignore
+                env=dict(block.grader_env),  # type: ignore
             ),
             workspace=WorkspaceSettings(root=workspace_root),
         )

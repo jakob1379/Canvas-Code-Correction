@@ -11,7 +11,9 @@ class CourseConfigBlock(Block):
 
     _block_type_name = "CCC Course Config"
 
-    canvas_api_url: HttpUrl = Field(default="https://canvas.instructure.com")
+    canvas_api_url: HttpUrl = Field(
+        default=HttpUrl("https://canvas.instructure.com")
+    )
     canvas_token: SecretStr
     canvas_course_id: int
 

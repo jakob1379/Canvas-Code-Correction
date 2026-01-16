@@ -37,7 +37,7 @@ class UploadConfig:
 class CanvasUploader:
     """Handles idempotent upload of feedback and grades to Canvas."""
 
-    def __init__(self, submission: Submission):
+    def __init__(self, submission: Submission) -> None:
         self.submission = submission
 
     def _check_feedback_duplicate(
@@ -55,7 +55,9 @@ class CanvasUploader:
                         continue
                     with tempfile.NamedTemporaryFile(delete=True) as tmp:
                         try:
-                            self._download_attachment(attachment["url"], Path(tmp.name))
+                            self._download_attachment(
+                                attachment["url"], Path(tmp.name)
+                            )
                             remote_md5 = self._calculate_md5(Path(tmp.name))
                             if remote_md5 == local_md5:
                                 return UploadResult(
@@ -67,7 +69,9 @@ class CanvasUploader:
                                     details={
                                         "local_md5": local_md5,
                                         "remote_md5": remote_md5,
-                                        "attachment": attachment.get("display_name"),
+                                        "attachment": attachment.get(
+                                            "display_name"
+                                        ),
                                     },
                                 )
                         except Exception as e:
@@ -107,7 +111,10 @@ class CanvasUploader:
                     duplicate=False,
                     comment_posted=False,
                     grade_posted=False,
-                    details={"file": str(feedback_file), "upload_comments": False},
+                    details={
+                        "file": str(feedback_file),
+                        "upload_comments": False,
+                    },
                 )
         except Exception as e:
             return UploadResult(
@@ -144,12 +151,16 @@ class CanvasUploader:
 
         # Check for duplicates
         if config.check_duplicates:
-            duplicate_result = self._check_feedback_duplicate(feedback_file, config)
+            duplicate_result = self._check_feedback_duplicate(
+                feedback_file, config
+            )
             if duplicate_result:
                 return duplicate_result
 
         # Upload feedback
-        return self._upload_feedback_without_duplicate_check(feedback_file, config)
+        return self._upload_feedback_without_duplicate_check(
+            feedback_file, config
+        )
 
     def upload_grade(
         self,
@@ -179,7 +190,10 @@ class CanvasUploader:
                     duplicate=True,
                     comment_posted=False,
                     grade_posted=False,
-                    details={"current_grade": current_grade, "new_grade": grade},
+                    details={
+                        "current_grade": current_grade,
+                        "new_grade": grade,
+                    },
                 )
 
             if config.upload_grades:
@@ -221,7 +235,9 @@ class CanvasUploader:
         """Convenience method to upload both feedback and grade."""
         config = config or UploadConfig()
         if feedback_file is None and grade is None:
-            raise ValueError("At least one of feedback_file or grade must be provided")
+            raise ValueError(
+                "At least one of feedback_file or grade must be provided"
+            )
         feedback_result = None
         grade_result = None
 
@@ -259,8 +275,11 @@ class CanvasUploader:
             )
         except ImportError:
             # Fallback to urllib (won't work with authenticated Canvas URLs)
-            with urllib.request.urlopen(url) as response, open(destination, "wb") as out_file:
-                shutil.copyfileobj(response, out_file)
+            with (
+                urllib.request.urlopen(url) as response,
+                open(destination, "wb") as out_file,
+            ):
+                shutil.copyfileobj(response, out_file)  # type: ignore
 
 
 def create_uploader_from_resources(

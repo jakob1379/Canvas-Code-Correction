@@ -88,19 +88,8 @@ Configuration via environment variables:
 ## Contributing
 
 We welcome contributions that improve reliability, performance, or ergonomics.
-
-1. Fork the repository and create a feature branch
-   (`git switch -c feat/your-change`).
-2. Run `uv sync` to install dependencies and keep the lockfile consistent.
-3. Implement changes, matching existing code style and Prefect-oriented patterns
-   already in use.
-4. Validate locally (`uv run pytest` and any relevant flows or scripts).
-   For integration tests, ensure RustFS server is running (`uv run poe s3`).
-5. Submit a pull request describing the change, expected impact, and any
-   follow-up work.
-
-Open an issue first for major architectural proposals to confirm alignment with
-maintainers.
+See [CONTRIBUTING.md](CONTRIBUTING.md) for detailed guidelines on development setup,
+code style, testing, and the pull request process.
 
 ## License
 
