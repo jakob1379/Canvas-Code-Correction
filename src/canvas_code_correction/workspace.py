@@ -31,7 +31,9 @@ class WorkspaceConfig:
     run_id: str | None = None
 
 
-def prepare_workspace(config: WorkspaceConfig, submission_files: list[Path]) -> WorkspacePaths:
+def prepare_workspace(
+    config: WorkspaceConfig, submission_files: list[Path]
+) -> WorkspacePaths:
     """Create a workspace for a grading run and populate it with required files."""
 
     run_identifier = config.run_id or uuid4().hex
@@ -67,7 +69,11 @@ def prepare_workspace(config: WorkspaceConfig, submission_files: list[Path]) -> 
     else:  # pragma: no cover - defensive fallback
         raise AttributeError("S3Bucket block missing download method")
 
-    return WorkspacePaths(root=workspace_root, submission_dir=submission_dir, assets_dir=assets_dir)
+    return WorkspacePaths(
+        root=workspace_root,
+        submission_dir=submission_dir,
+        assets_dir=assets_dir,
+    )
 
 
 def build_workspace_config(

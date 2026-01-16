@@ -10,7 +10,9 @@ from pathlib import Path
 
 import docker
 import requests
+from docker.errors import DockerException, ImageNotFound
 from docker.models.containers import Container
+from docker.types import Mount
 from pydantic import BaseModel, Field
 
 
@@ -59,7 +61,9 @@ class MountPoint:
 class GraderExecutor:
     """Executes grader commands inside Docker containers with security constraints."""
 
-    def __init__(self, docker_client: docker.DockerClient | None = None):
+    def __init__(
+        self, docker_client: docker.DockerClient | None = None
+    ) -> None:
         self.client = docker_client or docker.from_env()
 
     def execute(
@@ -74,7 +78,7 @@ class GraderExecutor:
         docker_mounts = []
         for mount in mounts:
             docker_mounts.append(
-                docker.types.Mount(
+                Mount(
                     target=str(mount.target),
                     source=str(mount.source),
                     type="bind",
@@ -87,9 +91,13 @@ class GraderExecutor:
         if config.resource_limits.cpu_shares is not None:
             run_kwargs["cpu_shares"] = config.resource_limits.cpu_shares
         if config.resource_limits.memory_mb is not None:
-            run_kwargs["mem_limit"] = config.resource_limits.memory_mb * 1024 * 1024
+            run_kwargs["mem_limit"] = (
+                config.resource_limits.memory_mb * 1024 * 1024
+            )
         if config.resource_limits.memory_swap_mb is not None:
-            run_kwargs["memswap_limit"] = config.resource_limits.memory_swap_mb * 1024 * 1024
+            run_kwargs["memswap_limit"] = (
+                config.resource_limits.memory_swap_mb * 1024 * 1024
+            )
         run_kwargs["read_only"] = config.resource_limits.read_only_rootfs
         run_kwargs["network_disabled"] = config.resource_limits.network_disabled
 
@@ -98,12 +106,12 @@ class GraderExecutor:
             # Pull image if not available locally
             try:
                 self.client.images.get(config.docker_image)
-            except docker.errors.ImageNotFound:
+            except ImageNotFound:
                 print(f"Pulling image {config.docker_image}...")
                 self.client.images.pull(config.docker_image)
 
             # Create and run container
-            container = self.client.containers.run(
+            container = self.client.containers.run(  # type: ignore
                 image=config.docker_image,
                 command=config.command,
                 working_dir=str(config.working_directory),
@@ -118,7 +126,9 @@ class GraderExecutor:
 
             # Wait for container with timeout
             try:
-                result = container.wait(timeout=config.resource_limits.timeout_seconds)
+                result = container.wait(
+                    timeout=config.resource_limits.timeout_seconds
+                )
                 exit_code = result["StatusCode"]
                 timed_out = False
             except (
@@ -131,8 +141,12 @@ class GraderExecutor:
                 timed_out = True
 
             # Get logs
-            stdout = container.logs(stdout=True, stderr=False).decode("utf-8", errors="replace")
-            stderr = container.logs(stdout=False, stderr=True).decode("utf-8", errors="replace")
+            stdout = container.logs(stdout=True, stderr=False).decode(
+                "utf-8", errors="replace"
+            )
+            stderr = container.logs(stdout=False, stderr=True).decode(
+                "utf-8", errors="replace"
+            )
 
             duration = time.monotonic() - start_time
 
@@ -145,7 +159,7 @@ class GraderExecutor:
                 container_id=container.id,
             )
 
-        except docker.errors.DockerException as e:
+        except DockerException as e:
             duration = time.monotonic() - start_time
             return ExecutionResult(
                 exit_code=1,
@@ -158,7 +172,7 @@ class GraderExecutor:
         finally:
             # Clean up container
             if container:
-                with contextlib.suppress(docker.errors.DockerException):
+                with contextlib.suppress(DockerException):
                     container.remove(force=True)
 
     def execute_in_workspace(
@@ -170,9 +184,15 @@ class GraderExecutor:
         """Convenience method to execute grader in a prepared workspace."""
         mounts = [
             MountPoint(
-                source=submission_dir, target=Path("/workspace/submission"), read_only=False
+                source=submission_dir,
+                target=Path("/workspace/submission"),
+                read_only=False,
             ),
-            MountPoint(source=assets_dir, target=Path("/workspace/assets"), read_only=True),
+            MountPoint(
+                source=assets_dir,
+                target=Path("/workspace/assets"),
+                read_only=True,
+            ),
         ]
         return self.execute(config, mounts)
 
