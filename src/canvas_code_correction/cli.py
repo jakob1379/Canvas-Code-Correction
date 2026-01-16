@@ -9,11 +9,9 @@ from pathlib import Path
 from typing import Annotated
 
 import typer
-import uvicorn
 from pydantic import HttpUrl, SecretStr
 from rich.console import Console
 from rich.table import Table
-from canvas_code_correction.webhooks.server import app as webhook_fastapi_app
 
 from canvas_code_correction.clients import build_canvas_resources
 from canvas_code_correction.config import resolve_settings_from_block
@@ -46,7 +44,8 @@ def run_once(
         ),
     ] = None,
     dry_run: Annotated[
-        bool, typer.Option("--dry-run", help="Skip actual grading and upload")
+        bool,
+        typer.Option("--dry-run", help="Skip actual grading and upload"),
     ] = False,
 ) -> None:
     """Run correction flow for an assignment or specific submission."""
@@ -67,12 +66,12 @@ def run_once(
         )
         console.print(
             f"[blue]Running correction for assignment {assignment_id}, "
-            f"submission {submission_id}[/blue]"
+            f"submission {submission_id}[/blue]",
         )
     else:
         # Batch mode: process all submissions
         console.print(
-            f"[blue]Batch mode: processing all submissions for assignment {assignment_id}[/blue]"
+            f"[blue]Batch mode: processing all submissions for assignment {assignment_id}[/blue]",
         )
         resources = build_canvas_resources(settings)
         assignment = resources.course.get_assignment(assignment_id)
@@ -121,7 +120,7 @@ def run_once(
                     "results_keys": list(result.results.keys()),
                 },
                 indent=2,
-            )
+            ),
         )
     except Exception as e:
         console.print(f"[red]Error running correction flow: {e}[/red]")
@@ -151,7 +150,8 @@ def configure_course(
         ),
     ],
     canvas_api_url: Annotated[
-        str, typer.Option("--api-url", help="Canvas instance URL")
+        str,
+        typer.Option("--api-url", help="Canvas instance URL"),
     ] = "https://canvas.instructure.com",
     asset_path_prefix: Annotated[
         str,
@@ -248,11 +248,52 @@ def serve(
     port: Annotated[int, typer.Option("--port", help="Port to bind")] = 8080,
 ) -> None:
     """Start webhook server for Canvas submissions."""
+    import uvicorn
+
+    from canvas_code_correction.webhooks.server import app as webhook_fastapi_app
+
     console.print(f"[blue]Starting webhook server on {host}:{port}[/blue]")
     uvicorn.run(webhook_fastapi_app, host=host, port=port)
 
 
 app.add_typer(webhook_app, name="webhook")
+
+deploy_app = typer.Typer()
+
+
+@deploy_app.command()
+def create(
+    course_block: Annotated[
+        str,
+        typer.Argument(help="Prefect course configuration block name"),
+    ],
+) -> None:
+    """Create or update a Prefect deployment for webhook-triggered corrections."""
+    import asyncio
+
+    from canvas_code_correction.config import resolve_settings_from_block
+    from canvas_code_correction.webhooks.deployments import ensure_deployment
+
+    try:
+        settings = resolve_settings_from_block(course_block)
+    except Exception as e:
+        console.print(f"[red]Error loading course block '{course_block}': {e}[/red]")
+        raise typer.Exit(1) from e
+
+    console.print(f"[blue]Creating deployment for course block: {course_block}[/blue]")
+
+    try:
+        deployment_name = asyncio.run(ensure_deployment(course_block, settings))
+        console.print(f"[green]Deployment '{deployment_name}' created/updated successfully[/green]")
+        console.print(
+            f"[yellow]Note: Ensure work pool '{settings.grader.work_pool_name or 'local-pool'}' exists and has workers[/yellow]",
+        )
+    except Exception as e:
+        console.print(f"[red]Error creating deployment: {e}[/red]")
+        raise typer.Exit(1) from e
+
+
+app.add_typer(deploy_app, name="deploy")
 
 
 @app.command()

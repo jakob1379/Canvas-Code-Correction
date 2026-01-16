@@ -7,6 +7,6 @@ from prefect.testing.utilities import prefect_test_harness
 
 
 @pytest.fixture(scope="session", autouse=True)
-def prefect_testing_environment() -> Generator[None, None, None]:
+def prefect_testing_environment() -> Generator[None]:
     with prefect_test_harness():
         yield

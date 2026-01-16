@@ -101,9 +101,9 @@ def test_upload_feedback_with_duplicate_check() -> None:
                 {
                     "url": "http://example.com/file1.zip",
                     "display_name": "feedback.zip",
-                }
-            ]
-        }
+                },
+            ],
+        },
     ]
 
     uploader = CanvasUploader(mock_submission)
@@ -289,7 +289,9 @@ def test_upload_feedback_and_grade_partial() -> None:
         tmp.flush()
 
         feedback_result, grade_result = uploader.upload_feedback_and_grade(
-            tmp_path, None, UploadConfig()
+            tmp_path,
+            None,
+            UploadConfig(),
         )
 
         assert feedback_result is not None

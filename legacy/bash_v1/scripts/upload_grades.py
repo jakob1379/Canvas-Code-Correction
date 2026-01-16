@@ -32,7 +32,10 @@ parser.add_argument("-v", "--verbose", help="set verbose", action="store_true")
 parser.add_argument("-a", "--grade-all", help="Grade all students again", action="store_true")
 parser.add_argument("-q", "--question", help="question what grade to give", action="store_true")
 parser.add_argument(
-    "path", nargs="?", default=os.path.join("*", "submissions", "*", ""), help="Path to check"
+    "path",
+    nargs="?",
+    default=os.path.join("*", "submissions", "*", ""),
+    help="Path to check",
 )
 parser.add_argument("-d", "--dry", help="Dry run. Doesn't change anything", action="store_true")
 
@@ -46,7 +49,7 @@ if not glob(args.path):
 
 
 def get_grade(points, assignment):
-    """convert points to grading according to setup in config.ini
+    """Convert points to grading according to setup in config.ini
 
     :param points: number of points scores
     :param assignmentName: name of the assignment graded
@@ -65,13 +68,10 @@ def get_grade(points, assignment):
 
 
 def grade_submission(sub, assignment):
-    """
-
-    :param sub: path to corrected folders
+    """:param sub: path to corrected folders
     :param assignments: dictionary with assignment names as keys and canvas assignment objects as values
 
     """
-
     if args.verbose:
         out_str = "Grading: Checking " + sub
         print(out_str)

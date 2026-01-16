@@ -62,7 +62,8 @@ class GraderExecutor:
     """Executes grader commands inside Docker containers with security constraints."""
 
     def __init__(
-        self, docker_client: docker.DockerClient | None = None
+        self,
+        docker_client: docker.DockerClient | None = None,
     ) -> None:
         self.client = docker_client or docker.from_env()
 
@@ -83,7 +84,7 @@ class GraderExecutor:
                     source=str(mount.source),
                     type="bind",
                     read_only=mount.read_only,
-                )
+                ),
             )
 
         # Prepare resource constraints for Docker run
@@ -91,13 +92,9 @@ class GraderExecutor:
         if config.resource_limits.cpu_shares is not None:
             run_kwargs["cpu_shares"] = config.resource_limits.cpu_shares
         if config.resource_limits.memory_mb is not None:
-            run_kwargs["mem_limit"] = (
-                config.resource_limits.memory_mb * 1024 * 1024
-            )
+            run_kwargs["mem_limit"] = config.resource_limits.memory_mb * 1024 * 1024
         if config.resource_limits.memory_swap_mb is not None:
-            run_kwargs["memswap_limit"] = (
-                config.resource_limits.memory_swap_mb * 1024 * 1024
-            )
+            run_kwargs["memswap_limit"] = config.resource_limits.memory_swap_mb * 1024 * 1024
         run_kwargs["read_only"] = config.resource_limits.read_only_rootfs
         run_kwargs["network_disabled"] = config.resource_limits.network_disabled
 
@@ -127,7 +124,7 @@ class GraderExecutor:
             # Wait for container with timeout
             try:
                 result = container.wait(
-                    timeout=config.resource_limits.timeout_seconds
+                    timeout=config.resource_limits.timeout_seconds,
                 )
                 exit_code = result["StatusCode"]
                 timed_out = False
@@ -142,10 +139,12 @@ class GraderExecutor:
 
             # Get logs
             stdout = container.logs(stdout=True, stderr=False).decode(
-                "utf-8", errors="replace"
+                "utf-8",
+                errors="replace",
             )
             stderr = container.logs(stdout=False, stderr=True).decode(
-                "utf-8", errors="replace"
+                "utf-8",
+                errors="replace",
             )
 
             duration = time.monotonic() - start_time

@@ -1,10 +1,14 @@
 # Creating a Grader Image (Optional)
 
-CCC runs your grader tests inside a Docker container. If the default `jakob1379/canvas-grader:latest` image contains all dependencies your tests need, you can skip this step. Only create a custom Docker image if you need additional system packages, language runtimes, or specialized tools.
+CCC runs your grader tests inside a Docker container. If the default
+`jakob1379/canvas-grader:latest` image contains all dependencies your tests
+need, you can skip this step. Only create a custom Docker image if you need
+additional system packages, language runtimes, or specialized tools.
 
 ## Base Image
 
-CCC provides a base image `jakob1379/canvas-grader:latest` based on Ubuntu with Python pre-installed. You can extend it or use your own.
+CCC provides a base image `jakob1379/canvas-grader:latest` based on Ubuntu with
+Python pre-installed. You can extend it or use your own.
 
 ## Creating a Dockerfile
 
@@ -50,6 +54,7 @@ You can test the image locally by running:
 docker run --rm -v $(pwd)/submission:/workspace/submission yourusername/canvas-grader:latest
 ```
 
-Ensure your grader script outputs the required files (`results.json`, `points.txt`, `comments.txt`).
+Ensure your grader script outputs the required files (`results.json`,
+`points.txt`, `comments.txt`).
 
 Next, we'll write grader tests.

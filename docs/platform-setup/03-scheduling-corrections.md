@@ -1,13 +1,15 @@
 # Scheduling Corrections
 
-> **Audience**: CCC platform operators  
-> **Prerequisites**: Prefect deployment created and worker running
+> **Audience**: CCC platform operators **Prerequisites**: Prefect deployment
+> created and worker running
 
-CCC can automatically correct submissions on a schedule or trigger via Canvas webhooks.
+CCC can automatically correct submissions on a schedule or trigger via Canvas
+webhooks.
 
 ## Prefect Schedules
 
-When building a deployment, you can attach a schedule. For example, to run every day at 2 AM:
+When building a deployment, you can attach a schedule. For example, to run every
+day at 2 AM:
 
 ```bash
 uv run prefect deployment build \
@@ -18,11 +20,13 @@ uv run prefect deployment build \
   -a
 ```
 
-The schedule uses cron syntax. You can also set interval schedules via Prefect UI.
+The schedule uses cron syntax. You can also set interval schedules via Prefect
+UI.
 
 ## Canvas Webhooks
 
-Canvas can send webhooks when students submit assignments. CCC can listen to these webhooks and trigger corrections automatically.
+Canvas can send webhooks when students submit assignments. CCC can listen to
+these webhooks and trigger corrections automatically.
 
 ### Setting up Webhooks
 
@@ -30,11 +34,13 @@ Canvas can send webhooks when students submit assignments. CCC can listen to the
 2. Add a webhook URL pointing to your Prefect deployment's webhook endpoint.
 3. Configure the webhook to send `submission_created` events.
 
-Prefect Cloud provides webhook endpoints for deployments. See [Prefect webhook documentation](https://docs.prefect.io/concepts/webhooks/).
+Prefect Cloud provides webhook endpoints for deployments. See
+[Prefect webhook documentation](https://docs.prefect.io/concepts/webhooks/).
 
 ### Webhook Payload
 
-CCC expects a payload with `assignment_id` and `submission_id`. You may need to transform Canvas webhook payload using a small middleware.
+CCC expects a payload with `assignment_id` and `submission_id`. You may need to
+transform Canvas webhook payload using a small middleware.
 
 ## Manual Triggers
 

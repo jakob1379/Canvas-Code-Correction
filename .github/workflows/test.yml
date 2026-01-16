@@ -1,11 +1,10 @@
+---
 name: Test
-
 on:
   push:
-    branches: [ main, v2 ]
+    branches: [main, v2]
   pull_request:
-    branches: [ main, v2 ]
-
+    branches: [main, v2]
 jobs:
   test:
     runs-on: ubuntu-latest
@@ -20,10 +19,7 @@ jobs:
           --health-interval=10s
           --health-timeout=5s
           --health-retries=5
-        ports:
-          - 9000:9000
-          - 9001:9001
-
+        ports: [9000:9000, 9001:9001]
     env:
       RUSTFS_ENDPOINT: http://localhost:9000
       RUSTFS_ACCESS_KEY: rustfsadmin
@@ -37,53 +33,41 @@ jobs:
       CANVAS_TEST_ASSIGNMENT_ID: ${{ secrets.CANVAS_TEST_ASSIGNMENT_ID }}
       CCC_WORKSPACE_ROOT: /tmp/ccc/workspaces
       PREFECT_API_URL: http://localhost:4200/api
-
     steps:
-    - uses: actions/checkout@v4
-
-    - name: Install uv
-      uses: astral-sh/setup-uv@v4
-      with:
-        enable-cache: true
-
-    - name: Set up Python
-      run: uv python install 3.13
-
-    - name: Install dependencies
-      run: uv sync --all-groups
-
-    - name: Setup RustFS for testing
-      run: |
-        # Wait for RustFS to be ready
-        timeout 30 bash -c 'until curl -f http://localhost:9000/minio/health/live; do sleep 1; done'
-        # Run setup script
-        uv run python scripts/setup-rustfs.py
-
-    - name: Run unit tests
-      run: uv run pytest tests/unit -v --strict-markers
-
-    - name: Run integration tests (requires Canvas credentials)
-      if: env.CANVAS_API_TOKEN != ''
-      run: |
-        uv run pytest tests/integration -v --strict-markers -m integration
-
-    - name: Run e2e tests (requires Docker and Canvas credentials)
-      if: env.CANVAS_API_TOKEN != ''
-      run: |
-        # Start Docker daemon (already running on GitHub Actions)
-        # Run e2e tests
-        uv run pytest tests/e2e -v --strict-markers -m e2e
-
-    - name: Run linting
-      run: |
-        uv run ruff check src
-        uv run pyrefly check src
-
-    - name: Run formatting check
-      run: uv run ruff format --check src
-
-    - name: Build documentation
-      run: uv run zensical build --strict
-
-    - name: Run pre-commit hooks
-      run: uv run prek run --all-files
+      - uses: actions/checkout@v4
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+        with:
+          enable-cache: true
+      - name: Set up Python
+        run: uv python install 3.13
+      - name: Install dependencies
+        run: uv sync --all-groups
+      - name: Setup RustFS for testing
+        run: |
+          # Wait for RustFS to be ready
+          timeout 30 bash -c 'until curl -f http://localhost:9000/minio/health/live; do sleep 1; done'
+          # Run setup script
+          uv run python scripts/setup-rustfs.py
+      - name: Run unit tests
+        run: uv run pytest tests/unit -v --strict-markers
+      - name: Run integration tests (requires Canvas credentials)
+        if: env.CANVAS_API_TOKEN != ''
+        run: |
+          uv run pytest tests/integration -v --strict-markers -m integration
+      - name: Run e2e tests (requires Docker and Canvas credentials)
+        if: env.CANVAS_API_TOKEN != ''
+        run: |
+          # Start Docker daemon (already running on GitHub Actions)
+          # Run e2e tests
+          uv run pytest tests/e2e -v --strict-markers -m e2e
+      - name: Run linting
+        run: |
+          uv run ruff check src
+          uv run pyrefly check src
+      - name: Run formatting check
+        run: uv run ruff format --check src
+      - name: Build documentation
+        run: uv run zensical build --strict
+      - name: Run pre-commit hooks
+        run: uv run prek run --all-files

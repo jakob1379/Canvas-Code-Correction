@@ -1,6 +1,7 @@
 # Contributing to Canvas Code Correction
 
-Thank you for your interest in contributing to CCC! This project is open source and welcomes contributions.
+Thank you for your interest in contributing to CCC! This project is open source
+and welcomes contributions.
 
 ## Development Setup
 
@@ -41,4 +42,5 @@ Thank you for your interest in contributing to CCC! This project is open source 
 
 ## Code of Conduct
 
-Be respectful and inclusive. We follow the [Contributor Covenant](https://www.contributor-covenant.org/).
+Be respectful and inclusive. We follow the
+[Contributor Covenant](https://www.contributor-covenant.org/).

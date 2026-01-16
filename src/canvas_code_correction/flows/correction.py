@@ -125,7 +125,6 @@ def prepare_workspace_task(
     submission_files: list[Path],
 ) -> WorkspacePaths:
     """Materialize a workspace that combines submission files with course assets."""
-
     config = build_workspace_config(
         resources.settings,
         assignment_id=payload.assignment_id,
@@ -146,21 +145,21 @@ def _resolve_attachment_name(attachment: Any, file_obj: Any) -> str:
 
     if isinstance(attachment, dict):
         candidates.extend(
-            [attachment.get("filename"), attachment.get("display_name")]
+            [attachment.get("filename"), attachment.get("display_name")],
         )
     else:
         candidates.extend(
             [
                 getattr(attachment, "filename", None),
                 getattr(attachment, "display_name", None),
-            ]
+            ],
         )
 
     candidates.extend(
         [
             getattr(file_obj, "filename", None),
             getattr(file_obj, "display_name", None),
-        ]
+        ],
     )
 
     for candidate in candidates:
@@ -168,7 +167,9 @@ def _resolve_attachment_name(attachment: Any, file_obj: Any) -> str:
             return candidate
 
     identifier = _extract_attachment_id(attachment) or getattr(
-        file_obj, "id", None
+        file_obj,
+        "id",
+        None,
     )
     return f"attachment-{identifier}"
 
@@ -229,9 +230,7 @@ def collect_results(
             if collection_result.grading_result.errors_log_path
             else None
         ),
-        "discovered_files": [
-            str(f) for f in collection_result.discovered_files
-        ],
+        "discovered_files": [str(f) for f in collection_result.discovered_files],
         "validation_issues": issues,
         "metadata": collection_result.grading_result.metadata,
     }
@@ -256,8 +255,8 @@ def upload_feedback(
 
     uploader = CanvasUploader(
         resources.course.get_assignment(payload.assignment_id).get_submission(
-            payload.submission_id
-        )
+            payload.submission_id,
+        ),
     )
 
     upload_result = uploader.upload_feedback(Path(feedback_zip_path), config)
@@ -290,8 +289,8 @@ def post_grade(
 
     uploader = CanvasUploader(
         resources.course.get_assignment(payload.assignment_id).get_submission(
-            payload.submission_id
-        )
+            payload.submission_id,
+        ),
     )
 
     # For now, upload raw points. Could be enhanced to support
@@ -327,8 +326,7 @@ def correct_submission_flow(
 
     # Create grader configuration from settings
     grader_config = create_default_grader_config(
-        docker_image=settings.grader.docker_image
-        or "jakob1379/canvas-grader:latest",
+        docker_image=settings.grader.docker_image or "jakob1379/canvas-grader:latest",
         command=["sh", "main.sh"],  # Default command, could be configurable
         timeout_seconds=300,
         memory_mb=512,
@@ -349,7 +347,10 @@ def correct_submission_flow(
         verbose=False,
     )
     feedback_result = upload_feedback(
-        resources, payload, results, upload_config
+        resources,
+        payload,
+        results,
+        upload_config,
     )
 
     # Post grade

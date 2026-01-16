@@ -123,7 +123,9 @@ def test_upload_feedback_and_grade_dry_run_live() -> None:
     try:
         config = UploadConfig(dry_run=True, upload_comments=True, upload_grades=True)
         feedback_result, grade_result = uploader.upload_feedback_and_grade(
-            feedback_file=tmp_path, grade="90.0", config=config
+            feedback_file=tmp_path,
+            grade="90.0",
+            config=config,
         )
         assert feedback_result is not None
         assert grade_result is not None

@@ -1,3 +1,4 @@
+---
 # Local RustFS S3 block configuration for development
 # Register with: prefect block register -f scripts/rustfs-s3-block.yaml
 # Or use: uv run poe rustfs-setup

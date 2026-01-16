@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from unittest.mock import AsyncMock, patch
 
 import pytest
@@ -76,15 +76,15 @@ def test_handle_canvas_webhook_success(
             payload = {
                 "metadata": {
                     "event_name": "submission_created",
-                    "event_time": datetime.now(timezone.utc).isoformat(),
+                    "event_time": datetime.now(UTC).isoformat(),
                     "producer": "canvas",
                 },
                 "body": {
                     "assignment_id": "123",
                     "submission_id": "456",
                     "submission_type": "online_text_entry",
-                    "submitted_at": datetime.now(timezone.utc).isoformat(),
-                    "updated_at": datetime.now(timezone.utc).isoformat(),
+                    "submitted_at": datetime.now(UTC).isoformat(),
+                    "updated_at": datetime.now(UTC).isoformat(),
                     "user_id": "789",
                     "workflow_state": "submitted",
                 },
@@ -164,7 +164,7 @@ def test_handle_canvas_webhook_unsupported_event(
         payload = {
             "metadata": {
                 "event_name": "assignment_created",
-                "event_time": datetime.now(timezone.utc).isoformat(),
+                "event_time": datetime.now(UTC).isoformat(),
                 "producer": "canvas",
             },
             "body": {},
@@ -200,15 +200,15 @@ def test_handle_canvas_webhook_rate_limit(
             payload = {
                 "metadata": {
                     "event_name": "submission_created",
-                    "event_time": datetime.now(timezone.utc).isoformat(),
+                    "event_time": datetime.now(UTC).isoformat(),
                     "producer": "canvas",
                 },
                 "body": {
                     "assignment_id": "123",
                     "submission_id": "456",
                     "submission_type": "online_text_entry",
-                    "submitted_at": datetime.now(timezone.utc).isoformat(),
-                    "updated_at": datetime.now(timezone.utc).isoformat(),
+                    "submitted_at": datetime.now(UTC).isoformat(),
+                    "updated_at": datetime.now(UTC).isoformat(),
                     "user_id": "789",
                     "workflow_state": "submitted",
                 },
@@ -228,7 +228,7 @@ def test_handle_canvas_webhook_rate_limit(
 def test_test_webhook_endpoint(client: TestClient) -> None:
     """Test manual test endpoint."""
     with patch(
-        "canvas_code_correction.webhooks.server.resolve_settings_from_block"
+        "canvas_code_correction.webhooks.server.resolve_settings_from_block",
     ) as mock_resolve:
         mock_resolve.return_value = Settings(
             canvas=CanvasSettings(

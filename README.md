@@ -26,8 +26,8 @@ using Prefect, Docker, and reproducible local workspaces.
    uv sync
    ```
 
-3. Create a `.env` file (copy `.env.example` or request credentials) and provide the
-   following values:
+3. Create a `.env` file (copy `.env.example` or request credentials) and provide
+   the following values:
 
    ```dotenv
    CANVAS_API_URL=https://canvas.instructure.com
@@ -71,7 +71,8 @@ uv run pytest -m integration
 
 #### End-to-End Tests
 
-Comprehensive e2e tests require a running RustFS server and Prefect server. Use docker-compose:
+Comprehensive e2e tests require a running RustFS server and Prefect server. Use
+docker-compose:
 
 ```bash
 docker-compose up -d rustfs postgres redis prefect-server prefect-services
@@ -79,6 +80,7 @@ uv run pytest -m e2e
 ```
 
 Configuration via environment variables:
+
 - `RUSTFS_ENDPOINT`: S3 endpoint URL (default: `http://localhost:9000`)
 - `RUSTFS_ACCESS_KEY`: Access key (default: `rustfsadmin`)
 - `RUSTFS_SECRET_KEY`: Secret key (default: `rustfsadmin`)
@@ -88,8 +90,8 @@ Configuration via environment variables:
 ## Contributing
 
 We welcome contributions that improve reliability, performance, or ergonomics.
-See [CONTRIBUTING.md](CONTRIBUTING.md) for detailed guidelines on development setup,
-code style, testing, and the pull request process.
+See [CONTRIBUTING.md](CONTRIBUTING.md) for detailed guidelines on development
+setup, code style, testing, and the pull request process.
 
 ## License
 

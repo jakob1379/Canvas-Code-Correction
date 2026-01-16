@@ -7,7 +7,6 @@ from datetime import datetime
 from typing import Annotated
 
 from fastapi import Depends, FastAPI, HTTPException, Request, status
-from fastapi.responses import JSONResponse
 from limits import parse
 from limits.storage import MemoryStorage
 from limits.strategies import MovingWindowRateLimiter
@@ -17,8 +16,6 @@ from canvas_code_correction.webhooks.auth import verify_canvas_webhook
 from canvas_code_correction.webhooks.deployments import trigger_deployment
 from canvas_code_correction.webhooks.models import (
     CanvasWebhookPayload,
-    SubmissionCreatedEvent,
-    SubmissionUpdatedEvent,
     WebhookResponse,
 )
 
@@ -50,7 +47,7 @@ def get_settings(course_block: str) -> Settings:
 def rate_limit_check(course_block: str, limit_str: str = "10/minute") -> None:
     """Check rate limit for a course block."""
     limit = parse(limit_str)
-    if not limiter.hit(limit, course_block, datetime.now()):
+    if not limiter.hit(limit, course_block):
         raise HTTPException(
             status_code=status.HTTP_429_TOO_MANY_REQUESTS,
             detail=f"Rate limit exceeded for {course_block}",
@@ -74,7 +71,7 @@ async def validate_webhook(
     body = await request.body()
 
     # Verify signature
-    if not await verify_canvas_webhook(settings, body, request.headers):
+    if not await verify_canvas_webhook(settings, body, dict(request.headers)):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid webhook signature",
@@ -169,7 +166,10 @@ async def handle_canvas_webhook(
 
     # Trigger correction flow
     flow_run_id = await trigger_correction_flow(
-        course_block, assignment_id, submission_id, settings
+        course_block,
+        assignment_id,
+        submission_id,
+        settings,
     )
 
     if flow_run_id:
@@ -181,14 +181,13 @@ async def handle_canvas_webhook(
             assignment_id=assignment_id,
             submission_id=submission_id,
         )
-    else:
-        return WebhookResponse(
-            success=False,
-            message="Failed to trigger correction flow",
-            course_block=course_block,
-            assignment_id=assignment_id,
-            submission_id=submission_id,
-        )
+    return WebhookResponse(
+        success=False,
+        message="Failed to trigger correction flow",
+        course_block=course_block,
+        assignment_id=assignment_id,
+        submission_id=submission_id,
+    )
 
 
 @app.post("/webhooks/canvas/{course_block}/test")

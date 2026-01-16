@@ -41,7 +41,9 @@ class CanvasUploader:
         self.submission = submission
 
     def _check_feedback_duplicate(
-        self, feedback_file: Path, config: UploadConfig
+        self,
+        feedback_file: Path,
+        config: UploadConfig,
     ) -> UploadResult | None:
         """Check if feedback file already exists as a comment attachment."""
         try:
@@ -56,7 +58,8 @@ class CanvasUploader:
                     with tempfile.NamedTemporaryFile(delete=True) as tmp:
                         try:
                             self._download_attachment(
-                                attachment["url"], Path(tmp.name)
+                                attachment["url"],
+                                Path(tmp.name),
                             )
                             remote_md5 = self._calculate_md5(Path(tmp.name))
                             if remote_md5 == local_md5:
@@ -70,7 +73,7 @@ class CanvasUploader:
                                         "local_md5": local_md5,
                                         "remote_md5": remote_md5,
                                         "attachment": attachment.get(
-                                            "display_name"
+                                            "display_name",
                                         ),
                                     },
                                 )
@@ -85,7 +88,9 @@ class CanvasUploader:
         return None
 
     def _upload_feedback_without_duplicate_check(
-        self, feedback_file: Path, config: UploadConfig
+        self,
+        feedback_file: Path,
+        config: UploadConfig,
     ) -> UploadResult:
         """Upload feedback file assuming no duplicate."""
         local_md5 = self._calculate_md5(feedback_file)
@@ -104,18 +109,17 @@ class CanvasUploader:
                         "size": feedback_file.stat().st_size,
                     },
                 )
-            else:
-                return UploadResult(
-                    success=True,
-                    message="Comments upload disabled, skipping",
-                    duplicate=False,
-                    comment_posted=False,
-                    grade_posted=False,
-                    details={
-                        "file": str(feedback_file),
-                        "upload_comments": False,
-                    },
-                )
+            return UploadResult(
+                success=True,
+                message="Comments upload disabled, skipping",
+                duplicate=False,
+                comment_posted=False,
+                grade_posted=False,
+                details={
+                    "file": str(feedback_file),
+                    "upload_comments": False,
+                },
+            )
         except Exception as e:
             return UploadResult(
                 success=False,
@@ -152,14 +156,16 @@ class CanvasUploader:
         # Check for duplicates
         if config.check_duplicates:
             duplicate_result = self._check_feedback_duplicate(
-                feedback_file, config
+                feedback_file,
+                config,
             )
             if duplicate_result:
                 return duplicate_result
 
         # Upload feedback
         return self._upload_feedback_without_duplicate_check(
-            feedback_file, config
+            feedback_file,
+            config,
         )
 
     def upload_grade(
@@ -206,15 +212,14 @@ class CanvasUploader:
                     grade_posted=True,
                     details={"grade": grade, "previous_grade": current_grade},
                 )
-            else:
-                return UploadResult(
-                    success=True,
-                    message="Grade upload disabled, skipping",
-                    duplicate=False,
-                    comment_posted=False,
-                    grade_posted=False,
-                    details={"grade": grade, "upload_grades": False},
-                )
+            return UploadResult(
+                success=True,
+                message="Grade upload disabled, skipping",
+                duplicate=False,
+                comment_posted=False,
+                grade_posted=False,
+                details={"grade": grade, "upload_grades": False},
+            )
 
         except Exception as e:
             return UploadResult(
@@ -236,7 +241,7 @@ class CanvasUploader:
         config = config or UploadConfig()
         if feedback_file is None and grade is None:
             raise ValueError(
-                "At least one of feedback_file or grade must be provided"
+                "At least one of feedback_file or grade must be provided",
             )
         feedback_result = None
         grade_result = None
@@ -271,7 +276,7 @@ class CanvasUploader:
             # since proper implementation requires the Canvas object context
             raise NotImplementedError(
                 "Attachment download requires Canvas object context. "
-                "Use submission.attachments or file.download() instead."
+                "Use submission.attachments or file.download() instead.",
             )
         except ImportError:
             # Fallback to urllib (won't work with authenticated Canvas URLs)

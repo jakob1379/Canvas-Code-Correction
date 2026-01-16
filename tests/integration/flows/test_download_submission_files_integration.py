@@ -46,7 +46,7 @@ def test_download_submission_files_live(tmp_path: Path) -> None:
         ),
         grader=GraderSettings(),
         workspace=WorkspaceSettings(
-            root=Path(os.getenv("CCC_WORKSPACE_ROOT", "/tmp/ccc/workspaces"))
+            root=Path(os.getenv("CCC_WORKSPACE_ROOT", "/tmp/ccc/workspaces")),
         ),
     )
     resources = canvas_resources.build_canvas_resources(settings)

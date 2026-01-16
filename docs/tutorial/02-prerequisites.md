@@ -4,12 +4,15 @@ Before creating your work package, ensure you have:
 
 ## Required for Course Responsible
 
-- **Canvas API token**: Generate from your Canvas instance (Settings > New Access Token). You'll provide this to the CCC platform operator.
-- **Docker**: Installed locally to build and test grader images (only if creating custom images).
+- **Canvas API token**: Generate from your Canvas instance (Settings > New
+  Access Token). You'll provide this to the CCC platform operator.
+- **Docker**: Installed locally to build and test grader images (only if
+  creating custom images).
 
 ## Optional (Operator Responsibility)
 
-- **Prefect account**: Platform operators manage Prefect for workflow orchestration.
+- **Prefect account**: Platform operators manage Prefect for workflow
+  orchestration.
 - **S3-compatible storage**: Operators provision storage for grader assets.
 - **Python & uv**: Helpful for local testing but not required.
 
@@ -22,6 +25,8 @@ Before creating your work package, ensure you have:
 
 ## Installing Docker
 
-Follow the official Docker installation guide for your operating system. You'll use Docker to build your grader image.
+Follow the official Docker installation guide for your operating system. You'll
+use Docker to build your grader image.
 
-Once you have a Canvas token (and Docker if creating custom images), you're ready to proceed.
+Once you have a Canvas token (and Docker if creating custom images), you're
+ready to proceed.

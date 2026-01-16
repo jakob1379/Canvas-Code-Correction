@@ -19,7 +19,10 @@ config.read("config.ini")
 
 parser = argparse.ArgumentParser()
 parser.add_argument(
-    "-i", "--interactive", help="Open the dataframe in an interactive window", action="store_true"
+    "-i",
+    "--interactive",
+    help="Open the dataframe in an interactive window",
+    action="store_true",
 )
 parser.add_argument(
     "-o",
@@ -54,7 +57,6 @@ def load_data(course):
     :rtype: pd.DataFrame
 
     """
-
     if args.load_data and Path("tmp").joinpath("data.csv").exists():
         df = pd.read_csv(Path("tmp").joinpath("data.csv"))
         return df
@@ -78,7 +80,7 @@ def load_data(course):
                     sub.score,
                     sub.user_id,
                     course.get_user(sub.user_id).name,
-                )
+                ),
             )
             counter += 1
     pbar.finish()
@@ -108,7 +110,7 @@ def load_data(course):
         .apply(
             lambda group: config.getfloat("scores_to_complete", group.name, fallback=0)
             * group.entered_score
-            >= config.getfloat("scores_to_complete", group.name, fallback=0)
+            >= config.getfloat("scores_to_complete", group.name, fallback=0),
         )
         .reset_index(drop=True)
     )
@@ -133,7 +135,6 @@ def plot_scores(df_in):
     :rtype:
 
     """
-
     df = df_in.copy()
 
     # calc how many

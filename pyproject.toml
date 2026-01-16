@@ -52,7 +52,7 @@ dependencies = [
   "fastapi>=0.115.0",
   "uvicorn[standard]>=0.34.0",
   "PyJWT>=2.10.0",
-  "limits>=3.13.0",
+  "limits>=3.13.0"
 ]
 
 [project.scripts]
@@ -76,20 +76,23 @@ all = {sequence = ["fmt", "lint", "check", "test"], help = "Runs all development
 clean = {cmd = "uvx pyclean . --debris", help = "Clean up Python cache files and test artifacts using pyclean."}
 "ci:fmt" = {cmd = "ruff format --check", help = "Checks if code is formatted without making changes (for CI)."}
 "ci:lint" = {cmd = "ruff check", help = "Lints code without applying fixes (for CI)."}
-
 # Project-specific tasks
 docker-publish = {sequence = ["_docker_build", "_docker_push"], help = "Build and push docker image for base runner"}
+serve-docs = {cmd = "zensical serve", help = "Serve documentation locally."}
 _docker_build.cmd = "docker build -t jakob1379/canvas-grader:latest . -f containers/grader/Dockerfile"
 _docker_push.cmd = "docker push jakob1379/canvas-grader:latest"
 prefect.shell = 'prefect server start'
-s3.shell = "mkdir -p workspace && chmod 777 workspace && docker run --rm -p 9000:9000 -p 9001:9001 -v ./workspace:/data -e RUSTFS_ACCESS_KEY=rustfsadmin -e RUSTFS_SECRET_KEY=rustfsadmin rustfs/rustfs:latest /data"
 rustfs-setup.shell = "uv run python scripts/setup-rustfs.py"
-serve-docs = {cmd = "zensical serve", help = "Serve documentation locally."}
+s3.shell = "mkdir -p workspace && chmod 777 workspace && docker run --rm -p 9000:9000 -p 9001:9001 -v ./workspace:/data -e RUSTFS_ACCESS_KEY=rustfsadmin -e RUSTFS_SECRET_KEY=rustfsadmin rustfs/rustfs:latest /data"
+
+[tool.pyrefly]
+python-version = "3.13"
+search-path = ["src"]
 
 [tool.pytest.ini_options]
 addopts = "--doctest-modules --numprocesses=auto --cov=src/canvas_code_correction --cov-report=term-missing --cov-report=json"
 testpaths = [
-  "tests",
+  "tests"
 ]
 markers = [
   "integration: marks tests that exercise live Canvas API",
@@ -112,7 +115,3 @@ ignore = []
 
 [tool.ruff.lint.isort]
 known-first-party = ["canvas_code_correction"]
-
-[tool.pyrefly]
-python-version = "3.13"
-search-path = ["src"]

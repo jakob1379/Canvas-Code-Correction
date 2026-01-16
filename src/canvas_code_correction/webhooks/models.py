@@ -5,7 +5,7 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Any
 
-from pydantic import BaseModel, Field, HttpUrl
+from pydantic import BaseModel, HttpUrl
 
 
 class CanvasWebhookMetadata(BaseModel):
@@ -63,8 +63,6 @@ class SubmissionCreatedEvent(BaseModel):
 class SubmissionUpdatedEvent(SubmissionCreatedEvent):
     """Submission updated event body from Canvas webhook."""
 
-    pass
-
 
 class CanvasWebhookPayload(BaseModel):
     """Complete Canvas webhook payload."""
@@ -81,7 +79,7 @@ class CanvasWebhookPayload(BaseModel):
         event_type = self.get_event_type()
         if event_type == "submission_created":
             return SubmissionCreatedEvent(**self.body)
-        elif event_type == "submission_updated":
+        if event_type == "submission_updated":
             return SubmissionUpdatedEvent(**self.body)
         return None
 

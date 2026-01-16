@@ -5,7 +5,6 @@ from __future__ import annotations
 from unittest.mock import patch
 
 import jwt.exceptions
-import pytest
 from pydantic import HttpUrl, SecretStr
 
 from canvas_code_correction.config import (

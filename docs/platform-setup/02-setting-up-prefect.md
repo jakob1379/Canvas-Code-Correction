@@ -1,13 +1,15 @@
 # Setting up Prefect
 
-> **Audience**: CCC platform operators  
-> **Prerequisites**: Course configured via `ccc configure-course`
+> **Audience**: CCC platform operators **Prerequisites**: Course configured via
+> `ccc configure-course`
 
-CCC uses Prefect for workflow orchestration. After configuring a course, you need to create a Prefect deployment and start a worker.
+CCC uses Prefect for workflow orchestration. After configuring a course, you
+need to create a Prefect deployment and start a worker.
 
 ## Creating a Deployment
 
-A deployment makes your correction flow triggerable via schedule, API, or UI. Use the Prefect CLI:
+A deployment makes your correction flow triggerable via schedule, API, or UI.
+Use the Prefect CLI:
 
 ```bash
 uv run prefect deployment build \
@@ -21,7 +23,8 @@ uv run prefect deployment build \
 - `-q`: Work pool name (must match the worker pool)
 - `-a`: Apply the deployment immediately
 
-The work pool name should match the one configured for your course (default `course-work-pool-<slug>`).
+The work pool name should match the one configured for your course (default
+`course-work-pool-<slug>`).
 
 ## Starting a Worker
 
@@ -31,9 +34,11 @@ Workers execute flow runs. Start a worker for your course's work pool:
 uv run prefect worker start --pool course-work-pool-cs101
 ```
 
-The worker must have access to Docker and the same environment variables (Canvas token, etc.) as configured in the course block.
+The worker must have access to Docker and the same environment variables (Canvas
+token, etc.) as configured in the course block.
 
-You can run workers on any machine: your laptop, a server, or a container orchestration platform.
+You can run workers on any machine: your laptop, a server, or a container
+orchestration platform.
 
 ## Triggering a Test Run
 

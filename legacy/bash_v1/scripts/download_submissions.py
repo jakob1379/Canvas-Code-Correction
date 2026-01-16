@@ -79,7 +79,10 @@ parser.add_argument(
     choices=["failed", "uncommented", "all", "new"],
 )
 parser.add_argument(
-    "-l", "--list-assignments", help="list assignments for course and exit", action="store_true"
+    "-l",
+    "--list-assignments",
+    help="list assignments for course and exit",
+    action="store_true",
 )
 parser.add_argument("--dry", help="dry run where nothing is downloaded", action="store_true")
 
@@ -99,7 +102,6 @@ def download_submission(sub, old_files=glob(os.path.join("*", "submissions", "*"
     :param old_files: list of paths to local submissions
 
     """
-
     try:
         url = sub.attachments[0]["url"]
         if url:
@@ -140,7 +142,6 @@ def find_submissions():
     :rtype: list
 
     """
-
     # Walk through all assignments and find submissions
     submissions = []
 

@@ -9,9 +9,6 @@ from glob import glob
 from multiprocessing import cpu_count
 
 import progressbar as Pbar
-from p_tqdm import p_map
-from tabulate import tabulate
-
 from canvas_helpers import (
     bcolors,
     download_url,
@@ -20,6 +17,8 @@ from canvas_helpers import (
     init_canvas_course,
     md5sum,
 )
+from p_tqdm import p_map
+from tabulate import tabulate
 
 config = configparser.ConfigParser()
 config.read("config.ini")
@@ -43,11 +42,17 @@ parser.add_argument(
     action="store_true",
 )
 parser.add_argument(
-    "-a", "--all", help="upload all feedback RISK OF DUPLICATES ON ABSALON", action="store_true"
+    "-a",
+    "--all",
+    help="upload all feedback RISK OF DUPLICATES ON ABSALON",
+    action="store_true",
 )
 parser.add_argument("-d", "--dry", help="dry run without uploading anything", action="store_true")
 parser.add_argument(
-    "path", nargs="?", default=os.path.join("*", "submissions", "*", ""), help="Path to check"
+    "path",
+    nargs="?",
+    default=os.path.join("*", "submissions", "*", ""),
+    help="Path to check",
 )
 args = parser.parse_args()
 
@@ -59,14 +64,13 @@ if not glob(args.path):
 
 
 def upload_comments(sub, assignment):
-    """uploads zipped content to absalone if it is not already there. Compared with md5sum.
+    """Uploads zipped content to absalone if it is not already there. Compared with md5sum.
 
     :param sub: Path to submission folder
     :param assignments: dict of assignment names as key and canvas assignment object as values
     # TODO: change to just take the canvas object instead of the whole dict
 
     """
-
     if not glob(f"{sub}*.zip"):
         return
 
@@ -118,7 +122,7 @@ def upload_comments(sub, assignment):
         if args.verbose:
             print("Upload: uploading feedback\n", file_to_upload)
 
-        and = ""
+        answer = ""
         if args.question:
             print(30 * "-")
             print(file_to_string(sub + txt_name + ".txt"))
@@ -126,7 +130,9 @@ def upload_comments(sub, assignment):
             if comment_files:
                 print(
                     tabulate(
-                        [[i] for i in comment_files], headers=["Comment names"], showindex="always"
+                        [[i] for i in comment_files],
+                        headers=["Comment names"],
+                        showindex="always",
                     ),
                     "\n",
                 )
@@ -141,10 +147,10 @@ def upload_comments(sub, assignment):
                 md5string = f"{bcolors.FAIL}No{bcolors.ENDC}"
             print("md5sum are equal:", md5string)
 
-            while and not in {"y", "n"}:
-                and = (input("Upload: Should new comment be uploaded? [y/N] ") or "n").lower()
+            while answer not in {"y", "n"}:
+                answer = (input("Upload: Should new comment be uploaded? [y/N] ") or "n").lower()
 
-        if and.lower() == "y" or not args.question:
+        if answer.lower() == "y" or not args.question:
             if not args.dry:
                 submission.upload_comment(file_to_upload)
                 if args.verbose or args.question:

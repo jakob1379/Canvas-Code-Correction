@@ -32,10 +32,10 @@ class WorkspaceConfig:
 
 
 def prepare_workspace(
-    config: WorkspaceConfig, submission_files: list[Path]
+    config: WorkspaceConfig,
+    submission_files: list[Path],
 ) -> WorkspacePaths:
     """Create a workspace for a grading run and populate it with required files."""
-
     run_identifier = config.run_id or uuid4().hex
     workspace_root = (
         config.workspace_root
@@ -77,10 +77,12 @@ def prepare_workspace(
 
 
 def build_workspace_config(
-    settings: Settings, *, assignment_id: int, submission_id: int
+    settings: Settings,
+    *,
+    assignment_id: int,
+    submission_id: int,
 ) -> WorkspaceConfig:
     """Construct :class:`WorkspaceConfig` from application settings."""
-
     return WorkspaceConfig(
         workspace_root=settings.workspace.root,
         bucket_block=settings.assets.bucket_block,

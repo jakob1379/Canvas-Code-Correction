@@ -6,7 +6,6 @@ import jwt
 from jwt.exceptions import InvalidTokenError
 from pydantic import SecretStr
 
-from canvas_code_correction.clients import build_canvas_resources
 from canvas_code_correction.config import Settings
 
 

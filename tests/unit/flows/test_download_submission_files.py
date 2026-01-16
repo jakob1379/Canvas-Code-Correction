@@ -20,7 +20,7 @@ from canvas_code_correction.flows.correction import (
 )
 
 
-@pytest.fixture()
+@pytest.fixture
 def settings() -> Settings:
     return Settings(
         canvas=CanvasSettings(
