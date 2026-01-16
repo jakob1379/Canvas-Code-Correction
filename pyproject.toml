@@ -44,12 +44,15 @@ dependencies = [
   "typer>=0.20.1",
   "python-dotenv>=1.2.1",
   "canvasapi>=3.4.0",
-  "prefect-aws>=0.7.3",
   "boto3>=1.42.19",
   "mkdocs>=1.6.1",
   "mkdocs-material>=9.7.1",
   "mkdocs-mermaid2-plugin>=1.2.3",
   "mkdocs-glightbox>=0.5.2",
+  "fastapi>=0.115.0",
+  "uvicorn[standard]>=0.34.0",
+  "python-jose[cryptography]>=3.3.0",
+  "limits>=3.13.0",
 ]
 
 [project.scripts]
