@@ -142,10 +142,10 @@ Event / trigger (manual CLI, webhook, schedule)
 
 ## 7. Recent Updates (January 2026)
 
-- **RustFS Integration**: Added configurable RustFS S3-compatible storage support
-  via environment variables (`RUSTFS_ENDPOINT`, `RUSTFS_ACCESS_KEY`, `RUSTFS_SECRET_KEY`,
-  `RUSTFS_BUCKET_NAME`, `RUSTFS_PREFIX`). Updated `setup-rustfs.py` script and
-  documentation.
+- **RustFS Integration**: Added configurable RustFS S3-compatible storage
+  support via environment variables (`RUSTFS_ENDPOINT`, `RUSTFS_ACCESS_KEY`,
+  `RUSTFS_SECRET_KEY`, `RUSTFS_BUCKET_NAME`, `RUSTFS_PREFIX`). Updated
+  `setup-rustfs.py` script and documentation.
 - **Comprehensive Test Suite**: Added end-to-end test suite (`tests/e2e/`) with
   pytest fixtures for docker-compose stack (RustFS, Prefect). Tests verify full
   pipeline: Canvas download → workspace preparation → Docker execution → result

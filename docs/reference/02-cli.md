@@ -1,10 +1,12 @@
 # CLI Reference
 
-CCC provides a command-line interface for configuring courses and running corrections.
+CCC provides a command-line interface for configuring courses and running
+corrections.
 
 ## Installation
 
-After installing the package with `uv sync`, the `ccc` command is available via `uv run ccc`.
+After installing the package with `uv sync`, the `ccc` command is available via
+`uv run ccc`.
 
 ## Commands
 
@@ -22,10 +24,13 @@ uv run ccc run-once <assignment-id> [OPTIONS]
 
 **Options**:
 
-- `--submission-id`, `--submission`: Specific submission ID (default: all submissions)
-- `--course`, `-c`: Prefect course configuration block name (default: "default-course")
+- `--submission-id`, `--submission`: Specific submission ID (default: all
+  submissions)
+- `--course`, `-c`: Prefect course configuration block name (default:
+  "default-course")
 - `--dry-run`: Skip actual grading and upload
-- `--download-dir`: Directory for downloaded submissions (default: temporary directory)
+- `--download-dir`: Directory for downloaded submissions (default: temporary
+  directory)
 
 **Examples**:
 
@@ -75,7 +80,8 @@ List all configured course blocks.
 uv run ccc list-courses
 ```
 
-Displays a table with block name, Canvas course ID, Docker image, and assets block.
+Displays a table with block name, Canvas course ID, Docker image, and assets
+block.
 
 ### `ccc version`
 
@@ -87,4 +93,6 @@ uv run ccc version
 
 ## Environment Variables
 
-CCC respects standard Prefect environment variables (`PREFECT_API_URL`, `PREFECT_API_KEY`) and Canvas credentials can be passed via options or stored in Prefect blocks.
+CCC respects standard Prefect environment variables (`PREFECT_API_URL`,
+`PREFECT_API_KEY`) and Canvas credentials can be passed via options or stored in
+Prefect blocks.

@@ -1,80 +1,125 @@
-"""Flow triggering for webhook-triggered corrections."""
+"""Proper deployment management for webhook-triggered flows using Prefect 3.x deployment patterns."""
 
 from __future__ import annotations
 
-import asyncio
 import logging
-from pathlib import Path
+from typing import Any
 
-from canvas_code_correction.config import Settings, resolve_settings_from_block
-from canvas_code_correction.flows import (
-    CorrectSubmissionPayload,
-    correct_submission_flow,
-)
+from prefect.deployments.flow_runs import run_deployment
+
+from canvas_code_correction.config import Settings
+from canvas_code_correction.webhooks.flows import webhook_correction_flow
 
 logger = logging.getLogger(__name__)
 
 
-async def trigger_flow(
+def get_deployment_name(settings: Settings, course_block: str) -> str:
+    """Get deployment name for a course block."""
+    if settings.webhook.deployment_name:
+        return settings.webhook.deployment_name
+
+    # Default: ccc-{slug}-deployment
+    # Remove "ccc-course-" prefix if present
+    slug = course_block
+    if course_block.startswith("ccc-course-"):
+        slug = course_block[11:]
+    return f"ccc-{slug}-deployment"
+
+
+async def ensure_deployment(
+    course_block: str,
+    settings: Settings,
+) -> str:
+    """Ensure a deployment exists for the given course block.
+
+    Creates the deployment if it doesn't exist using flow.deploy().
+    Returns deployment name.
+    """
+    deployment_name = get_deployment_name(settings, course_block)
+
+    # Use work pool from settings, fallback to "local-pool" (from docker-compose)
+    work_pool_name = settings.grader.work_pool_name or "local-pool"
+
+    logger.debug("Ensuring deployment %s exists for course %s", deployment_name, course_block)
+
+    # Deploy the flow
+    # flow.deploy() will create or update the deployment
+    try:
+        deployment_id = await webhook_correction_flow.deploy(
+            name=deployment_name,
+            work_pool_name=work_pool_name,
+            parameters={
+                "course_block": course_block,
+                # assignment_id and submission_id will be provided at runtime
+                "download_dir": None,  # Let flow create temp dir
+                "dry_run": False,
+            },
+            tags=["canvas-webhook", f"course:{course_block}"],
+            print_next_steps=False,
+            ignore_warnings=True,
+        )
+
+        logger.info(
+            "Created/updated deployment %s (ID: %s) for course %s on work pool %s",
+            deployment_name,
+            deployment_id,
+            course_block,
+            work_pool_name,
+        )
+
+    except Exception as e:
+        logger.error(
+            "Failed to create deployment %s for course %s: %s",
+            deployment_name,
+            course_block,
+            e,
+            exc_info=True,
+        )
+        # If deployment fails, we can still try to run it (might already exist)
+        # Don't re-raise, as the deployment might already exist
+
+    return deployment_name
+
+
+async def trigger_deployment(
     course_block: str,
     assignment_id: int,
     submission_id: int,
     settings: Settings,
 ) -> str | None:
-    """Trigger correction flow for a submission.
+    """Trigger deployment for a submission using Prefect's run_deployment.
 
-    Runs the flow in a separate thread to avoid blocking the webhook response.
     Returns flow run ID if successful, None otherwise.
     """
     try:
-        # Create payload
-        payload = CorrectSubmissionPayload(
-            assignment_id=assignment_id,
-            submission_id=submission_id,
+        # Ensure deployment exists (idempotent)
+        deployment_name = await ensure_deployment(course_block, settings)
+
+        # Run deployment
+        flow_run = await run_deployment(
+            deployment_name=deployment_name,
+            parameters={
+                "assignment_id": assignment_id,
+                "submission_id": submission_id,
+                "download_dir": None,  # Let flow create temp dir
+                "dry_run": False,
+            },
+            timeout=0,  # No timeout
         )
-
-        # Run flow in separate thread (since it's synchronous)
-        # Note: This runs the flow locally, not via a work pool.
-        # For production, consider creating a deployment and using work pools.
-        def run_flow() -> dict:
-            """Synchronous flow execution."""
-            # Use temporary download directory
-            import tempfile
-
-            with tempfile.TemporaryDirectory(prefix="ccc-webhook-") as tmpdir:
-                artifacts = correct_submission_flow(
-                    payload=payload,
-                    settings=settings,
-                    download_dir=Path(tmpdir),
-                    dry_run=False,
-                )
-                # Return minimal info
-                return {
-                    "success": True,
-                    "submission_metadata_keys": list(artifacts.submission_metadata.keys()),
-                }
-
-        # Run in thread pool
-        loop = asyncio.get_event_loop()
-        result = await loop.run_in_executor(None, run_flow)
 
         logger.info(
-            "Triggered correction flow for %s: assignment %s, submission %s",
-            course_block,
+            "Triggered deployment %s for assignment %s submission %s -> flow run %s",
+            deployment_name,
             assignment_id,
             submission_id,
+            flow_run.id,
         )
 
-        # Generate a fake flow run ID for now (since we're not using Prefect API)
-        # In production, you would use `flow.deploy()` and `run_deployment()`.
-        import uuid
-
-        flow_run_id = f"local-{uuid.uuid4().hex[:8]}"
-        return flow_run_id
+        return str(flow_run.id)
 
     except Exception as e:
         logger.error(
-            "Failed to trigger flow for %s (assignment %s, submission %s): %s",
+            "Failed to trigger deployment for %s (assignment %s, submission %s): %s",
             course_block,
             assignment_id,
             submission_id,
@@ -84,5 +129,7 @@ async def trigger_flow(
         return None
 
 
-# Alias for backward compatibility
-trigger_deployment = trigger_flow
+# Legacy alias for backward compatibility
+async def trigger_flow(*args: Any, **kwargs: Any) -> str | None:
+    """Legacy alias for trigger_deployment."""
+    return await trigger_deployment(*args, **kwargs)

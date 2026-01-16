@@ -19,11 +19,10 @@ from canvasapi import Canvas
 
 
 def download_url(url, save_path):
-    """files files at url to the given path
+    """Files files at url to the given path
     :param url: target url
     :param save_path: target path
     """
-
     # Make sure destination folder exists
     end_folder = os.sep.join(save_path.split(os.sep)[:-1])
     Path(end_folder).mkdir(parents=True, exist_ok=True)
@@ -33,26 +32,24 @@ def download_url(url, save_path):
 
 
 def file_to_string(file_name):
-    """reads entire file into a single string
+    """Reads entire file into a single string
 
     :param file_name: path
     :returns: file content as string
     :rtype: str
 
     """
-
     with open(file_name) as f:
         content = f.read()
     return content.strip()
 
 
 def print_dict(d):
-    """pretty prints a dictionary
+    """Pretty prints a dictionary
 
     :param d: dictionary to print
 
     """
-
     max_key = len(max(d.keys(), key=len))
     for k, v in d.items():
         print(k.ljust(max_key) + " : " + str(v))
@@ -65,7 +62,6 @@ def print_as_dict(dd):
     :param dd: any input that has a __dict__ defined
 
     """
-
     d = vars(dd)
     keys = sorted(d.keys())
     values = [d[keys] for key in keys]
@@ -94,14 +90,13 @@ def md5sum(filename, block_size=2**20):
 
 
 def extract_comment_filenames(comments):
-    """extract all filenames from submission comments
+    """Extract all filenames from submission comments
 
     :param comments:
     :returns: list of filenames
     :rtype: list
 
     """
-
     # Get all attachments in comments as one flat list
     fileNames = []
     for comment in list(comments):
@@ -113,7 +108,7 @@ def extract_comment_filenames(comments):
 
 
 def create_file_name(submission, course, method="name"):
-    """constructs the basename for a submission
+    """Constructs the basename for a submission
 
     :param submission: canvas submission object
     :param course: canvas course object
@@ -122,7 +117,6 @@ def create_file_name(submission, course, method="name"):
     :rtype: str
 
     """
-
     file_name = []
     uid = submission.user_id
 

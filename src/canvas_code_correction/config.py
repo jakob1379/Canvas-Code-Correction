@@ -96,5 +96,4 @@ class Settings(BaseModel):
 
 def resolve_settings_from_block(block_name: str) -> Settings:
     """Load :class:`Settings` from a Prefect course configuration block."""
-
     return Settings.from_course_block(block_name)

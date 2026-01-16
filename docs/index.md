@@ -34,10 +34,10 @@ been implemented and tested:
 All unit tests pass, and the system is ready for integration testing with the
 Canvas Cloud development course.
 
-- **RustFS Integration**: Configurable S3-compatible storage backend with environment
-  variable support for production deployments
-- **Comprehensive Test Suite**: End-to-end tests with docker-compose stack (RustFS,
-  Prefect) and GitHub Actions CI pipeline
+- **RustFS Integration**: Configurable S3-compatible storage backend with
+  environment variable support for production deployments
+- **Comprehensive Test Suite**: End-to-end tests with docker-compose stack
+  (RustFS, Prefect) and GitHub Actions CI pipeline
 - **Production-Ready Configuration**: Support for custom S3 endpoints and secure
   credential management
 
@@ -70,6 +70,7 @@ uv run pytest -m integration
 ```
 
 Configuration via environment variables:
+
 - `RUSTFS_ENDPOINT`: S3 endpoint URL (default: `http://localhost:9000`)
 - `RUSTFS_ACCESS_KEY`: Access key (default: `rustfsadmin`)
 - `RUSTFS_SECRET_KEY`: Secret key (default: `rustfsadmin`)

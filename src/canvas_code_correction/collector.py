@@ -50,29 +50,29 @@ class ResultCollector:
         return points_files[0]
 
     def _find_comments_file(
-        self, submission_dir: Path, submission_dir_name: str | None
+        self,
+        submission_dir: Path,
+        submission_dir_name: str | None,
     ) -> tuple[Path | None, str | None]:
         """Find comments file and read its content."""
         comments_file = None
         comments = None
         if submission_dir_name:
-            comments_file_candidate = (
-                submission_dir / f"{submission_dir_name}.txt"
-            )
+            comments_file_candidate = submission_dir / f"{submission_dir_name}.txt"
             if comments_file_candidate.exists():
                 comments_file = comments_file_candidate
         else:
             txt_files = [
                 f
                 for f in submission_dir.glob("*.txt")
-                if not f.name.endswith("_points.txt")
-                and f.name != ERRORS_LOG_FILENAME
+                if not f.name.endswith("_points.txt") and f.name != ERRORS_LOG_FILENAME
             ]
             if txt_files:
                 comments_file = txt_files[0]
         if comments_file and comments_file.exists():
             comments = comments_file.read_text(
-                encoding="utf-8", errors="replace"
+                encoding="utf-8",
+                errors="replace",
             )
         return comments_file, comments
 
@@ -87,13 +87,14 @@ class ResultCollector:
         return errors_log if errors_log.exists() else None
 
     def collect(
-        self, submission_dir_name: str | None = None
+        self,
+        submission_dir_name: str | None = None,
     ) -> CollectionResult:
         """Collect all grader outputs from the workspace."""
         submission_dir = self.workspace_root / "submission"
         if not submission_dir.exists():
             raise ValueError(
-                f"Submission directory not found: {submission_dir}"
+                f"Submission directory not found: {submission_dir}",
             )
 
         # Determine the base name for files (currently unused, reserved for future naming)
@@ -110,7 +111,8 @@ class ResultCollector:
 
         # Find comments file and content
         comments_file, comments = self._find_comments_file(
-            submission_dir, submission_dir_name
+            submission_dir,
+            submission_dir_name,
         )
 
         # Find artifacts zip
@@ -123,7 +125,8 @@ class ResultCollector:
         grading_result = GradingResult(
             points=points,
             points_file_content=points_file.read_text(
-                encoding="utf-8", errors="replace"
+                encoding="utf-8",
+                errors="replace",
             ),
             comments=comments,
             comments_file_path=comments_file,
@@ -131,10 +134,10 @@ class ResultCollector:
             errors_log_path=errors_log,
             metadata={
                 "points_file": str(
-                    points_file.relative_to(self.workspace_root)
+                    points_file.relative_to(self.workspace_root),
                 ),
                 "submission_dir": str(
-                    submission_dir.relative_to(self.workspace_root)
+                    submission_dir.relative_to(self.workspace_root),
                 ),
             },
         )
@@ -148,7 +151,8 @@ class ResultCollector:
     def _parse_points_file(self, points_file: Path) -> float:
         """Parse points file, summing all numbers if multiple lines."""
         content = points_file.read_text(
-            encoding="utf-8", errors="replace"
+            encoding="utf-8",
+            errors="replace",
         ).strip()
         if not content:
             return 0.0
@@ -208,18 +212,14 @@ class ResultCollector:
                 zipf.writestr("comments.txt", result.comments)
 
             # Add errors log if exists and requested
-            if (
-                include_errors_log
-                and result.errors_log_path
-                and result.errors_log_path.exists()
-            ):
+            if include_errors_log and result.errors_log_path and result.errors_log_path.exists():
                 zipf.write(result.errors_log_path, ERRORS_LOG_FILENAME)
 
             # Add metadata as JSON
             metadata = {
                 "points": result.points,
                 "collected_at": json.dumps(
-                    str(Path.cwd())
+                    str(Path.cwd()),
                 ),  # Simple timestamp placeholder
                 "files_included": [],
             }
@@ -239,7 +239,7 @@ class ResultCollector:
 
         if result.artifacts_zip_path and not result.artifacts_zip_path.exists():
             issues.append(
-                f"Artifacts zip referenced but not found: {result.artifacts_zip_path}"
+                f"Artifacts zip referenced but not found: {result.artifacts_zip_path}",
             )
 
         return issues

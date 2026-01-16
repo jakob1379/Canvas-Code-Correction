@@ -37,7 +37,7 @@ def test_build_canvas_resources_live() -> None:
         ),
         grader=GraderSettings(),
         workspace=WorkspaceSettings(
-            root=Path(os.getenv("CCC_WORKSPACE_ROOT", "/tmp/ccc/workspaces"))
+            root=Path(os.getenv("CCC_WORKSPACE_ROOT", "/tmp/ccc/workspaces")),
         ),
     )
 

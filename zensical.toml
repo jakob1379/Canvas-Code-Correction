@@ -4,7 +4,6 @@ site_url = "https://jakob1379.github.io/Canvas-Code-Correction/"
 site_description = "Prefect-based automation for Canvas submission correction"
 copyright = "Copyright © 2026 Canvas Code Correction Maintainers"
 extra_css = ["stylesheets/custom.css"]
-# extra_javascript = ["javascripts/extra.js"]  # Uncomment if you have custom JS
 
 [[project.extra.social]]
 icon = "fontawesome/brands/github"
@@ -69,20 +68,20 @@ logo = "assets/logo.svg"
 favicon = "assets/logo.svg"
 # custom_dir = "overrides"  # Uncomment if you have theme overrides
 features = [
-    "content.code.annotate",
-    "content.code.copy",
-    "content.tabs.link",
-    "navigation.expand",
-    "navigation.footer",
-    "navigation.indexes",
-    "navigation.instant",
-    "navigation.instant.prefetch",
-    "navigation.instant.progress",
-    "navigation.sections",
-    "navigation.tabs",
-    "navigation.top",
-    "navigation.tracking",
-    "toc.follow"
+  "content.code.annotate",
+  "content.code.copy",
+  "content.tabs.link",
+  "navigation.expand",
+  "navigation.footer",
+  "navigation.indexes",
+  "navigation.instant",
+  "navigation.instant.prefetch",
+  "navigation.instant.progress",
+  "navigation.sections",
+  "navigation.tabs",
+  "navigation.top",
+  "navigation.tracking",
+  "toc.follow"
 ]
 
 [project.theme.icon]

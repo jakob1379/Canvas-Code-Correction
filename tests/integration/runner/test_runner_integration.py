@@ -29,7 +29,6 @@ def docker_available() -> bool:
 @pytest.mark.skipif(not docker_available(), reason="Docker not available")
 def test_grader_executor_simple_command() -> None:
     """Test executing a simple command in a Docker container."""
-
     # Use a small, widely available image
     config = GraderConfig(
         docker_image="alpine:latest",
@@ -56,7 +55,6 @@ def test_grader_executor_simple_command() -> None:
 @pytest.mark.skipif(not docker_available(), reason="Docker not available")
 def test_grader_executor_with_mounts() -> None:
     """Test executing a command with mounted directories."""
-
     with tempfile.TemporaryDirectory() as tmpdir:
         submission_dir = Path(tmpdir) / "submission"
         submission_dir.mkdir()
@@ -68,7 +66,9 @@ def test_grader_executor_with_mounts() -> None:
 
         mounts = [
             MountPoint(
-                source=submission_dir, target=Path("/workspace/submission"), read_only=False
+                source=submission_dir,
+                target=Path("/workspace/submission"),
+                read_only=False,
             ),
             MountPoint(source=assets_dir, target=Path("/workspace/assets"), read_only=True),
         ]
@@ -95,7 +95,6 @@ def test_grader_executor_with_mounts() -> None:
 @pytest.mark.skipif(not docker_available(), reason="Docker not available")
 def test_grader_executor_timeout() -> None:
     """Test that timeout kills the container."""
-
     config = GraderConfig(
         docker_image="alpine:latest",
         command=["sleep", "10"],
@@ -119,7 +118,6 @@ def test_grader_executor_timeout() -> None:
 @pytest.mark.skipif(not docker_available(), reason="Docker not available")
 def test_grader_executor_invalid_image() -> None:
     """Test error handling for invalid Docker image."""
-
     config = GraderConfig(
         docker_image="nonexistent_image:999999",
         command=["echo", "test"],
@@ -143,7 +141,6 @@ def test_grader_executor_invalid_image() -> None:
 @pytest.mark.skipif(not docker_available(), reason="Docker not available")
 def test_execute_in_workspace() -> None:
     """Test the convenience method that sets up mounts automatically."""
-
     with tempfile.TemporaryDirectory() as tmpdir:
         submission_dir = Path(tmpdir) / "submission"
         submission_dir.mkdir()

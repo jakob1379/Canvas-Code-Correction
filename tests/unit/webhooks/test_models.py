@@ -2,10 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
-
-import pytest
-from pydantic import ValidationError
+from datetime import UTC, datetime
 
 from canvas_code_correction.webhooks.models import (
     CanvasWebhookMetadata,
@@ -19,7 +16,7 @@ def test_canvas_webhook_metadata() -> None:
     """Test CanvasWebhookMetadata validation."""
     metadata = CanvasWebhookMetadata(
         event_name="submission_created",
-        event_time=datetime.now(timezone.utc),
+        event_time=datetime.now(UTC),
         producer="canvas",
     )
     assert metadata.event_name == "submission_created"
@@ -33,8 +30,8 @@ def test_submission_created_event() -> None:
         assignment_id="123",
         submission_id="456",
         submission_type="online_text_entry",
-        submitted_at=datetime.now(timezone.utc),
-        updated_at=datetime.now(timezone.utc),
+        submitted_at=datetime.now(UTC),
+        updated_at=datetime.now(UTC),
         user_id="789",
         workflow_state="submitted",
     )
@@ -51,8 +48,8 @@ def test_submission_updated_event_inherits() -> None:
         assignment_id="123",
         submission_id="456",
         submission_type="online_text_entry",
-        submitted_at=datetime.now(timezone.utc),
-        updated_at=datetime.now(timezone.utc),
+        submitted_at=datetime.now(UTC),
+        updated_at=datetime.now(UTC),
         user_id="789",
         workflow_state="graded",
     )
@@ -65,15 +62,15 @@ def test_canvas_webhook_payload_parsing() -> None:
     payload = CanvasWebhookPayload(
         metadata=CanvasWebhookMetadata(
             event_name="submission_created",
-            event_time=datetime.now(timezone.utc),
+            event_time=datetime.now(UTC),
             producer="canvas",
         ),
         body={
             "assignment_id": "123",
             "submission_id": "456",
             "submission_type": "online_text_entry",
-            "submitted_at": datetime.now(timezone.utc).isoformat(),
-            "updated_at": datetime.now(timezone.utc).isoformat(),
+            "submitted_at": datetime.now(UTC).isoformat(),
+            "updated_at": datetime.now(UTC).isoformat(),
             "user_id": "789",
             "workflow_state": "submitted",
         },
@@ -90,7 +87,7 @@ def test_canvas_webhook_payload_invalid_event() -> None:
     payload = CanvasWebhookPayload(
         metadata=CanvasWebhookMetadata(
             event_name="assignment_created",
-            event_time=datetime.now(timezone.utc),
+            event_time=datetime.now(UTC),
             producer="canvas",
         ),
         body={},

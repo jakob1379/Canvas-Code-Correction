@@ -1,3 +1,5 @@
+- Commit often - group things together and make conventional commits
+
 ## General approach to code
 
 we should follow the zen of python:

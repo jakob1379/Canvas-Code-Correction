@@ -13,10 +13,12 @@ WORKSPACE_ROOT = Path(os.getenv("CCC_WORKSPACE_DIR", Path.cwd()))
 
 
 def submission_files(root: Path) -> list[str]:
+    """Return sorted list of file paths relative to root."""
     return sorted(path.relative_to(root).as_posix() for path in root.rglob("*") if path.is_file())
 
 
 def write_outputs(files: list[str]) -> None:
+    """Write results, points, and comments files."""
     RESULTS_PATH.write_text(json.dumps({"files": files, "total": len(files)}))
     POINTS_PATH.write_text("1\n")
 
@@ -30,9 +32,10 @@ def write_outputs(files: list[str]) -> None:
 
 
 def main() -> None:
+    """Main entry point for the example grader."""
     submission_root = WORKSPACE_ROOT / "submission"
     if not submission_root.exists():
-        raise SystemExit("submission directory missing")
+        raise SystemExit("submission directory missing")  # noqa: TRY003, EM101
 
     files = submission_files(submission_root)
     write_outputs(files)

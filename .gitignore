@@ -1,11 +1,14 @@
 ##########################
 # project specific files #
 ##########################
+.env
 **/code/
+src/.skylos_trace
 *.log
 *.pdf
 *_scores.txt
 .coverage
+coverage.json
 .pytest_cache/
 .python-version
 .venv/

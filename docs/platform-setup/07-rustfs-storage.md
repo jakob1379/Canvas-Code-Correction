@@ -1,6 +1,7 @@
 # RustFS Storage
 
-CCC can use RustFS, a lightweight S3-compatible storage server, for local development and testing.
+CCC can use RustFS, a lightweight S3-compatible storage server, for local
+development and testing.
 
 ## Running RustFS Locally
 
@@ -10,7 +11,8 @@ Start the RustFS server:
 uv run poe s3
 ```
 
-This starts a server at `http://localhost:9000` with default credentials `rustfsadmin`/`rustfsadmin`. Data is stored in `./workspace`.
+This starts a server at `http://localhost:9000` with default credentials
+`rustfsadmin`/`rustfsadmin`. Data is stored in `./workspace`.
 
 ## Setting Up for Testing
 
@@ -50,7 +52,8 @@ uv run poe rustfs-setup
 
 ## Using RustFS with CCC
 
-When configuring a course, use the `--assets-block` flag with the block name created by the setup script (e.g., `local-rustfs`).
+When configuring a course, use the `--assets-block` flag with the block name
+created by the setup script (e.g., `local-rustfs`).
 
 ```bash
 uv run ccc configure-course cs101 \
@@ -60,4 +63,6 @@ uv run ccc configure-course cs101 \
 
 ## Production Considerations
 
-For production, consider using a dedicated S3 service (AWS S3, MinIO, etc.) with proper backups and access controls. RustFS is suitable for development and small-scale deployments.
+For production, consider using a dedicated S3 service (AWS S3, MinIO, etc.) with
+proper backups and access controls. RustFS is suitable for development and
+small-scale deployments.

@@ -61,7 +61,7 @@ def test_full_correction_pipeline(
         ),
         grader=GraderSettings(),
         workspace=WorkspaceSettings(
-            root=Path(os.getenv("CCC_WORKSPACE_ROOT", "/tmp/ccc/workspaces"))
+            root=Path(os.getenv("CCC_WORKSPACE_ROOT", "/tmp/ccc/workspaces")),
         ),
     )
 

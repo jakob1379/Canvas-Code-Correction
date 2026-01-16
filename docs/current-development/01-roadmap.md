@@ -16,11 +16,14 @@ architecture.
       end-to-end Prefect flow completed. All Phase 2 components are now
       implemented and tested.
 - [x] **Phase 3 – Container Runner**: Harden Docker execution, add resource
-      limits, smoke tests. _(Complete - Docker runner with resource limits implemented)_
-- [ ] **Phase 4 – Webhooks & Queueing**: FastAPI webhook receiver, Prefect
-      deployments, optional external queue.
+      limits, smoke tests. _(Complete - Docker runner with resource limits
+      implemented)_
+- [x] **Phase 4 – Webhooks & Queueing**: FastAPI webhook receiver, Prefect
+      deployments, optional external queue. _(Complete - Webhook server with JWT
+      validation, rate limiting, deployment management)_
 - [x] **Phase 5 – Reporting & Docs**: Automated run summaries, expanded MkDocs
-      content, CI integration. _(In progress - GitHub Actions CI added, docs updated)_
+      content, CI integration. _(In progress - GitHub Actions CI added, docs
+      updated)_
 
 ## Contributing
 

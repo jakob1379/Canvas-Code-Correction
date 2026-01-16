@@ -29,8 +29,8 @@ architecture that keeps the system modular, testable, and secure by default.
 - **Submission Workspace** – transient directory inside the worker container
   where submission attachments are staged and grader artefacts are produced.
 - **Asset Storage (RustFS)** – S3-compatible object storage for immutable grader
-  assets (tests, fixtures, helper scripts). Configurable via environment variables
-  for local development and production deployments.
+  assets (tests, fixtures, helper scripts). Configurable via environment
+  variables for local development and production deployments.
 - **Prefect Webhook** – Canvas events call Prefect's native webhook endpoint,
   which queues a flow run without additional services. Optional custom shims can
   be added later only if advanced preprocessing is required.

@@ -32,8 +32,8 @@ def build_canvas_resources(
         Configuration containing Canvas connection details.
     canvas:
         Optional preconfigured :class:`~canvasapi.Canvas` instance for testing.
-    """
 
+    """
     token = settings.canvas.token.get_secret_value()
     api_client = canvas or Canvas(str(settings.canvas.api_url), token)
     course = api_client.get_course(settings.canvas.course_id)

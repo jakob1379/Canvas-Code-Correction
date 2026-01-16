@@ -102,7 +102,9 @@ uv run ccc configure-course <course-slug> \
   --s3-prefix dev
 ```
 
-See the [Deploying Tests to CCC](../b-platform-setup/05-deploying-tests-to-ccc.md) guide for details.
+See the
+[Deploying Tests to CCC](../b-platform-setup/05-deploying-tests-to-ccc.md) guide
+for details.
 
 ## Validating the Setup
 

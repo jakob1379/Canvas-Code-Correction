@@ -163,9 +163,8 @@ def check_prefect_server() -> bool:
         if response.status_code == 200:
             print(f"✓ Prefect server is reachable at {prefect_api_url}")
             return True
-        else:
-            print(f"✗ Prefect server returned status {response.status_code}")
-            return False
+        print(f"✗ Prefect server returned status {response.status_code}")
+        return False
     except ImportError:
         print("⚠ Could not check Prefect server (httpx not available)")
         return True  # Continue anyway
