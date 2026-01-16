@@ -30,11 +30,35 @@ class WorkspaceSettings(BaseModel):
     root: Path = Field(default_factory=lambda: Path("/tmp/ccc/workspaces"))
 
 
+class WebhookSettings(BaseModel):
+    secret: SecretStr | None = Field(
+        default=None,
+        description="Shared secret for Canvas webhook JWT validation (optional)",
+    )
+    deployment_name: str | None = Field(
+        default=None,
+        description="Prefect deployment name for this course (default: ccc-{slug}-deployment)",
+    )
+    enabled: bool = Field(
+        default=True,
+        description="Enable webhook processing for this course",
+    )
+    require_jwt: bool = Field(
+        default=False,
+        description="Require JWT validation for Canvas webhooks (uses secret)",
+    )
+    rate_limit: str = Field(
+        default="10/minute",
+        description="Rate limit for webhook requests (e.g., '10/minute', '100/hour')",
+    )
+
+
 class Settings(BaseModel):
     canvas: CanvasSettings
     assets: CourseAssetsSettings
     grader: GraderSettings
     workspace: WorkspaceSettings
+    webhook: WebhookSettings = Field(default_factory=WebhookSettings)
 
     @classmethod
     def from_course_block(cls, block_name: str) -> Settings:
@@ -60,6 +84,13 @@ class Settings(BaseModel):
                 env=dict(block.grader_env),  # type: ignore
             ),
             workspace=WorkspaceSettings(root=workspace_root),
+            webhook=WebhookSettings(
+                secret=block.webhook_secret,  # type: ignore
+                deployment_name=block.deployment_name,  # type: ignore
+                enabled=block.webhook_enabled,  # type: ignore
+                require_jwt=block.webhook_require_jwt,  # type: ignore
+                rate_limit="10/minute",
+            ),
         )
 
 
