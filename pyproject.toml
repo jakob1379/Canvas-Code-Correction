@@ -115,3 +115,9 @@ ignore = []
 
 [tool.ruff.lint.isort]
 known-first-party = ["canvas_code_correction"]
+
+[tool.ruff.lint.per-file-ignores]
+# Allow assert statements and skip docstrings in tests
+"tests/**/*.py" = ["S101", "D100", "D101", "D102", "D103", "D104", "D105", "D106", "D107"]
+# Allow print statements in legacy scripts
+"legacy/**/*.py" = ["T201"]

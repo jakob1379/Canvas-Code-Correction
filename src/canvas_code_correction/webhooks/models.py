@@ -2,10 +2,12 @@
 
 from __future__ import annotations
 
-from datetime import datetime
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from pydantic import BaseModel, HttpUrl
+
+if TYPE_CHECKING:
+    from datetime import datetime
 
 
 class CanvasWebhookMetadata(BaseModel):

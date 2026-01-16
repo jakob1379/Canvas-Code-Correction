@@ -8,6 +8,7 @@ src/.skylos_trace
 *.pdf
 *_scores.txt
 .coverage
+.coverage.*
 coverage.json
 .pytest_cache/
 .python-version

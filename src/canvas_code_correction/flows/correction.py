@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from prefect import flow, task
 
@@ -13,7 +13,6 @@ from canvas_code_correction.clients import (
     build_canvas_resources,
 )
 from canvas_code_correction.collector import ResultCollector
-from canvas_code_correction.config import Settings
 from canvas_code_correction.runner import (
     GraderConfig,
     GraderExecutor,
@@ -25,6 +24,9 @@ from canvas_code_correction.workspace import (
     build_workspace_config,
     prepare_workspace,
 )
+
+if TYPE_CHECKING:
+    from canvas_code_correction.config import Settings
 
 
 @dataclass(frozen=True)
@@ -73,7 +75,7 @@ def fetch_submission_metadata(
     }
 
 
-def _canvas_object_to_dict(obj: Any) -> dict[str, Any]:
+def _canvas_object_to_dict(obj: Any) -> dict[str, Any]:  # noqa: ANN401
     if hasattr(obj, "attributes"):
         attributes = obj.attributes
         if isinstance(attributes, dict) and attributes:
@@ -133,14 +135,14 @@ def prepare_workspace_task(
     return prepare_workspace(config, submission_files)
 
 
-def _extract_attachment_id(attachment: Any) -> int | None:
+def _extract_attachment_id(attachment: Any) -> int | None:  # noqa: ANN401
     if isinstance(attachment, dict):
         value = attachment.get("id")
         return int(value) if value is not None else None
     return getattr(attachment, "id", None)
 
 
-def _resolve_attachment_name(attachment: Any, file_obj: Any) -> str:
+def _resolve_attachment_name(attachment: Any, file_obj: Any) -> str:  # noqa: ANN401
     candidates = []
 
     if isinstance(attachment, dict):
@@ -319,7 +321,8 @@ def correct_submission_flow(
     metadata = fetch_submission_metadata(resources, payload)
 
     if download_dir is None:
-        raise NotImplementedError("download directory must be provided")
+        msg = "download directory must be provided"
+        raise NotImplementedError(msg)
 
     downloaded = download_submission_files(resources, payload, download_dir)
     workspace = prepare_workspace_task(resources, payload, downloaded)
