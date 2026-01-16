@@ -32,9 +32,7 @@ def test_download_submission_files_live(tmp_path: Path) -> None:
 
     api_url = os.getenv("CANVAS_API_URL", "https://canvas.instructure.com")
 
-    bucket_block = os.getenv("CCC_ASSET_BUCKET_BLOCK")
-    if not bucket_block:
-        pytest.skip("Course asset bucket block not configured")
+    bucket_block = os.getenv("CCC_ASSET_BUCKET_BLOCK", "local-rustfs")
 
     settings = Settings(
         canvas=CanvasSettings(
