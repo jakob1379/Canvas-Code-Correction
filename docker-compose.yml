@@ -62,6 +62,21 @@ services:
     environment:
       PREFECT_API_URL: http://prefect-server:4200/api
     command: prefect worker start --pool local-pool
+
+  webhook-listener:
+    image: prefecthq/prefect:3-latest
+    depends_on:
+      prefect-server:
+        condition: service_started
+    environment:
+      PREFECT_API_URL: http://prefect-server:4200/api
+    volumes:
+      - .:/opt/canvas-code-correction
+    working_dir: /opt/canvas-code-correction
+    command: sh -c "pip install -e . && ccc webhook serve --host 0.0.0.0 --port 8080"
+    ports:
+      - "8080:8080"
+
   rustfs:
     image: rustfs/rustfs:latest
     ports:

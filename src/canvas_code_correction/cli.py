@@ -9,9 +9,11 @@ from pathlib import Path
 from typing import Annotated
 
 import typer
+import uvicorn
 from pydantic import HttpUrl, SecretStr
 from rich.console import Console
 from rich.table import Table
+from canvas_code_correction.webhooks.server import app as webhook_fastapi_app
 
 from canvas_code_correction.clients import build_canvas_resources
 from canvas_code_correction.config import resolve_settings_from_block
@@ -30,15 +32,11 @@ def run_once(
     assignment_id: Annotated[int, typer.Argument(help="Canvas assignment ID")],
     submission_id: Annotated[
         int | None,
-        typer.Option(
-            None, help="Specific submission ID (default: all submissions)"
-        ),
+        typer.Option(None, help="Specific submission ID (default: all submissions)"),
     ] = None,
     course_block: Annotated[
         str,
-        typer.Option(
-            "--course", "-c", help="Prefect course configuration block name"
-        ),
+        typer.Option("--course", "-c", help="Prefect course configuration block name"),
     ] = "default-course",
     download_dir: Annotated[
         Path | None,
@@ -55,16 +53,12 @@ def run_once(
     try:
         settings = resolve_settings_from_block(course_block)
     except Exception as e:
-        console.print(
-            f"[red]Error loading course block '{course_block}': {e}[/red]"
-        )
+        console.print(f"[red]Error loading course block '{course_block}': {e}[/red]")
         raise typer.Exit(1) from e
 
     if download_dir is None:
         download_dir = Path(tempfile.mkdtemp(prefix="ccc-download-"))
-        console.print(
-            f"[yellow]Using temporary download directory: {download_dir}[/yellow]"
-        )
+        console.print(f"[yellow]Using temporary download directory: {download_dir}[/yellow]")
 
     if submission_id:
         payload = CorrectSubmissionPayload(
@@ -97,14 +91,10 @@ def run_once(
                     download_dir=download_dir,
                     dry_run=dry_run,
                 )
-                console.print(
-                    f"[green]Submission {sub_id} processed successfully[/green]"
-                )
+                console.print(f"[green]Submission {sub_id} processed successfully[/green]")
                 # Optional: collect summary
             except Exception as e:
-                console.print(
-                    f"[red]Error processing submission {sub_id}: {e}[/red]"
-                )
+                console.print(f"[red]Error processing submission {sub_id}: {e}[/red]")
                 # Continue with next submission
                 continue
 
@@ -112,9 +102,7 @@ def run_once(
         raise typer.Exit(0)
 
     if dry_run:
-        console.print(
-            "[yellow]Dry run enabled - no actual grading or upload will occur[/yellow]"
-        )
+        console.print("[yellow]Dry run enabled - no actual grading or upload will occur[/yellow]")
 
     try:
         result = correct_submission_flow(
@@ -127,13 +115,9 @@ def run_once(
         console.print(
             json.dumps(
                 {
-                    "submission_metadata_keys": list(
-                        result.submission_metadata.keys()
-                    ),
+                    "submission_metadata_keys": list(result.submission_metadata.keys()),
                     "downloaded_files_count": len(result.downloaded_files),
-                    "workspace": str(result.workspace.root)
-                    if result.workspace
-                    else None,
+                    "workspace": str(result.workspace.root) if result.workspace else None,
                     "results_keys": list(result.results.keys()),
                 },
                 indent=2,
@@ -146,9 +130,7 @@ def run_once(
 
 @app.command()
 def configure_course(
-    course_slug: Annotated[
-        str, typer.Argument(help="Unique identifier for the course")
-    ],
+    course_slug: Annotated[str, typer.Argument(help="Unique identifier for the course")],
     canvas_token: Annotated[
         str,
         typer.Option(
@@ -159,9 +141,7 @@ def configure_course(
             hide_input=True,
         ),
     ],
-    canvas_course_id: Annotated[
-        int, typer.Option("--course-id", "-i", help="Canvas course ID")
-    ],
+    canvas_course_id: Annotated[int, typer.Option("--course-id", "-i", help="Canvas course ID")],
     asset_bucket_block: Annotated[
         str,
         typer.Option(
@@ -205,9 +185,7 @@ def configure_course(
                 key, value = env_str.split("=", 1)
                 grader_env[key.strip()] = value.strip()
             else:
-                console.print(
-                    f"[yellow]Skipping invalid env var: {env_str}[/yellow]"
-                )
+                console.print(f"[yellow]Skipping invalid env var: {env_str}[/yellow]")
 
     try:
         block = CourseConfigBlock(
@@ -222,9 +200,7 @@ def configure_course(
             grader_env=grader_env,
         )
         block.save(block_name, overwrite=True)
-        console.print(
-            f"[green]Course configuration saved as block: {block_name}[/green]"
-        )
+        console.print(f"[green]Course configuration saved as block: {block_name}[/green]")
     except Exception as e:
         console.print(f"[red]Error saving course block: {e}[/red]")
         raise typer.Exit(1) from e
@@ -236,9 +212,7 @@ def list_courses() -> None:
     try:
         blocks = CourseConfigBlock.find()  # type: ignore
         if not blocks:
-            console.print(
-                "[yellow]No course configuration blocks found[/yellow]"
-            )
+            console.print("[yellow]No course configuration blocks found[/yellow]")
             return
 
         table = Table(title="Configured Courses")
@@ -263,6 +237,22 @@ def list_courses() -> None:
     except Exception as e:
         console.print(f"[red]Error listing courses: {e}[/red]")
         raise typer.Exit(1) from e
+
+
+webhook_app = typer.Typer()
+
+
+@webhook_app.command()
+def serve(
+    host: Annotated[str, typer.Option("--host", help="Host to bind")] = "0.0.0.0",
+    port: Annotated[int, typer.Option("--port", help="Port to bind")] = 8080,
+) -> None:
+    """Start webhook server for Canvas submissions."""
+    console.print(f"[blue]Starting webhook server on {host}:{port}[/blue]")
+    uvicorn.run(webhook_fastapi_app, host=host, port=port)
+
+
+app.add_typer(webhook_app, name="webhook")
 
 
 @app.command()

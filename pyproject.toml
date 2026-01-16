@@ -106,13 +106,7 @@ quote-style = "double"
 
 [tool.ruff.lint]
 select = [
-  "A",    # warn about shadowing built-ins
-  "E",    # style stuff, whitespaces
-  "F",    # important pyflakes lints
-  "I",    # import sorting
-  "N",    # naming
-  "C90",  # No overly complex nested logic
-  "T100", # breakpoints (probably don't want these in prod!)
+  "ALL"
 ]
 ignore = []
 
