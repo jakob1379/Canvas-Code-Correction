@@ -203,7 +203,10 @@ def test_execute_docker_error(mock_docker) -> None:
     executor = GraderExecutor()
     config = GraderConfig(docker_image="test/image:latest")
 
-    result = executor.execute(config, [])
+    # Patch the imported exceptions in the runner module
+    with patch("canvas_code_correction.runner.ImageNotFound", MockDockerException):
+        with patch("canvas_code_correction.runner.DockerException", MockDockerException):
+            result = executor.execute(config, [])
 
     assert result.exit_code == 1
     assert "Docker error" in result.stderr
@@ -213,7 +216,8 @@ def test_execute_docker_error(mock_docker) -> None:
 
 @patch("canvas_code_correction.runner.docker")
 @pytest.mark.local
-def test_execute_in_workspace(mock_docker) -> None:
+@patch("canvas_code_correction.runner.Mount")
+def test_execute_in_workspace(mock_mount, mock_docker) -> None:
     """Test execute_in_workspace convenience method."""
 
     # Create a real exception class for DockerException
@@ -225,6 +229,7 @@ def test_execute_in_workspace(mock_docker) -> None:
     mock_errors.DockerException = MockDockerException
     mock_errors.ImageNotFound = MockDockerException
     mock_docker.errors = mock_errors
+    mock_docker.types.Mount = mock_mount
 
     mock_client = Mock()
     mock_container = Mock()
@@ -248,11 +253,14 @@ def test_execute_in_workspace(mock_docker) -> None:
     submission_dir.mkdir(parents=True, exist_ok=True)
     assets_dir.mkdir(parents=True, exist_ok=True)
 
-    result = executor.execute_in_workspace(config, submission_dir, assets_dir)
+    # Patch the imported exceptions in the runner module
+    with patch("canvas_code_correction.runner.ImageNotFound", MockDockerException):
+        with patch("canvas_code_correction.runner.DockerException", MockDockerException):
+            result = executor.execute_in_workspace(config, submission_dir, assets_dir)
 
     # Verify execute was called (implicitly by execute_in_workspace)
     # Check that docker.types.Mount was called correctly
-    mount_calls = mock_docker.types.Mount.call_args_list
+    mount_calls = mock_mount.call_args_list
     assert len(mount_calls) == 2
 
     # Check submission mount (read/write) - called with keyword arguments
