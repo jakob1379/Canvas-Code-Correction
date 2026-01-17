@@ -2,12 +2,10 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+from datetime import datetime  # noqa: TC003
+from typing import Any
 
-from pydantic import BaseModel, HttpUrl
-
-if TYPE_CHECKING:
-    from datetime import datetime
+from pydantic import BaseModel, HttpUrl, ValidationError
 
 
 class CanvasWebhookMetadata(BaseModel):
@@ -79,10 +77,13 @@ class CanvasWebhookPayload(BaseModel):
     def parse_submission_event(self) -> SubmissionCreatedEvent | SubmissionUpdatedEvent | None:
         """Parse body into specific event model based on event type."""
         event_type = self.get_event_type()
-        if event_type == "submission_created":
-            return SubmissionCreatedEvent(**self.body)
-        if event_type == "submission_updated":
-            return SubmissionUpdatedEvent(**self.body)
+        try:
+            if event_type == "submission_created":
+                return SubmissionCreatedEvent(**self.body)
+            if event_type == "submission_updated":
+                return SubmissionUpdatedEvent(**self.body)
+        except ValidationError:
+            return None
         return None
 
 
