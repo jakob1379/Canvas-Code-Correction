@@ -152,8 +152,7 @@ def test_webhook_invalid_signature(
 ) -> None:
     """Test webhook handling with invalid signature."""
     mock_resolve_settings.return_value = mock_settings
-    mock_verify.return_value = True
-    mock_trigger.return_value = "flow-run-123"
+    mock_verify.return_value = False
 
     payload = create_canvas_webhook_payload()
 
