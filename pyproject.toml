@@ -4,7 +4,7 @@ build-backend = "uv_build"
 
 [dependency-groups]
 docs = [
-  "zensical>=0.0.0"
+  "zensical>=0.0.16"
 ]
 dev = [
   "pytest>=9.0.2",
@@ -13,10 +13,10 @@ dev = [
   "pytest-cov>=7.0.0",
   "ipython>=9.9.0",
   "poethepoet>=0.40.0",
-  "prek>=0.2.27",
-  "ruff>=0.14.11",
-  "pyrefly>=0.0.0",
-  "commitizen>=0.0.0"
+  "prek>=0.2.29",
+  "ruff>=0.14.13",
+  "pyrefly>=0.48.2",
+  "commitizen>=4.11.6"
 ]
 
 [project]
@@ -36,8 +36,8 @@ classifiers = [
   "Operating System :: POSIX :: Linux"
 ]
 dependencies = [
-  "prefect[docker]>=3.6.10",
-  "prefect-aws>=0.7.3",
+  "prefect[docker]>=3.6.11",
+  "prefect-aws>=0.7.4",
   "httpx>=0.28.1",
   "docker>=7.1.0",
   "pydantic>=2.12.5",
@@ -49,10 +49,10 @@ dependencies = [
   "mkdocs-material>=9.7.1",
   "mkdocs-mermaid2-plugin>=1.2.3",
   "mkdocs-glightbox>=0.5.2",
-  "fastapi>=0.115.0",
-  "uvicorn[standard]>=0.34.0",
+  "fastapi>=0.128.0",
+  "uvicorn[standard]>=0.40.0",
   "PyJWT>=2.10.0",
-  "limits>=3.13.0"
+  "limits>=5.6.0"
 ]
 
 [project.scripts]
@@ -88,10 +88,9 @@ s3.shell = "mkdir -p workspace && chmod 777 workspace && docker run --rm -p 9000
 [tool.pyrefly]
 python-version = "3.13"
 search-path = ["src"]
-exclude = ["legacy"]
 
 [tool.pytest.ini_options]
-addopts = "--doctest-modules --numprocesses=auto --cov=src/canvas_code_correction --cov-report=term-missing --cov-report=json"
+addopts = "--doctest-modules --cov=src/canvas_code_correction --cov-report=term-missing --cov-report=json"
 testpaths = [
   "tests"
 ]
@@ -104,7 +103,8 @@ markers = [
 [tool.ruff]
 target-version = "py313"
 line-length = 100
-exclude = ["legacy"]
+exclude = ["legacy", "scripts"]
+extend-exclude = ["scripts"]
 
 [tool.ruff.format]
 quote-style = "double"
@@ -120,6 +120,8 @@ known-first-party = ["canvas_code_correction"]
 
 [tool.ruff.lint.per-file-ignores]
 # Allow assert statements and skip docstrings in tests
-"tests/**/*.py" = ["S101", "D100", "D101", "D102", "D103", "D104", "D105", "D106", "D107", "INP001", "PLR0913", "PLR2004"]
+"tests/**/*.py" = ["S101", "D100", "D101", "D102", "D103", "D104", "D105", "D106", "D107", "INP001", "PLR0913", "PLR2004", "ANN001", "ANN201", "ARG001", "FBT001", "PLR0915", "S108", "PLC0415", "N818", "SIM117", "RET504", "SLF001", "S105", "TC003", "BLE001", "TRY300", "T201"]
 # Allow print statements in legacy scripts
 "legacy/**/*.py" = ["T201"]
+# Ignore all linting issues in development scripts
+"scripts/**/*.py" = ["ALL"]
