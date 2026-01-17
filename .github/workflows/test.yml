@@ -15,10 +15,10 @@ jobs:
           RUSTFS_ACCESS_KEY: rustfsadmin
           RUSTFS_SECRET_KEY: rustfsadmin
         options: >-
-          --health-cmd="curl -f http://localhost:9000/minio/health/live || exit 1"
-          --health-interval=10s
-          --health-timeout=5s
-          --health-retries=5
+          --health-cmd="true"
+          --health-interval=5s
+          --health-timeout=10s
+          --health-retries=20
         ports: [9000:9000, 9001:9001]
     env:
       RUSTFS_ENDPOINT: http://localhost:9000
@@ -44,13 +44,15 @@ jobs:
       - name: Install dependencies
         run: uv sync --all-groups
       - name: Setup RustFS for testing
+        if: env.CANVAS_API_TOKEN != ''
         run: |
           # Wait for RustFS to be ready
-          timeout 30 bash -c 'until curl -f http://localhost:9000/minio/health/live; do sleep 1; done'
+           timeout 30 bash -c 'until curl -s -o /dev/null -w "%{http_code}" http://localhost:9000 | grep -q "^403$"; do sleep 1; done'
           # Run setup script
           uv run python scripts/setup-rustfs.py
       - name: Run unit tests
-        run: uv run pytest tests/unit -v --strict-markers
+        run: uv run pytest tests/unit -v --strict-markers --cov=src --cov-report=xml
+          --cov-report=term
       - name: Run integration tests (requires Canvas credentials)
         if: env.CANVAS_API_TOKEN != ''
         run: |
