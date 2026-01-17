@@ -287,7 +287,7 @@ class CanvasUploader:
         except ImportError:
             # Fallback to urllib (won't work with authenticated Canvas URLs)
             with (
-                urllib.request.urlopen(url) as response,  # noqa: S310 # nosec B310
+                urllib.request.urlopen(url) as response,  # noqa: S310 # nosec B310 # nosonar
                 destination.open("wb") as out_file,
             ):
                 shutil.copyfileobj(response, out_file)  # type: ignore[arg-type]

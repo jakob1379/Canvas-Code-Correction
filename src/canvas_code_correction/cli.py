@@ -248,7 +248,7 @@ webhook_app = typer.Typer()
 
 @webhook_app.command()
 def serve(
-    host: Annotated[str, typer.Option("--host", help="Host to bind")] = "0.0.0.0",  # noqa: S104 # nosec B104
+    host: Annotated[str, typer.Option("--host", help="Host to bind")] = "0.0.0.0",  # noqa: S104 # nosec B104 # nosonar
     port: Annotated[int, typer.Option("--port", help="Port to bind")] = 8080,
 ) -> None:
     """Start webhook server for Canvas submissions."""

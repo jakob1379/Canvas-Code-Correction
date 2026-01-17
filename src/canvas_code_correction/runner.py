@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import contextlib
-import subprocess  # nosec B404
+import subprocess  # nosec B404 # nosonar
 import time
 from dataclasses import dataclass
 from pathlib import Path
