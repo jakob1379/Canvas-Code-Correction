@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -102,7 +103,7 @@ def test_ensure_deployment_success(mock_flow: MagicMock) -> None:
         webhook=WebhookSettings(),
     )
 
-    deployment_name = ensure_deployment("test-course", settings)
+    deployment_name = asyncio.run(ensure_deployment("test-course", settings))
 
     assert deployment_name == "ccc-test-course-deployment"
     mock_flow.deploy.assert_called_once_with(
@@ -136,7 +137,7 @@ def test_ensure_deployment_default_work_pool(mock_flow: MagicMock) -> None:
         webhook=WebhookSettings(),
     )
 
-    deployment_name = ensure_deployment("test-course", settings)
+    deployment_name = asyncio.run(ensure_deployment("test-course", settings))
 
     assert deployment_name == "ccc-test-course-deployment"
     # Should default to "local-pool"
@@ -172,7 +173,7 @@ def test_ensure_deployment_failure(mock_flow: MagicMock) -> None:
     )
 
     # Should still return the deployment name even if creation fails
-    deployment_name = ensure_deployment("test-course", settings)
+    deployment_name = asyncio.run(ensure_deployment("test-course", settings))
 
     assert deployment_name == "ccc-test-course-deployment"
     mock_flow.deploy.assert_called_once()
@@ -191,11 +192,13 @@ def test_trigger_deployment_success(
     mock_run.id = "flow-run-456"
     mock_run_deployment.return_value = mock_run
 
-    result = trigger_deployment(
-        course_block="test-course",
-        assignment_id=123,
-        submission_id=456,
-        settings=mock_settings,
+    result = asyncio.run(
+        trigger_deployment(
+            course_block="test-course",
+            assignment_id=123,
+            submission_id=456,
+            settings=mock_settings,
+        ),
     )
 
     assert result == "flow-run-456"
@@ -223,11 +226,13 @@ def test_trigger_deployment_failure(
     mock_flow.deploy.return_value = "deployment-id-123"
     mock_run_deployment.side_effect = Exception("Run failed")
 
-    result = trigger_deployment(
-        course_block="test-course",
-        assignment_id=123,
-        submission_id=456,
-        settings=mock_settings,
+    result = asyncio.run(
+        trigger_deployment(
+            course_block="test-course",
+            assignment_id=123,
+            submission_id=456,
+            settings=mock_settings,
+        ),
     )
 
     assert result is None
@@ -259,11 +264,13 @@ def test_trigger_deployment_with_custom_name(
         webhook=WebhookSettings(deployment_name="custom-deployment"),
     )
 
-    result = trigger_deployment(
-        course_block="test-course",
-        assignment_id=123,
-        submission_id=456,
-        settings=settings,
+    result = asyncio.run(
+        trigger_deployment(
+            course_block="test-course",
+            assignment_id=123,
+            submission_id=456,
+            settings=settings,
+        ),
     )
 
     assert result == "flow-run-456"
