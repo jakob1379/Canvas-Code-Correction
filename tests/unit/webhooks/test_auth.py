@@ -126,10 +126,13 @@ def test_validate_canvas_signature_jwt_not_required() -> None:
         ),
     )
 
-    # When JWT not required, validation passes (for now)
-    result = validate_canvas_signature(
-        settings,
-        b"payload",
-        None,
-    )
-    assert result is True
+    # When JWT not required, validation falls back to Canvas API verification
+    with patch("canvas_code_correction.webhooks.auth.verify_via_canvas_api") as mock_verify:
+        mock_verify.return_value = True
+        result = validate_canvas_signature(
+            settings,
+            b"payload",
+            None,
+        )
+        assert result is True
+        mock_verify.assert_called_once_with(settings, b"payload")
