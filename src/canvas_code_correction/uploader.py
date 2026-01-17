@@ -262,7 +262,7 @@ class CanvasUploader:
 
     def _calculate_md5(self, file_path: Path) -> str:
         """Calculate MD5 hash of a file."""
-        hash_md5 = hashlib.md5()  # noqa: S324
+        hash_md5 = hashlib.md5(usedforsecurity=False)
         with file_path.open("rb") as f:
             for chunk in iter(lambda: f.read(4096), b""):
                 hash_md5.update(chunk)
@@ -287,7 +287,7 @@ class CanvasUploader:
         except ImportError:
             # Fallback to urllib (won't work with authenticated Canvas URLs)
             with (
-                urllib.request.urlopen(url) as response,  # noqa: S310
+                urllib.request.urlopen(url) as response,  # noqa: S310 # nosec B310
                 destination.open("wb") as out_file,
             ):
                 shutil.copyfileobj(response, out_file)  # type: ignore[arg-type]

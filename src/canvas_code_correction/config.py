@@ -35,7 +35,7 @@ class GraderSettings(BaseModel):
 class WorkspaceSettings(BaseModel):
     """Workspace directory settings."""
 
-    root: Path = Field(default_factory=lambda: Path("/tmp/ccc/workspaces"))  # noqa: S108
+    root: Path = Field(default_factory=lambda: Path("/tmp/ccc/workspaces"))  # noqa: S108 # nosec B108
 
 
 class WebhookSettings(BaseModel):
@@ -79,7 +79,7 @@ class Settings(BaseModel):
         workspace_root = (
             Path(block.workspace_root).expanduser()  # type: ignore[attr-defined]
             if block.workspace_root  # type: ignore[attr-defined]
-            else Path("/tmp/ccc/workspaces")  # noqa: S108
+            else Path("/tmp/ccc/workspaces")  # noqa: S108 # nosec B108
         )
         return cls(
             canvas=CanvasSettings(
