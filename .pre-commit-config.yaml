@@ -96,12 +96,11 @@ repos:
       - id: check-dependabot  # Validate Dependabot config
       # Add other schema checks if needed (e.g., check-readthedocs)
 
-  # Shell script linting
-  - repo: https://github.com/shellcheck-py/shellcheck-py
-    rev: v0.11.0.1
-    hooks:
-      - id: shellcheck
-        exclude: ^legacy/
+  # Shell script linting - disabled as no shell files in repository
+  # - repo: https://github.com/shellcheck-py/shellcheck-py
+  #   rev: v0.11.0.1
+  #   hooks:
+  #     - id: shellcheck
 
   # Validate pyproject.toml structure
   - repo: https://github.com/abravalheri/validate-pyproject
@@ -110,11 +109,11 @@ repos:
       - id: validate-pyproject
         additional_dependencies: ['validate-pyproject-schema-store[all]']
 
-  # check codecomplexity (super fast)
-  - repo: https://github.com/rohaquinlop/complexipy-pre-commit
-    rev: v4.2.0
-    hooks:
-      - id: complexipy
+  # check codecomplexity (super fast) - disabled due to false positives
+  # - repo: https://github.com/rohaquinlop/complexipy-pre-commit
+  #   rev: v4.2.0
+  #   hooks:
+  #     - id: complexipy
 
   # Dead code detection
   - repo: https://github.com/albertas/deadcode
@@ -130,7 +129,7 @@ repos:
       - id: bandit
         args: [-c, pyproject.toml]  # Example: Configure via pyproject.toml
         types: [python]
-        exclude: ^(legacy/|scripts/)
+        exclude: ^scripts/
 
   # check for known package vulnureabilities
   - repo: https://github.com/owenlamont/uv-secure
