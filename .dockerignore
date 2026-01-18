@@ -71,7 +71,8 @@ docs/_build/
 target/
 
 # Virtual environment
-.env
+.env*
+**/.env*
 .venv/
 venv/
 
