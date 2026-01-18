@@ -9,6 +9,7 @@ from unittest.mock import patch
 import pytest
 
 from canvas_code_correction.collector import (
+    ERRORS_LOG_FILENAME,
     CollectionResult,
     GradingResult,
     ResultCollector,
@@ -298,3 +299,92 @@ def test_validate_result() -> None:
     with patch.object(Path, "exists", return_value=False):
         issues = collector.validate_result(missing_artifacts_result)
         assert "Artifacts zip referenced but not found" in issues[0]
+
+
+@pytest.mark.local
+def test_collect_missing_submission_dir(tmp_path: Path) -> None:
+    """Test collection when submission directory doesn't exist."""
+    workspace = tmp_path / "workspace"
+    collector = ResultCollector(workspace)
+    with pytest.raises(ValueError, match="Submission directory not found"):
+        collector.collect()
+
+
+@pytest.mark.local
+def test_find_comments_file_no_txt_files(tmp_path: Path) -> None:
+    """Test finding comments file when no txt files exist."""
+    workspace = tmp_path / "workspace"
+    submission_dir = workspace / "submission"
+    submission_dir.mkdir(parents=True)
+    # Create only points file and errors log
+    points_file = submission_dir / "points.txt"
+    points_file.write_text("10.0")
+    errors_log = submission_dir / ERRORS_LOG_FILENAME
+    errors_log.write_text("")
+    collector = ResultCollector(workspace)
+    # submission_dir_name=None, no txt files => comments_file=None
+    comments_file, comments = collector._find_comments_file(submission_dir, None)
+    assert comments_file is None
+    assert comments is None
+
+
+@pytest.mark.local
+def test_parse_line_numbers_value_error() -> None:
+    """Test parsing line numbers with invalid float conversion."""
+    import re
+
+    from canvas_code_correction.collector import ResultCollector
+
+    collector = ResultCollector(Path("/tmp"))
+    # Mock re.findall to return a string that float() can't parse
+    with patch.object(re, "findall", return_value=["1.2.3"]):
+        numbers = collector._parse_line_numbers("dummy")
+        assert numbers == []  # ValueError should be caught and skipped
+
+
+@pytest.mark.local
+def test_parse_fraction_format_empty_parts() -> None:
+    """Test parsing fraction format with empty parts after split."""
+    from canvas_code_correction.collector import ResultCollector
+
+    collector = ResultCollector(Path("/tmp"))
+    # Line with only slash? Actually "/" splits to ["", ""] which is not empty.
+    # So maybe line like " / "? Let's test.
+    result = collector._parse_fraction_format(" / ")
+    assert result is None  # because no numbers in first part
+
+
+@pytest.mark.local
+def test_sum_numbers_from_line_empty() -> None:
+    """Test summing numbers from empty line."""
+    from canvas_code_correction.collector import ResultCollector
+
+    collector = ResultCollector(Path("/tmp"))
+    result = collector._sum_numbers_from_line("")
+    assert result == 0.0
+    result = collector._sum_numbers_from_line("   ")
+    assert result == 0.0
+
+
+@pytest.mark.local
+def test_create_feedback_zip_empty_points_content(tmp_path: Path) -> None:
+    """Test feedback zip creation with empty points file content."""
+    workspace = tmp_path / "workspace"
+    collector = ResultCollector(workspace)
+    grading_result = GradingResult(
+        points=0.0,
+        points_file_content="",  # empty
+        comments=None,
+        comments_file_path=None,
+        artifacts_zip_path=None,
+        errors_log_path=None,
+        metadata={},
+    )
+    output_zip = tmp_path / "feedback.zip"
+    collector.create_feedback_zip(grading_result, output_path=output_zip)
+    assert output_zip.exists()
+    with zipfile.ZipFile(output_zip, "r") as zf:
+        filenames = set(zf.namelist())
+        # points.txt should not be included because content empty
+        assert "points.txt" not in filenames
+        assert "metadata.json" in filenames

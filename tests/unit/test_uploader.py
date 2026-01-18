@@ -99,7 +99,7 @@ def test_upload_feedback_with_duplicate_check() -> None:
         {
             "attachments": [
                 {
-                    "url": "http://example.com/file1.zip",
+                    "url": "https://example.com/file1.zip",
                     "display_name": "feedback.zip",
                 },
             ],
@@ -338,3 +338,94 @@ def test_calculate_md5(tmp_path: Path) -> None:
     # write_text adds newline by default
     expected_hash = "65a8e27d8879283831b664bd8b7f0ad4"  # MD5 of "Hello, World!\n"
     assert md5_hash == expected_hash
+
+
+@pytest.mark.local
+def test_check_feedback_duplicate_exception_verbose() -> None:
+    """Test duplicate check with exception and verbose logging."""
+    mock_submission = Mock()
+    uploader = CanvasUploader(mock_submission)
+    config = UploadConfig(verbose=True)
+
+    with patch.object(uploader, "_get_submission_comments", side_effect=Exception("Test error")):
+        result = uploader._check_feedback_duplicate(Path("dummy.zip"), config)
+
+    assert result is None
+
+
+@pytest.mark.local
+def test_find_duplicate_in_comments_missing_url() -> None:
+    """Test duplicate detection with attachment missing URL."""
+    mock_submission = Mock()
+    uploader = CanvasUploader(mock_submission)
+    config = UploadConfig()
+    comments = [{"attachments": [{"display_name": "file.zip"}]}]  # missing url
+    result = uploader._find_duplicate_in_comments(comments, "hash", config)
+    assert result is None
+
+
+@pytest.mark.local
+def test_check_attachment_duplicate_exception_verbose() -> None:
+    """Test attachment duplicate check with exception and verbose."""
+    mock_submission = Mock()
+    uploader = CanvasUploader(mock_submission)
+    config = UploadConfig(verbose=True)
+    attachment = {"url": "http://example.com/file.zip", "display_name": "file.zip"}
+
+    with patch.object(uploader, "_download_attachment", side_effect=Exception("Download error")):
+        result = uploader._check_attachment_duplicate(attachment, "hash", config)
+
+    assert result is None
+
+
+@pytest.mark.local
+def test_upload_feedback_exception() -> None:
+    """Test feedback upload when upload_comment raises exception."""
+    mock_submission = Mock()
+    mock_submission.upload_comment = Mock(side_effect=Exception("Upload failed"))
+    uploader = CanvasUploader(mock_submission)
+    config = UploadConfig(upload_comments=True, check_duplicates=False)
+
+    with tempfile.NamedTemporaryFile(suffix=".zip") as tmp:
+        tmp_path = Path(tmp.name)
+        tmp.write(b"test")
+        tmp.flush()
+
+        result = uploader._upload_feedback_without_duplicate_check(tmp_path, config)
+
+    assert result.success is False
+    assert "Failed to upload feedback" in result.message
+
+
+@pytest.mark.local
+def test_upload_grade_exception() -> None:
+    """Test grade upload when edit raises exception."""
+    mock_submission = Mock()
+    mock_submission.grade = "75.0"
+    mock_submission.edit = Mock(side_effect=Exception("Edit failed"))
+    uploader = CanvasUploader(mock_submission)
+    config = UploadConfig(upload_grades=True, check_duplicates=False)
+
+    result = uploader.upload_grade("85.5", config)
+    assert result.success is False
+    assert "Failed to post grade" in result.message
+
+
+@pytest.mark.local
+def test_upload_feedback_and_grade_both_none() -> None:
+    """Test upload_feedback_and_grade with both arguments None."""
+    mock_submission = Mock()
+    uploader = CanvasUploader(mock_submission)
+
+    with pytest.raises(ValueError, match="At least one of feedback_file or grade must be provided"):
+        uploader.upload_feedback_and_grade(None, None)
+
+
+@pytest.mark.local
+def test_download_attachment_not_implemented() -> None:
+    """Test that _download_attachment raises NotImplementedError."""
+    mock_submission = Mock()
+    uploader = CanvasUploader(mock_submission)
+
+    with pytest.raises(NotImplementedError):
+        uploader._download_attachment("http://example.com/file.zip", Path("/tmp/dest"))

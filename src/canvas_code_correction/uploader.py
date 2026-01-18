@@ -52,44 +52,69 @@ class CanvasUploader:
     ) -> UploadResult | None:
         """Check if feedback file already exists as a comment attachment."""
         try:
-            self.submission = self.submission.refresh()
-            comments = getattr(self.submission, "submission_comments", []) or []
+            comments = self._get_submission_comments()
             local_md5 = self._calculate_md5(feedback_file)
-            for comment in comments:
-                attachments = comment.get("attachments", [])
-                for attachment in attachments:
-                    if not attachment.get("url"):
-                        continue
-                    with tempfile.NamedTemporaryFile(delete=True) as tmp:
-                        try:
-                            self._download_attachment(
-                                attachment["url"],
-                                Path(tmp.name),
-                            )
-                            remote_md5 = self._calculate_md5(Path(tmp.name))
-                            if remote_md5 == local_md5:
-                                return UploadResult(
-                                    success=True,
-                                    message="Duplicate feedback detected, skipping upload",
-                                    duplicate=True,
-                                    comment_posted=False,
-                                    grade_posted=False,
-                                    details={
-                                        "local_md5": local_md5,
-                                        "remote_md5": remote_md5,
-                                        "attachment": attachment.get(
-                                            "display_name",
-                                        ),
-                                    },
-                                )
-                        except Exception:  # noqa: BLE001
-                            if config.verbose:
-                                pass
-                            continue
-        except Exception:  # noqa: BLE001
+            duplicate_result = self._find_duplicate_in_comments(comments, local_md5, config)
+            if duplicate_result:
+                return duplicate_result
+        except Exception as e:  # noqa: BLE001
             if config.verbose:
-                pass
+                print(f"Error during duplicate check: {e}")  # noqa: T201
             # Continue with upload even if duplicate check fails
+        return None
+
+    def _get_submission_comments(self) -> list[dict]:
+        """Refresh submission and return submission comments."""
+        self.submission = self.submission.refresh()
+        return getattr(self.submission, "submission_comments", []) or []
+
+    def _find_duplicate_in_comments(
+        self,
+        comments: list[dict],
+        local_md5: str,
+        config: UploadConfig,
+    ) -> UploadResult | None:
+        """Search through comments and attachments for duplicate MD5."""
+        for comment in comments:
+            attachments = comment.get("attachments", [])
+            for attachment in attachments:
+                if not attachment.get("url"):
+                    continue
+                duplicate_result = self._check_attachment_duplicate(attachment, local_md5, config)
+                if duplicate_result:
+                    return duplicate_result
+        return None
+
+    def _check_attachment_duplicate(
+        self,
+        attachment: dict,
+        local_md5: str,
+        config: UploadConfig,
+    ) -> UploadResult | None:
+        """Check if a single attachment matches local MD5."""
+        with tempfile.NamedTemporaryFile(delete=True) as tmp:
+            try:
+                self._download_attachment(
+                    attachment["url"],
+                    Path(tmp.name),
+                )
+                remote_md5 = self._calculate_md5(Path(tmp.name))
+                if remote_md5 == local_md5:
+                    return UploadResult(
+                        success=True,
+                        message="Duplicate feedback detected, skipping upload",
+                        duplicate=True,
+                        comment_posted=False,
+                        grade_posted=False,
+                        details={
+                            "local_md5": local_md5,
+                            "remote_md5": remote_md5,
+                            "attachment": attachment.get("display_name"),
+                        },
+                    )
+            except Exception as e:  # noqa: BLE001
+                if config.verbose:
+                    print(f"Error checking attachment: {e}")  # noqa: T201
         return None
 
     def _upload_feedback_without_duplicate_check(

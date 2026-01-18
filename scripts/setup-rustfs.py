@@ -22,6 +22,7 @@ from __future__ import annotations
 
 import os
 import sys
+from urllib.parse import urlparse
 
 import boto3
 from botocore.client import Config
@@ -37,6 +38,14 @@ def get_rustfs_config():
         "bucket_name": os.getenv("RUSTFS_BUCKET_NAME", "test-assets"),
         "prefix": os.getenv("RUSTFS_PREFIX", "dev"),
     }
+
+
+def get_bucket_owner_kwargs(endpoint_url: str) -> dict:
+    """Return ExpectedBucketOwner parameter if endpoint is AWS and owner is configured."""
+    bucket_owner = os.getenv("AWS_BUCKET_OWNER")
+    if bucket_owner and "amazonaws.com" in endpoint_url:
+        return {"ExpectedBucketOwner": bucket_owner}
+    return {}
 
 
 def check_rustfs_available() -> bool:
@@ -63,6 +72,7 @@ def check_rustfs_available() -> bool:
 def ensure_bucket_exists(bucket_name: str) -> bool:
     """Create bucket if it doesn't exist."""
     config = get_rustfs_config()
+    bucket_owner_kwargs = get_bucket_owner_kwargs(config["endpoint_url"])
     s3 = boto3.client(
         "s3",
         endpoint_url=config["endpoint_url"],
@@ -71,14 +81,14 @@ def ensure_bucket_exists(bucket_name: str) -> bool:
         config=Config(signature_version="s3v4"),
     )
     try:
-        s3.head_bucket(Bucket=bucket_name)
+        s3.head_bucket(Bucket=bucket_name, **bucket_owner_kwargs)
         print(f"✓ Bucket '{bucket_name}' already exists")
         return True
     except ClientError as e:
         error_code = e.response["Error"]["Code"]
         if error_code == "404":
             try:
-                s3.create_bucket(Bucket=bucket_name)
+                s3.create_bucket(Bucket=bucket_name, **bucket_owner_kwargs)
                 print(f"✓ Created bucket '{bucket_name}'")
                 return True
             except ClientError as create_err:
@@ -92,6 +102,7 @@ def ensure_bucket_exists(bucket_name: str) -> bool:
 def upload_test_asset(bucket_name: str, prefix: str = "dev") -> None:
     """Upload a test asset file for integration tests."""
     config = get_rustfs_config()
+    bucket_owner_kwargs = get_bucket_owner_kwargs(config["endpoint_url"])
     s3 = boto3.client(
         "s3",
         endpoint_url=config["endpoint_url"],
@@ -104,7 +115,7 @@ def upload_test_asset(bucket_name: str, prefix: str = "dev") -> None:
     key = f"{prefix}/test.txt" if prefix else "test.txt"
 
     try:
-        s3.put_object(Bucket=bucket_name, Key=key, Body=test_content)
+        s3.put_object(Bucket=bucket_name, Key=key, Body=test_content, **bucket_owner_kwargs)
         print(f"✓ Uploaded test asset to '{bucket_name}/{key}'")
     except ClientError as e:
         print(f"✗ Failed to upload test asset: {e}")

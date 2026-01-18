@@ -90,7 +90,7 @@ python-version = "3.13"
 search-path = ["src"]
 
 [tool.pytest.ini_options]
-addopts = "--doctest-modules --cov=src/canvas_code_correction --cov-report=term-missing --cov-report=json"
+addopts = "--doctest-modules --cov=src/canvas_code_correction --cov-branch --cov-report=term-missing --cov-report=json"
 testpaths = [
   "tests"
 ]

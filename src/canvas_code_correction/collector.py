@@ -70,7 +70,8 @@ class ResultCollector:
             txt_files = [
                 f
                 for f in submission_dir.glob("*.txt")
-                if not f.name.endswith("_points.txt") and f.name != ERRORS_LOG_FILENAME
+                if not f.name.endswith("_points.txt")
+                and f.name not in (ERRORS_LOG_FILENAME, "points.txt")
             ]
             if txt_files:
                 comments_file = txt_files[0]
@@ -154,7 +155,47 @@ class ResultCollector:
             workspace_root=self.workspace_root,
         )
 
-    def _parse_points_file(self, points_file: Path) -> float:  # noqa: C901
+    def _parse_line_numbers(self, line: str) -> list[float]:
+        """Extract all numbers from a line using regex."""
+        numbers = re.findall(r"[-+]?(?:\d+(?:\.\d*)?|\.\d+)", line)
+        result = []
+        for num in numbers:
+            try:
+                result.append(float(num))
+            except ValueError:
+                continue
+        return result
+
+    def _parse_fraction_format(self, line: str) -> float | None:
+        """Parse fraction format like '25.5/30' and return numerator."""
+        if "/" not in line:
+            return None
+        parts = line.split("/")
+        nums = self._parse_line_numbers(parts[0])
+        return nums[0] if nums else None
+
+    def _sum_numbers_from_line(self, line: str) -> float:
+        """Sum all numbers found in a line."""
+        cleaned_line = line.strip()
+        if not cleaned_line:
+            return 0.0
+
+        # Try direct float conversion
+        try:
+            return float(cleaned_line)
+        except ValueError:
+            pass
+
+        # Try fraction format
+        fraction_num = self._parse_fraction_format(cleaned_line)
+        if fraction_num is not None:
+            return fraction_num
+
+        # General case: sum all numbers
+        numbers = self._parse_line_numbers(cleaned_line)
+        return sum(numbers)
+
+    def _parse_points_file(self, points_file: Path) -> float:
         """Parse points file, summing all numbers if multiple lines."""
         content = points_file.read_text(
             encoding="utf-8",
@@ -163,38 +204,9 @@ class ResultCollector:
         if not content:
             return 0.0
 
-        lines = content.splitlines()
         total = 0.0
-        for line in lines:
-            cleaned_line = line.strip()
-            if not cleaned_line:
-                continue
-            try:
-                total += float(cleaned_line)
-            except ValueError:
-                # If it's not a number, try to extract numbers
-
-                # Special handling for fraction format like "25.5/30"
-                if "/" in cleaned_line:
-                    # Try to parse as numerator/denominator
-                    parts = cleaned_line.split("/")
-                    if parts:
-                        # Try to extract first number from first part
-                        nums = re.findall(r"[-+]?\d*\.?\d+", parts[0])
-                        if nums:
-                            try:
-                                total += float(nums[0])
-                                continue
-                            except ValueError:
-                                pass
-                # General case: find all numbers and sum them
-                numbers = re.findall(r"[-+]?\d*\.?\d+", cleaned_line)
-                for num in numbers:
-                    try:
-                        total += float(num)
-                    except ValueError:
-                        continue
-
+        for line in content.splitlines():
+            total += self._sum_numbers_from_line(line)
         return total
 
     def create_feedback_zip(
