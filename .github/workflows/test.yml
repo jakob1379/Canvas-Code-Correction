@@ -53,6 +53,18 @@ jobs:
       - name: Run unit tests
         run: uv run pytest tests/unit -v --strict-markers --cov=src --cov-report=xml
           --cov-report=term
+      - name: Generate HTML coverage report
+        run: uv run coverage html --data-file=.coverage
+      - name: Upload coverage to smokeshow
+        if: github.event_name == 'push' || github.event_name == 'pull_request'
+        run: |
+          uv run smokeshow upload htmlcov \
+            --github-status-description="Coverage {coverage-percentage}" \
+            --github-coverage-threshold=80
+        env:
+          SMOKESHOW_AUTH_KEY: ${{ secrets.SMOKESHOW_AUTH_KEY }}
+          SMOKESHOW_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SMOKESHOW_GITHUB_PR_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
       - name: Run integration tests (requires Canvas credentials)
         if: env.CANVAS_API_TOKEN != ''
         run: |
