@@ -1,5 +1,6 @@
 <p align="center">
 [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/jakob1379/canvas-code-correction)
+[![Coverage](https://img.shields.io/badge/Pytest--cov-%233F51B5?style=for-the-badge&logo=pytest&logoColor=white&labelColor=black)](https://smokeshow.helpmanual.io/org/project/branch)
 </p>
 
 
