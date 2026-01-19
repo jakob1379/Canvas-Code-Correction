@@ -386,7 +386,7 @@ dev = [
     { name = "pytest-datadir", specifier = ">=1.8.0" },
     { name = "pytest-xdist", specifier = ">=3.8.0" },
     { name = "ruff", specifier = ">=0.14.13" },
-    { name = "smokeshow", specifier = ">=0.3.0" },
+    { name = "smokeshow", specifier = ">=0.5.0" },
 ]
 docs = [{ name = "zensical", specifier = ">=0.0.16" }]
 
