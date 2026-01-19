@@ -118,12 +118,12 @@ repos:
   - repo: https://github.com/owenlamont/uv-secure
     rev: 0.15.4
     hooks:
-       - id: uv-secure
-         name: uv-secure
-         description: Run 'uv-secure' to check uv.lock dependencies for known vulnerabilities
-         entry: python scripts/uv_secure_retry.py
-         language: python
-         files: (^|.*/)(uv\.lock|requirements\.txt)$
+      - id: uv-secure
+        name: uv-secure
+        description: Run 'uv-secure' to check uv.lock dependencies for known vulnerabilities
+        entry: python scripts/uv_secure_retry.py
+        language: python
+        files: (^|.*/)(uv\.lock|requirements\.txt)$
 
   # conventional commit messages. Allows for automated changelogs and versioning based on commits
   - repo: https://github.com/commitizen-tools/commitizen
