@@ -39,8 +39,7 @@ jobs:
         uses: astral-sh/setup-uv@v4
         with:
           enable-cache: true
-          python-version: "3.13"
-
+          python-version: '3.13'
       - name: Install dependencies
         run: uv sync --all-groups
       - name: Setup RustFS for testing
@@ -68,11 +67,10 @@ jobs:
       - name: Run integration tests (requires Canvas credentials)
         if: env.CANVAS_API_TOKEN != ''
         run: |
-           uv run pytest tests/integration -v --strict-markers -m integration --no-cov
+          uv run pytest tests/integration -v --strict-markers -m integration --no-cov
       - name: Run e2e tests (requires Docker and Canvas credentials)
         if: env.CANVAS_API_TOKEN != ''
-        run: |
+        run: |-
           # Start Docker daemon (already running on GitHub Actions)
           # Run e2e tests
            uv run pytest tests/e2e -v --strict-markers -m e2e --no-cov
-
