@@ -3,8 +3,6 @@
 [![Coverage](https://img.shields.io/badge/Pytest--cov-%233F51B5?style=for-the-badge&logo=pytest&logoColor=white&labelColor=black)](https://smokeshow.helpmanual.io/org/project/branch)
 </p>
 
-
-
 # Canvas Code Correction
 
 Modern orchestration for downloading, grading, and uploading Canvas submissions
