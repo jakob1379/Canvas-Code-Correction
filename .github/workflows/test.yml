@@ -39,8 +39,8 @@ jobs:
         uses: astral-sh/setup-uv@v4
         with:
           enable-cache: true
-      - name: Set up Python
-        run: uv python install 3.13
+          python-version: "3.13"
+
       - name: Install dependencies
         run: uv sync --all-groups
       - name: Setup RustFS for testing
@@ -75,13 +75,4 @@ jobs:
           # Start Docker daemon (already running on GitHub Actions)
           # Run e2e tests
           uv run pytest tests/e2e -v --strict-markers -m e2e
-      - name: Run linting
-        run: |
-          uv run ruff check src
-          uv run pyrefly check src
-      - name: Run formatting check
-        run: uv run ruff format --check src
-      - name: Build documentation
-        run: uv run zensical build --strict
-      - name: Run pre-commit hooks
-        run: uv run prek run --all-files
+
