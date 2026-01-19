@@ -63,23 +63,23 @@ def run_with_retry(args: List[str], max_retries: int = 3, initial_delay: float =
 
 
 def main() -> None:
-    # Build command arguments
+    # Pre-commit passes file paths, but uv-secure expects either a directory
+    # or a list of lock files. We'll use the current directory (project root)
+    # since the lock file is at the project root.
     cmd = ["uv-secure"]
-    cmd.extend(sys.argv[1:])  # Pass through any additional args
 
     # Add default arguments for better caching and reliability
     default_args = [
         "--cache-ttl-seconds",
         "604800",  # 1 week cache
-        "--check-uv-tool",
-        "false",  # Skip checking uv CLI (reduces network calls)
+        "--no-check-uv-tool",  # Skip checking uv CLI (reduces network calls)
     ]
 
-    # Only add defaults if not already present
-    for i in range(0, len(default_args), 2):
-        if default_args[i] not in cmd:
-            cmd.append(default_args[i])
-            cmd.append(default_args[i + 1])
+    # Add defaults
+    cmd.extend(default_args)
+
+    # Use current directory as project root (contains uv.lock)
+    cmd.append(".")
 
     exit_code = run_with_retry(cmd, max_retries=3)
     sys.exit(exit_code)
