@@ -1,3 +1,9 @@
+<p align="center">
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/jakob1379/canvas-code-correction)
+</p>
+
+
+
 # Canvas Code Correction
 
 Modern orchestration for downloading, grading, and uploading Canvas submissions
