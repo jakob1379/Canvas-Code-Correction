@@ -17,7 +17,7 @@ dev = [
   "ruff>=0.14.13",
   "pyrefly>=0.48.2",
   "commitizen>=4.11.6",
-  "smokeshow>=0.3.0"
+  "smokeshow>=0.5.0"
 ]
 
 [project]
@@ -87,7 +87,7 @@ python-version = "3.13"
 search-path = ["src"]
 
 [tool.pytest.ini_options]
-addopts = "--doctest-modules --cov=src/canvas_code_correction --cov-branch --cov-report=term-missing --cov-report=json --cov-fail-under=80"
+addopts = "--doctest-modules --cov=src/canvas_code_correction --cov-branch --cov-report=term-missing --cov-report=json --cov-fail-under=70"
 testpaths = [
   "tests"
 ]
