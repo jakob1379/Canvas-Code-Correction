@@ -3,20 +3,15 @@ requires = ["uv_build>=0.8.19,<0.9.0"]
 build-backend = "uv_build"
 
 [dependency-groups]
-docs = [
-  "zensical>=0.0.16"
-]
 dev = [
-  "pytest>=9.0.2",
-  "pytest-datadir>=1.8.0",
-  "pytest-xdist>=3.8.0",
-  "pytest-cov>=7.0.0",
+  "canvas-code-correction[test,docs]",
   "ipython>=9.9.0",
   "poethepoet>=0.40.0",
   "prek>=0.2.29",
   "ruff>=0.14.13",
   "pyrefly>=0.48.2",
-  "commitizen>=4.11.6"
+  "commitizen>=4.11.6",
+  "smokeshow>=0.5.0"
 ]
 
 [project]
@@ -55,6 +50,17 @@ dependencies = [
   "limits>=5.6.0"
 ]
 
+[project.optional-dependencies]
+docs = [
+  "zensical>=0.0.16"
+]
+test = [
+  "pytest>=9.0.2",
+  "pytest-datadir>=1.8.0",
+  "pytest-xdist>=3.8.0",
+  "pytest-cov>=7.0.0"
+]
+
 [project.scripts]
 ccc = "canvas_code_correction.cli:app"
 
@@ -90,7 +96,7 @@ python-version = "3.13"
 search-path = ["src"]
 
 [tool.pytest.ini_options]
-addopts = "--doctest-modules --cov=src/canvas_code_correction --cov-branch --cov-report=term-missing --cov-report=json"
+addopts = "--doctest-modules --cov=src/canvas_code_correction --cov-branch --cov-report=term-missing --cov-report=json --cov-fail-under=70"
 testpaths = [
   "tests"
 ]

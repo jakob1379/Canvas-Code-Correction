@@ -1,25 +1,64 @@
 # Configuring a Course
 
-> **Audience**: CCC platform operators **Prerequisites**: Grader Docker image
-> built, grader tests uploaded to S3 storage, Prefect blocks created
+**Audience**: CCC platform operators **Prerequisites**: Grader Docker image
+built, grader tests uploaded to S3 storage, Prefect blocks created
 
-Once you have a grader image and tests uploaded to storage, you need to
-configure a course on CCC. This creates a Prefect block that stores
-course-specific settings.
+!!! note "Try It Now (60 seconds)"
 
-## Using the CCC CLI
+    If you have a Canvas API token, course ID, and an S3 bucket block ready, run
+    this command to configure a course immediately:
 
-The `ccc configure-course` command sets up a course. You'll need:
+    ```bash
+    $ ccc configure-course cs101 \
+      --token YOUR_CANVAS_TOKEN \
+      --course-id 12345 \
+      --assets-block course-assets-cs101 \
+      --docker-image yourusername/canvas-grader:latest \
+      --s3-prefix graders/cs101/
+    ```
 
-- Canvas API token
-- Canvas course ID
-- S3 bucket block name (Prefect block for assets)
-- Docker image name (optional)
+    You’ll see output similar to:
 
-### Example
+    ```
+    Created Prefect block 'ccc-course-cs101' with:
+      Canvas course ID: 12345
+      Assets block: course-assets-cs101
+      Docker image: yourusername/canvas-grader:latest
+      S3 prefix: graders/cs101/
+    ```
+
+    The course is now ready for scheduling corrections.
+
+---
+
+This guide walks you through configuring a course on the **Canvas Code
+Correction** (CCC) platform using the CLI and Prefect blocks. By the end you’ll
+have a course block that links your Canvas course to the grader image and test
+assets.
+
+## Prerequisites
+
+Before you start, gather these three items:
+
+1. **Canvas API token** – generate in your Canvas account under “Settings → New
+   Access Token”
+2. **Canvas course ID** – the numeric ID from the course URL (e.g.,
+   `https://canvas.instructure.com/courses/12345`)
+3. **Prefect S3 bucket block** – created via the Prefect UI or CLI (see
+   [Setting up Prefect](02-setting-up-prefect.md))
+
+If you haven’t built a grader image or uploaded tests yet, complete those steps
+first (see [Deploying tests to CCC](05-deploying-tests-to-ccc.md)).
+
+## Step 1: Configure a course with the CLI
+
+The `ccc configure-course` command creates a Prefect block that stores all
+course‑specific settings. Run it from the project root.
+
+### Basic command
 
 ```bash
-uv run ccc configure-course cs101 \
+$ ccc configure-course cs101 \
   --token YOUR_CANVAS_TOKEN \
   --course-id 12345 \
   --assets-block course-assets-cs101 \
@@ -27,30 +66,79 @@ uv run ccc configure-course cs101 \
   --s3-prefix graders/cs101/
 ```
 
-### Options
+**What each option does:**
 
-- `--token`, `-t`: Canvas API token (will prompt if omitted)
-- `--course-id`, `-i`: Canvas course numeric ID
-- `--assets-block`, `-a`: Prefect S3 bucket block name (must exist)
-- `--docker-image`, `-d`: Docker image for grading (defaults to base image)
-- `--s3-prefix`, `-p`: Prefix within the S3 bucket where grader assets are
-  stored
-- `--env`, `-e`: Environment variables for the grader container (KEY=VALUE)
+| Option                 | Description                                                              |
+| ---------------------- | ------------------------------------------------------------------------ |
+| `cs101`                | **Course slug** – a short, URL‑safe identifier (used in block names)     |
+| `--token`, `-t`        | Canvas API token (if omitted, you’ll be prompted)                        |
+| `--course-id`, `-i`    | Numeric Canvas course ID                                                 |
+| `--assets-block`, `-a` | Name of an existing Prefect S3 bucket block                              |
+| `--docker-image`, `-d` | Docker image that runs the grader (defaults to the base image)           |
+| `--s3-prefix`, `-p`    | Path prefix inside the S3 bucket where grader assets are stored          |
+| `--env`, `-e`          | Environment variables for the grader container (`KEY=VALUE`, repeatable) |
 
-## Prefect Blocks
+### Expected output
 
-CCC uses Prefect blocks to store configuration securely. The command creates a
-`ccc-course-<slug>` block. Ensure you have the required S3 bucket block created
-beforehand (via Prefect UI or CLI).
+After a successful run you’ll see:
 
-## Verifying Configuration
-
-List configured courses:
-
-```bash
-uv run ccc list-courses
+```
+Created Prefect block 'ccc-course-cs101' with:
+  Canvas course ID: 12345
+  Assets block: course-assets-cs101
+  Docker image: yourusername/canvas-grader:latest
+  S3 prefix: graders/cs101/
 ```
 
-This displays all course blocks.
+The block is now stored in your Prefect workspace and can be referenced by its
+slug (`cs101`).
 
-Next, we'll set up Prefect deployments and workers.
+## Step 2: Understanding Prefect blocks
+
+CCC uses **Prefect blocks** to store configuration securely. The command creates
+a block named `ccc-course-<slug>` (e.g., `ccc-course-cs101`). The block
+contains:
+
+- Canvas token (encrypted)
+- Course ID
+- S3 bucket block reference
+- Docker image name
+- S3 prefix
+- Any environment variables
+
+**Important**: The S3 bucket block must exist before you run `configure-course`.
+Create it via the Prefect UI or CLI (see
+[Setting up Prefect](02-setting-up-prefect.md)).
+
+## Step 3: Verify the configuration
+
+List all configured courses to confirm your block was created:
+
+```bash
+$ ccc list-courses
+```
+
+Output:
+
+```
+Slug    Canvas ID  Docker Image
+cs101   12345      yourusername/canvas-grader:latest
+```
+
+If you see your course in the list, the configuration is ready.
+
+## Next steps
+
+With a course configured, you can:
+
+1. **Set up Prefect deployments and workers** –
+   [Setting up Prefect](02-setting-up-prefect.md)
+2. **Schedule automatic corrections** –
+   [Scheduling corrections](03-scheduling-corrections.md)
+3. **Monitor results** – [Monitoring results](04-monitoring-results.md)
+4. **Deploy updated tests** –
+   [Deploying tests to CCC](05-deploying-tests-to-ccc.md)
+
+!!! note The course block is now available to any Prefect flow that uses the
+`Course` block type. You can update its settings by running `configure-course`
+again with the same slug.

@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file. See
 [standard-version](https://github.com/conventional-changelog/standard-version)
 for commit guidelines.
 
+!!! note This changelog documents the legacy v1.x releases. For the v2 rewrite
+and current development, see the
+[project roadmap](docs/current-development/01-roadmap.md) and
+[migration plan](docs/current-development/02-phase-2-migration-plan.md).
+
 ## [1.8.0](https://github.com/jakob1379/Canvas-Code-Correction/compare/v1.7.0...v1.8.0) (2021-10-15)
 
 ### Features

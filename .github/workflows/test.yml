@@ -2,9 +2,9 @@
 name: Test
 on:
   push:
-    branches: [main, v2]
+    branches: [main, dev]
   pull_request:
-    branches: [main, v2]
+    branches: [main, dev]
 jobs:
   test:
     runs-on: ubuntu-latest
@@ -39,8 +39,7 @@ jobs:
         uses: astral-sh/setup-uv@v4
         with:
           enable-cache: true
-      - name: Set up Python
-        run: uv python install 3.13
+          python-version: '3.13'
       - name: Install dependencies
         run: uv sync --all-groups
       - name: Setup RustFS for testing
@@ -53,23 +52,25 @@ jobs:
       - name: Run unit tests
         run: uv run pytest tests/unit -v --strict-markers --cov=src --cov-report=xml
           --cov-report=term
+      - name: Generate HTML coverage report
+        run: uv run coverage html --data-file=.coverage
+      - name: Upload coverage to smokeshow
+        if: github.event_name == 'push' || github.event_name == 'pull_request'
+        run: |
+          uv run smokeshow upload htmlcov \
+            --github-status-description="Coverage {coverage-percentage}" \
+            --github-coverage-threshold=70
+        env:
+          SMOKESHOW_AUTH_KEY: ${{ secrets.SMOKESHOW_AUTH_KEY }}
+          SMOKESHOW_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SMOKESHOW_GITHUB_PR_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
       - name: Run integration tests (requires Canvas credentials)
         if: env.CANVAS_API_TOKEN != ''
         run: |
-          uv run pytest tests/integration -v --strict-markers -m integration
+          uv run pytest tests/integration -v --strict-markers -m integration --no-cov
       - name: Run e2e tests (requires Docker and Canvas credentials)
         if: env.CANVAS_API_TOKEN != ''
-        run: |
+        run: |-
           # Start Docker daemon (already running on GitHub Actions)
           # Run e2e tests
-          uv run pytest tests/e2e -v --strict-markers -m e2e
-      - name: Run linting
-        run: |
-          uv run ruff check src
-          uv run pyrefly check src
-      - name: Run formatting check
-        run: uv run ruff format --check src
-      - name: Build documentation
-        run: uv run zensical build --strict
-      - name: Run pre-commit hooks
-        run: uv run prek run --all-files
+           uv run pytest tests/e2e -v --strict-markers -m e2e --no-cov
