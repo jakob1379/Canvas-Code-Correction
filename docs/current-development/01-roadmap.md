@@ -27,5 +27,5 @@ architecture.
 
 ## Contributing
 
-Contributions should target the `v2` branch via focused pull requests and be
+Contributions should target the `dev` branch via focused pull requests and be
 accompanied by appropriate documentation updates in this site.
