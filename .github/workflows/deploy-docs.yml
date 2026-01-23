@@ -81,6 +81,8 @@ jobs:
           cp coverage.json site/coverage.json
       - name: Build documentation
         run: uv run zensical build --strict --clean
+      - name: Create CNAME file for custom domain
+        run: echo "ccc.jgalabs.dk" > site/CNAME
       - uses: actions/upload-pages-artifact@v4
         with:
           path: site

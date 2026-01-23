@@ -1,6 +1,6 @@
 [project]
 site_name = "Canvas Code Correction v2"
-site_url = "https://jakob1379.github.io/Canvas-Code-Correction/"
+site_url = "https://ccc.jgalabs.dk/"
 site_description = "Prefect-based automation for Canvas submission correction"
 copyright = "Copyright © 2026 Canvas Code Correction Maintainers"
 extra_css = ["stylesheets/custom.css"]
