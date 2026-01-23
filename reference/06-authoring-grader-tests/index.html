@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="light">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        
+        
+        
+        <link rel="shortcut icon" href="../../img/favicon.ico">
+        <title>Authoring Grader Tests - My Docs</title>
+        <link href="../../css/bootstrap.min.css" rel="stylesheet">
+        <link href="../../css/fontawesome.min.css" rel="stylesheet">
+        <link href="../../css/brands.min.css" rel="stylesheet">
+        <link href="../../css/solid.min.css" rel="stylesheet">
+        <link href="../../css/v4-font-face.min.css" rel="stylesheet">
+        <link href="../../css/base.css" rel="stylesheet">
+        <link id="hljs-light" rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" >
+        <link id="hljs-dark" rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github-dark.min.css" disabled>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+        <script>hljs.highlightAll();</script> 
+    </head>
+
+    <body>
+        <div class="navbar fixed-top navbar-expand-lg navbar-dark bg-primary">
+            <div class="container">
+                <a class="navbar-brand" href="../..">My Docs</a>
+                <!-- Expander button -->
+                <button type="button" class="navbar-toggler" data-bs-toggle="collapse" data-bs-target="#navbar-collapse" aria-controls="navbar-collapse" aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+
+                <!-- Expanded navigation -->
+                <div id="navbar-collapse" class="navbar-collapse collapse">
+                        <!-- Main navigation -->
+                        <ul class="nav navbar-nav">
+                            <li class="nav-item">
+                                <a href="../.." class="nav-link">Canvas Code Correction v2</a>
+                            </li>
+                            <li class="nav-item dropdown">
+                                <a href="#" class="nav-link dropdown-toggle" role="button" data-bs-toggle="dropdown"  aria-expanded="false">Current development</a>
+                                <ul class="dropdown-menu">
+                                    
+<li>
+    <a href="../../current-development/01-roadmap/" class="dropdown-item">Development Roadmap</a>
+</li>
+                                    
+<li>
+    <a href="../../current-development/02-phase-2-migration-plan/" class="dropdown-item">Phase 2 – Canvas Client Migration Plan</a>
+</li>
+                                </ul>
+                            </li>
+                            <li class="nav-item dropdown">
+                                <a href="#" class="nav-link dropdown-toggle" role="button" data-bs-toggle="dropdown"  aria-expanded="false">Platform setup</a>
+                                <ul class="dropdown-menu">
+                                    
+<li>
+    <a href="../../platform-setup/01-configuring-course/" class="dropdown-item">Configuring a Course</a>
+</li>
+                                    
+<li>
+    <a href="../../platform-setup/02-setting-up-prefect/" class="dropdown-item">Setting up Prefect</a>
+</li>
+                                    
+<li>
+    <a href="../../platform-setup/03-scheduling-corrections/" class="dropdown-item">Scheduling Corrections</a>
+</li>
+                                    
+<li>
+    <a href="../../platform-setup/04-monitoring-results/" class="dropdown-item">Monitoring Results</a>
+</li>
+                                    
+<li>
+    <a href="../../platform-setup/05-deploying-tests-to-ccc/" class="dropdown-item">Deploying Grader Tests to Canvas Code Correction (CCC)</a>
+</li>
+                                    
+<li>
+    <a href="../../platform-setup/06-prefect-agent/" class="dropdown-item">Running Prefect Locally for Development</a>
+</li>
+                                    
+<li>
+    <a href="../../platform-setup/07-rustfs-storage/" class="dropdown-item">RustFS Storage</a>
+</li>
+                                </ul>
+                            </li>
+                            <li class="nav-item dropdown">
+                                <a href="#" class="nav-link dropdown-toggle active" aria-current="page" role="button" data-bs-toggle="dropdown"  aria-expanded="false">Reference</a>
+                                <ul class="dropdown-menu">
+                                    
+<li>
+    <a href="../01-architecture/" class="dropdown-item">Architecture Overview</a>
+</li>
+                                    
+<li>
+    <a href="../02-cli/" class="dropdown-item">CLI Reference</a>
+</li>
+                                    
+<li>
+    <a href="../03-configuration/" class="dropdown-item">Configuration Reference</a>
+</li>
+                                    
+<li>
+    <a href="../04-api-clients/" class="dropdown-item">API Clients Reference</a>
+</li>
+                                    
+<li>
+    <a href="../05-grader-image/" class="dropdown-item">Grader Image Guide</a>
+</li>
+                                    
+<li>
+    <a href="./" class="dropdown-item active" aria-current="page">Authoring Grader Tests</a>
+</li>
+                                </ul>
+                            </li>
+                            <li class="nav-item dropdown">
+                                <a href="#" class="nav-link dropdown-toggle" role="button" data-bs-toggle="dropdown"  aria-expanded="false">Tutorial</a>
+                                <ul class="dropdown-menu">
+                                    
+<li>
+    <a href="../../tutorial/" class="dropdown-item">Tutorial for Course Responsible</a>
+</li>
+                                    
+<li>
+    <a href="../../tutorial/02-prerequisites/" class="dropdown-item">Prerequisites</a>
+</li>
+                                    
+<li>
+    <a href="../../tutorial/03-creating-grader-image/" class="dropdown-item">Creating a Custom Grader Docker Image</a>
+</li>
+                                    
+<li>
+    <a href="../../tutorial/04-writing-grader-tests/" class="dropdown-item">Writing Grader Tests: A Hands-On Tutorial</a>
+</li>
+                                </ul>
+                            </li>
+                        </ul>
+
+                    <ul class="nav navbar-nav ms-md-auto">
+                        <li class="nav-item">
+                            <a href="#" class="nav-link" data-bs-toggle="modal" data-bs-target="#mkdocs_search_modal">
+                                <i class="fa fa-search"></i> Search
+                            </a>
+                        </li>
+                            <li class="nav-item">
+                                <a rel="prev" href="../05-grader-image/" class="nav-link">
+                                    <i class="fa fa-arrow-left"></i> Previous
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a rel="next" href="../../tutorial/" class="nav-link">
+                                    Next <i class="fa fa-arrow-right"></i>
+                                </a>
+                            </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="container">
+            <div class="row">
+                    <div class="col-md-3"><div class="navbar-expand-md bs-sidebar hidden-print affix" role="complementary">
+    <div class="navbar-header">
+        <button type="button" class="navbar-toggler collapsed" data-bs-toggle="collapse" data-bs-target="#toc-collapse" title="Table of Contents">
+            <span class="fa fa-angle-down"></span>
+        </button>
+    </div>
+
+    
+    <div id="toc-collapse" class="navbar-collapse collapse card bg-body-tertiary">
+        <ul class="nav flex-column">
+            
+            <li class="nav-item" data-bs-level="1"><a href="#authoring-grader-tests" class="nav-link">Authoring Grader Tests</a>
+              <ul class="nav flex-column">
+            <li class="nav-item" data-bs-level="2"><a href="#quick-start-a-minimal-grader-that-works-immediately" class="nav-link">Quick Start: A Minimal Grader That Works Immediately</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#execution-context-how-your-grader-runs" class="nav-link">Execution Context: How Your Grader Runs</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#writing-your-own-grader" class="nav-link">Writing Your Own Grader</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#sample-outputs-and-validation" class="nav-link">Sample Outputs and Validation</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#tips-and-best-practices" class="nav-link">Tips and Best Practices</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#next-steps" class="nav-link">Next Steps</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+              </ul>
+            </li>
+        </ul>
+    </div>
+</div></div>
+                    <div class="col-md-9" role="main">
+
+<h1 id="authoring-grader-tests">Authoring Grader Tests</h1>
+<p>Write grader tests that evaluate student submissions. This guide shows you how
+to create a minimal grader script, test it locally, and deploy it to Canvas Code
+Correction.</p>
+<h2 id="quick-start-a-minimal-grader-that-works-immediately">Quick Start: A Minimal Grader That Works Immediately</h2>
+<p>Copy the following Python script to a file named <code>grader.py</code>. This grader lists
+the submission files, awards one point, and writes feedback.</p>
+<pre><code class="language-python">from __future__ import annotations
+
+import json
+import os
+from pathlib import Path
+
+
+RESULTS_PATH = Path(os.getenv(&quot;CCC_RESULTS_FILE&quot;, &quot;results.json&quot;))
+POINTS_PATH = Path(os.getenv(&quot;CCC_POINTS_FILE&quot;, &quot;points.txt&quot;))
+COMMENTS_PATH = Path(os.getenv(&quot;CCC_COMMENTS_FILE&quot;, &quot;comments.txt&quot;))
+WORKSPACE_ROOT = Path(os.getenv(&quot;CCC_WORKSPACE_DIR&quot;, Path.cwd()))
+
+
+def submission_files(root: Path) -&gt; list[str]:
+    &quot;&quot;&quot;Return sorted relative paths of all files under `root`.&quot;&quot;&quot;
+    return sorted(
+        path.relative_to(root).as_posix()
+        for path in root.rglob(&quot;*&quot;)
+        if path.is_file()
+    )
+
+
+def write_outputs(files: list[str]) -&gt; None:
+    &quot;&quot;&quot;Write the three required output files.&quot;&quot;&quot;
+    RESULTS_PATH.write_text(json.dumps({&quot;files&quot;: files, &quot;total&quot;: len(files)}))
+    POINTS_PATH.write_text(&quot;1\n&quot;)
+
+    message = [&quot;Sample grader succeeded.&quot;, &quot;Discovered files:&quot;]
+    if files:
+        message.extend(f&quot;  - {name}&quot; for name in files)
+    else:
+        message.append(&quot;  (no files found)&quot;)
+
+    COMMENTS_PATH.write_text(&quot;\n&quot;.join(message) + &quot;\n&quot;)
+
+
+def main() -&gt; None:
+    submission_root = WORKSPACE_ROOT / &quot;submission&quot;
+    if not submission_root.exists():
+        raise SystemExit(&quot;submission directory missing&quot;)
+
+    files = submission_files(submission_root)
+    write_outputs(files)
+
+
+if __name__ == &quot;__main__&quot;:
+    main()
+</code></pre>
+<h3 id="test-the-grader-locally-with-a-mock-submission">Test the Grader Locally with a Mock Submission</h3>
+<p>Create a mock submission directory and run the grader to see the outputs.</p>
+<pre><code class="language-bash"># Create a temporary workspace
+$ mkdir -p /tmp/test_workspace/submission
+$ echo &quot;print('hello')&quot; &gt; /tmp/test_workspace/submission/hello.py
+$ echo &quot;# README&quot; &gt; /tmp/test_workspace/submission/README.md
+
+# Set the environment variables the grader expects
+$ export CCC_WORKSPACE_DIR=/tmp/test_workspace
+$ export CCC_RESULTS_FILE=/tmp/test_workspace/results.json
+$ export CCC_POINTS_FILE=/tmp/test_workspace/points.txt
+$ export CCC_COMMENTS_FILE=/tmp/test_workspace/comments.txt
+
+# Run the grader
+$ cd /tmp/test_workspace &amp;&amp; python grader.py
+
+# Examine the outputs
+$ cat /tmp/test_workspace/results.json
+{
+  &quot;files&quot;: [&quot;README.md&quot;, &quot;hello.py&quot;],
+  &quot;total&quot;: 2
+}
+$ cat /tmp/test_workspace/points.txt
+1
+$ cat /tmp/test_workspace/comments.txt
+Sample grader succeeded.
+Discovered files:
+  - README.md
+  - hello.py
+</code></pre>
+<p>The grader has produced the three required outputs: a JSON results file, a
+points file, and a plain‑text comment file. Canvas Code Correction will collect
+these files when the grader runs inside a container.</p>
+<h2 id="execution-context-how-your-grader-runs">Execution Context: How Your Grader Runs</h2>
+<p>Each student submission is evaluated in a fresh Ubuntu container. Your grader
+script is invoked with a predefined <strong>workspace layout</strong> and a set of
+<strong>environment variables</strong>.</p>
+<h3 id="workspace-layout">Workspace Layout</h3>
+<pre><code>/workspace
+├── submission/          # Extracted files from the Canvas submission
+├── results.json         # JSON payload returned to CCC (created by your script)
+├── points.txt           # One numeric score per line (created by your script)
+└── comments.txt         # Plain‑text feedback for the student (created by your script)
+</code></pre>
+<h3 id="environment-variables">Environment Variables</h3>
+<table>
+<thead>
+<tr>
+<th>Variable</th>
+<th>Default</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>CCC_WORKSPACE_DIR</code></td>
+<td><code>/workspace</code></td>
+<td>Root directory of the mounted workspace.</td>
+</tr>
+<tr>
+<td><code>CCC_RESULTS_FILE</code></td>
+<td><code>/workspace/results.json</code></td>
+<td>Path where your script must write the JSON results.</td>
+</tr>
+<tr>
+<td><code>CCC_POINTS_FILE</code></td>
+<td><code>/workspace/points.txt</code></td>
+<td>Path for the point(s) awarded (one value per line).</td>
+</tr>
+<tr>
+<td><code>CCC_COMMENTS_FILE</code></td>
+<td><code>/workspace/comments.txt</code></td>
+<td>Path for the plain‑text feedback shown to the student.</td>
+</tr>
+</tbody>
+</table>
+<p>!!! note
+    The container is ephemeral. Your grader should not rely on any state
+    from previous submissions.</p>
+<h2 id="writing-your-own-grader">Writing Your Own Grader</h2>
+<p>Start from the minimal grader above and replace or extend the <code>submission_files</code>
+and <code>write_outputs</code> functions.</p>
+<h3 id="example-run-a-python-test-suite">Example: Run a Python Test Suite</h3>
+<p>Suppose you want to run <code>pytest</code> on the submission and capture the output.</p>
+<pre><code class="language-python">import subprocess
+import sys
+
+
+def run_pytest(submission_root: Path) -&gt; tuple[int, str]:
+    &quot;&quot;&quot;Run pytest in the submission directory and return (exit_code, stdout).&quot;&quot;&quot;
+    result = subprocess.run(
+        [sys.executable, &quot;-m&quot;, &quot;pytest&quot;, &quot;-v&quot;],
+        cwd=submission_root,
+        capture_output=True,
+        text=True,
+    )
+    return result.returncode, result.stdout
+
+
+def grade_python_assignment(submission_root: Path) -&gt; tuple[float, str]:
+    &quot;&quot;&quot;Grade a Python submission using pytest.&quot;&quot;&quot;
+    exit_code, output = run_pytest(submission_root)
+    if exit_code == 0:
+        points = 1.0
+        comment = &quot;All tests passed.\n&quot; + output
+    else:
+        points = 0.0
+        comment = &quot;Some tests failed.\n&quot; + output
+    return points, comment
+</code></pre>
+<p>Integrate this into the <code>main</code> function:</p>
+<pre><code class="language-python">def main() -&gt; None:
+    submission_root = WORKSPACE_ROOT / &quot;submission&quot;
+    if not submission_root.exists():
+        raise SystemExit(&quot;submission directory missing&quot;)
+
+    points, comment = grade_python_assignment(submission_root)
+
+    # Write the three output files
+    RESULTS_PATH.write_text(json.dumps({&quot;points&quot;: points, &quot;comment_preview&quot;: comment[:200]}))
+    POINTS_PATH.write_text(f&quot;{points}\n&quot;)
+    COMMENTS_PATH.write_text(comment)
+</code></pre>
+<h3 id="example-check-for-required-files">Example: Check for Required Files</h3>
+<pre><code class="language-python">def check_required_files(submission_root: Path, required: list[str]) -&gt; list[str]:
+    &quot;&quot;&quot;Return list of missing required files.&quot;&quot;&quot;
+    missing = []
+    for name in required:
+        if not (submission_root / name).exists():
+            missing.append(name)
+    return missing
+
+
+def main() -&gt; None:
+    submission_root = WORKSPACE_ROOT / &quot;submission&quot;
+    missing = check_required_files(submission_root, [&quot;main.py&quot;, &quot;README.md&quot;])
+    if missing:
+        comment = f&quot;Missing required files: {', '.join(missing)}&quot;
+        points = 0.0
+    else:
+        comment = &quot;All required files present.&quot;
+        points = 1.0
+
+    RESULTS_PATH.write_text(json.dumps({&quot;missing&quot;: missing}))
+    POINTS_PATH.write_text(f&quot;{points}\n&quot;)
+    COMMENTS_PATH.write_text(comment)
+</code></pre>
+<h2 id="sample-outputs-and-validation">Sample Outputs and Validation</h2>
+<p>Your grader must create three output files. The formats are simple but strict.</p>
+<h3 id="resultsjson"><code>results.json</code></h3>
+<p>A JSON payload that Canvas Code Correction stores alongside the grade. You can
+put any structured data here; the system does not interpret it. Use this to
+record detailed metrics for later analysis.</p>
+<p>Example:</p>
+<pre><code class="language-json">{
+  &quot;files&quot;: [&quot;README.md&quot;, &quot;src/main.py&quot;],
+  &quot;total&quot;: 2
+}
+</code></pre>
+<h3 id="pointstxt"><code>points.txt</code></h3>
+<p>One numeric score per line (usually a single line). Decimals are allowed.</p>
+<pre><code class="language-text">1
+</code></pre>
+<p>Or, for partial credit:</p>
+<pre><code class="language-text">0.75
+</code></pre>
+<h3 id="commentstxt"><code>comments.txt</code></h3>
+<p>Plain‑text feedback that the student will see in Canvas. Keep it concise and
+helpful.</p>
+<pre><code class="language-text">All tests passed. Good work!
+
+Detailed test output:
+test_add (test_calc.TestCalc) ... ok
+test_sub (test_calc.TestCalc) ... ok
+</code></pre>
+<h2 id="tips-and-best-practices">Tips and Best Practices</h2>
+<ul>
+<li><strong>Test locally first.</strong> Use the mock‑submission technique shown in the Quick
+  Start to verify your grader works before deploying.</li>
+<li><strong>Keep the grader self‑contained.</strong> The container has Python 3.13 and the
+  packages listed in your course’s <code>requirements.txt</code>. Do not rely on external
+  network access.</li>
+<li><strong>Write informative comments.</strong> Students see the contents of <code>comments.txt</code>.
+  Explain what they did well and what needs improvement.</li>
+<li><strong>Use the results JSON for debugging.</strong> Store intermediate values (e.g., test
+  counts, lint scores) to help you diagnose grading issues later.</li>
+<li><strong>One submission per execution.</strong> The orchestrator launches a fresh container
+  for every submission. Your grader should not assume any state from previous
+  runs.</li>
+</ul>
+<h2 id="next-steps">Next Steps</h2>
+<ul>
+<li>See <a href="../tutorials/02-configuring-a-course.md">Configuring a Course</a> to connect
+  your grader to a Canvas assignment.</li>
+<li>Explore the <a href="../api/">API Reference</a> for advanced integration options.</li>
+<li>Check the <a href="../troubleshooting/">Troubleshooting</a> guide if your grader does not
+  produce the expected results.</li>
+</ul></div>
+            </div>
+        </div>
+
+        <footer class="col-md-12">
+            <hr>
+            <p>Documentation built with <a href="https://www.mkdocs.org/">MkDocs</a>.</p>
+        </footer>
+        <script src="../../js/bootstrap.bundle.min.js"></script>
+        <script>
+            var base_url = "../..",
+                shortcuts = {"help": 191, "next": 78, "previous": 80, "search": 83};
+        </script>
+        <script src="../../js/base.js"></script>
+        <script src="../../search/main.js"></script>
+
+        <div class="modal" id="mkdocs_search_modal" tabindex="-1" role="dialog" aria-labelledby="searchModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title" id="searchModalLabel">Search</h4>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>From here you can search these documents. Enter your search terms below.</p>
+                <form>
+                    <div class="form-group">
+                        <input type="search" class="form-control" placeholder="Search..." id="mkdocs-search-query" title="Type search term here">
+                    </div>
+                </form>
+                <div id="mkdocs-search-results" data-no-results-text="No results found"></div>
+            </div>
+            <div class="modal-footer">
+            </div>
+        </div>
+    </div>
+</div><div class="modal" id="mkdocs_keyboard_modal" tabindex="-1" role="dialog" aria-labelledby="keyboardModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title" id="keyboardModalLabel">Keyboard Shortcuts</h4>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th style="width: 20%;">Keys</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td class="help shortcut"><kbd>?</kbd></td>
+                    <td>Open this help</td>
+                  </tr>
+                  <tr>
+                    <td class="next shortcut"><kbd>n</kbd></td>
+                    <td>Next page</td>
+                  </tr>
+                  <tr>
+                    <td class="prev shortcut"><kbd>p</kbd></td>
+                    <td>Previous page</td>
+                  </tr>
+                  <tr>
+                    <td class="search shortcut"><kbd>s</kbd></td>
+                    <td>Search</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="modal-footer">
+            </div>
+        </div>
+    </div>
+</div>
+
+    </body>
+</html>

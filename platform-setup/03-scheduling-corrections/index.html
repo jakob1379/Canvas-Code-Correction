@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="light">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        
+        
+        
+        <link rel="shortcut icon" href="../../img/favicon.ico">
+        <title>Scheduling Corrections - My Docs</title>
+        <link href="../../css/bootstrap.min.css" rel="stylesheet">
+        <link href="../../css/fontawesome.min.css" rel="stylesheet">
+        <link href="../../css/brands.min.css" rel="stylesheet">
+        <link href="../../css/solid.min.css" rel="stylesheet">
+        <link href="../../css/v4-font-face.min.css" rel="stylesheet">
+        <link href="../../css/base.css" rel="stylesheet">
+        <link id="hljs-light" rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" >
+        <link id="hljs-dark" rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github-dark.min.css" disabled>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+        <script>hljs.highlightAll();</script> 
+    </head>
+
+    <body>
+        <div class="navbar fixed-top navbar-expand-lg navbar-dark bg-primary">
+            <div class="container">
+                <a class="navbar-brand" href="../..">My Docs</a>
+                <!-- Expander button -->
+                <button type="button" class="navbar-toggler" data-bs-toggle="collapse" data-bs-target="#navbar-collapse" aria-controls="navbar-collapse" aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+
+                <!-- Expanded navigation -->
+                <div id="navbar-collapse" class="navbar-collapse collapse">
+                        <!-- Main navigation -->
+                        <ul class="nav navbar-nav">
+                            <li class="nav-item">
+                                <a href="../.." class="nav-link">Canvas Code Correction v2</a>
+                            </li>
+                            <li class="nav-item dropdown">
+                                <a href="#" class="nav-link dropdown-toggle" role="button" data-bs-toggle="dropdown"  aria-expanded="false">Current development</a>
+                                <ul class="dropdown-menu">
+                                    
+<li>
+    <a href="../../current-development/01-roadmap/" class="dropdown-item">Development Roadmap</a>
+</li>
+                                    
+<li>
+    <a href="../../current-development/02-phase-2-migration-plan/" class="dropdown-item">Phase 2 – Canvas Client Migration Plan</a>
+</li>
+                                </ul>
+                            </li>
+                            <li class="nav-item dropdown">
+                                <a href="#" class="nav-link dropdown-toggle active" aria-current="page" role="button" data-bs-toggle="dropdown"  aria-expanded="false">Platform setup</a>
+                                <ul class="dropdown-menu">
+                                    
+<li>
+    <a href="../01-configuring-course/" class="dropdown-item">Configuring a Course</a>
+</li>
+                                    
+<li>
+    <a href="../02-setting-up-prefect/" class="dropdown-item">Setting up Prefect</a>
+</li>
+                                    
+<li>
+    <a href="./" class="dropdown-item active" aria-current="page">Scheduling Corrections</a>
+</li>
+                                    
+<li>
+    <a href="../04-monitoring-results/" class="dropdown-item">Monitoring Results</a>
+</li>
+                                    
+<li>
+    <a href="../05-deploying-tests-to-ccc/" class="dropdown-item">Deploying Grader Tests to Canvas Code Correction (CCC)</a>
+</li>
+                                    
+<li>
+    <a href="../06-prefect-agent/" class="dropdown-item">Running Prefect Locally for Development</a>
+</li>
+                                    
+<li>
+    <a href="../07-rustfs-storage/" class="dropdown-item">RustFS Storage</a>
+</li>
+                                </ul>
+                            </li>
+                            <li class="nav-item dropdown">
+                                <a href="#" class="nav-link dropdown-toggle" role="button" data-bs-toggle="dropdown"  aria-expanded="false">Reference</a>
+                                <ul class="dropdown-menu">
+                                    
+<li>
+    <a href="../../reference/01-architecture/" class="dropdown-item">Architecture Overview</a>
+</li>
+                                    
+<li>
+    <a href="../../reference/02-cli/" class="dropdown-item">CLI Reference</a>
+</li>
+                                    
+<li>
+    <a href="../../reference/03-configuration/" class="dropdown-item">Configuration Reference</a>
+</li>
+                                    
+<li>
+    <a href="../../reference/04-api-clients/" class="dropdown-item">API Clients Reference</a>
+</li>
+                                    
+<li>
+    <a href="../../reference/05-grader-image/" class="dropdown-item">Grader Image Guide</a>
+</li>
+                                    
+<li>
+    <a href="../../reference/06-authoring-grader-tests/" class="dropdown-item">Authoring Grader Tests</a>
+</li>
+                                </ul>
+                            </li>
+                            <li class="nav-item dropdown">
+                                <a href="#" class="nav-link dropdown-toggle" role="button" data-bs-toggle="dropdown"  aria-expanded="false">Tutorial</a>
+                                <ul class="dropdown-menu">
+                                    
+<li>
+    <a href="../../tutorial/" class="dropdown-item">Tutorial for Course Responsible</a>
+</li>
+                                    
+<li>
+    <a href="../../tutorial/02-prerequisites/" class="dropdown-item">Prerequisites</a>
+</li>
+                                    
+<li>
+    <a href="../../tutorial/03-creating-grader-image/" class="dropdown-item">Creating a Custom Grader Docker Image</a>
+</li>
+                                    
+<li>
+    <a href="../../tutorial/04-writing-grader-tests/" class="dropdown-item">Writing Grader Tests: A Hands-On Tutorial</a>
+</li>
+                                </ul>
+                            </li>
+                        </ul>
+
+                    <ul class="nav navbar-nav ms-md-auto">
+                        <li class="nav-item">
+                            <a href="#" class="nav-link" data-bs-toggle="modal" data-bs-target="#mkdocs_search_modal">
+                                <i class="fa fa-search"></i> Search
+                            </a>
+                        </li>
+                            <li class="nav-item">
+                                <a rel="prev" href="../02-setting-up-prefect/" class="nav-link">
+                                    <i class="fa fa-arrow-left"></i> Previous
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a rel="next" href="../04-monitoring-results/" class="nav-link">
+                                    Next <i class="fa fa-arrow-right"></i>
+                                </a>
+                            </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="container">
+            <div class="row">
+                    <div class="col-md-3"><div class="navbar-expand-md bs-sidebar hidden-print affix" role="complementary">
+    <div class="navbar-header">
+        <button type="button" class="navbar-toggler collapsed" data-bs-toggle="collapse" data-bs-target="#toc-collapse" title="Table of Contents">
+            <span class="fa fa-angle-down"></span>
+        </button>
+    </div>
+
+    
+    <div id="toc-collapse" class="navbar-collapse collapse card bg-body-tertiary">
+        <ul class="nav flex-column">
+            
+            <li class="nav-item" data-bs-level="1"><a href="#scheduling-corrections" class="nav-link">Scheduling Corrections</a>
+              <ul class="nav flex-column">
+            <li class="nav-item" data-bs-level="2"><a href="#try-it-now-60-seconds" class="nav-link">Try It Now (60 seconds)</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#prerequisites" class="nav-link">Prerequisites</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#1-scheduling-with-cron" class="nav-link">1. Scheduling with Cron</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#2-trigger-via-canvas-webhooks" class="nav-link">2. Trigger via Canvas Webhooks</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#3-manual-triggers-when-you-need-control" class="nav-link">3. Manual Triggers (When You Need Control)</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#4-monitoring-and-next-steps" class="nav-link">4. Monitoring and Next Steps</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+              </ul>
+            </li>
+        </ul>
+    </div>
+</div></div>
+                    <div class="col-md-9" role="main">
+
+<h1 id="scheduling-corrections">Scheduling Corrections</h1>
+<p>!!! note "Audience"
+    CCC platform operators <strong>Prerequisites</strong>: Prefect deployment created and worker running (see
+    <a href="../02-setting-up-prefect/">Setting up Prefect</a>)</p>
+<h2 id="try-it-now-60-seconds">Try It Now (60 seconds)</h2>
+<p>Schedule automatic corrections for a course that already has a Prefect
+deployment. If you have a deployment named <code>cs101-corrections</code>, attach a cron
+schedule that runs daily at 2 AM:</p>
+<pre><code class="language-bash">$ prefect deployment build \
+  canvas_code_correction.flows.correct_submission:correct_submission_flow \
+  -n cs101-corrections \
+  -q course-work-pool-cs101 \
+  --schedule &quot;0 2 * * *&quot; \
+  -a
+</code></pre>
+<p>Expected output:</p>
+<pre><code>Successfully updated deployment 'cs101-corrections'!
+Deployment applied to work pool 'course-work-pool-cs101'.
+</code></pre>
+<p>Your corrections now run automatically every day at 2 AM. Continue with the
+guide to learn cron syntax, webhook triggers, and manual overrides.</p>
+<hr />
+<p><strong>Canvas Code Correction</strong> runs submissions on a schedule (e.g., every night at
+2 AM) or triggers immediately via Canvas webhooks when a student submits. This
+guide walks you through both options in <strong>5 minutes</strong>.</p>
+<h2 id="prerequisites">Prerequisites</h2>
+<p>Before you schedule corrections, ensure you have:</p>
+<ol>
+<li><strong>A Prefect deployment</strong> – created with <code>prefect deployment build</code>
+   (<a href="../02-setting-up-prefect/">Setting up Prefect</a>)</li>
+<li><strong>A running worker</strong> – listening to the same work pool as the deployment</li>
+<li><strong>Access to the Canvas course</strong> – to set up webhooks (optional)</li>
+</ol>
+<p>If you haven’t completed the setup, go back to
+<a href="../02-setting-up-prefect/">Setting up Prefect</a> and finish <strong>Steps 1 and 2</strong>.</p>
+<h2 id="1-scheduling-with-cron">1. Scheduling with Cron</h2>
+<p><strong>Prefect schedules</strong> let you run corrections at fixed times (like a system cron
+job). Attach the schedule when you build or update a deployment.</p>
+<h3 id="cron-syntax-quick-reference">Cron syntax quick reference</h3>
+<p>CCC uses standard cron syntax with five fields:</p>
+<pre><code>┌───────────── minute (0–59)
+│ ┌───────────── hour (0–23)
+│ │ ┌───────────── day of month (1–31)
+│ │ │ ┌───────────── month (1–12)
+│ │ │ │ ┌───────────── day of week (0–6, Sunday=0)
+│ │ │ │ │
+│ │ │ │ │
+* * * * *
+</code></pre>
+<table>
+<thead>
+<tr>
+<th>Example</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>0 2 * * *</code></td>
+<td>Every day at 02:00</td>
+</tr>
+<tr>
+<td><code>30 14 * * 1-5</code></td>
+<td>Monday–Friday at 14:30</td>
+</tr>
+<tr>
+<td><code>*/15 * * * *</code></td>
+<td>Every 15 minutes</td>
+</tr>
+<tr>
+<td><code>0 0 1 * *</code></td>
+<td>First day of each month at midnight</td>
+</tr>
+</tbody>
+</table>
+<h3 id="attach-a-schedule-to-an-existing-deployment">Attach a schedule to an existing deployment</h3>
+<p>Use the same <code>prefect deployment build</code> command with the <code>--schedule</code> flag.
+<strong>Keep all other flags identical</strong> (name, work pool, etc.).</p>
+<pre><code class="language-bash">$ prefect deployment build \
+  canvas_code_correction.flows.correct_submission:correct_submission_flow \
+  -n cs101-corrections \
+  -q course-work-pool-cs101 \
+  --schedule &quot;0 2 * * *&quot; \
+  -a
+</code></pre>
+<p><strong>What happens:</strong></p>
+<ul>
+<li>The existing deployment <code>cs101-corrections</code> updates with the new schedule.</li>
+<li>Future flow runs create automatically at the specified times.</li>
+<li>The worker picks up each run and executes the correction flow.</li>
+</ul>
+<p>!!! tip
+    To remove a schedule, run the same command <strong>without</strong> the <code>--schedule</code> flag.</p>
+<h3 id="view-and-edit-schedules-in-the-prefect-ui">View and edit schedules in the Prefect UI</h3>
+<ol>
+<li>Open the Prefect UI (cloud or local).</li>
+<li>Navigate to <strong>Deployments</strong> and select your deployment.</li>
+<li>Click the <strong>Schedule</strong> tab to see the cron expression and next scheduled run.</li>
+<li>Use the <strong>Edit</strong> button to change the schedule interactively.</li>
+</ol>
+<h2 id="2-trigger-via-canvas-webhooks">2. Trigger via Canvas Webhooks</h2>
+<p>For immediate corrections after each student submission, configure Canvas to
+send webhooks to your Prefect deployment.</p>
+<h3 id="how-webhooks-work">How webhooks work</h3>
+<ol>
+<li>Canvas detects a <code>submission_created</code> event.</li>
+<li>Canvas sends an HTTP POST to a <strong>webhook endpoint</strong> provided by Prefect.</li>
+<li>Prefect creates a flow run for the affected assignment and submission.</li>
+<li>Your worker picks up the run and corrects that submission.</li>
+</ol>
+<h3 id="stepbystep-setup">Step‑by‑step setup</h3>
+<h4 id="1-get-your-deployments-webhook-url">1. Get your deployment’s webhook URL</h4>
+<p>Prefect Cloud automatically provides a webhook endpoint for each deployment.</p>
+<ol>
+<li>In the Prefect UI, go to <strong>Deployments</strong> and select your deployment.</li>
+<li>Click the <strong>Webhooks</strong> tab.</li>
+<li>Copy the <strong>URL</strong> shown (looks like
+   <code>https://api.prefect.cloud/api/accounts/.../webhooks/...</code>).</li>
+</ol>
+<p>!!! note
+    If you run a self‑hosted Prefect server, consult the <a href="https://docs.prefect.io/concepts/webhooks/">Prefect webhook documentation</a> for
+    endpoint configuration.</p>
+<h4 id="2-add-the-webhook-in-canvas">2. Add the webhook in Canvas</h4>
+<ol>
+<li>In Canvas, go to your course → <strong>Settings</strong> → <strong>Integrations</strong>.</li>
+<li>Click <strong>+ Add Webhook</strong>.</li>
+<li>Fill in the fields:</li>
+</ol>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>URL</strong></td>
+<td>Paste the webhook URL from Prefect</td>
+</tr>
+<tr>
+<td><strong>Event</strong></td>
+<td>Select <code>submission_created</code></td>
+</tr>
+<tr>
+<td><strong>Format</strong></td>
+<td><code>JSON</code> (default)</td>
+</tr>
+<tr>
+<td><strong>Secret</strong></td>
+<td>(Optional) Add a secret for signing</td>
+</tr>
+</tbody>
+</table>
+<ol>
+<li>Click <strong>Save</strong>.</li>
+</ol>
+<p>Canvas now sends a POST request to Prefect for every new submission.</p>
+<h4 id="3-verify-the-webhook-payload">3. Verify the webhook payload</h4>
+<p>CCC expects a JSON payload with at least <code>assignment_id</code> and <code>submission_id</code>.
+Canvas sends a richer object; CCC extracts the required fields automatically.</p>
+<p>To transform the payload (e.g., rename keys), write a small middleware or use
+Prefect’s <strong>webhook transformations</strong> (see
+<a href="https://docs.prefect.io/concepts/webhooks/">Prefect webhook documentation</a>).</p>
+<h3 id="test-the-webhook">Test the webhook</h3>
+<ol>
+<li>Make a test submission in Canvas.</li>
+<li>Watch the Prefect UI for a new flow run (appears within seconds).</li>
+<li>Check the logs to confirm the correction succeeded.</li>
+</ol>
+<h2 id="3-manual-triggers-when-you-need-control">3. Manual Triggers (When You Need Control)</h2>
+<p>Even with schedules and webhooks, you can always trigger corrections manually.</p>
+<h3 id="via-the-prefect-ui">Via the Prefect UI</h3>
+<ol>
+<li>Open <strong>Deployments</strong> and select your deployment.</li>
+<li>Click the <strong>Run</strong> button.</li>
+<li>Choose <strong>Custom</strong> to provide parameters (assignment ID, submission ID, etc.).</li>
+</ol>
+<h3 id="via-the-cli">Via the CLI</h3>
+<pre><code class="language-bash">$ prefect deployment run cs101-corrections
+</code></pre>
+<p>This creates a flow run for <strong>all submissions that need grading</strong> (default
+behavior).</p>
+<h3 id="via-the-ccc-cli-single-assignment">Via the CCC CLI (single assignment)</h3>
+<pre><code class="language-bash">$ ccc run-once 12345
+</code></pre>
+<p>Replace <code>12345</code> with the numeric Canvas assignment ID. This command creates a
+one‑off flow run for just that assignment, ideal for debugging or urgent
+corrections.</p>
+<h2 id="4-monitoring-and-next-steps">4. Monitoring and Next Steps</h2>
+<p>Once corrections are scheduled, use the <strong>Prefect dashboard</strong> to monitor flow
+runs, view logs, and inspect results. For a full guide, see
+<a href="../04-monitoring-results/">Monitoring results</a>.</p>
+<h3 id="quick-checklist-after-setup">Quick checklist after setup</h3>
+<ul>
+<li>[ ] Schedule attached (cron expression correct)</li>
+<li>[ ] Worker online and listening to the work pool</li>
+<li>[ ] Webhook configured (if using immediate triggers)</li>
+<li>[ ] Test run completed successfully</li>
+</ul>
+<hr />
+<p><strong>Next</strong>: Learn how to interpret correction results, view feedback in Canvas,
+and troubleshoot common issues in
+<a href="../04-monitoring-results/">Monitoring results</a>.</p></div>
+            </div>
+        </div>
+
+        <footer class="col-md-12">
+            <hr>
+            <p>Documentation built with <a href="https://www.mkdocs.org/">MkDocs</a>.</p>
+        </footer>
+        <script src="../../js/bootstrap.bundle.min.js"></script>
+        <script>
+            var base_url = "../..",
+                shortcuts = {"help": 191, "next": 78, "previous": 80, "search": 83};
+        </script>
+        <script src="../../js/base.js"></script>
+        <script src="../../search/main.js"></script>
+
+        <div class="modal" id="mkdocs_search_modal" tabindex="-1" role="dialog" aria-labelledby="searchModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title" id="searchModalLabel">Search</h4>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>From here you can search these documents. Enter your search terms below.</p>
+                <form>
+                    <div class="form-group">
+                        <input type="search" class="form-control" placeholder="Search..." id="mkdocs-search-query" title="Type search term here">
+                    </div>
+                </form>
+                <div id="mkdocs-search-results" data-no-results-text="No results found"></div>
+            </div>
+            <div class="modal-footer">
+            </div>
+        </div>
+    </div>
+</div><div class="modal" id="mkdocs_keyboard_modal" tabindex="-1" role="dialog" aria-labelledby="keyboardModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title" id="keyboardModalLabel">Keyboard Shortcuts</h4>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th style="width: 20%;">Keys</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td class="help shortcut"><kbd>?</kbd></td>
+                    <td>Open this help</td>
+                  </tr>
+                  <tr>
+                    <td class="next shortcut"><kbd>n</kbd></td>
+                    <td>Next page</td>
+                  </tr>
+                  <tr>
+                    <td class="prev shortcut"><kbd>p</kbd></td>
+                    <td>Previous page</td>
+                  </tr>
+                  <tr>
+                    <td class="search shortcut"><kbd>s</kbd></td>
+                    <td>Search</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="modal-footer">
+            </div>
+        </div>
+    </div>
+</div>
+
+    </body>
+</html>

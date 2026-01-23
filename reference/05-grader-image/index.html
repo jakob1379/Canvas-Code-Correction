@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="light">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        
+        
+        
+        <link rel="shortcut icon" href="../../img/favicon.ico">
+        <title>Grader Image Guide - My Docs</title>
+        <link href="../../css/bootstrap.min.css" rel="stylesheet">
+        <link href="../../css/fontawesome.min.css" rel="stylesheet">
+        <link href="../../css/brands.min.css" rel="stylesheet">
+        <link href="../../css/solid.min.css" rel="stylesheet">
+        <link href="../../css/v4-font-face.min.css" rel="stylesheet">
+        <link href="../../css/base.css" rel="stylesheet">
+        <link id="hljs-light" rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" >
+        <link id="hljs-dark" rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github-dark.min.css" disabled>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+        <script>hljs.highlightAll();</script> 
+    </head>
+
+    <body>
+        <div class="navbar fixed-top navbar-expand-lg navbar-dark bg-primary">
+            <div class="container">
+                <a class="navbar-brand" href="../..">My Docs</a>
+                <!-- Expander button -->
+                <button type="button" class="navbar-toggler" data-bs-toggle="collapse" data-bs-target="#navbar-collapse" aria-controls="navbar-collapse" aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+
+                <!-- Expanded navigation -->
+                <div id="navbar-collapse" class="navbar-collapse collapse">
+                        <!-- Main navigation -->
+                        <ul class="nav navbar-nav">
+                            <li class="nav-item">
+                                <a href="../.." class="nav-link">Canvas Code Correction v2</a>
+                            </li>
+                            <li class="nav-item dropdown">
+                                <a href="#" class="nav-link dropdown-toggle" role="button" data-bs-toggle="dropdown"  aria-expanded="false">Current development</a>
+                                <ul class="dropdown-menu">
+                                    
+<li>
+    <a href="../../current-development/01-roadmap/" class="dropdown-item">Development Roadmap</a>
+</li>
+                                    
+<li>
+    <a href="../../current-development/02-phase-2-migration-plan/" class="dropdown-item">Phase 2 – Canvas Client Migration Plan</a>
+</li>
+                                </ul>
+                            </li>
+                            <li class="nav-item dropdown">
+                                <a href="#" class="nav-link dropdown-toggle" role="button" data-bs-toggle="dropdown"  aria-expanded="false">Platform setup</a>
+                                <ul class="dropdown-menu">
+                                    
+<li>
+    <a href="../../platform-setup/01-configuring-course/" class="dropdown-item">Configuring a Course</a>
+</li>
+                                    
+<li>
+    <a href="../../platform-setup/02-setting-up-prefect/" class="dropdown-item">Setting up Prefect</a>
+</li>
+                                    
+<li>
+    <a href="../../platform-setup/03-scheduling-corrections/" class="dropdown-item">Scheduling Corrections</a>
+</li>
+                                    
+<li>
+    <a href="../../platform-setup/04-monitoring-results/" class="dropdown-item">Monitoring Results</a>
+</li>
+                                    
+<li>
+    <a href="../../platform-setup/05-deploying-tests-to-ccc/" class="dropdown-item">Deploying Grader Tests to Canvas Code Correction (CCC)</a>
+</li>
+                                    
+<li>
+    <a href="../../platform-setup/06-prefect-agent/" class="dropdown-item">Running Prefect Locally for Development</a>
+</li>
+                                    
+<li>
+    <a href="../../platform-setup/07-rustfs-storage/" class="dropdown-item">RustFS Storage</a>
+</li>
+                                </ul>
+                            </li>
+                            <li class="nav-item dropdown">
+                                <a href="#" class="nav-link dropdown-toggle active" aria-current="page" role="button" data-bs-toggle="dropdown"  aria-expanded="false">Reference</a>
+                                <ul class="dropdown-menu">
+                                    
+<li>
+    <a href="../01-architecture/" class="dropdown-item">Architecture Overview</a>
+</li>
+                                    
+<li>
+    <a href="../02-cli/" class="dropdown-item">CLI Reference</a>
+</li>
+                                    
+<li>
+    <a href="../03-configuration/" class="dropdown-item">Configuration Reference</a>
+</li>
+                                    
+<li>
+    <a href="../04-api-clients/" class="dropdown-item">API Clients Reference</a>
+</li>
+                                    
+<li>
+    <a href="./" class="dropdown-item active" aria-current="page">Grader Image Guide</a>
+</li>
+                                    
+<li>
+    <a href="../06-authoring-grader-tests/" class="dropdown-item">Authoring Grader Tests</a>
+</li>
+                                </ul>
+                            </li>
+                            <li class="nav-item dropdown">
+                                <a href="#" class="nav-link dropdown-toggle" role="button" data-bs-toggle="dropdown"  aria-expanded="false">Tutorial</a>
+                                <ul class="dropdown-menu">
+                                    
+<li>
+    <a href="../../tutorial/" class="dropdown-item">Tutorial for Course Responsible</a>
+</li>
+                                    
+<li>
+    <a href="../../tutorial/02-prerequisites/" class="dropdown-item">Prerequisites</a>
+</li>
+                                    
+<li>
+    <a href="../../tutorial/03-creating-grader-image/" class="dropdown-item">Creating a Custom Grader Docker Image</a>
+</li>
+                                    
+<li>
+    <a href="../../tutorial/04-writing-grader-tests/" class="dropdown-item">Writing Grader Tests: A Hands-On Tutorial</a>
+</li>
+                                </ul>
+                            </li>
+                        </ul>
+
+                    <ul class="nav navbar-nav ms-md-auto">
+                        <li class="nav-item">
+                            <a href="#" class="nav-link" data-bs-toggle="modal" data-bs-target="#mkdocs_search_modal">
+                                <i class="fa fa-search"></i> Search
+                            </a>
+                        </li>
+                            <li class="nav-item">
+                                <a rel="prev" href="../04-api-clients/" class="nav-link">
+                                    <i class="fa fa-arrow-left"></i> Previous
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a rel="next" href="../06-authoring-grader-tests/" class="nav-link">
+                                    Next <i class="fa fa-arrow-right"></i>
+                                </a>
+                            </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="container">
+            <div class="row">
+                    <div class="col-md-3"><div class="navbar-expand-md bs-sidebar hidden-print affix" role="complementary">
+    <div class="navbar-header">
+        <button type="button" class="navbar-toggler collapsed" data-bs-toggle="collapse" data-bs-target="#toc-collapse" title="Table of Contents">
+            <span class="fa fa-angle-down"></span>
+        </button>
+    </div>
+
+    
+    <div id="toc-collapse" class="navbar-collapse collapse card bg-body-tertiary">
+        <ul class="nav flex-column">
+            
+            <li class="nav-item" data-bs-level="1"><a href="#grader-image-guide" class="nav-link">Grader Image Guide</a>
+              <ul class="nav flex-column">
+            <li class="nav-item" data-bs-level="2"><a href="#quick-start-create-and-test-a-minimal-grader-image" class="nav-link">Quick Start: Create and Test a Minimal Grader Image</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#1-hardening-steps" class="nav-link">1. Hardening Steps</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#2-packaging-coursespecific-graders" class="nav-link">2. Packaging Course‑Specific Graders</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#3-building-and-publishing" class="nav-link">3. Building and Publishing</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#4-configuring-ccc-to-use-the-image" class="nav-link">4. Configuring CCC to Use the Image</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#5-validating-the-setup" class="nav-link">5. Validating the Setup</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#next-steps" class="nav-link">Next Steps</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+              </ul>
+            </li>
+        </ul>
+    </div>
+</div></div>
+                    <div class="col-md-9" role="main">
+
+<h1 id="grader-image-guide">Grader Image Guide</h1>
+<p>Create a <strong>grader Docker image</strong> for Canvas Code Correction (CCC) to execute
+student submissions in an isolated environment. This guide walks you through
+building, hardening, packaging, and configuring a grader image, from a minimal
+example to production-ready deployment.</p>
+<h2 id="quick-start-create-and-test-a-minimal-grader-image">Quick Start: Create and Test a Minimal Grader Image</h2>
+<p>Start with the CCC base image <code>jakob1379/canvas-grader:latest</code> (Ubuntu with
+Python 3.13 pre‑installed). Create a <strong>Dockerfile</strong> in your grader repository:</p>
+<pre><code class="language-dockerfile">FROM jakob1379/canvas-grader:latest
+
+# Install any extra system packages your grader needs
+RUN apt-get update &amp;&amp; apt-get install -y graphviz &amp;&amp; rm -rf /var/lib/apt/lists/*
+</code></pre>
+<p>Build the image:</p>
+<pre><code class="language-bash">$ docker build -t my-course/grader:latest .
+</code></pre>
+<pre><code class="language-output">Sending build context to Docker daemon  4.096kB
+Step 1/2 : FROM jakob1379/canvas-grader:latest
+latest: Pulling from jakob1379/canvas-grader
+Digest: sha256:...
+Status: Downloaded newer image for jakob1379/canvas-grader:latest
+ ---&gt; a1b2c3d4e5f6
+Step 2/2 : RUN apt-get update &amp;&amp; apt-get install -y graphviz &amp;&amp; rm -rf /var/lib/apt/lists/*
+ ---&gt; Running in 1234567890ab
+Get:1 http://archive.ubuntu.com/ubuntu jammy InRelease [270 kB]
+...
+Setting up graphviz (2.42.2-6) ...
+ ---&gt; 7890abcdef12
+Successfully built 7890abcdef12
+Successfully tagged my-course/grader:latest
+</code></pre>
+<p>Test that the image works and includes the added dependency:</p>
+<pre><code class="language-bash">$ docker run --rm my-course/grader:latest dot -V
+</code></pre>
+<pre><code class="language-output">dot - graphviz version 2.42.2 (20200629.0806)
+</code></pre>
+<p>Your minimal grader image is ready. Now add hardening, package your grader code,
+and configure CCC to use it.</p>
+<h2 id="1-hardening-steps">1. Hardening Steps</h2>
+<p>The CCC base image already follows security best practices. When you extend it,
+keep these hardening principles in mind.</p>
+<h3 id="run-as-a-nonroot-user">Run as a Non‑Root User</h3>
+<p>The base image creates a non‑root user <code>app</code> (UID/GID configurable via build
+arguments). Your container will automatically run as this user, reducing the
+impact of potential container escapes.</p>
+<p>Verify the user inside the container:</p>
+<pre><code class="language-bash">$ docker run --rm my-course/grader:latest whoami
+app
+</code></pre>
+<h3 id="dependency-management">Dependency Management</h3>
+<p>Install system dependencies with <code>apt-get</code> in a single <code>RUN</code> layer and clean up
+afterward to keep the image small:</p>
+<pre><code class="language-dockerfile">RUN apt-get update \
+    &amp;&amp; apt-get install -y --no-install-recommends \
+        graphviz \
+        clang \
+    &amp;&amp; rm -rf /var/lib/apt/lists/*
+</code></pre>
+<p>For Python dependencies, use <code>pip</code> inside your grader test scripts. No need to
+bake them into the image unless they are large or rarely change.</p>
+<h3 id="frozen-dependencies">Frozen Dependencies</h3>
+<p>If your grader uses <code>uv</code> or <code>pip-tools</code>, you can mirror the project’s tooling
+inside the image. Add a <code>requirements.txt</code> or <code>pyproject.toml</code> and install with
+<code>--frozen</code>:</p>
+<pre><code class="language-dockerfile">COPY requirements.txt .
+RUN uv pip install --frozen -r requirements.txt
+</code></pre>
+<p>This ensures the same versions are used in the container as in your development
+environment.</p>
+<h2 id="2-packaging-coursespecific-graders">2. Packaging Course‑Specific Graders</h2>
+<p>Course configuration should <strong>not</strong> require modifying the CCC source tree.
+Instead, ship grader code and test assets with your Docker image (or mount them
+read‑only at runtime) while keeping CCC itself immutable.</p>
+<p>Two common approaches:</p>
+<h3 id="approach-1-generalpurpose-base-image">Approach 1: General‑Purpose Base Image</h3>
+<p>Start from a lightweight Ubuntu image, install the language runtimes and
+dependencies required by your grader, and copy your test harness into the image
+under <code>/opt/grader</code>.</p>
+<p>Example Dockerfile:</p>
+<pre><code class="language-dockerfile">FROM ubuntu:22.04
+
+# Install Python and system dependencies
+RUN apt-get update &amp;&amp; apt-get install -y \
+    python3 \
+    python3-pip \
+    &amp;&amp; rm -rf /var/lib/apt/lists/*
+
+# Create non‑root user
+RUN useradd -m -u 1000 app
+USER app
+
+# Copy grader scripts
+COPY --chown=app:app grader /opt/grader
+WORKDIR /opt/grader
+
+# Set entrypoint to the grader harness
+ENTRYPOINT [&quot;python3&quot;, &quot;/opt/grader/run.py&quot;]
+</code></pre>
+<h3 id="approach-2-coursespecialized-image">Approach 2: Course‑Specialized Image</h3>
+<p>Fork the CCC base image and bake in course‑specific tooling or third‑party
+binaries. When sensitive test assets should <strong>not</strong> be bundled into the image,
+mount them read/executable‑only via Prefect worker volume configuration.</p>
+<p>Example Dockerfile:</p>
+<pre><code class="language-dockerfile">FROM jakob1379/canvas-grader:latest
+
+# Add course‑specific binaries
+COPY --chown=app:app binaries/ /usr/local/bin/
+
+# Install extra system packages
+RUN apt-get update &amp;&amp; apt-get install -y \
+    java-17-openjdk \
+    &amp;&amp; rm -rf /var/lib/apt/lists/*
+
+# Grader entrypoint is already set by the base image
+</code></pre>
+<p>In both cases the container should expose the grader entry script via
+<code>ENTRYPOINT</code> (or <code>CMD</code>) so Prefect can invoke it directly. The script is
+responsible for reading submission files from <code>/workspace/submission</code> and
+writing results (<code>results.json</code>, <code>points.txt</code>, <code>comments.txt</code>) back to the
+workspace.</p>
+<h2 id="3-building-and-publishing">3. Building and Publishing</h2>
+<p>Once your Dockerfile packages the grader harness and any required test assets,
+build and optionally push the image to a container registry.</p>
+<h3 id="build-the-image">Build the Image</h3>
+<pre><code class="language-bash">$ docker build -t &lt;registry&gt;/grader:latest .
+</code></pre>
+<p>Replace <code>&lt;registry&gt;</code> with your Docker Hub username, GitHub Container Registry
+address, or private registry URL.</p>
+<h3 id="push-to-a-registry-recommended">Push to a Registry (Recommended)</h3>
+<p>Tag the image with the full registry path, then push:</p>
+<pre><code class="language-bash">$ docker tag &lt;registry&gt;/grader:latest ghcr.io/your‑org/your‑course‑grader:latest
+$ docker push ghcr.io/your‑org/your‑course‑grader:latest
+</code></pre>
+<pre><code class="language-output">The push refers to repository [ghcr.io/your‑org/your‑course‑grader]
+latest: digest: sha256:... size: 1234
+</code></pre>
+<p>Publishing the image allows CCC workers to pull it from a central location.</p>
+<h2 id="4-configuring-ccc-to-use-the-image">4. Configuring CCC to Use the Image</h2>
+<p>Provision the course through the Prefect flow/deployment instead of the former
+CLI. The provisioning flow will:</p>
+<ol>
+<li>Create (or overwrite) the course work pool.</li>
+<li>Upload the grader asset folder to S3 via the configured Prefect S3 block.</li>
+<li>Persist a <code>course-config-&lt;course_name&gt;</code> JSON block referencing the Docker
+   image and latest asset materialization.</li>
+</ol>
+<h3 id="using-the-provisioning-flow-directly">Using the Provisioning Flow Directly</h3>
+<p>Example Python snippet:</p>
+<pre><code class="language-python">from pathlib import Path
+from canvas_code_correction.flows.provision import provision_course_flow
+
+provision_course_flow(
+    course_name=&quot;my-course&quot;,
+    course_id=42,
+    docker_image=&quot;ghcr.io/your‑org/your‑course‑grader:latest&quot;,
+    assets_path=str(Path(&quot;grader-assets&quot;)),
+    bucket_block=&quot;course-assets-my-course&quot;,
+)
+</code></pre>
+<p>Alternatively, build and apply the provided deployment script under
+<code>canvas_code_correction/deployments/provision.py</code> so operators can trigger
+provisioning from Prefect Cloud/UI.</p>
+<h3 id="local-testing-with-rustfs">Local Testing with RustFS</h3>
+<p>For local development and testing, use the RustFS S3‑compatible server:</p>
+<pre><code class="language-bash"># Start RustFS server
+$ poe s3
+</code></pre>
+<pre><code class="language-output">Starting RustFS S3 server on http://localhost:9000
+Credentials: rustfsadmin / rustfsadmin
+</code></pre>
+<p>Set up RustFS for testing:</p>
+<pre><code class="language-bash">$ poe rustfs-setup
+</code></pre>
+<pre><code class="language-output">Verifying RustFS is running...
+Creating bucket 'test-assets'...
+Uploading test asset...
+Registered Prefect S3 block 'local-rustfs'.
+</code></pre>
+<p>Configure the course to use the local RustFS block:</p>
+<pre><code class="language-bash">$ ccc configure-course my-course \
+  --docker-image my-course/grader:latest \
+  --assets-block local-rustfs \
+  --s3-prefix dev
+</code></pre>
+<pre><code class="language-output">Created work pool 'course-work-pool-my-course'
+Saved configuration block 'course-config-my-course'
+</code></pre>
+<p>See the <a href="../../platform-setup/05-deploying-tests-to-ccc/">Deploying Tests to CCC</a>
+guide for details.</p>
+<h2 id="5-validating-the-setup">5. Validating the Setup</h2>
+<p>Once provisioning completes and the correction deployment is active, trigger a
+test run via Prefect (UI, CLI, or API).</p>
+<h3 id="trigger-a-test-run-manually">Trigger a Test Run Manually</h3>
+<pre><code class="language-bash">$ prefect deployment run my-course-corrections
+</code></pre>
+<h3 id="verify-execution">Verify Execution</h3>
+<p>Inspect the Prefect flow run logs to confirm:</p>
+<ol>
+<li>The correct Docker image was pulled.</li>
+<li>Grader assets were downloaded into the container.</li>
+<li>The grader command executed successfully.</li>
+<li>Results (<code>results.json</code>, <code>points.txt</code>, <code>comments.txt</code>) were written back to
+   the workspace.</li>
+</ol>
+<h3 id="common-validation-steps">Common Validation Steps</h3>
+<ul>
+<li><strong>Image accessibility</strong>: Ensure the worker environment has credentials for
+  private registries (if used).</li>
+<li><strong>Resource limits</strong>: Check that <code>--memory-limit</code> and <code>--cpu-limit</code> are
+  appropriate for your grader.</li>
+<li><strong>Asset synchronization</strong>: Verify the S3 bucket/prefix contains the latest
+  grader test files.</li>
+</ul>
+<h2 id="next-steps">Next Steps</h2>
+<p>Your grader image is now ready for production. Continue with:</p>
+<ul>
+<li><a href="../../tutorial/04-writing-grader-tests/">Writing Grader Tests</a> – develop the
+  actual test logic.</li>
+<li><a href="../../platform-setup/05-deploying-tests-to-ccc/">Deploying Tests to CCC</a> –
+  publish tests and configure the CCC platform.</li>
+<li><a href="../reference/06-running-corrections.md">Running Corrections</a> – trigger
+  grading flows and monitor results.</li>
+</ul>
+<p><strong>Remember:</strong> Keep your Dockerfile simple. Only add dependencies that are truly
+required for grading. The smaller the image, the faster it starts and the less
+storage it consumes.</p></div>
+            </div>
+        </div>
+
+        <footer class="col-md-12">
+            <hr>
+            <p>Documentation built with <a href="https://www.mkdocs.org/">MkDocs</a>.</p>
+        </footer>
+        <script src="../../js/bootstrap.bundle.min.js"></script>
+        <script>
+            var base_url = "../..",
+                shortcuts = {"help": 191, "next": 78, "previous": 80, "search": 83};
+        </script>
+        <script src="../../js/base.js"></script>
+        <script src="../../search/main.js"></script>
+
+        <div class="modal" id="mkdocs_search_modal" tabindex="-1" role="dialog" aria-labelledby="searchModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title" id="searchModalLabel">Search</h4>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>From here you can search these documents. Enter your search terms below.</p>
+                <form>
+                    <div class="form-group">
+                        <input type="search" class="form-control" placeholder="Search..." id="mkdocs-search-query" title="Type search term here">
+                    </div>
+                </form>
+                <div id="mkdocs-search-results" data-no-results-text="No results found"></div>
+            </div>
+            <div class="modal-footer">
+            </div>
+        </div>
+    </div>
+</div><div class="modal" id="mkdocs_keyboard_modal" tabindex="-1" role="dialog" aria-labelledby="keyboardModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title" id="keyboardModalLabel">Keyboard Shortcuts</h4>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th style="width: 20%;">Keys</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td class="help shortcut"><kbd>?</kbd></td>
+                    <td>Open this help</td>
+                  </tr>
+                  <tr>
+                    <td class="next shortcut"><kbd>n</kbd></td>
+                    <td>Next page</td>
+                  </tr>
+                  <tr>
+                    <td class="prev shortcut"><kbd>p</kbd></td>
+                    <td>Previous page</td>
+                  </tr>
+                  <tr>
+                    <td class="search shortcut"><kbd>s</kbd></td>
+                    <td>Search</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="modal-footer">
+            </div>
+        </div>
+    </div>
+</div>
+
+    </body>
+</html>

@@ -1,0 +1,634 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="light">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        
+        
+        
+        <link rel="shortcut icon" href="../../img/favicon.ico">
+        <title>Configuration Reference - My Docs</title>
+        <link href="../../css/bootstrap.min.css" rel="stylesheet">
+        <link href="../../css/fontawesome.min.css" rel="stylesheet">
+        <link href="../../css/brands.min.css" rel="stylesheet">
+        <link href="../../css/solid.min.css" rel="stylesheet">
+        <link href="../../css/v4-font-face.min.css" rel="stylesheet">
+        <link href="../../css/base.css" rel="stylesheet">
+        <link id="hljs-light" rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" >
+        <link id="hljs-dark" rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github-dark.min.css" disabled>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+        <script>hljs.highlightAll();</script> 
+    </head>
+
+    <body>
+        <div class="navbar fixed-top navbar-expand-lg navbar-dark bg-primary">
+            <div class="container">
+                <a class="navbar-brand" href="../..">My Docs</a>
+                <!-- Expander button -->
+                <button type="button" class="navbar-toggler" data-bs-toggle="collapse" data-bs-target="#navbar-collapse" aria-controls="navbar-collapse" aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+
+                <!-- Expanded navigation -->
+                <div id="navbar-collapse" class="navbar-collapse collapse">
+                        <!-- Main navigation -->
+                        <ul class="nav navbar-nav">
+                            <li class="nav-item">
+                                <a href="../.." class="nav-link">Canvas Code Correction v2</a>
+                            </li>
+                            <li class="nav-item dropdown">
+                                <a href="#" class="nav-link dropdown-toggle" role="button" data-bs-toggle="dropdown"  aria-expanded="false">Current development</a>
+                                <ul class="dropdown-menu">
+                                    
+<li>
+    <a href="../../current-development/01-roadmap/" class="dropdown-item">Development Roadmap</a>
+</li>
+                                    
+<li>
+    <a href="../../current-development/02-phase-2-migration-plan/" class="dropdown-item">Phase 2 – Canvas Client Migration Plan</a>
+</li>
+                                </ul>
+                            </li>
+                            <li class="nav-item dropdown">
+                                <a href="#" class="nav-link dropdown-toggle" role="button" data-bs-toggle="dropdown"  aria-expanded="false">Platform setup</a>
+                                <ul class="dropdown-menu">
+                                    
+<li>
+    <a href="../../platform-setup/01-configuring-course/" class="dropdown-item">Configuring a Course</a>
+</li>
+                                    
+<li>
+    <a href="../../platform-setup/02-setting-up-prefect/" class="dropdown-item">Setting up Prefect</a>
+</li>
+                                    
+<li>
+    <a href="../../platform-setup/03-scheduling-corrections/" class="dropdown-item">Scheduling Corrections</a>
+</li>
+                                    
+<li>
+    <a href="../../platform-setup/04-monitoring-results/" class="dropdown-item">Monitoring Results</a>
+</li>
+                                    
+<li>
+    <a href="../../platform-setup/05-deploying-tests-to-ccc/" class="dropdown-item">Deploying Grader Tests to Canvas Code Correction (CCC)</a>
+</li>
+                                    
+<li>
+    <a href="../../platform-setup/06-prefect-agent/" class="dropdown-item">Running Prefect Locally for Development</a>
+</li>
+                                    
+<li>
+    <a href="../../platform-setup/07-rustfs-storage/" class="dropdown-item">RustFS Storage</a>
+</li>
+                                </ul>
+                            </li>
+                            <li class="nav-item dropdown">
+                                <a href="#" class="nav-link dropdown-toggle active" aria-current="page" role="button" data-bs-toggle="dropdown"  aria-expanded="false">Reference</a>
+                                <ul class="dropdown-menu">
+                                    
+<li>
+    <a href="../01-architecture/" class="dropdown-item">Architecture Overview</a>
+</li>
+                                    
+<li>
+    <a href="../02-cli/" class="dropdown-item">CLI Reference</a>
+</li>
+                                    
+<li>
+    <a href="./" class="dropdown-item active" aria-current="page">Configuration Reference</a>
+</li>
+                                    
+<li>
+    <a href="../04-api-clients/" class="dropdown-item">API Clients Reference</a>
+</li>
+                                    
+<li>
+    <a href="../05-grader-image/" class="dropdown-item">Grader Image Guide</a>
+</li>
+                                    
+<li>
+    <a href="../06-authoring-grader-tests/" class="dropdown-item">Authoring Grader Tests</a>
+</li>
+                                </ul>
+                            </li>
+                            <li class="nav-item dropdown">
+                                <a href="#" class="nav-link dropdown-toggle" role="button" data-bs-toggle="dropdown"  aria-expanded="false">Tutorial</a>
+                                <ul class="dropdown-menu">
+                                    
+<li>
+    <a href="../../tutorial/" class="dropdown-item">Tutorial for Course Responsible</a>
+</li>
+                                    
+<li>
+    <a href="../../tutorial/02-prerequisites/" class="dropdown-item">Prerequisites</a>
+</li>
+                                    
+<li>
+    <a href="../../tutorial/03-creating-grader-image/" class="dropdown-item">Creating a Custom Grader Docker Image</a>
+</li>
+                                    
+<li>
+    <a href="../../tutorial/04-writing-grader-tests/" class="dropdown-item">Writing Grader Tests: A Hands-On Tutorial</a>
+</li>
+                                </ul>
+                            </li>
+                        </ul>
+
+                    <ul class="nav navbar-nav ms-md-auto">
+                        <li class="nav-item">
+                            <a href="#" class="nav-link" data-bs-toggle="modal" data-bs-target="#mkdocs_search_modal">
+                                <i class="fa fa-search"></i> Search
+                            </a>
+                        </li>
+                            <li class="nav-item">
+                                <a rel="prev" href="../02-cli/" class="nav-link">
+                                    <i class="fa fa-arrow-left"></i> Previous
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a rel="next" href="../04-api-clients/" class="nav-link">
+                                    Next <i class="fa fa-arrow-right"></i>
+                                </a>
+                            </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="container">
+            <div class="row">
+                    <div class="col-md-3"><div class="navbar-expand-md bs-sidebar hidden-print affix" role="complementary">
+    <div class="navbar-header">
+        <button type="button" class="navbar-toggler collapsed" data-bs-toggle="collapse" data-bs-target="#toc-collapse" title="Table of Contents">
+            <span class="fa fa-angle-down"></span>
+        </button>
+    </div>
+
+    
+    <div id="toc-collapse" class="navbar-collapse collapse card bg-body-tertiary">
+        <ul class="nav flex-column">
+            
+            <li class="nav-item" data-bs-level="1"><a href="#configuration-reference" class="nav-link">Configuration Reference</a>
+              <ul class="nav flex-column">
+            <li class="nav-item" data-bs-level="2"><a href="#quick-start" class="nav-link">Quick Start</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#configuration-sources" class="nav-link">Configuration Sources</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#configuration-options" class="nav-link">Configuration Options</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#rustfs-integration-local-development" class="nav-link">RustFS Integration (Local Development)</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#advanced-configuration" class="nav-link">Advanced Configuration</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+              </ul>
+            </li>
+        </ul>
+    </div>
+</div></div>
+                    <div class="col-md-9" role="main">
+
+<h1 id="configuration-reference">Configuration Reference</h1>
+<p>Configure Canvas Code Correction via environment variables or a TOML file.</p>
+<h2 id="quick-start">Quick Start</h2>
+<p>Create a <code>.env</code> file in your project root with the minimum required settings:</p>
+<pre><code class="language-bash"># .env
+CANVAS_API_URL=https://canvas.instructure.com
+CANVAS_API_TOKEN=your_canvas_api_token_here
+CANVAS_COURSE_ID=123456
+CCC_WORKING_DIR=/tmp/ccc/runs
+</code></pre>
+<p>Then run any <code>ccc</code> command – the application will automatically load these
+variables.</p>
+<p><strong>Expected output when configuration is loaded:</strong></p>
+<pre><code class="language-bash">$ ccc --help
+Canvas Code Correction CLI (v2.0.0)
+
+Usage: ccc [OPTIONS] COMMAND [ARGS]...
+
+  ...
+</code></pre>
+<p>If you see the help screen, your environment variables are being read correctly.</p>
+<h2 id="configuration-sources">Configuration Sources</h2>
+<p>Canvas Code Correction reads configuration from three sources, in order of
+precedence:</p>
+<ol>
+<li><strong>Command‑line arguments</strong> – highest priority (e.g., <code>--config custom.toml</code>)</li>
+<li><strong>Environment variables</strong> – convenient for development and deployment</li>
+<li><strong>TOML configuration file</strong> – recommended for production and team sharing</li>
+</ol>
+<p>The settings are merged into a single <code>Settings</code> object defined in
+<code>canvas_code_correction.config</code>.</p>
+<h3 id="environment-variables">Environment Variables</h3>
+<p>Set any of the variables listed below in your shell or in a <code>.env</code> file
+(auto‑loaded by the CLI). Example for bash:</p>
+<pre><code class="language-bash">export CANVAS_API_URL=https://your.instructure.com
+export CANVAS_API_TOKEN=secret_token_here
+export CANVAS_COURSE_ID=98765
+</code></pre>
+<h3 id="toml-configuration-file">TOML Configuration File</h3>
+<p>Create a <code>settings.toml</code> file with the same structure as the <code>Settings</code> model.
+Pass it to the CLI with <code>ccc --config path/to/settings.toml</code>.</p>
+<pre><code class="language-toml"># settings.toml
+[canvas]
+api_url = &quot;https://canvas.instructure.com&quot;
+token = &quot;your_canvas_api_token_here&quot;
+course_id = 123456
+
+[assets]
+block_name = &quot;course-assets&quot;
+bucket = &quot;course-assets&quot;
+prefix = &quot;graders/course-slug/&quot;
+
+[runner]
+docker_image = &quot;python:3.13-slim&quot;
+network_disabled = false
+memory_limit = &quot;1g&quot;
+cpu_limit = 1.0
+
+[workspace]
+root = &quot;/tmp/ccc/workspaces&quot;
+
+[webhook]
+enabled = true
+secret = &quot;optional_jwt_secret&quot;
+require_jwt = false
+rate_limit = &quot;10/minute&quot;
+</code></pre>
+<h2 id="configuration-options">Configuration Options</h2>
+<p>The following table lists every configuration key, its corresponding environment
+variable, a brief description, the default value (if any), and a concrete
+example.</p>
+<table>
+<thead>
+<tr>
+<th>Key</th>
+<th>Environment Variable</th>
+<th>Description</th>
+<th>Default</th>
+<th>Example</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Canvas API Settings</strong></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td><code>canvas.api_url</code></td>
+<td><code>CANVAS_API_URL</code></td>
+<td>Base URL of your Canvas instance.</td>
+<td><code>https://canvas.instructure.com</code></td>
+<td><code>https://your‑school.instructure.com</code></td>
+</tr>
+<tr>
+<td><code>canvas.token</code></td>
+<td><code>CANVAS_API_TOKEN</code></td>
+<td>API token with permissions to read submissions and post grades.</td>
+<td><em>(required)</em></td>
+<td><code>"1~AbCdEf..."</code></td>
+</tr>
+<tr>
+<td><code>canvas.course_id</code></td>
+<td><code>CANVAS_COURSE_ID</code></td>
+<td>Numeric ID of the Canvas course.</td>
+<td><em>(required)</em></td>
+<td><code>123456</code></td>
+</tr>
+<tr>
+<td><strong>Runner (Grading Container) Settings</strong></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td><code>runner.docker_image</code></td>
+<td><code>CCC_RUNNER_IMAGE</code><br><code>CCC_GRADER_IMAGE</code></td>
+<td>Docker image used to execute grading jobs.</td>
+<td><code>None</code> (uses default from Prefect block)</td>
+<td><code>"python:3.13‑slim"</code></td>
+</tr>
+<tr>
+<td><code>runner.network_disabled</code></td>
+<td><code>CCC_RUNNER_NETWORK_DISABLED</code></td>
+<td>Disable network access inside the grading container.</td>
+<td><code>false</code></td>
+<td><code>true</code></td>
+</tr>
+<tr>
+<td><code>runner.memory_limit</code></td>
+<td><code>CCC_RUNNER_MEMORY_LIMIT</code></td>
+<td>Memory limit for the container (supports <code>g</code>, <code>m</code>, <code>k</code> suffixes).</td>
+<td><code>None</code> (no limit)</td>
+<td><code>"2g"</code></td>
+</tr>
+<tr>
+<td><code>runner.cpu_limit</code></td>
+<td><code>CCC_RUNNER_CPU_LIMIT</code></td>
+<td>CPU quota for the container (float).</td>
+<td><code>None</code> (no limit)</td>
+<td><code>1.5</code></td>
+</tr>
+<tr>
+<td><strong>Asset Storage Settings</strong></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td><code>assets.block_name</code></td>
+<td><code>CCC_ASSETS_BLOCK</code></td>
+<td>Name of the Prefect S3 block that stores grader assets.</td>
+<td><code>""</code></td>
+<td><code>"course‑assets"</code></td>
+</tr>
+<tr>
+<td><code>assets.bucket</code></td>
+<td><code>CCC_ASSETS_S3_BUCKET</code></td>
+<td>S3 bucket containing grader tests and fixtures.</td>
+<td><code>""</code></td>
+<td><code>"course‑assets"</code></td>
+</tr>
+<tr>
+<td><code>assets.prefix</code></td>
+<td><code>CCC_ASSETS_S3_PREFIX</code></td>
+<td>Prefix (folder) inside the bucket that scopes course assets.</td>
+<td><code>""</code></td>
+<td><code>"graders/course‑slug/"</code></td>
+</tr>
+<tr>
+<td><code>assets.endpoint_url</code></td>
+<td><code>CCC_ASSETS_S3_ENDPOINT</code></td>
+<td>Custom S3‑compatible endpoint (e.g., RustFS, MinIO).</td>
+<td><code>https://s3.amazonaws.com</code></td>
+<td><code>"http://localhost:9000"</code></td>
+</tr>
+<tr>
+<td><code>assets.region</code></td>
+<td><code>CCC_ASSETS_S3_REGION</code></td>
+<td>AWS region for the bucket (ignored for custom endpoints).</td>
+<td><code>None</code></td>
+<td><code>"us‑east‑1"</code></td>
+</tr>
+<tr>
+<td><code>assets.use_ssl</code></td>
+<td><code>CCC_ASSETS_S3_SSL</code></td>
+<td>Whether to use HTTPS for the S3 client.</td>
+<td><code>true</code></td>
+<td><code>false</code></td>
+</tr>
+<tr>
+<td><code>assets.verify_ssl</code></td>
+<td><code>CCC_ASSETS_S3_VERIFY</code></td>
+<td>Whether to verify TLS certificates.</td>
+<td><code>true</code></td>
+<td><code>false</code></td>
+</tr>
+<tr>
+<td><code>assets.access_key</code></td>
+<td><code>CCC_ASSETS_S3_ACCESS_KEY</code><br><code>AWS_ACCESS_KEY_ID</code></td>
+<td>S3 access key (overrides AWS credentials).</td>
+<td><code>None</code></td>
+<td><code>"AKIAIOSFODNN7EXAMPLE"</code></td>
+</tr>
+<tr>
+<td><code>assets.secret_key</code></td>
+<td><code>CCC_ASSETS_S3_SECRET_KEY</code><br><code>AWS_SECRET_ACCESS_KEY</code></td>
+<td>S3 secret key (overrides AWS credentials).</td>
+<td><code>None</code></td>
+<td><code>"wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY"</code></td>
+</tr>
+<tr>
+<td><code>assets.session_token</code></td>
+<td><code>CCC_ASSETS_S3_SESSION_TOKEN</code><br><code>AWS_SESSION_TOKEN</code></td>
+<td>Session token for temporary credentials.</td>
+<td><code>None</code></td>
+<td><code>"AQoEXAMPLE..."</code></td>
+</tr>
+<tr>
+<td><strong>Workspace Settings</strong></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td><code>working_dir</code></td>
+<td><code>CCC_WORKING_DIR</code></td>
+<td>Root directory for temporary run workspaces.</td>
+<td><code>/tmp/ccc/runs</code></td>
+<td><code>"/var/lib/ccc/workspaces"</code></td>
+</tr>
+<tr>
+<td><code>workspace.root</code></td>
+<td><code>CCC_WORKSPACE_ROOT</code></td>
+<td>Root directory for persistent course workspaces.</td>
+<td><code>/tmp/ccc/workspaces</code></td>
+<td><code>"/var/lib/ccc/workspaces"</code></td>
+</tr>
+</tbody>
+</table>
+<p>!!! note
+    The <code>webhook</code> section (secret, deployment name, rate limiting) is also configurable via the same
+    sources. See the <code>Settings</code> model in <code>canvas_code_correction.config</code> for all available fields.</p>
+<h2 id="rustfs-integration-local-development">RustFS Integration (Local Development)</h2>
+<p>For local development and testing, Canvas Code Correction can use a RustFS
+S3‑compatible storage server. The <code>setup‑rustfs.py</code> script expects the following
+environment variables:</p>
+<table>
+<thead>
+<tr>
+<th>Environment Variable</th>
+<th>Default Value</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>RUSTFS_ENDPOINT</code></td>
+<td><code>http://localhost:9000</code></td>
+<td>RustFS S3 endpoint URL</td>
+</tr>
+<tr>
+<td><code>RUSTFS_ACCESS_KEY</code></td>
+<td><code>rustfsadmin</code></td>
+<td>Access key for RustFS</td>
+</tr>
+<tr>
+<td><code>RUSTFS_SECRET_KEY</code></td>
+<td><code>rustfsadmin</code></td>
+<td>Secret key for RustFS</td>
+</tr>
+<tr>
+<td><code>RUSTFS_BUCKET_NAME</code></td>
+<td><code>test‑assets</code></td>
+<td>Bucket name for test assets</td>
+</tr>
+<tr>
+<td><code>RUSTFS_PREFIX</code></td>
+<td><code>dev</code></td>
+<td>Path prefix for assets within the bucket</td>
+</tr>
+</tbody>
+</table>
+<p>The main application uses the standard S3 configuration variables
+(<code>CCC_ASSETS_S3_ENDPOINT</code>, <code>CCC_ASSETS_S3_ACCESS_KEY</code>, etc.) – you can point
+them to RustFS or any other S3‑compatible service.</p>
+<p><strong>Example .env snippet for RustFS:</strong></p>
+<pre><code class="language-bash">CCC_ASSETS_S3_ENDPOINT=http://localhost:9000
+CCC_ASSETS_S3_ACCESS_KEY=rustfsadmin
+CCC_ASSETS_S3_SECRET_KEY=rustfsadmin
+CCC_ASSETS_S3_BUCKET=test-assets
+CCC_ASSETS_S3_PREFIX=dev
+</code></pre>
+<h2 id="advanced-configuration">Advanced Configuration</h2>
+<h3 id="using-a-toml-file">Using a TOML File</h3>
+<p>A TOML configuration file is the recommended way to store settings for
+production deployments and team collaboration. The file must mirror the
+structure of the <code>Settings</code> Pydantic model.</p>
+<pre><code class="language-toml"># settings.toml
+[canvas]
+api_url = &quot;https://canvas.instructure.com&quot;
+token = &quot;your_canvas_api_token_here&quot;
+course_id = 123456
+
+[assets]
+block_name = &quot;course-assets&quot;
+bucket = &quot;course-assets&quot;
+prefix = &quot;graders/course-slug/&quot;
+endpoint_url = &quot;https://s3.amazonaws.com&quot;
+region = &quot;us-east-1&quot;
+use_ssl = true
+verify_ssl = true
+
+[runner]
+docker_image = &quot;python:3.13-slim&quot;
+network_disabled = false
+memory_limit = &quot;1g&quot;
+cpu_limit = 1.0
+
+[workspace]
+root = &quot;/tmp/ccc/workspaces&quot;
+
+[webhook]
+enabled = true
+secret = &quot;optional_jwt_secret&quot;
+require_jwt = false
+rate_limit = &quot;10/minute&quot;
+</code></pre>
+<p>Load the file with:</p>
+<pre><code class="language-bash">$ ccc --config settings.toml configure-course --slug my-course
+</code></pre>
+<h3 id="precedence-rules">Precedence Rules</h3>
+<p>When the same setting appears in multiple sources, the highest‑priority source
+wins:</p>
+<ol>
+<li><strong>Command‑line arguments</strong> (e.g., <code>--config</code>, <code>--course‑id</code>)</li>
+<li><strong>Environment variables</strong> (set in shell or <code>.env</code>)</li>
+<li><strong>TOML configuration file</strong> (if provided)</li>
+<li><strong>Defaults</strong> from the <code>Settings</code> model</li>
+</ol>
+<p>For example, if <code>CANVAS_API_URL</code> is set in the environment and also specified in
+<code>settings.toml</code>, the environment variable takes precedence.</p>
+<h3 id="validation-and-errors">Validation and Errors</h3>
+<p>The configuration is validated with Pydantic when the application starts. If a
+required field is missing or a value is invalid, you’ll see an error like:</p>
+<pre><code class="language-bash">$ ccc configure-course --slug my-course
+pydantic_core._pydantic_core.ValidationError: 1 validation error for Settings
+canvas.token
+  Field required [type=missing, input_value={}, input_type=dict]
+</code></pre>
+<p>Check the error message for the exact field that needs correction.</p></div>
+            </div>
+        </div>
+
+        <footer class="col-md-12">
+            <hr>
+            <p>Documentation built with <a href="https://www.mkdocs.org/">MkDocs</a>.</p>
+        </footer>
+        <script src="../../js/bootstrap.bundle.min.js"></script>
+        <script>
+            var base_url = "../..",
+                shortcuts = {"help": 191, "next": 78, "previous": 80, "search": 83};
+        </script>
+        <script src="../../js/base.js"></script>
+        <script src="../../search/main.js"></script>
+
+        <div class="modal" id="mkdocs_search_modal" tabindex="-1" role="dialog" aria-labelledby="searchModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title" id="searchModalLabel">Search</h4>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>From here you can search these documents. Enter your search terms below.</p>
+                <form>
+                    <div class="form-group">
+                        <input type="search" class="form-control" placeholder="Search..." id="mkdocs-search-query" title="Type search term here">
+                    </div>
+                </form>
+                <div id="mkdocs-search-results" data-no-results-text="No results found"></div>
+            </div>
+            <div class="modal-footer">
+            </div>
+        </div>
+    </div>
+</div><div class="modal" id="mkdocs_keyboard_modal" tabindex="-1" role="dialog" aria-labelledby="keyboardModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title" id="keyboardModalLabel">Keyboard Shortcuts</h4>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th style="width: 20%;">Keys</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td class="help shortcut"><kbd>?</kbd></td>
+                    <td>Open this help</td>
+                  </tr>
+                  <tr>
+                    <td class="next shortcut"><kbd>n</kbd></td>
+                    <td>Next page</td>
+                  </tr>
+                  <tr>
+                    <td class="prev shortcut"><kbd>p</kbd></td>
+                    <td>Previous page</td>
+                  </tr>
+                  <tr>
+                    <td class="search shortcut"><kbd>s</kbd></td>
+                    <td>Search</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="modal-footer">
+            </div>
+        </div>
+    </div>
+</div>
+
+    </body>
+</html>

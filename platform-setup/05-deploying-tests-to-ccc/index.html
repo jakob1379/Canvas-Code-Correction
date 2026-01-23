@@ -1,0 +1,645 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="light">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        
+        
+        
+        <link rel="shortcut icon" href="../../img/favicon.ico">
+        <title>Deploying Grader Tests to Canvas Code Correction (CCC) - My Docs</title>
+        <link href="../../css/bootstrap.min.css" rel="stylesheet">
+        <link href="../../css/fontawesome.min.css" rel="stylesheet">
+        <link href="../../css/brands.min.css" rel="stylesheet">
+        <link href="../../css/solid.min.css" rel="stylesheet">
+        <link href="../../css/v4-font-face.min.css" rel="stylesheet">
+        <link href="../../css/base.css" rel="stylesheet">
+        <link id="hljs-light" rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" >
+        <link id="hljs-dark" rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github-dark.min.css" disabled>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+        <script>hljs.highlightAll();</script> 
+    </head>
+
+    <body>
+        <div class="navbar fixed-top navbar-expand-lg navbar-dark bg-primary">
+            <div class="container">
+                <a class="navbar-brand" href="../..">My Docs</a>
+                <!-- Expander button -->
+                <button type="button" class="navbar-toggler" data-bs-toggle="collapse" data-bs-target="#navbar-collapse" aria-controls="navbar-collapse" aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+
+                <!-- Expanded navigation -->
+                <div id="navbar-collapse" class="navbar-collapse collapse">
+                        <!-- Main navigation -->
+                        <ul class="nav navbar-nav">
+                            <li class="nav-item">
+                                <a href="../.." class="nav-link">Canvas Code Correction v2</a>
+                            </li>
+                            <li class="nav-item dropdown">
+                                <a href="#" class="nav-link dropdown-toggle" role="button" data-bs-toggle="dropdown"  aria-expanded="false">Current development</a>
+                                <ul class="dropdown-menu">
+                                    
+<li>
+    <a href="../../current-development/01-roadmap/" class="dropdown-item">Development Roadmap</a>
+</li>
+                                    
+<li>
+    <a href="../../current-development/02-phase-2-migration-plan/" class="dropdown-item">Phase 2 – Canvas Client Migration Plan</a>
+</li>
+                                </ul>
+                            </li>
+                            <li class="nav-item dropdown">
+                                <a href="#" class="nav-link dropdown-toggle active" aria-current="page" role="button" data-bs-toggle="dropdown"  aria-expanded="false">Platform setup</a>
+                                <ul class="dropdown-menu">
+                                    
+<li>
+    <a href="../01-configuring-course/" class="dropdown-item">Configuring a Course</a>
+</li>
+                                    
+<li>
+    <a href="../02-setting-up-prefect/" class="dropdown-item">Setting up Prefect</a>
+</li>
+                                    
+<li>
+    <a href="../03-scheduling-corrections/" class="dropdown-item">Scheduling Corrections</a>
+</li>
+                                    
+<li>
+    <a href="../04-monitoring-results/" class="dropdown-item">Monitoring Results</a>
+</li>
+                                    
+<li>
+    <a href="./" class="dropdown-item active" aria-current="page">Deploying Grader Tests to Canvas Code Correction (CCC)</a>
+</li>
+                                    
+<li>
+    <a href="../06-prefect-agent/" class="dropdown-item">Running Prefect Locally for Development</a>
+</li>
+                                    
+<li>
+    <a href="../07-rustfs-storage/" class="dropdown-item">RustFS Storage</a>
+</li>
+                                </ul>
+                            </li>
+                            <li class="nav-item dropdown">
+                                <a href="#" class="nav-link dropdown-toggle" role="button" data-bs-toggle="dropdown"  aria-expanded="false">Reference</a>
+                                <ul class="dropdown-menu">
+                                    
+<li>
+    <a href="../../reference/01-architecture/" class="dropdown-item">Architecture Overview</a>
+</li>
+                                    
+<li>
+    <a href="../../reference/02-cli/" class="dropdown-item">CLI Reference</a>
+</li>
+                                    
+<li>
+    <a href="../../reference/03-configuration/" class="dropdown-item">Configuration Reference</a>
+</li>
+                                    
+<li>
+    <a href="../../reference/04-api-clients/" class="dropdown-item">API Clients Reference</a>
+</li>
+                                    
+<li>
+    <a href="../../reference/05-grader-image/" class="dropdown-item">Grader Image Guide</a>
+</li>
+                                    
+<li>
+    <a href="../../reference/06-authoring-grader-tests/" class="dropdown-item">Authoring Grader Tests</a>
+</li>
+                                </ul>
+                            </li>
+                            <li class="nav-item dropdown">
+                                <a href="#" class="nav-link dropdown-toggle" role="button" data-bs-toggle="dropdown"  aria-expanded="false">Tutorial</a>
+                                <ul class="dropdown-menu">
+                                    
+<li>
+    <a href="../../tutorial/" class="dropdown-item">Tutorial for Course Responsible</a>
+</li>
+                                    
+<li>
+    <a href="../../tutorial/02-prerequisites/" class="dropdown-item">Prerequisites</a>
+</li>
+                                    
+<li>
+    <a href="../../tutorial/03-creating-grader-image/" class="dropdown-item">Creating a Custom Grader Docker Image</a>
+</li>
+                                    
+<li>
+    <a href="../../tutorial/04-writing-grader-tests/" class="dropdown-item">Writing Grader Tests: A Hands-On Tutorial</a>
+</li>
+                                </ul>
+                            </li>
+                        </ul>
+
+                    <ul class="nav navbar-nav ms-md-auto">
+                        <li class="nav-item">
+                            <a href="#" class="nav-link" data-bs-toggle="modal" data-bs-target="#mkdocs_search_modal">
+                                <i class="fa fa-search"></i> Search
+                            </a>
+                        </li>
+                            <li class="nav-item">
+                                <a rel="prev" href="../04-monitoring-results/" class="nav-link">
+                                    <i class="fa fa-arrow-left"></i> Previous
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a rel="next" href="../06-prefect-agent/" class="nav-link">
+                                    Next <i class="fa fa-arrow-right"></i>
+                                </a>
+                            </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="container">
+            <div class="row">
+                    <div class="col-md-3"><div class="navbar-expand-md bs-sidebar hidden-print affix" role="complementary">
+    <div class="navbar-header">
+        <button type="button" class="navbar-toggler collapsed" data-bs-toggle="collapse" data-bs-target="#toc-collapse" title="Table of Contents">
+            <span class="fa fa-angle-down"></span>
+        </button>
+    </div>
+
+    
+    <div id="toc-collapse" class="navbar-collapse collapse card bg-body-tertiary">
+        <ul class="nav flex-column">
+            
+            <li class="nav-item" data-bs-level="1"><a href="#deploying-grader-tests-to-canvas-code-correction-ccc" class="nav-link">Deploying Grader Tests to Canvas Code Correction (CCC)</a>
+              <ul class="nav flex-column">
+            <li class="nav-item" data-bs-level="2"><a href="#prerequisites" class="nav-link">Prerequisites</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#1-local-development-with-rustfs" class="nav-link">1. Local Development with RustFS</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#2-build-and-publish-the-grader-image" class="nav-link">2. Build and Publish the Grader Image</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#3-configure-prefect-blocks" class="nav-link">3. Configure Prefect Blocks</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#4-register-a-prefect-deployment" class="nav-link">4. Register a Prefect Deployment</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#5-start-a-prefect-worker" class="nav-link">5. Start a Prefect Worker</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#6-trigger-test-runs" class="nav-link">6. Trigger Test Runs</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#7-verify-and-iterate" class="nav-link">7. Verify and Iterate</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#troubleshooting" class="nav-link">Troubleshooting</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+              </ul>
+            </li>
+        </ul>
+    </div>
+</div></div>
+                    <div class="col-md-9" role="main">
+
+<h1 id="deploying-grader-tests-to-canvas-code-correction-ccc">Deploying Grader Tests to Canvas Code Correction (CCC)</h1>
+<p>!!! note "Try It Now (5 minutes)"</p>
+<pre><code>Deploy your first grader test to CCC using local RustFS storage. This quick
+start assumes you have:
+
+- Docker installed and running
+- `uv` installed (see [project setup](../README.md))
+- Prefect Cloud or self-hosted Orion configured
+  ([Setting up Prefect](02-setting-up-prefect.md))
+- Canvas API token and course ID stored in `.env` or Prefect blocks
+
+**Start the local S3 server**:
+
+```bash
+</code></pre>
+<p>$ poe s3 ```</p>
+<pre><code>```
+Starting RustFS server on http://localhost:9000
+Access key: rustfsadmin
+Secret key: rustfsadmin
+Storage directory: ./workspace
+Server ready.
+```
+
+**In a new terminal, set up RustFS for CCC**:
+
+```bash
+$ poe rustfs-setup
+```
+
+```
+✓ RustFS server reachable at http://localhost:9000
+✓ Bucket 'test-assets' created
+✓ Test asset uploaded to s3://test-assets/dev/test.txt
+✓ Prefect S3 block 'local-rustfs' registered
+Local RustFS is ready for use with CCC.
+```
+
+**Build a grader image** (update `containers/grader/Dockerfile` first if
+needed):
+
+```bash
+$ docker build -t my-grader:latest containers/grader
+```
+
+```
+[+] Building 2.1s (12/12) FINISHED
+=&gt; =&gt; naming to docker.io/library/my-grader:latest
+```
+
+**Configure the course** (replace `cs101` with your course slug):
+
+```bash
+$ ccc configure-course cs101 \
+  --docker-image my-grader:latest \
+  --memory-limit 2g \
+  --cpu-limit 2.0 \
+  --env PYTHONUNBUFFERED=1 \
+  --assets-block local-rustfs
+```
+
+```
+✓ Prefect block 'course-config-cs101' saved
+✓ Work pool 'course-work-pool-cs101' created
+Course 'cs101' configured successfully.
+```
+
+**Create a Prefect deployment**:
+
+```bash
+$ prefect deployment build \
+  canvas_code_correction.flows.correct_submission:correct_submission_flow \
+  -n cs101-corrections \
+  -q course-work-pool-cs101 \
+  -a
+```
+
+```
+Deployment built and applied successfully!
+View deployment in UI: https://app.prefect.cloud/deployments/...
+```
+
+**Start a worker**:
+
+```bash
+$ prefect worker start --pool course-work-pool-cs101
+```
+
+```
+Worker started. Polling for flow runs...
+Connected to work pool 'course-work-pool-cs101'.
+```
+
+**Trigger a test run**:
+
+```bash
+$ prefect deployment run cs101-corrections
+```
+
+```
+Flow run submitted: cs101-corrections/alert-marmot
+```
+
+Watch the worker logs to see your grader execute inside a Docker container. If
+everything is set up correctly, you will see the flow run complete
+successfully in the Prefect UI.
+</code></pre>
+<hr />
+<h2 id="prerequisites">Prerequisites</h2>
+<p>Before deploying grader tests, ensure you have:</p>
+<ol>
+<li><strong>Prefect access</strong> – either <a href="https://app.prefect.cloud">Prefect Cloud</a> or a
+   self‑hosted Orion instance. See
+   <a href="../02-setting-up-prefect/">Setting up Prefect</a> for configuration details.</li>
+<li><strong>Docker</strong> – installed locally for building grader images.</li>
+<li><strong>Grader repository</strong> – the course‑specific grader repository with instructor
+   tests.</li>
+<li><strong>Canvas credentials</strong> – API token and course ID stored in <code>.env</code> or Prefect
+   blocks.</li>
+<li><strong><code>uv</code></strong> – installed and the project dependencies resolved (<code>uv sync</code>).</li>
+</ol>
+<p>!!! tip
+    Export <code>PREFECT_API_URL</code>, <code>PREFECT_API_KEY</code>, and Canvas credentials before running CLI commands,
+    or update your Prefect profile to include them.</p>
+<h2 id="1-local-development-with-rustfs">1. Local Development with RustFS</h2>
+<p>CCC includes a lightweight S3‑compatible server (RustFS) for local development
+and testing. It stores assets in the <code>./workspace</code> directory and uses fixed
+credentials (<code>rustfsadmin</code>/<code>rustfsadmin</code>).</p>
+<h3 id="start-rustfs">Start RustFS</h3>
+<pre><code class="language-bash">$ poe s3
+</code></pre>
+<pre><code>Starting RustFS server on http://localhost:9000
+Access key: rustfsadmin
+Secret key: rustfsadmin
+Storage directory: ./workspace
+Server ready.
+</code></pre>
+<p>Keep this terminal running. The server listens on <code>http://localhost:9000</code>.</p>
+<h3 id="configure-rustfs-for-ccc">Configure RustFS for CCC</h3>
+<p>Run the setup script to create a bucket, upload a test asset, and register a
+Prefect S3 block named <code>local‑rustfs</code>:</p>
+<pre><code class="language-bash">$ poe rustfs-setup
+</code></pre>
+<pre><code>✓ RustFS server reachable at http://localhost:9000
+✓ Bucket 'test-assets' created
+✓ Test asset uploaded to s3://test-assets/dev/test.txt
+✓ Prefect S3 block 'local-rustfs' registered
+Local RustFS is ready for use with CCC.
+</code></pre>
+<p>You can now use <code>--assets-block local-rustfs</code> when configuring courses for local
+testing.</p>
+<h3 id="customize-rustfs-settings">Customize RustFS Settings</h3>
+<p>The setup can be tailored with environment variables:</p>
+<table>
+<thead>
+<tr>
+<th>Variable</th>
+<th>Default</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>RUSTFS_ENDPOINT</code></td>
+<td><code>http://localhost:9000</code></td>
+<td>S3 endpoint URL</td>
+</tr>
+<tr>
+<td><code>RUSTFS_ACCESS_KEY</code></td>
+<td><code>rustfsadmin</code></td>
+<td>Access key</td>
+</tr>
+<tr>
+<td><code>RUSTFS_SECRET_KEY</code></td>
+<td><code>rustfsadmin</code></td>
+<td>Secret key</td>
+</tr>
+<tr>
+<td><code>RUSTFS_BUCKET_NAME</code></td>
+<td><code>test-assets</code></td>
+<td>Bucket name</td>
+</tr>
+<tr>
+<td><code>RUSTFS_PREFIX</code></td>
+<td><code>dev</code></td>
+<td>Path prefix for assets</td>
+</tr>
+</tbody>
+</table>
+<p>Example for a production‑like setup:</p>
+<pre><code class="language-bash">export RUSTFS_ENDPOINT=&quot;https://rustfs.example.com&quot;
+export RUSTFS_ACCESS_KEY=&quot;your-access-key&quot;
+export RUSTFS_SECRET_KEY=&quot;your-secret-key&quot;
+export RUSTFS_BUCKET_NAME=&quot;course-assets&quot;
+export RUSTFS_PREFIX=&quot;graders/cs101&quot;
+poe rustfs-setup
+</code></pre>
+<p>For detailed RustFS configuration, see <a href="../07-rustfs-storage/">RustFS Storage</a>.</p>
+<h2 id="2-build-and-publish-the-grader-image">2. Build and Publish the Grader Image</h2>
+<ol>
+<li>Update <code>containers/grader/Dockerfile</code> (or your course‑specific Dockerfile)
+   with the required dependencies and entrypoint.</li>
+<li>Build the image:</li>
+</ol>
+<pre><code class="language-bash">$ docker build -t jakob1379/canvas-grader:latest containers/grader
+</code></pre>
+<ol>
+<li>If you use a remote registry, push the image:</li>
+</ol>
+<pre><code class="language-bash">$ docker push jakob1379/canvas-grader:latest
+</code></pre>
+<p>!!! note
+    The image tag must be accessible from wherever the Prefect worker runs.  For private registries,
+    ensure the worker environment has the necessary credentials.</p>
+<h2 id="3-configure-prefect-blocks">3. Configure Prefect Blocks</h2>
+<p>Use the <code>ccc configure‑course</code> CLI to provision a Prefect work pool, record
+runner settings, and associate an S3 assets block that points to the
+bucket/prefix containing immutable grader tests.</p>
+<pre><code class="language-bash">$ ccc configure-course &lt;course-slug&gt; \
+  --docker-image &lt;image:tag&gt; \
+  --memory-limit 2g \
+  --cpu-limit 2.0 \
+  --env PYTHONUNBUFFERED=1 \
+  --assets-block &lt;block-name&gt; \
+  --s3-bucket &lt;course-assets-bucket&gt; \
+  --s3-prefix graders/&lt;course-slug&gt;/
+</code></pre>
+<p><strong>Example with local RustFS</strong> (block created by <code>rustfs‑setup</code>):</p>
+<pre><code class="language-bash">$ ccc configure-course cs101 \
+  --docker-image my-grader:latest \
+  --assets-block local-rustfs
+</code></pre>
+<p><strong>Example with production S3</strong> (block must already exist):</p>
+<pre><code class="language-bash">$ ccc configure-course cs101 \
+  --docker-image jakob1379/canvas-grader:latest \
+  --assets-block course-assets-cs101 \
+  --s3-bucket course-assets \
+  --s3-prefix graders/cs101/
+</code></pre>
+<p>The command saves a Prefect JSON block named <code>course‑config‑&lt;course‑slug&gt;</code> (by
+default) and creates or reuses a work pool <code>course‑work‑pool‑&lt;course‑slug&gt;</code>.</p>
+<p>For more about course configuration, see
+<a href="../01-configuring-course/">Configuring a Course</a>.</p>
+<h2 id="4-register-a-prefect-deployment">4. Register a Prefect Deployment</h2>
+<p>Create a Prefect deployment so CCC flows can be triggered manually, on a
+schedule, or via webhooks.</p>
+<pre><code class="language-bash">$ prefect deployment build \
+  canvas_code_correction.flows.correct_submission:correct_submission_flow \
+  -n &lt;course-slug&gt;-corrections \
+  -q &lt;course-work-pool&gt; \
+  -a
+</code></pre>
+<ul>
+<li><code>-q</code> specifies the work pool (course‑specific) that matching workers will
+  poll.</li>
+<li><code>-a</code> applies the deployment immediately.</li>
+</ul>
+<p>Example:</p>
+<pre><code class="language-bash">$ prefect deployment build \
+  canvas_code_correction.flows.correct_submission:correct_submission_flow \
+  -n cs101-corrections \
+  -q course-work-pool-cs101 \
+  -a
+</code></pre>
+<pre><code>Deployment built and applied successfully!
+View deployment in UI: https://app.prefect.cloud/deployments/...
+</code></pre>
+<p>Alternatively, create deployments through the Prefect UI. For scheduling
+automated runs, see <a href="../03-scheduling-corrections/">Scheduling Corrections</a>.</p>
+<h2 id="5-start-a-prefect-worker">5. Start a Prefect Worker</h2>
+<p>Launch a worker connected to the course work pool so queued flow runs can
+execute the grader code inside the Docker container.</p>
+<pre><code class="language-bash">$ prefect worker start --pool &lt;course-work-pool&gt;
+</code></pre>
+<p>Workers can run locally, on a dedicated VM, or inside container orchestration.
+Ensure Docker access is available wherever the worker runs.</p>
+<p>Example:</p>
+<pre><code class="language-bash">$ prefect worker start --pool course-work-pool-cs101
+</code></pre>
+<pre><code>Worker started. Polling for flow runs...
+Connected to work pool 'course-work-pool-cs101'.
+</code></pre>
+<p>For detailed worker configuration, see
+<a href="../06-prefect-agent/">Local Prefect Worker Guide</a>.</p>
+<h2 id="6-trigger-test-runs">6. Trigger Test Runs</h2>
+<p>With the deployment active and a worker online, you can trigger runs in several
+ways:</p>
+<h3 id="manual-run-via-cli">Manual Run via CLI</h3>
+<pre><code class="language-bash">$ prefect deployment run &lt;course-slug&gt;-corrections
+</code></pre>
+<h3 id="oneoff-run-targeting-a-specific-submission">One‑Off Run Targeting a Specific Submission</h3>
+<pre><code class="language-bash">$ ccc run-once &lt;assignment-id&gt;
+</code></pre>
+<h3 id="automatic-runs-via-canvas-webhook">Automatic Runs via Canvas Webhook</h3>
+<p>Configure the Canvas webhook to call the Prefect webhook URL. When a submission
+is made, CCC will automatically start a correction flow. See
+<a href="../03-scheduling-corrections/">Scheduling Corrections</a> for webhook setup.</p>
+<h3 id="run-from-the-prefect-ui">Run from the Prefect UI</h3>
+<p>Navigate to the deployment in the Prefect UI and click <strong>Run</strong>.</p>
+<h2 id="7-verify-and-iterate">7. Verify and Iterate</h2>
+<ol>
+<li><strong>Inspect logs</strong> in Prefect to ensure the grader command runs successfully.</li>
+<li><strong>Review artefacts</strong> in the submission workspace (results, points, comments).</li>
+<li><strong>Adjust grader tests</strong> or container configuration as required.</li>
+<li><strong>Rebuild/push the image</strong> when the runtime environment changes.</li>
+<li><strong>Update grader tests</strong> by uploading new files to the S3 bucket/prefix
+   referenced by the Prefect block; the next flow run will pick up the new
+   assets automatically.</li>
+</ol>
+<p>For monitoring flow runs and results, see
+<a href="../04-monitoring-results/">Monitoring Results</a>.</p>
+<h2 id="troubleshooting">Troubleshooting</h2>
+<table>
+<thead>
+<tr>
+<th>Problem</th>
+<th>Likely Cause</th>
+<th>Solution</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Worker cannot pull image</strong></td>
+<td>Missing Docker credentials or incorrect image tag</td>
+<td>Ensure the worker environment has credentials for private registries and that the image tag is correct.</td>
+</tr>
+<tr>
+<td><strong>Canvas API failures</strong></td>
+<td>Invalid or missing tokens/course IDs</td>
+<td>Verify tokens and course IDs are present in your settings (<code>.env</code> or Prefect block).</td>
+</tr>
+<tr>
+<td><strong>Timeouts / resource issues</strong></td>
+<td>Insufficient memory or CPU</td>
+<td>Adjust <code>--memory‑limit</code>, <code>--cpu‑limit</code>, or <code>--gpu‑enabled</code> flags when running <code>configure‑course</code>.</td>
+</tr>
+<tr>
+<td><strong>No runs start</strong></td>
+<td>Work pool mismatch or worker not connected</td>
+<td>Confirm the work pool name in the deployment matches the running worker and that the worker log shows it is connected.</td>
+</tr>
+<tr>
+<td><strong>RustFS server unreachable</strong></td>
+<td>Server not running or wrong endpoint</td>
+<td>Check that <code>poe s3</code> is still running and that <code>RUSTFS_ENDPOINT</code> matches the server URL.</td>
+</tr>
+</tbody>
+</table>
+<p>Following these steps keeps grader tests aligned with CCC’s Prefect‑based
+orchestration while allowing instructors to iterate rapidly on course‑specific
+grading logic.</p></div>
+            </div>
+        </div>
+
+        <footer class="col-md-12">
+            <hr>
+            <p>Documentation built with <a href="https://www.mkdocs.org/">MkDocs</a>.</p>
+        </footer>
+        <script src="../../js/bootstrap.bundle.min.js"></script>
+        <script>
+            var base_url = "../..",
+                shortcuts = {"help": 191, "next": 78, "previous": 80, "search": 83};
+        </script>
+        <script src="../../js/base.js"></script>
+        <script src="../../search/main.js"></script>
+
+        <div class="modal" id="mkdocs_search_modal" tabindex="-1" role="dialog" aria-labelledby="searchModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title" id="searchModalLabel">Search</h4>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>From here you can search these documents. Enter your search terms below.</p>
+                <form>
+                    <div class="form-group">
+                        <input type="search" class="form-control" placeholder="Search..." id="mkdocs-search-query" title="Type search term here">
+                    </div>
+                </form>
+                <div id="mkdocs-search-results" data-no-results-text="No results found"></div>
+            </div>
+            <div class="modal-footer">
+            </div>
+        </div>
+    </div>
+</div><div class="modal" id="mkdocs_keyboard_modal" tabindex="-1" role="dialog" aria-labelledby="keyboardModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title" id="keyboardModalLabel">Keyboard Shortcuts</h4>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th style="width: 20%;">Keys</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td class="help shortcut"><kbd>?</kbd></td>
+                    <td>Open this help</td>
+                  </tr>
+                  <tr>
+                    <td class="next shortcut"><kbd>n</kbd></td>
+                    <td>Next page</td>
+                  </tr>
+                  <tr>
+                    <td class="prev shortcut"><kbd>p</kbd></td>
+                    <td>Previous page</td>
+                  </tr>
+                  <tr>
+                    <td class="search shortcut"><kbd>s</kbd></td>
+                    <td>Search</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="modal-footer">
+            </div>
+        </div>
+    </div>
+</div>
+
+    </body>
+</html>

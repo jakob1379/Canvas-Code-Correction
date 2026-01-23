@@ -1,0 +1,507 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="light">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        
+        
+        
+        <link rel="shortcut icon" href="../../img/favicon.ico">
+        <title>Running Prefect Locally for Development - My Docs</title>
+        <link href="../../css/bootstrap.min.css" rel="stylesheet">
+        <link href="../../css/fontawesome.min.css" rel="stylesheet">
+        <link href="../../css/brands.min.css" rel="stylesheet">
+        <link href="../../css/solid.min.css" rel="stylesheet">
+        <link href="../../css/v4-font-face.min.css" rel="stylesheet">
+        <link href="../../css/base.css" rel="stylesheet">
+        <link id="hljs-light" rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" >
+        <link id="hljs-dark" rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github-dark.min.css" disabled>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+        <script>hljs.highlightAll();</script> 
+    </head>
+
+    <body>
+        <div class="navbar fixed-top navbar-expand-lg navbar-dark bg-primary">
+            <div class="container">
+                <a class="navbar-brand" href="../..">My Docs</a>
+                <!-- Expander button -->
+                <button type="button" class="navbar-toggler" data-bs-toggle="collapse" data-bs-target="#navbar-collapse" aria-controls="navbar-collapse" aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+
+                <!-- Expanded navigation -->
+                <div id="navbar-collapse" class="navbar-collapse collapse">
+                        <!-- Main navigation -->
+                        <ul class="nav navbar-nav">
+                            <li class="nav-item">
+                                <a href="../.." class="nav-link">Canvas Code Correction v2</a>
+                            </li>
+                            <li class="nav-item dropdown">
+                                <a href="#" class="nav-link dropdown-toggle" role="button" data-bs-toggle="dropdown"  aria-expanded="false">Current development</a>
+                                <ul class="dropdown-menu">
+                                    
+<li>
+    <a href="../../current-development/01-roadmap/" class="dropdown-item">Development Roadmap</a>
+</li>
+                                    
+<li>
+    <a href="../../current-development/02-phase-2-migration-plan/" class="dropdown-item">Phase 2 – Canvas Client Migration Plan</a>
+</li>
+                                </ul>
+                            </li>
+                            <li class="nav-item dropdown">
+                                <a href="#" class="nav-link dropdown-toggle active" aria-current="page" role="button" data-bs-toggle="dropdown"  aria-expanded="false">Platform setup</a>
+                                <ul class="dropdown-menu">
+                                    
+<li>
+    <a href="../01-configuring-course/" class="dropdown-item">Configuring a Course</a>
+</li>
+                                    
+<li>
+    <a href="../02-setting-up-prefect/" class="dropdown-item">Setting up Prefect</a>
+</li>
+                                    
+<li>
+    <a href="../03-scheduling-corrections/" class="dropdown-item">Scheduling Corrections</a>
+</li>
+                                    
+<li>
+    <a href="../04-monitoring-results/" class="dropdown-item">Monitoring Results</a>
+</li>
+                                    
+<li>
+    <a href="../05-deploying-tests-to-ccc/" class="dropdown-item">Deploying Grader Tests to Canvas Code Correction (CCC)</a>
+</li>
+                                    
+<li>
+    <a href="./" class="dropdown-item active" aria-current="page">Running Prefect Locally for Development</a>
+</li>
+                                    
+<li>
+    <a href="../07-rustfs-storage/" class="dropdown-item">RustFS Storage</a>
+</li>
+                                </ul>
+                            </li>
+                            <li class="nav-item dropdown">
+                                <a href="#" class="nav-link dropdown-toggle" role="button" data-bs-toggle="dropdown"  aria-expanded="false">Reference</a>
+                                <ul class="dropdown-menu">
+                                    
+<li>
+    <a href="../../reference/01-architecture/" class="dropdown-item">Architecture Overview</a>
+</li>
+                                    
+<li>
+    <a href="../../reference/02-cli/" class="dropdown-item">CLI Reference</a>
+</li>
+                                    
+<li>
+    <a href="../../reference/03-configuration/" class="dropdown-item">Configuration Reference</a>
+</li>
+                                    
+<li>
+    <a href="../../reference/04-api-clients/" class="dropdown-item">API Clients Reference</a>
+</li>
+                                    
+<li>
+    <a href="../../reference/05-grader-image/" class="dropdown-item">Grader Image Guide</a>
+</li>
+                                    
+<li>
+    <a href="../../reference/06-authoring-grader-tests/" class="dropdown-item">Authoring Grader Tests</a>
+</li>
+                                </ul>
+                            </li>
+                            <li class="nav-item dropdown">
+                                <a href="#" class="nav-link dropdown-toggle" role="button" data-bs-toggle="dropdown"  aria-expanded="false">Tutorial</a>
+                                <ul class="dropdown-menu">
+                                    
+<li>
+    <a href="../../tutorial/" class="dropdown-item">Tutorial for Course Responsible</a>
+</li>
+                                    
+<li>
+    <a href="../../tutorial/02-prerequisites/" class="dropdown-item">Prerequisites</a>
+</li>
+                                    
+<li>
+    <a href="../../tutorial/03-creating-grader-image/" class="dropdown-item">Creating a Custom Grader Docker Image</a>
+</li>
+                                    
+<li>
+    <a href="../../tutorial/04-writing-grader-tests/" class="dropdown-item">Writing Grader Tests: A Hands-On Tutorial</a>
+</li>
+                                </ul>
+                            </li>
+                        </ul>
+
+                    <ul class="nav navbar-nav ms-md-auto">
+                        <li class="nav-item">
+                            <a href="#" class="nav-link" data-bs-toggle="modal" data-bs-target="#mkdocs_search_modal">
+                                <i class="fa fa-search"></i> Search
+                            </a>
+                        </li>
+                            <li class="nav-item">
+                                <a rel="prev" href="../05-deploying-tests-to-ccc/" class="nav-link">
+                                    <i class="fa fa-arrow-left"></i> Previous
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a rel="next" href="../07-rustfs-storage/" class="nav-link">
+                                    Next <i class="fa fa-arrow-right"></i>
+                                </a>
+                            </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="container">
+            <div class="row">
+                    <div class="col-md-3"><div class="navbar-expand-md bs-sidebar hidden-print affix" role="complementary">
+    <div class="navbar-header">
+        <button type="button" class="navbar-toggler collapsed" data-bs-toggle="collapse" data-bs-target="#toc-collapse" title="Table of Contents">
+            <span class="fa fa-angle-down"></span>
+        </button>
+    </div>
+
+    
+    <div id="toc-collapse" class="navbar-collapse collapse card bg-body-tertiary">
+        <ul class="nav flex-column">
+            
+            <li class="nav-item" data-bs-level="1"><a href="#running-prefect-locally-for-development" class="nav-link">Running Prefect Locally for Development</a>
+              <ul class="nav flex-column">
+            <li class="nav-item" data-bs-level="2"><a href="#why-run-prefect-locally" class="nav-link">Why Run Prefect Locally?</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#prerequisites" class="nav-link">Prerequisites</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#step-1-start-the-prefect-orion-server" class="nav-link">Step 1: Start the Prefect Orion Server</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#step-2-create-a-local-work-pool" class="nav-link">Step 2: Create a Local Work Pool</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#step-3-start-a-worker" class="nav-link">Step 3: Start a Worker</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#step-4-trigger-a-test-correction" class="nav-link">Step 4: Trigger a Test Correction</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#step-5-configure-prefect-blocks-locally" class="nav-link">Step 5: Configure Prefect Blocks Locally</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#troubleshooting" class="nav-link">Troubleshooting</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#next-steps" class="nav-link">Next Steps</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+              </ul>
+            </li>
+        </ul>
+    </div>
+</div></div>
+                    <div class="col-md-9" role="main">
+
+<h1 id="running-prefect-locally-for-development">Running Prefect Locally for Development</h1>
+<p>!!! note "Audience"
+    CCC developers and testers <strong>Prerequisites</strong>: Python 3.13+,
+    Docker installed and running, CCC installed (<code>uv install -e .</code>)</p>
+<p><strong>Prefect Orion</strong> is the local server that orchestrates correction workflows
+when you are developing or testing CCC. This guide shows you how to start Orion,
+create a local work pool, and launch a worker that picks up flow runs, <strong>all in
+3 minutes</strong>.</p>
+<p>!!! note "Try It Now (90 seconds)"</p>
+<pre><code>If you have a course configured with slug `cs101`, run these commands to start
+a local Prefect server and a worker:
+
+```bash
+$ prefect server start
+```
+
+Expected output (server starts on http://127.0.0.1:4200):
+
+```
+ ___ ___ ___ ___ ___ ___ _____
+| _ \ _ \ __| __| __/ __|_   _|
+|  _/   / _|| _|| _| (__  | |
+|_| |_|_\___|_| |_| \___| |_|
+
+Starting Prefect server...
+Server started on http://127.0.0.1:4200
+```
+
+In a **second terminal**, create a work pool and start a worker for the
+`canvas-corrections` queue:
+
+```bash
+$ prefect work-pool create --type process canvas-corrections
+$ prefect worker start --pool canvas-corrections
+```
+
+Expected worker output:
+
+```
+Starting worker for pool 'canvas-corrections'...
+Worker 'eager-panda' started!
+Waiting for flow runs...
+```
+
+Your local Prefect environment is now ready. Keep both terminals open.
+</code></pre>
+<hr />
+<h2 id="why-run-prefect-locally">Why Run Prefect Locally?</h2>
+<p>When you are developing grader images, writing tests, or debugging correction
+logic, you need a <strong>fast feedback loop</strong>. A local Prefect server
+(<code>prefect server start</code>) gives you:</p>
+<ul>
+<li><strong>No network latency</strong> – all communication stays on your machine.</li>
+<li><strong>Full control</strong> – you can restart, reset, or inspect the server state.</li>
+<li><strong>Isolation</strong> – your experiments do not affect production corrections.</li>
+</ul>
+<p>This setup is <strong>not for production</strong>; use Prefect Cloud or a self‑hosted Prefect
+server for real courses. For production deployment, see
+<a href="../02-setting-up-prefect/">Setting up Prefect</a>.</p>
+<h2 id="prerequisites">Prerequisites</h2>
+<p>Before you start, ensure you have:</p>
+<ol>
+<li><strong>Python 3.13+</strong> and <code>uv</code> installed (the project uses <code>uv run</code>).</li>
+<li><strong>Docker</strong> installed and running (the worker launches grader containers).</li>
+<li><strong>CCC installed</strong> in editable mode:
+   <code>bash
+   $ uv install -e .</code></li>
+<li><strong>A configured course</strong> (if you want to run actual corrections). Complete
+   <a href="../01-configuring-course/">Configuring a Course</a> first.</li>
+</ol>
+<h2 id="step-1-start-the-prefect-orion-server">Step 1: Start the Prefect Orion Server</h2>
+<p>Open a terminal in the project root and run:</p>
+<pre><code class="language-bash">$ prefect server start
+</code></pre>
+<h3 id="what-you-will-see">What you will see</h3>
+<p>The command prints the Prefect ASCII logo and starts the server on
+<code>http://127.0.0.1:4200</code>. The output looks like this:</p>
+<pre><code> ___ ___ ___ ___ ___ ___ _____
+| _ \ _ \ __| __| __/ __|_   _|
+|  _/   / _|| _|| _| (__  | |
+|_| |_|_\___|_| |_| \___| |_|
+
+Starting Prefect server...
+Server started on http://127.0.0.1:4200
+</code></pre>
+<p>!!! note
+    The server runs in the foreground. Keep this terminal open. You can
+    stop it with <code>Ctrl+C</code>.</p>
+<h3 id="verify-the-server">Verify the server</h3>
+<p>Open your browser to <code>http://127.0.0.1:4200</code>. You should see the Prefect UI with
+an empty dashboard. No login is required for the local server.</p>
+<h2 id="step-2-create-a-local-work-pool">Step 2: Create a Local Work Pool</h2>
+<p>A <strong>work pool</strong> is a named queue that workers subscribe to. For local
+development, create a pool of type <code>process</code> (the worker will run flows in
+subprocesses).</p>
+<p>In a <strong>second terminal</strong> (same project directory), run:</p>
+<pre><code class="language-bash">$ prefect work-pool create --type process canvas-corrections
+</code></pre>
+<p><strong>Expected output:</strong></p>
+<pre><code>Created work pool 'canvas-corrections' (type: process)
+</code></pre>
+<p>The pool is now visible in the Prefect UI under <strong>Work Pools</strong>.</p>
+<p>!!! note "Why canvas-corrections?"
+    This is the default queue name used by the CCC CLI when you run <code>ccc run‑once</code>.
+    You can use any name, but make sure your deployment targets the same pool.</p>
+<h2 id="step-3-start-a-worker">Step 3: Start a Worker</h2>
+<p><strong>Workers</strong> are processes that pick up flow runs from a work pool and execute
+them. Start a worker for the pool you just created:</p>
+<pre><code class="language-bash">$ prefect worker start --pool canvas-corrections
+</code></pre>
+<p><strong>Expected output:</strong></p>
+<pre><code>Starting worker for pool 'canvas-corrections'...
+Worker 'eager-panda' started!
+Waiting for flow runs...
+</code></pre>
+<p>The worker will stay alive and wait for flow runs. It needs:</p>
+<ul>
+<li><strong>Access to Docker</strong> (to launch grader containers).</li>
+<li><strong>The same environment variables</strong> (Canvas token, etc.) that you configured in
+  the course block.</li>
+<li><strong>Network connectivity</strong> to the local Orion server (already satisfied).</li>
+</ul>
+<p>Keep this terminal open as well. You can run multiple workers for the same pool
+to distribute load.</p>
+<h2 id="step-4-trigger-a-test-correction">Step 4: Trigger a Test Correction</h2>
+<p>With the server running and a worker waiting, trigger a correction flow to
+verify everything works.</p>
+<h3 id="option-a-use-the-ccc-cli-recommended">Option A: Use the CCC CLI (recommended)</h3>
+<p>If you have a course configured, run a one‑off correction for a specific
+assignment:</p>
+<pre><code class="language-bash">$ ccc run-once &lt;assignment-id&gt;
+</code></pre>
+<p>Replace <code>&lt;assignment-id&gt;</code> with the numeric Canvas assignment ID. The command
+creates a flow run that your local worker will pick up immediately.</p>
+<h3 id="option-b-use-the-prefect-cli">Option B: Use the Prefect CLI</h3>
+<p>First, create a deployment that targets your local pool (replace <code>cs101</code> with
+your course slug):</p>
+<pre><code class="language-bash">$ prefect deployment build \
+  canvas_code_correction.flows.correct_submission:correct_submission_flow \
+  -n cs101-corrections \
+  -q canvas-corrections \
+  -a
+</code></pre>
+<p>Then run the deployment:</p>
+<pre><code class="language-bash">$ prefect deployment run cs101-corrections
+</code></pre>
+<h3 id="option-c-use-the-prefect-ui">Option C: Use the Prefect UI</h3>
+<ol>
+<li>Open <code>http://127.0.0.1:4200</code>.</li>
+<li>Navigate to <strong>Deployments</strong> and find your deployment.</li>
+<li>Click the <strong>Run</strong> button.</li>
+</ol>
+<h3 id="expected-outcome">Expected outcome</h3>
+<p>Watch the worker terminal. You should see logs like:</p>
+<pre><code>Picked up flow run 'golden-sloth' from pool 'canvas-corrections'
+Executing flow 'correct-submission-flow'...
+Downloading submission from Canvas...
+Pulling grader image 'yourusername/canvas-grader:latest'...
+Running grader container...
+</code></pre>
+<p>If the flow completes successfully, you will see a final log line with the score
+submitted to Canvas.</p>
+<h2 id="step-5-configure-prefect-blocks-locally">Step 5: Configure Prefect Blocks Locally</h2>
+<p>For local runs, you must ensure the <strong>Prefect blocks</strong> that store Canvas
+credentials, runner configuration, and S3 assets already exist. The
+<code>ccc configure-course</code> command creates these blocks for you.</p>
+<p>If you have not configured a course yet, follow
+<a href="../01-configuring-course/">Configuring a Course</a>. The blocks are stored in the
+local Orion server's SQLite database, so they persist across server restarts.</p>
+<p>!!! note "Important"
+    When you run <code>ccc run‑once</code> locally, you do <strong>not</strong> need to
+    set <code>PREFECT_API_KEY</code> (the local server does not require authentication).
+    However, you still need the blocks that hold your Canvas token and S3 bucket
+    details.</p>
+<h2 id="troubleshooting">Troubleshooting</h2>
+<h3 id="the-worker-cannot-connect-to-the-server">The worker cannot connect to the server</h3>
+<ul>
+<li>Ensure the Orion server is still running (first terminal).</li>
+<li>Check that the worker uses the same API URL (default
+  <code>http://127.0.0.1:4200/api</code>). The local worker auto‑discovers it; if you
+  changed the port, set <code>PREFECT_API_URL</code>.</li>
+</ul>
+<h3 id="the-worker-fails-to-pull-the-docker-image">The worker fails to pull the Docker image</h3>
+<ul>
+<li>Verify Docker is running (<code>docker ps</code>).</li>
+<li>Ensure the grader image exists locally or is accessible from Docker Hub.</li>
+</ul>
+<h3 id="the-flow-run-stays-scheduled-forever">The flow run stays <code>Scheduled</code> forever</h3>
+<ul>
+<li>Confirm the worker is subscribed to the correct pool (<code>canvas-corrections</code>).</li>
+<li>Look for errors in the worker logs (the second terminal).</li>
+</ul>
+<h3 id="blocks-are-missing">Blocks are missing</h3>
+<ul>
+<li>Run <code>ccc configure-course</code> to create the necessary blocks.</li>
+<li>List existing blocks with <code>prefect block list</code>.</li>
+</ul>
+<h2 id="next-steps">Next Steps</h2>
+<p>Your local Prefect environment is ready for development. Next, you can:</p>
+<ul>
+<li><strong>Write and test grader images</strong> – see
+  <a href="../../tutorial/03-creating-grader-image/">Creating a Grader Image</a>.</li>
+<li><strong>Upload test assets to S3</strong> – see
+  <a href="../05-deploying-tests-to-ccc/">Deploying Tests to CCC</a>.</li>
+<li><strong>Schedule corrections</strong> (on a local schedule) – follow
+  <a href="../03-scheduling-corrections/">Scheduling Corrections</a>.</li>
+<li><strong>Monitor runs and logs</strong> in the Prefect UI – see
+  <a href="../04-monitoring-results/">Monitoring Results</a>.</li>
+</ul>
+<p>!!! tip
+    When you are done testing, stop the Orion server (<code>Ctrl+C</code> in the first terminal) and the worker
+    (<code>Ctrl+C</code> in the second terminal). The local SQLite database (<code>~/.prefect/orion.db</code>) retains
+    blocks and run history for the next session.</p></div>
+            </div>
+        </div>
+
+        <footer class="col-md-12">
+            <hr>
+            <p>Documentation built with <a href="https://www.mkdocs.org/">MkDocs</a>.</p>
+        </footer>
+        <script src="../../js/bootstrap.bundle.min.js"></script>
+        <script>
+            var base_url = "../..",
+                shortcuts = {"help": 191, "next": 78, "previous": 80, "search": 83};
+        </script>
+        <script src="../../js/base.js"></script>
+        <script src="../../search/main.js"></script>
+
+        <div class="modal" id="mkdocs_search_modal" tabindex="-1" role="dialog" aria-labelledby="searchModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title" id="searchModalLabel">Search</h4>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>From here you can search these documents. Enter your search terms below.</p>
+                <form>
+                    <div class="form-group">
+                        <input type="search" class="form-control" placeholder="Search..." id="mkdocs-search-query" title="Type search term here">
+                    </div>
+                </form>
+                <div id="mkdocs-search-results" data-no-results-text="No results found"></div>
+            </div>
+            <div class="modal-footer">
+            </div>
+        </div>
+    </div>
+</div><div class="modal" id="mkdocs_keyboard_modal" tabindex="-1" role="dialog" aria-labelledby="keyboardModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title" id="keyboardModalLabel">Keyboard Shortcuts</h4>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th style="width: 20%;">Keys</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td class="help shortcut"><kbd>?</kbd></td>
+                    <td>Open this help</td>
+                  </tr>
+                  <tr>
+                    <td class="next shortcut"><kbd>n</kbd></td>
+                    <td>Next page</td>
+                  </tr>
+                  <tr>
+                    <td class="prev shortcut"><kbd>p</kbd></td>
+                    <td>Previous page</td>
+                  </tr>
+                  <tr>
+                    <td class="search shortcut"><kbd>s</kbd></td>
+                    <td>Search</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="modal-footer">
+            </div>
+        </div>
+    </div>
+</div>
+
+    </body>
+</html>

@@ -1,0 +1,513 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="light">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <meta name="description" content="None">
+        
+        
+        <link rel="shortcut icon" href="img/favicon.ico">
+        <title>My Docs</title>
+        <link href="css/bootstrap.min.css" rel="stylesheet">
+        <link href="css/fontawesome.min.css" rel="stylesheet">
+        <link href="css/brands.min.css" rel="stylesheet">
+        <link href="css/solid.min.css" rel="stylesheet">
+        <link href="css/v4-font-face.min.css" rel="stylesheet">
+        <link href="css/base.css" rel="stylesheet">
+        <link id="hljs-light" rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" >
+        <link id="hljs-dark" rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github-dark.min.css" disabled>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+        <script>hljs.highlightAll();</script> 
+    </head>
+
+    <body class="homepage">
+        <div class="navbar fixed-top navbar-expand-lg navbar-dark bg-primary">
+            <div class="container">
+                <a class="navbar-brand" href=".">My Docs</a>
+                <!-- Expander button -->
+                <button type="button" class="navbar-toggler" data-bs-toggle="collapse" data-bs-target="#navbar-collapse" aria-controls="navbar-collapse" aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+
+                <!-- Expanded navigation -->
+                <div id="navbar-collapse" class="navbar-collapse collapse">
+                        <!-- Main navigation -->
+                        <ul class="nav navbar-nav">
+                            <li class="nav-item">
+                                <a href="." class="nav-link active" aria-current="page">Canvas Code Correction v2</a>
+                            </li>
+                            <li class="nav-item dropdown">
+                                <a href="#" class="nav-link dropdown-toggle" role="button" data-bs-toggle="dropdown"  aria-expanded="false">Current development</a>
+                                <ul class="dropdown-menu">
+                                    
+<li>
+    <a href="current-development/01-roadmap/" class="dropdown-item">Development Roadmap</a>
+</li>
+                                    
+<li>
+    <a href="current-development/02-phase-2-migration-plan/" class="dropdown-item">Phase 2 – Canvas Client Migration Plan</a>
+</li>
+                                </ul>
+                            </li>
+                            <li class="nav-item dropdown">
+                                <a href="#" class="nav-link dropdown-toggle" role="button" data-bs-toggle="dropdown"  aria-expanded="false">Platform setup</a>
+                                <ul class="dropdown-menu">
+                                    
+<li>
+    <a href="platform-setup/01-configuring-course/" class="dropdown-item">Configuring a Course</a>
+</li>
+                                    
+<li>
+    <a href="platform-setup/02-setting-up-prefect/" class="dropdown-item">Setting up Prefect</a>
+</li>
+                                    
+<li>
+    <a href="platform-setup/03-scheduling-corrections/" class="dropdown-item">Scheduling Corrections</a>
+</li>
+                                    
+<li>
+    <a href="platform-setup/04-monitoring-results/" class="dropdown-item">Monitoring Results</a>
+</li>
+                                    
+<li>
+    <a href="platform-setup/05-deploying-tests-to-ccc/" class="dropdown-item">Deploying Grader Tests to Canvas Code Correction (CCC)</a>
+</li>
+                                    
+<li>
+    <a href="platform-setup/06-prefect-agent/" class="dropdown-item">Running Prefect Locally for Development</a>
+</li>
+                                    
+<li>
+    <a href="platform-setup/07-rustfs-storage/" class="dropdown-item">RustFS Storage</a>
+</li>
+                                </ul>
+                            </li>
+                            <li class="nav-item dropdown">
+                                <a href="#" class="nav-link dropdown-toggle" role="button" data-bs-toggle="dropdown"  aria-expanded="false">Reference</a>
+                                <ul class="dropdown-menu">
+                                    
+<li>
+    <a href="reference/01-architecture/" class="dropdown-item">Architecture Overview</a>
+</li>
+                                    
+<li>
+    <a href="reference/02-cli/" class="dropdown-item">CLI Reference</a>
+</li>
+                                    
+<li>
+    <a href="reference/03-configuration/" class="dropdown-item">Configuration Reference</a>
+</li>
+                                    
+<li>
+    <a href="reference/04-api-clients/" class="dropdown-item">API Clients Reference</a>
+</li>
+                                    
+<li>
+    <a href="reference/05-grader-image/" class="dropdown-item">Grader Image Guide</a>
+</li>
+                                    
+<li>
+    <a href="reference/06-authoring-grader-tests/" class="dropdown-item">Authoring Grader Tests</a>
+</li>
+                                </ul>
+                            </li>
+                            <li class="nav-item dropdown">
+                                <a href="#" class="nav-link dropdown-toggle" role="button" data-bs-toggle="dropdown"  aria-expanded="false">Tutorial</a>
+                                <ul class="dropdown-menu">
+                                    
+<li>
+    <a href="tutorial/" class="dropdown-item">Tutorial for Course Responsible</a>
+</li>
+                                    
+<li>
+    <a href="tutorial/02-prerequisites/" class="dropdown-item">Prerequisites</a>
+</li>
+                                    
+<li>
+    <a href="tutorial/03-creating-grader-image/" class="dropdown-item">Creating a Custom Grader Docker Image</a>
+</li>
+                                    
+<li>
+    <a href="tutorial/04-writing-grader-tests/" class="dropdown-item">Writing Grader Tests: A Hands-On Tutorial</a>
+</li>
+                                </ul>
+                            </li>
+                        </ul>
+
+                    <ul class="nav navbar-nav ms-md-auto">
+                        <li class="nav-item">
+                            <a href="#" class="nav-link" data-bs-toggle="modal" data-bs-target="#mkdocs_search_modal">
+                                <i class="fa fa-search"></i> Search
+                            </a>
+                        </li>
+                            <li class="nav-item">
+                                <a rel="prev" class="nav-link disabled">
+                                    <i class="fa fa-arrow-left"></i> Previous
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a rel="next" href="current-development/01-roadmap/" class="nav-link">
+                                    Next <i class="fa fa-arrow-right"></i>
+                                </a>
+                            </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="container">
+            <div class="row">
+                    <div class="col-md-3"><div class="navbar-expand-md bs-sidebar hidden-print affix" role="complementary">
+    <div class="navbar-header">
+        <button type="button" class="navbar-toggler collapsed" data-bs-toggle="collapse" data-bs-target="#toc-collapse" title="Table of Contents">
+            <span class="fa fa-angle-down"></span>
+        </button>
+    </div>
+
+    
+    <div id="toc-collapse" class="navbar-collapse collapse card bg-body-tertiary">
+        <ul class="nav flex-column">
+            
+            <li class="nav-item" data-bs-level="1"><a href="#canvas-code-correction-v2" class="nav-link">Canvas Code Correction v2</a>
+              <ul class="nav flex-column">
+            <li class="nav-item" data-bs-level="2"><a href="#what-is-canvas-code-correction" class="nav-link">What is Canvas Code Correction?</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#documentation-structure" class="nav-link">Documentation Structure</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#quick-start" class="nav-link">Quick Start</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#current-status-january-2026" class="nav-link">Current Status (January 2026)</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#need-help" class="nav-link">Need Help?</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+              </ul>
+            </li>
+        </ul>
+    </div>
+</div></div>
+                    <div class="col-md-9" role="main">
+
+<h1 id="canvas-code-correction-v2">Canvas Code Correction v2</h1>
+<p><strong>Try It Now</strong> (60 seconds)</p>
+<p>!!! note "Virtual Environment"
+    All commands in this documentation assume you have activated the virtual environment created by
+    <code>uv sync</code>. If you haven't activated it, prefix commands with <code>uv run</code>. To activate:</p>
+<pre><code>```bash
+source .venv/bin/activate
+```
+
+Or use `uv shell` to start a new shell with the environment activated.
+</code></pre>
+<p>Copy and paste this command to run a quick test that verifies your environment
+is ready:</p>
+<pre><code class="language-bash">$ pytest tests/unit/test_workspace.py -v
+</code></pre>
+<p>You will see output similar to:</p>
+<pre><code>============================= test session starts ==============================
+platform linux -- Python 3.14.0, pytest-9.0.2, pluggy-1.6.0
+cachedir: .pytest_cache
+rootdir: /home/jsg/Documents/jsg/Canvas-Code-Correction
+configfile: pyproject.toml
+plugins: anyio-4.12.1, cov-7.0.0, datadir-1.8.0, xdist-3.8.0
+collecting ... collected 9 items
+
+tests/unit/test_workspace.py::test_workspace_config PASSED               [ 11%]
+tests/unit/test_workspace.py::test_workspace_paths PASSED                [ 22%]
+tests/unit/test_workspace.py::test_build_workspace_config PASSED         [ 33%]
+...
+tests/unit/test_workspace.py::test_prepare_workspace_submission_file_not_exists PASSED [100%]
+</code></pre>
+<p>If all tests pass, your setup is correct and you are ready to explore Canvas
+Code Correction.</p>
+<h2 id="what-is-canvas-code-correction">What is Canvas Code Correction?</h2>
+<p><strong>Canvas Code Correction (CCC)</strong> is a Python‑based orchestration layer that
+automates the grading of programming assignments in Canvas. It replaces ad‑hoc
+shell scripts with a <strong>Prefect‑powered pipeline</strong> that:</p>
+<ul>
+<li>Downloads student submissions from Canvas</li>
+<li>Executes instructor‑provided grader code in <strong>secure, ephemeral Docker
+  containers</strong></li>
+<li>Collects scores, feedback, and artefacts</li>
+<li>Uploads results back to Canvas</li>
+</ul>
+<p>CCC keeps <strong>platform operators</strong>, <strong>grader authors</strong>, and <strong>contributors</strong>
+separate:</p>
+<ul>
+<li><strong>Platform operators</strong> deploy and monitor the grading pipeline</li>
+<li><strong>Grader authors</strong> (course responsibles) create Docker images and test scripts</li>
+<li><strong>Contributors</strong> extend the core orchestration logic</li>
+</ul>
+<p>The system is <strong>modular</strong>, <strong>testable</strong>, and <strong>secure by default</strong>. It ships
+with MkDocs documentation, pytest‑based tests, and uv‑managed dependencies.</p>
+<h2 id="documentation-structure">Documentation Structure</h2>
+<p>Choose the documentation that matches your role:</p>
+<table>
+<thead>
+<tr>
+<th>Role</th>
+<th>What You Need</th>
+<th>Where to Start</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Grader Author</strong> (course responsible)</td>
+<td>Create grader Docker images and test scripts</td>
+<td><a href="tutorial/">Tutorial: Create Your First Work Package in 10 Minutes</a></td>
+</tr>
+<tr>
+<td><strong>Platform Operator</strong></td>
+<td>Deploy, configure, and monitor the grading pipeline</td>
+<td><a href="platform-setup/01-configuring-course/">Platform Setup: Configuring a Course</a></td>
+</tr>
+<tr>
+<td><strong>Contributor</strong> / <strong>Developer</strong></td>
+<td>Understand the architecture and extend the system</td>
+<td><a href="reference/01-architecture/">Reference: Architecture Overview</a></td>
+</tr>
+<tr>
+<td><strong>All Roles</strong></td>
+<td>See what is coming next and track progress</td>
+<td><a href="current-development/01-roadmap/">Current Development: Roadmap</a></td>
+</tr>
+</tbody>
+</table>
+<h3 id="tutorial-4-files">Tutorial (4 files)</h3>
+<p>Start here if you are a <strong>course responsible</strong> creating your first work package.</p>
+<ol>
+<li><strong><a href="tutorial/">Tutorial Index</a></strong> – Create a work package in 10
+   minutes</li>
+<li><strong><a href="tutorial/02-prerequisites/">Prerequisites</a></strong> – Canvas API access,
+   Docker basics, Python 3.13+</li>
+<li><strong><a href="tutorial/03-creating-grader-image/">Creating a Grader Docker Image</a></strong>
+   – Build a container with your testing environment</li>
+<li><strong><a href="tutorial/04-writing-grader-tests/">Writing Grader Tests</a></strong> – Write
+   scripts that evaluate student submissions</li>
+</ol>
+<h3 id="reference-6-files">Reference (6 files)</h3>
+<p>Deep dive into architecture, CLI, configuration, and APIs.</p>
+<ol>
+<li><strong><a href="reference/01-architecture/">Architecture Overview</a></strong> – Design goals,
+   component responsibilities, and new services</li>
+<li><strong><a href="reference/02-cli/">CLI Reference</a></strong> – All <code>ccc</code> commands with examples</li>
+<li><strong><a href="reference/03-configuration/">Configuration</a></strong> – Environment variables,
+   Prefect blocks, and course‑specific settings</li>
+<li><strong><a href="reference/04-api-clients/">API Clients</a></strong> – Canvas API wrapper and
+   storage client details</li>
+<li><strong><a href="reference/05-grader-image/">Grader Image Specification</a></strong> – Required
+   entry points, environment variables, and output format</li>
+<li><strong><a href="reference/06-authoring-grader-tests/">Authoring Grader Tests</a></strong> – Test
+   structure, scoring, and feedback conventions</li>
+</ol>
+<h3 id="platform-setup-7-files">Platform Setup (7 files)</h3>
+<p>Step‑by‑step guides for <strong>platform operators</strong> deploying CCC in production.</p>
+<ol>
+<li><strong><a href="platform-setup/01-configuring-course/">Configuring a Course</a></strong> – Set
+   up a course with Canvas token, Docker image, and S3 assets</li>
+<li><strong><a href="platform-setup/02-setting-up-prefect/">Setting Up Prefect</a></strong> – Install
+   Prefect, create work pools, and configure agents</li>
+<li><strong><a href="platform-setup/03-scheduling-corrections/">Scheduling Corrections</a></strong> –
+   Create scheduled deployments and trigger flows via webhooks</li>
+<li><strong><a href="platform-setup/04-monitoring-results/">Monitoring Results</a></strong> – Track
+   flow runs, logs, and errors in the Prefect UI</li>
+<li><strong><a href="platform-setup/05-deploying-tests-to-ccc/">Deploying Tests to CCC</a></strong> –
+   Upload grader assets to S3 and link them to a course</li>
+<li><strong><a href="platform-setup/06-prefect-agent/">Prefect Agent Configuration</a></strong> – Run
+   a Prefect agent locally or in a container</li>
+<li><strong><a href="platform-setup/07-rustfs-storage/">RustFS Storage</a></strong> – Set up an
+   S3‑compatible storage backend for local development and production</li>
+</ol>
+<h3 id="current-development-2-files">Current Development (2 files)</h3>
+<p>Track progress and upcoming changes.</p>
+<ol>
+<li><strong><a href="current-development/01-roadmap/">Roadmap</a></strong> – High‑level timeline and
+   feature priorities</li>
+<li><strong><a href="current-development/02-phase-2-migration-plan/">Phase 2 Migration Plan</a></strong>
+   – Detailed migration steps from v1 to v2</li>
+</ol>
+<h2 id="quick-start">Quick Start</h2>
+<p>Run these commands to install dependencies, run the full test suite, and serve
+the documentation locally. These commands assume <strong>Python 3.13+</strong> and a clean
+environment.</p>
+<pre><code class="language-bash"># Install dependencies (uv handles virtualenv and locking)
+$ uv sync
+</code></pre>
+<p>You will see output similar to:</p>
+<pre><code>Resolved 171 packages in 4ms
+Installed 171 packages in 2.3s
+</code></pre>
+<pre><code class="language-bash"># Run the entire test suite (~30 seconds)
+$ pytest
+</code></pre>
+<p>Expect a series of passing tests:</p>
+<pre><code>============================= test session starts ==============================
+platform linux -- Python 3.14.0, pytest-9.0.2, pluggy-1.6.0
+cachedir: .pytest_cache
+rootdir: /home/jsg/Documents/jsg/Canvas-Code-Correction
+configfile: pyproject.toml
+plugins: anyio-4.12.1, cov-7.0.0, datadir-1.8.0, xdist-3.8.0
+collecting ... collected 123 items
+
+tests/unit/test_workspace.py::test_workspace_config PASSED               [  0%]
+tests/unit/test_workspace.py::test_workspace_paths PASSED                [  1%]
+...
+tests/e2e/test_correction_flow.py::test_full_flow_with_mocks PASSED      [100%]
+</code></pre>
+<pre><code class="language-bash"># Serve documentation on http://localhost:8000
+$ poe serve-docs
+</code></pre>
+<p>The command starts a local MkDocs server:</p>
+<pre><code>INFO    -  Building documentation...
+INFO    -  Cleaning site directory
+INFO    -  Documentation built in 0.30 seconds
+INFO    -  [20:00:00] Serving on http://localhost:8000
+INFO    -  [20:00:00] Browser opened automatically
+</code></pre>
+<p>Press <code>Ctrl+C</code> to stop the server.</p>
+<h3 id="local-development-with-rustfs">Local Development with RustFS</h3>
+<p>For integration testing, start a local RustFS S3‑compatible server:</p>
+<pre><code class="language-bash"># Start RustFS server
+$ poe s3
+
+# Setup RustFS for testing (creates bucket, uploads test assets)
+$ poe rustfs-setup
+
+# Run integration tests
+$ pytest -m integration
+</code></pre>
+<p>Configuration via environment variables:</p>
+<ul>
+<li><code>RUSTFS_ENDPOINT</code>: S3 endpoint URL (default: <code>http://localhost:9000</code>)</li>
+<li><code>RUSTFS_ACCESS_KEY</code>: Access key (default: <code>rustfsadmin</code>)</li>
+<li><code>RUSTFS_SECRET_KEY</code>: Secret key (default: <code>rustfsadmin</code>)</li>
+<li><code>RUSTFS_BUCKET_NAME</code>: Bucket name (default: <code>test-assets</code>)</li>
+<li><code>RUSTFS_PREFIX</code>: Path prefix for assets (default: <code>dev</code>)</li>
+</ul>
+<h2 id="current-status-january-2026">Current Status (January 2026)</h2>
+<p><strong>Phase 2 of the v2 rewrite is complete.</strong> The following key components are
+implemented and tested:</p>
+<ul>
+<li><strong>GraderExecutor</strong>: Secure Docker‑based execution with resource limits and
+  timeout handling</li>
+<li><strong>ResultCollector</strong>: Robust parsing of grader outputs and feedback zip
+  creation</li>
+<li><strong>CanvasUploader</strong>: Idempotent feedback and grade uploads with duplicate
+  detection</li>
+<li><strong>Prefect Flow Integration</strong>: Complete end‑to‑end flow with <code>execute_grader</code>,
+  <code>collect_results</code>, <code>upload_feedback</code>, and <code>post_grade</code> tasks</li>
+<li><strong>Enhanced CLI</strong>: New <code>ccc</code> commands for <code>run‑once</code>, <code>configure‑course</code>, and
+  <code>list‑courses</code></li>
+<li><strong>RustFS Integration</strong>: Configurable S3‑compatible storage backend with
+  environment‑variable support for production deployments</li>
+<li><strong>Comprehensive Test Suite</strong>: End‑to‑end tests with docker‑compose stack
+  (RustFS, Prefect) and GitHub Actions CI pipeline</li>
+<li><strong>Production‑Ready Configuration</strong>: Support for custom S3 endpoints and secure
+  credential management</li>
+</ul>
+<p>All unit tests pass, and the system is ready for integration testing with the
+Canvas Cloud development course.</p>
+<h2 id="need-help">Need Help?</h2>
+<ul>
+<li>Use the <strong>agent system</strong> described in <a href="../AGENTS.md"><code>AGENTS.md</code></a> to explore
+  the codebase and delegate tasks.</li>
+<li>Check the
+  <a href="https://github.com/jakob1379/canvas-code-correction">GitHub repository</a> for
+  issues and discussions.</li>
+<li>Follow the
+  <a href="../AGENTS.md#3-commit-conventions-conventional-commits">Conventional Commits</a>
+  convention when contributing changes.</li>
+</ul></div>
+            </div>
+        </div>
+
+        <footer class="col-md-12">
+            <hr>
+            <p>Documentation built with <a href="https://www.mkdocs.org/">MkDocs</a>.</p>
+        </footer>
+        <script src="js/bootstrap.bundle.min.js"></script>
+        <script>
+            var base_url = ".",
+                shortcuts = {"help": 191, "next": 78, "previous": 80, "search": 83};
+        </script>
+        <script src="js/base.js"></script>
+        <script src="search/main.js"></script>
+
+        <div class="modal" id="mkdocs_search_modal" tabindex="-1" role="dialog" aria-labelledby="searchModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title" id="searchModalLabel">Search</h4>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>From here you can search these documents. Enter your search terms below.</p>
+                <form>
+                    <div class="form-group">
+                        <input type="search" class="form-control" placeholder="Search..." id="mkdocs-search-query" title="Type search term here">
+                    </div>
+                </form>
+                <div id="mkdocs-search-results" data-no-results-text="No results found"></div>
+            </div>
+            <div class="modal-footer">
+            </div>
+        </div>
+    </div>
+</div><div class="modal" id="mkdocs_keyboard_modal" tabindex="-1" role="dialog" aria-labelledby="keyboardModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title" id="keyboardModalLabel">Keyboard Shortcuts</h4>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th style="width: 20%;">Keys</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td class="help shortcut"><kbd>?</kbd></td>
+                    <td>Open this help</td>
+                  </tr>
+                  <tr>
+                    <td class="next shortcut"><kbd>n</kbd></td>
+                    <td>Next page</td>
+                  </tr>
+                  <tr>
+                    <td class="prev shortcut"><kbd>p</kbd></td>
+                    <td>Previous page</td>
+                  </tr>
+                  <tr>
+                    <td class="search shortcut"><kbd>s</kbd></td>
+                    <td>Search</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="modal-footer">
+            </div>
+        </div>
+    </div>
+</div>
+
+    </body>
+</html>
+
+<!--
+MkDocs version : 1.6.1
+Build Date UTC : 1980-01-01 00:00:00+00:00
+-->

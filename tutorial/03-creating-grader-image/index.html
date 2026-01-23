@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="light">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        
+        
+        
+        <link rel="shortcut icon" href="../../img/favicon.ico">
+        <title>Creating a Custom Grader Docker Image - My Docs</title>
+        <link href="../../css/bootstrap.min.css" rel="stylesheet">
+        <link href="../../css/fontawesome.min.css" rel="stylesheet">
+        <link href="../../css/brands.min.css" rel="stylesheet">
+        <link href="../../css/solid.min.css" rel="stylesheet">
+        <link href="../../css/v4-font-face.min.css" rel="stylesheet">
+        <link href="../../css/base.css" rel="stylesheet">
+        <link id="hljs-light" rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" >
+        <link id="hljs-dark" rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github-dark.min.css" disabled>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+        <script>hljs.highlightAll();</script> 
+    </head>
+
+    <body>
+        <div class="navbar fixed-top navbar-expand-lg navbar-dark bg-primary">
+            <div class="container">
+                <a class="navbar-brand" href="../..">My Docs</a>
+                <!-- Expander button -->
+                <button type="button" class="navbar-toggler" data-bs-toggle="collapse" data-bs-target="#navbar-collapse" aria-controls="navbar-collapse" aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+
+                <!-- Expanded navigation -->
+                <div id="navbar-collapse" class="navbar-collapse collapse">
+                        <!-- Main navigation -->
+                        <ul class="nav navbar-nav">
+                            <li class="nav-item">
+                                <a href="../.." class="nav-link">Canvas Code Correction v2</a>
+                            </li>
+                            <li class="nav-item dropdown">
+                                <a href="#" class="nav-link dropdown-toggle" role="button" data-bs-toggle="dropdown"  aria-expanded="false">Current development</a>
+                                <ul class="dropdown-menu">
+                                    
+<li>
+    <a href="../../current-development/01-roadmap/" class="dropdown-item">Development Roadmap</a>
+</li>
+                                    
+<li>
+    <a href="../../current-development/02-phase-2-migration-plan/" class="dropdown-item">Phase 2 – Canvas Client Migration Plan</a>
+</li>
+                                </ul>
+                            </li>
+                            <li class="nav-item dropdown">
+                                <a href="#" class="nav-link dropdown-toggle" role="button" data-bs-toggle="dropdown"  aria-expanded="false">Platform setup</a>
+                                <ul class="dropdown-menu">
+                                    
+<li>
+    <a href="../../platform-setup/01-configuring-course/" class="dropdown-item">Configuring a Course</a>
+</li>
+                                    
+<li>
+    <a href="../../platform-setup/02-setting-up-prefect/" class="dropdown-item">Setting up Prefect</a>
+</li>
+                                    
+<li>
+    <a href="../../platform-setup/03-scheduling-corrections/" class="dropdown-item">Scheduling Corrections</a>
+</li>
+                                    
+<li>
+    <a href="../../platform-setup/04-monitoring-results/" class="dropdown-item">Monitoring Results</a>
+</li>
+                                    
+<li>
+    <a href="../../platform-setup/05-deploying-tests-to-ccc/" class="dropdown-item">Deploying Grader Tests to Canvas Code Correction (CCC)</a>
+</li>
+                                    
+<li>
+    <a href="../../platform-setup/06-prefect-agent/" class="dropdown-item">Running Prefect Locally for Development</a>
+</li>
+                                    
+<li>
+    <a href="../../platform-setup/07-rustfs-storage/" class="dropdown-item">RustFS Storage</a>
+</li>
+                                </ul>
+                            </li>
+                            <li class="nav-item dropdown">
+                                <a href="#" class="nav-link dropdown-toggle" role="button" data-bs-toggle="dropdown"  aria-expanded="false">Reference</a>
+                                <ul class="dropdown-menu">
+                                    
+<li>
+    <a href="../../reference/01-architecture/" class="dropdown-item">Architecture Overview</a>
+</li>
+                                    
+<li>
+    <a href="../../reference/02-cli/" class="dropdown-item">CLI Reference</a>
+</li>
+                                    
+<li>
+    <a href="../../reference/03-configuration/" class="dropdown-item">Configuration Reference</a>
+</li>
+                                    
+<li>
+    <a href="../../reference/04-api-clients/" class="dropdown-item">API Clients Reference</a>
+</li>
+                                    
+<li>
+    <a href="../../reference/05-grader-image/" class="dropdown-item">Grader Image Guide</a>
+</li>
+                                    
+<li>
+    <a href="../../reference/06-authoring-grader-tests/" class="dropdown-item">Authoring Grader Tests</a>
+</li>
+                                </ul>
+                            </li>
+                            <li class="nav-item dropdown">
+                                <a href="#" class="nav-link dropdown-toggle active" aria-current="page" role="button" data-bs-toggle="dropdown"  aria-expanded="false">Tutorial</a>
+                                <ul class="dropdown-menu">
+                                    
+<li>
+    <a href="../" class="dropdown-item">Tutorial for Course Responsible</a>
+</li>
+                                    
+<li>
+    <a href="../02-prerequisites/" class="dropdown-item">Prerequisites</a>
+</li>
+                                    
+<li>
+    <a href="./" class="dropdown-item active" aria-current="page">Creating a Custom Grader Docker Image</a>
+</li>
+                                    
+<li>
+    <a href="../04-writing-grader-tests/" class="dropdown-item">Writing Grader Tests: A Hands-On Tutorial</a>
+</li>
+                                </ul>
+                            </li>
+                        </ul>
+
+                    <ul class="nav navbar-nav ms-md-auto">
+                        <li class="nav-item">
+                            <a href="#" class="nav-link" data-bs-toggle="modal" data-bs-target="#mkdocs_search_modal">
+                                <i class="fa fa-search"></i> Search
+                            </a>
+                        </li>
+                            <li class="nav-item">
+                                <a rel="prev" href="../02-prerequisites/" class="nav-link">
+                                    <i class="fa fa-arrow-left"></i> Previous
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a rel="next" href="../04-writing-grader-tests/" class="nav-link">
+                                    Next <i class="fa fa-arrow-right"></i>
+                                </a>
+                            </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="container">
+            <div class="row">
+                    <div class="col-md-3"><div class="navbar-expand-md bs-sidebar hidden-print affix" role="complementary">
+    <div class="navbar-header">
+        <button type="button" class="navbar-toggler collapsed" data-bs-toggle="collapse" data-bs-target="#toc-collapse" title="Table of Contents">
+            <span class="fa fa-angle-down"></span>
+        </button>
+    </div>
+
+    
+    <div id="toc-collapse" class="navbar-collapse collapse card bg-body-tertiary">
+        <ul class="nav flex-column">
+            
+            <li class="nav-item" data-bs-level="1"><a href="#creating-a-custom-grader-docker-image" class="nav-link">Creating a Custom Grader Docker Image</a>
+              <ul class="nav flex-column">
+            <li class="nav-item" data-bs-level="2"><a href="#1-decide-if-you-need-a-custom-image" class="nav-link">1. Decide If You Need a Custom Image</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#2-create-a-dockerfile" class="nav-link">2. Create a Dockerfile</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#3-build-the-image" class="nav-link">3. Build the Image</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#4-test-the-image-locally" class="nav-link">4. Test the Image Locally</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#5-push-to-a-container-registry-optional" class="nav-link">5. Push to a Container Registry (Optional)</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#next-steps" class="nav-link">Next Steps</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+              </ul>
+            </li>
+        </ul>
+    </div>
+</div></div>
+                    <div class="col-md-9" role="main">
+
+<h1 id="creating-a-custom-grader-docker-image">Creating a Custom Grader Docker Image</h1>
+<p>CCC runs your grader tests inside a Docker container. By default, CCC provides
+the <strong>base image</strong> <code>jakob1379/canvas-grader:latest</code> (Ubuntu with Python
+pre‑installed). This tutorial shows you how to build a custom Docker image when
+you need extra dependencies.</p>
+<h2 id="1-decide-if-you-need-a-custom-image">1. Decide If You Need a Custom Image</h2>
+<p><strong>Use the base image unless you need extra packages.</strong> The base image already
+contains Python 3.13, a minimal Ubuntu environment, and the grader entrypoint.
+You only need a custom image if your grader requires:</p>
+<ul>
+<li>Additional system packages (e.g., <code>graphviz</code>, <code>clang</code>, <code>java</code>)</li>
+<li>Language runtimes not present in the base image (e.g., Node.js, Ruby)</li>
+<li>Specialized tools (e.g., <code>pandoc</code>, <code>ffmpeg</code>)</li>
+</ul>
+<p>If your grader only needs Python packages, install them via <code>pip</code> in your test
+script. No custom image required.</p>
+<h2 id="2-create-a-dockerfile">2. Create a Dockerfile</h2>
+<p>Create a file named <strong>Dockerfile</strong> in your work‑package directory. Start from
+the CCC base image and add the dependencies you need.</p>
+<p>Here’s a minimal example that installs a single system package (<code>graphviz</code>):</p>
+<pre><code class="language-dockerfile">FROM jakob1379/canvas-grader:latest
+
+# Install one additional package
+RUN apt-get update &amp;&amp; apt-get install -y graphviz &amp;&amp; rm -rf /var/lib/apt/lists/*
+</code></pre>
+<p>That’s it. The Dockerfile inherits the grader entrypoint and working directory
+from the base image. You can add more <code>RUN</code>, <code>COPY</code>, or <code>ENV</code> instructions as
+needed, but keep the image small and focused.</p>
+<h2 id="3-build-the-image">3. Build the Image</h2>
+<p>Open a terminal in the directory containing your Dockerfile and run:</p>
+<pre><code class="language-bash">docker build -t my-course/grader:latest .
+</code></pre>
+<p>You’ll see output similar to:</p>
+<pre><code>Sending build context to Docker daemon  4.096kB
+Step 1/2 : FROM jakob1379/canvas-grader:latest
+latest: Pulling from jakob1379/canvas-grader
+Digest: sha256:...
+Status: Downloaded newer image for jakob1379/canvas-grader:latest
+ ---&gt; a1b2c3d4e5f6
+Step 2/2 : RUN apt-get update &amp;&amp; apt-get install -y graphviz &amp;&amp; rm -rf /var/lib/apt/lists/*
+ ---&gt; Running in 1234567890ab
+Get:1 http://archive.ubuntu.com/ubuntu jammy InRelease [270 kB]
+...
+Setting up graphviz (2.42.2-6) ...
+ ---&gt; 7890abcdef12
+Successfully built 7890abcdef12
+Successfully tagged my-course/grader:latest
+</code></pre>
+<p>The image is now stored locally with the tag you provided
+(<code>my-course/grader:latest</code>).</p>
+<h2 id="4-test-the-image-locally">4. Test the Image Locally</h2>
+<p>Verify that your custom image works and includes the added dependency. Run a
+quick test:</p>
+<pre><code class="language-bash">docker run --rm my-course/grader:latest dot -V
+</code></pre>
+<p>Expected output:</p>
+<pre><code>dot - graphviz version 2.42.2 (20200629.0806)
+</code></pre>
+<p>If you see the version string, the package was installed correctly. You can also
+run a full grader test by mounting a sample submission:</p>
+<pre><code class="language-bash">mkdir -p sample/submission
+echo &quot;print('Hello')&quot; &gt; sample/submission/hello.py
+docker run --rm -v &quot;$(pwd)/sample/submission:/workspace/submission&quot; my-course/grader:latest
+</code></pre>
+<p>The container will execute the default grader entrypoint (which expects your
+test scripts). If you haven’t added test scripts yet, the container will exit
+with an error. This is fine; the purpose is to confirm the image starts and can
+access the submission directory.</p>
+<h2 id="5-push-to-a-container-registry-optional">5. Push to a Container Registry (Optional)</h2>
+<p>If you want to share the image with your CCC platform operator or deploy it to a
+cloud environment, push it to a <strong>container registry</strong> (Docker Hub, GitHub
+Container Registry, etc.).</p>
+<p>First, tag the image with your registry URL:</p>
+<pre><code class="language-bash">docker tag my-course/grader:latest ghcr.io/your‑org/your‑course‑grader:latest
+</code></pre>
+<p>Then push it:</p>
+<pre><code class="language-bash">docker push ghcr.io/your‑org/your‑course‑grader:latest
+</code></pre>
+<p>The platform operator can later pull the image from that registry.</p>
+<h2 id="next-steps">Next Steps</h2>
+<p>Your custom grader image is ready. Now you can write the grader test scripts
+that will run inside it. Proceed to
+<a href="../04-writing-grader-tests/">Writing Grader Tests</a>.</p>
+<p><strong>Remember:</strong> Keep your Dockerfile simple. Only add dependencies that are truly
+required for grading. The smaller the image, the faster it starts and the less
+storage it consumes.</p></div>
+            </div>
+        </div>
+
+        <footer class="col-md-12">
+            <hr>
+            <p>Documentation built with <a href="https://www.mkdocs.org/">MkDocs</a>.</p>
+        </footer>
+        <script src="../../js/bootstrap.bundle.min.js"></script>
+        <script>
+            var base_url = "../..",
+                shortcuts = {"help": 191, "next": 78, "previous": 80, "search": 83};
+        </script>
+        <script src="../../js/base.js"></script>
+        <script src="../../search/main.js"></script>
+
+        <div class="modal" id="mkdocs_search_modal" tabindex="-1" role="dialog" aria-labelledby="searchModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title" id="searchModalLabel">Search</h4>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>From here you can search these documents. Enter your search terms below.</p>
+                <form>
+                    <div class="form-group">
+                        <input type="search" class="form-control" placeholder="Search..." id="mkdocs-search-query" title="Type search term here">
+                    </div>
+                </form>
+                <div id="mkdocs-search-results" data-no-results-text="No results found"></div>
+            </div>
+            <div class="modal-footer">
+            </div>
+        </div>
+    </div>
+</div><div class="modal" id="mkdocs_keyboard_modal" tabindex="-1" role="dialog" aria-labelledby="keyboardModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title" id="keyboardModalLabel">Keyboard Shortcuts</h4>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th style="width: 20%;">Keys</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td class="help shortcut"><kbd>?</kbd></td>
+                    <td>Open this help</td>
+                  </tr>
+                  <tr>
+                    <td class="next shortcut"><kbd>n</kbd></td>
+                    <td>Next page</td>
+                  </tr>
+                  <tr>
+                    <td class="prev shortcut"><kbd>p</kbd></td>
+                    <td>Previous page</td>
+                  </tr>
+                  <tr>
+                    <td class="search shortcut"><kbd>s</kbd></td>
+                    <td>Search</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="modal-footer">
+            </div>
+        </div>
+    </div>
+</div>
+
+    </body>
+</html>

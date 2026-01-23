@@ -1,0 +1,659 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="light">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        
+        
+        
+        <link rel="shortcut icon" href="../../img/favicon.ico">
+        <title>CLI Reference - My Docs</title>
+        <link href="../../css/bootstrap.min.css" rel="stylesheet">
+        <link href="../../css/fontawesome.min.css" rel="stylesheet">
+        <link href="../../css/brands.min.css" rel="stylesheet">
+        <link href="../../css/solid.min.css" rel="stylesheet">
+        <link href="../../css/v4-font-face.min.css" rel="stylesheet">
+        <link href="../../css/base.css" rel="stylesheet">
+        <link id="hljs-light" rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" >
+        <link id="hljs-dark" rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github-dark.min.css" disabled>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+        <script>hljs.highlightAll();</script> 
+    </head>
+
+    <body>
+        <div class="navbar fixed-top navbar-expand-lg navbar-dark bg-primary">
+            <div class="container">
+                <a class="navbar-brand" href="../..">My Docs</a>
+                <!-- Expander button -->
+                <button type="button" class="navbar-toggler" data-bs-toggle="collapse" data-bs-target="#navbar-collapse" aria-controls="navbar-collapse" aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+
+                <!-- Expanded navigation -->
+                <div id="navbar-collapse" class="navbar-collapse collapse">
+                        <!-- Main navigation -->
+                        <ul class="nav navbar-nav">
+                            <li class="nav-item">
+                                <a href="../.." class="nav-link">Canvas Code Correction v2</a>
+                            </li>
+                            <li class="nav-item dropdown">
+                                <a href="#" class="nav-link dropdown-toggle" role="button" data-bs-toggle="dropdown"  aria-expanded="false">Current development</a>
+                                <ul class="dropdown-menu">
+                                    
+<li>
+    <a href="../../current-development/01-roadmap/" class="dropdown-item">Development Roadmap</a>
+</li>
+                                    
+<li>
+    <a href="../../current-development/02-phase-2-migration-plan/" class="dropdown-item">Phase 2 – Canvas Client Migration Plan</a>
+</li>
+                                </ul>
+                            </li>
+                            <li class="nav-item dropdown">
+                                <a href="#" class="nav-link dropdown-toggle" role="button" data-bs-toggle="dropdown"  aria-expanded="false">Platform setup</a>
+                                <ul class="dropdown-menu">
+                                    
+<li>
+    <a href="../../platform-setup/01-configuring-course/" class="dropdown-item">Configuring a Course</a>
+</li>
+                                    
+<li>
+    <a href="../../platform-setup/02-setting-up-prefect/" class="dropdown-item">Setting up Prefect</a>
+</li>
+                                    
+<li>
+    <a href="../../platform-setup/03-scheduling-corrections/" class="dropdown-item">Scheduling Corrections</a>
+</li>
+                                    
+<li>
+    <a href="../../platform-setup/04-monitoring-results/" class="dropdown-item">Monitoring Results</a>
+</li>
+                                    
+<li>
+    <a href="../../platform-setup/05-deploying-tests-to-ccc/" class="dropdown-item">Deploying Grader Tests to Canvas Code Correction (CCC)</a>
+</li>
+                                    
+<li>
+    <a href="../../platform-setup/06-prefect-agent/" class="dropdown-item">Running Prefect Locally for Development</a>
+</li>
+                                    
+<li>
+    <a href="../../platform-setup/07-rustfs-storage/" class="dropdown-item">RustFS Storage</a>
+</li>
+                                </ul>
+                            </li>
+                            <li class="nav-item dropdown">
+                                <a href="#" class="nav-link dropdown-toggle active" aria-current="page" role="button" data-bs-toggle="dropdown"  aria-expanded="false">Reference</a>
+                                <ul class="dropdown-menu">
+                                    
+<li>
+    <a href="../01-architecture/" class="dropdown-item">Architecture Overview</a>
+</li>
+                                    
+<li>
+    <a href="./" class="dropdown-item active" aria-current="page">CLI Reference</a>
+</li>
+                                    
+<li>
+    <a href="../03-configuration/" class="dropdown-item">Configuration Reference</a>
+</li>
+                                    
+<li>
+    <a href="../04-api-clients/" class="dropdown-item">API Clients Reference</a>
+</li>
+                                    
+<li>
+    <a href="../05-grader-image/" class="dropdown-item">Grader Image Guide</a>
+</li>
+                                    
+<li>
+    <a href="../06-authoring-grader-tests/" class="dropdown-item">Authoring Grader Tests</a>
+</li>
+                                </ul>
+                            </li>
+                            <li class="nav-item dropdown">
+                                <a href="#" class="nav-link dropdown-toggle" role="button" data-bs-toggle="dropdown"  aria-expanded="false">Tutorial</a>
+                                <ul class="dropdown-menu">
+                                    
+<li>
+    <a href="../../tutorial/" class="dropdown-item">Tutorial for Course Responsible</a>
+</li>
+                                    
+<li>
+    <a href="../../tutorial/02-prerequisites/" class="dropdown-item">Prerequisites</a>
+</li>
+                                    
+<li>
+    <a href="../../tutorial/03-creating-grader-image/" class="dropdown-item">Creating a Custom Grader Docker Image</a>
+</li>
+                                    
+<li>
+    <a href="../../tutorial/04-writing-grader-tests/" class="dropdown-item">Writing Grader Tests: A Hands-On Tutorial</a>
+</li>
+                                </ul>
+                            </li>
+                        </ul>
+
+                    <ul class="nav navbar-nav ms-md-auto">
+                        <li class="nav-item">
+                            <a href="#" class="nav-link" data-bs-toggle="modal" data-bs-target="#mkdocs_search_modal">
+                                <i class="fa fa-search"></i> Search
+                            </a>
+                        </li>
+                            <li class="nav-item">
+                                <a rel="prev" href="../01-architecture/" class="nav-link">
+                                    <i class="fa fa-arrow-left"></i> Previous
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a rel="next" href="../03-configuration/" class="nav-link">
+                                    Next <i class="fa fa-arrow-right"></i>
+                                </a>
+                            </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="container">
+            <div class="row">
+                    <div class="col-md-3"><div class="navbar-expand-md bs-sidebar hidden-print affix" role="complementary">
+    <div class="navbar-header">
+        <button type="button" class="navbar-toggler collapsed" data-bs-toggle="collapse" data-bs-target="#toc-collapse" title="Table of Contents">
+            <span class="fa fa-angle-down"></span>
+        </button>
+    </div>
+
+    
+    <div id="toc-collapse" class="navbar-collapse collapse card bg-body-tertiary">
+        <ul class="nav flex-column">
+            
+            <li class="nav-item" data-bs-level="1"><a href="#cli-reference" class="nav-link">CLI Reference</a>
+              <ul class="nav flex-column">
+            <li class="nav-item" data-bs-level="2"><a href="#accessing-the-cli" class="nav-link">Accessing the CLI</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#commands" class="nav-link">Commands</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#environment-variables" class="nav-link">Environment Variables</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#getting-help" class="nav-link">Getting Help</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+              </ul>
+            </li>
+        </ul>
+    </div>
+</div></div>
+                    <div class="col-md-9" role="main">
+
+<h1 id="cli-reference">CLI Reference</h1>
+<p>Canvas Code Correction provides a command-line interface for configuring
+courses, running corrections, and managing webhook deployments. The CLI is built
+with <strong>Typer</strong> and offers rich help via <code>--help</code> flags.</p>
+<h2 id="accessing-the-cli">Accessing the CLI</h2>
+<p>After installing the package with <code>uv sync</code>, the <code>ccc</code> command is available via
+<code>ccc</code>. You can also install the package globally, but using <code>uv run</code> ensures the
+correct environment.</p>
+<p><strong>Quick start:</strong> Run the help command to see all available commands:</p>
+<pre><code class="language-bash">$ ccc --help
+</code></pre>
+<p>Expected output:</p>
+<pre><code>Canvas Code Correction CLI
+
+Usage: ccc [OPTIONS] COMMAND [ARGS]...
+
+Options:
+  --help  Show this message and exit.
+
+Commands:
+  configure-course  Create or update a course configuration block.
+  deploy            Manage Prefect deployments.
+  list-courses      List all configured course blocks.
+  run-once          Run correction flow for an assignment or specific...
+  version           Show version information.
+  webhook           Manage webhook server.
+</code></pre>
+<h2 id="commands">Commands</h2>
+<h3 id="run-once"><code>run-once</code></h3>
+<p>Run correction flow for an assignment or specific submission.</p>
+<p><strong>Usage:</strong></p>
+<pre><code class="language-bash">ccc run-once &lt;assignment-id&gt; [OPTIONS]
+</code></pre>
+<p><strong>Arguments:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Description</th>
+<th>Required</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>assignment-id</code></td>
+<td>Canvas assignment ID (integer)</td>
+<td>Yes</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Options:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Flag</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>--submission-id</code>, <code>--submission</code></td>
+<td>Specific submission ID (default: all submissions)</td>
+<td><code>None</code></td>
+</tr>
+<tr>
+<td><code>--course</code>, <code>-c</code></td>
+<td>Prefect course configuration block name</td>
+<td><code>"default-course"</code></td>
+</tr>
+<tr>
+<td><code>--dry-run</code></td>
+<td>Skip actual grading and upload</td>
+<td><code>False</code></td>
+</tr>
+<tr>
+<td><code>--download-dir</code></td>
+<td>Directory for downloaded submissions (default: temporary directory)</td>
+<td><code>None</code></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Example – process a single submission:</strong></p>
+<pre><code class="language-bash">$ ccc run-once 12345 --submission-id 67890 --dry-run
+</code></pre>
+<p>Expected output:</p>
+<pre><code>[blue]Running correction for assignment 12345, submission 67890[/blue]
+[yellow]Dry run enabled - no actual grading or upload will occur[/yellow]
+[green]Correction flow completed successfully![/green]
+{
+  &quot;submission_metadata_keys&quot;: [&quot;67890&quot;],
+  &quot;downloaded_files_count&quot;: 2,
+  &quot;workspace&quot;: &quot;/tmp/ccc-download-abc123&quot;,
+  &quot;results_keys&quot;: [&quot;score&quot;, &quot;feedback&quot;]
+}
+</code></pre>
+<p><strong>Example – batch process all submissions:</strong></p>
+<pre><code class="language-bash">$ ccc run-once 12345
+</code></pre>
+<p>Expected output:</p>
+<pre><code>[blue]Batch mode: processing all submissions for assignment 12345[/blue]
+[blue]Processing submission 67890[/blue]
+[green]Submission 67890 processed successfully[/green]
+[blue]Processing submission 67891[/blue]
+[green]Submission 67891 processed successfully[/green]
+[green]Batch processing completed![/green]
+</code></pre>
+<p><strong>Notes:</strong></p>
+<ul>
+<li>If <code>--download-dir</code> is omitted, a temporary directory is created and its path
+  is printed.</li>
+<li>In batch mode, errors for individual submissions are logged but processing
+  continues.</li>
+</ul>
+<hr />
+<h3 id="configure-course"><code>configure-course</code></h3>
+<p>Create or update a course configuration block.</p>
+<p><strong>Usage:</strong></p>
+<pre><code class="language-bash">ccc configure-course &lt;course-slug&gt; [OPTIONS]
+</code></pre>
+<p><strong>Arguments:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Description</th>
+<th>Required</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>course-slug</code></td>
+<td>Unique identifier for the course (string)</td>
+<td>Yes</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Options:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Flag</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>--token</code>, <code>-t</code></td>
+<td>Canvas API token (prompted if omitted)</td>
+<td>Prompted</td>
+</tr>
+<tr>
+<td><code>--course-id</code>, <code>-i</code></td>
+<td>Canvas course ID (integer)</td>
+<td>(required)</td>
+</tr>
+<tr>
+<td><code>--assets-block</code>, <code>-a</code></td>
+<td>Prefect S3 bucket block name for assets</td>
+<td>(required)</td>
+</tr>
+<tr>
+<td><code>--api-url</code></td>
+<td>Canvas instance URL</td>
+<td><code>"https://canvas.instructure.com"</code></td>
+</tr>
+<tr>
+<td><code>--s3-prefix</code>, <code>-p</code></td>
+<td>S3 prefix for grader assets</td>
+<td><code>""</code></td>
+</tr>
+<tr>
+<td><code>--docker-image</code>, <code>-d</code></td>
+<td>Docker image for grading</td>
+<td><code>None</code></td>
+</tr>
+<tr>
+<td><code>--work-pool</code>, <code>-w</code></td>
+<td>Prefect work pool name</td>
+<td><code>None</code></td>
+</tr>
+<tr>
+<td><code>--workspace-root</code></td>
+<td>Root directory for workspaces</td>
+<td><code>None</code></td>
+</tr>
+<tr>
+<td><code>--env</code>, <code>-e</code></td>
+<td>Environment variables (KEY=VALUE), repeatable</td>
+<td><code>None</code></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Example – configure a new course:</strong></p>
+<pre><code class="language-bash">$ ccc configure-course cs101 \
+  --token $CANVAS_TOKEN \
+  --course-id 12345 \
+  --assets-block course-assets-cs101 \
+  --docker-image mygrader:latest \
+  --s3-prefix graders/cs101/ \
+  --env DEBUG=true \
+  --env TIMEOUT=300
+</code></pre>
+<p>Expected output:</p>
+<pre><code>Course configuration saved as block: ccc-course-cs101
+</code></pre>
+<p><strong>Example – error when required options are missing:</strong></p>
+<pre><code class="language-bash">$ ccc configure-course cs101 --course-id 12345
+</code></pre>
+<p>Expected output:</p>
+<pre><code>Error: Missing option '--assets-block' / '-a'.
+</code></pre>
+<p><strong>Notes:</strong></p>
+<ul>
+<li>The block name is automatically prefixed with <code>ccc-course-</code>.</li>
+<li>Environment variables are passed to the grader container.</li>
+</ul>
+<hr />
+<h3 id="list-courses"><code>list-courses</code></h3>
+<p>List all configured course blocks.</p>
+<p><strong>Usage:</strong></p>
+<pre><code class="language-bash">ccc list-courses
+</code></pre>
+<p><strong>Arguments:</strong> None</p>
+<p><strong>Options:</strong> None</p>
+<p><strong>Example:</strong></p>
+<pre><code class="language-bash">$ ccc list-courses
+</code></pre>
+<p>Expected output:</p>
+<pre><code>              Configured Courses
+┏━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━┳━━━━━━━━━━━━┓
+┃ Block Name    ┃ Canvas Course ID ┃ Docker Image ┃ Assets Block ┃
+┣━━━━━━━━━━━━━━━╋━━━━━━━━━━━━━━━━━╋━━━━━━━━━━━━╋━━━━━━━━━━━━┫
+┃ ccc-course-cs101 ┃ 12345          ┃ mygrader:latest ┃ course-assets-cs101 ┃
+┃ ccc-course-math202 ┃ 67890         ┃ Not set    ┃ course-assets-math ┃
+┗━━━━━━━━━━━━━━━┻━━━━━━━━━━━━━━━━━┻━━━━━━━━━━━━┻━━━━━━━━━━━━┛
+</code></pre>
+<p><strong>Notes:</strong></p>
+<ul>
+<li>Blocks that fail to load are shown with an error message in the table.</li>
+</ul>
+<hr />
+<h3 id="webhook-serve"><code>webhook serve</code></h3>
+<p>Start webhook server for Canvas submissions.</p>
+<p><strong>Usage:</strong></p>
+<pre><code class="language-bash">ccc webhook serve [OPTIONS]
+</code></pre>
+<p><strong>Arguments:</strong> None</p>
+<p><strong>Options:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Flag</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>--host</code></td>
+<td>Host to bind</td>
+<td><code>"0.0.0.0"</code></td>
+</tr>
+<tr>
+<td><code>--port</code></td>
+<td>Port to bind</td>
+<td><code>8080</code></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Example – start server on localhost:8080:</strong></p>
+<pre><code class="language-bash">$ ccc webhook serve --host 127.0.0.1 --port 8080
+</code></pre>
+<p>Expected output:</p>
+<pre><code>[blue]Starting webhook server on 127.0.0.1:8080[/blue]
+INFO:     Started server process [12345]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://127.0.0.1:8080 (Press CTRL+C to quit)
+</code></pre>
+<p><strong>Notes:</strong></p>
+<ul>
+<li>The server uses the FastAPI application defined in the webhook module.</li>
+<li>Ensure the appropriate course blocks are configured before using webhooks.</li>
+</ul>
+<hr />
+<h3 id="deploy-create"><code>deploy create</code></h3>
+<p>Create or update a Prefect deployment for webhook-triggered corrections.</p>
+<p><strong>Usage:</strong></p>
+<pre><code class="language-bash">ccc deploy create &lt;course-block&gt; [OPTIONS]
+</code></pre>
+<p><strong>Arguments:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Description</th>
+<th>Required</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>course-block</code></td>
+<td>Prefect course configuration block name</td>
+<td>Yes</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Options:</strong> None</p>
+<p><strong>Example – create deployment for a course block:</strong></p>
+<pre><code class="language-bash">$ ccc deploy create ccc-course-cs101
+</code></pre>
+<p>Expected output:</p>
+<pre><code>[blue]Creating deployment for course block: ccc-course-cs101[/blue]
+[green]Deployment 'ccc-cs101-deployment' created/updated successfully[/green]
+[yellow]Note: Ensure work pool 'local-pool' exists and has workers[/yellow]
+</code></pre>
+<p><strong>Notes:</strong></p>
+<ul>
+<li>The deployment name is derived from the course slug (removing the
+  <code>ccc-course-</code> prefix).</li>
+<li>The deployment is registered with Prefect and can be triggered via webhooks.</li>
+</ul>
+<hr />
+<h3 id="version"><code>version</code></h3>
+<p>Show version information.</p>
+<p><strong>Usage:</strong></p>
+<pre><code class="language-bash">ccc version
+</code></pre>
+<p><strong>Arguments:</strong> None</p>
+<p><strong>Options:</strong> None</p>
+<p><strong>Example:</strong></p>
+<pre><code class="language-bash">$ ccc version
+</code></pre>
+<p>Expected output:</p>
+<pre><code>Canvas Code Correction v2.0.0a0
+</code></pre>
+<p><strong>Notes:</strong></p>
+<ul>
+<li>Version is read from the package metadata, or defaults to <code>v2.0.0a0</code> if not
+  found.</li>
+</ul>
+<hr />
+<h2 id="environment-variables">Environment Variables</h2>
+<p>CCC respects standard Prefect environment variables (<code>PREFECT_API_URL</code>,
+<code>PREFECT_API_KEY</code>). Canvas credentials can be passed via options or stored in
+Prefect blocks.</p>
+<table>
+<thead>
+<tr>
+<th>Variable</th>
+<th>Purpose</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>PREFECT_API_URL</code></td>
+<td>Prefect API URL</td>
+<td><code>http://127.0.0.1:4200</code></td>
+</tr>
+<tr>
+<td><code>PREFECT_API_KEY</code></td>
+<td>Prefect API key</td>
+<td>None</td>
+</tr>
+<tr>
+<td><code>CCC_WORKSPACE_ROOT</code></td>
+<td>Root directory for workspaces</td>
+<td><code>/tmp/ccc/workspaces</code></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Example – set environment variables before running commands:</strong></p>
+<pre><code class="language-bash">export PREFECT_API_URL=&quot;http://localhost:4200&quot;
+export PREFECT_API_KEY=&quot;your-api-key&quot;
+ccc list-courses
+</code></pre>
+<h2 id="getting-help">Getting Help</h2>
+<p>Every command supports a <code>--help</code> flag that provides detailed usage information.
+For example:</p>
+<pre><code class="language-bash">$ ccc configure-course --help
+</code></pre>
+<p>This will show the command’s arguments, options, and a brief description.</p></div>
+            </div>
+        </div>
+
+        <footer class="col-md-12">
+            <hr>
+            <p>Documentation built with <a href="https://www.mkdocs.org/">MkDocs</a>.</p>
+        </footer>
+        <script src="../../js/bootstrap.bundle.min.js"></script>
+        <script>
+            var base_url = "../..",
+                shortcuts = {"help": 191, "next": 78, "previous": 80, "search": 83};
+        </script>
+        <script src="../../js/base.js"></script>
+        <script src="../../search/main.js"></script>
+
+        <div class="modal" id="mkdocs_search_modal" tabindex="-1" role="dialog" aria-labelledby="searchModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title" id="searchModalLabel">Search</h4>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>From here you can search these documents. Enter your search terms below.</p>
+                <form>
+                    <div class="form-group">
+                        <input type="search" class="form-control" placeholder="Search..." id="mkdocs-search-query" title="Type search term here">
+                    </div>
+                </form>
+                <div id="mkdocs-search-results" data-no-results-text="No results found"></div>
+            </div>
+            <div class="modal-footer">
+            </div>
+        </div>
+    </div>
+</div><div class="modal" id="mkdocs_keyboard_modal" tabindex="-1" role="dialog" aria-labelledby="keyboardModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title" id="keyboardModalLabel">Keyboard Shortcuts</h4>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th style="width: 20%;">Keys</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td class="help shortcut"><kbd>?</kbd></td>
+                    <td>Open this help</td>
+                  </tr>
+                  <tr>
+                    <td class="next shortcut"><kbd>n</kbd></td>
+                    <td>Next page</td>
+                  </tr>
+                  <tr>
+                    <td class="prev shortcut"><kbd>p</kbd></td>
+                    <td>Previous page</td>
+                  </tr>
+                  <tr>
+                    <td class="search shortcut"><kbd>s</kbd></td>
+                    <td>Search</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="modal-footer">
+            </div>
+        </div>
+    </div>
+</div>
+
+    </body>
+</html>
