@@ -5,19 +5,168 @@
 
 # Canvas Code Correction
 
-Modern orchestration for downloading, grading, and uploading Canvas submissions
-using Prefect, Docker, and reproducible local workspaces.
+**Modern orchestration for downloading, grading, and uploading Canvas
+submissions using Prefect, Docker, and reproducible local workspaces.**
 
-## Quick Start
+## Try It Now (60 Seconds)
+
+Copy and run these commands to install CCC and verify it works:
+
+```bash
+# Clone the repository
+git clone https://github.com/<your-org>/canvas-code-correction.git
+cd canvas-code-correction
+
+# Install dependencies with uv (Python 3.13+)
+uv sync
+
+# Activate the virtual environment
+source .venv/bin/activate
+
+# Verify the CLI is ready
+ccc --help
+```
+
+!!! note All commands assume you have activated the virtual environment created
+by `uv sync`. If you haven't activated it, prefix commands with `uv run`. This
+example shows activation via `source .venv/bin/activate`; you can also use
+`uv shell` or prefix individual commands with `uv run`.
+
+You’ll see:
+
+```
+Usage: ccc [OPTIONS] COMMAND [ARGS]...
+
+  Canvas Code Correction CLI.
+
+Options:
+  --help  Show this message and exit.
+
+Commands:
+  configure-course  Create or update a course configuration block.
+  deploy            Manage Prefect deployments.
+  list-courses      List all configured courses.
+  run-once          Run a correction for a single assignment.
+  webhook           Start the Canvas webhook server.
+```
+
+If you see the help text, **CCC is installed and ready**. The next step is to
+configure your first course.
+
+## Quick Tutorial (5 Minutes)
+
+This tutorial walks you through setting up CCC and grading your first
+assignment. You’ll need:
+
+- **Canvas API token** with sufficient permissions
+- **Canvas course ID** (numeric)
+- **Docker** (for running grader containers)
+
+### 1. Configure Your First Course
+
+Use `ccc configure-course` to create a course configuration block. The
+configuration is stored as a Prefect block and can be reused across runs.
+
+```bash
+ccc configure-course cs101 \
+  --token YOUR_CANVAS_TOKEN \
+  --course-id 12345 \
+  --assets-block course-assets-cs101 \
+  --docker-image yourusername/canvas-grader:latest \
+  --s3-prefix graders/cs101/
+```
+
+**What this does:**
+
+- Creates a Prefect block named `ccc-course-cs101`
+- Stores your Canvas token, course ID, and grader image reference
+- Links to an S3 bucket block (`course-assets-cs101`) for grader assets
+
+If you omit `--token`, you’ll be prompted to enter it securely.
+
+**Verify the configuration:**
+
+```bash
+ccc list-courses
+```
+
+Expected output:
+
+```
+Configured courses:
+- cs101 (course ID: 12345, image: yourusername/canvas-grader:latest)
+```
+
+### 2. Run a Correction Manually
+
+Test your setup by grading a specific assignment. Replace `98765` with your
+actual Canvas assignment ID.
+
+```bash
+ccc run-once 98765 --course ccc-course-cs101
+```
+
+**What happens:**
+
+1. **Downloads** all submissions for assignment `98765`
+2. **Runs** the grader Docker image on each submission
+3. **Uploads** feedback and grades to Canvas
+
+You’ll see progress output like:
+
+```
+📥 Downloading submissions for assignment 98765...
+✅ Downloaded 42 submissions
+🏃 Running graders in Docker containers...
+  ████████████████████████████████████ 100% (42/42)
+📊 Results: 40 passed, 2 failed
+📤 Uploading feedback to Canvas...
+🎉 Done! Grades posted for 40 students
+⏱️  Total time: 18.3 seconds
+```
+
+To grade a single submission (dry‑run mode), add `--submission-id`:
+
+```bash
+ccc run-once 98765 --submission-id 54321 --dry-run
+```
+
+### 3. Start the Webhook Server (Optional)
+
+For automatic grading when students submit, start the webhook server:
+
+```bash
+ccc webhook serve --host 0.0.0.0 --port 8080
+```
+
+The server listens for Canvas webhook events and triggers the correction flow.
+You’ll need to configure Canvas to send events to this endpoint.
+
+### 4. Create a Prefect Deployment (Optional)
+
+To run corrections via Prefect’s scheduler or API, create a deployment. First,
+ensure your Prefect server is running (see **Installation & Setup** below).
+
+```bash
+ccc deploy create ccc-course-cs101
+```
+
+This registers a deployment that can be triggered by webhooks or manually
+through the Prefect UI.
+
+---
+
+## Installation & Setup
 
 ### Prerequisites
 
-- [uv](https://docs.astral.sh/uv/) (manages Python toolchain and dependencies)
-- Python 3.13 (automatically provisioned by `uv sync`)
-- Canvas API token and course identifiers with sufficient permissions
-- Docker (for running grader containers)
+- **[uv](https://docs.astral.sh/uv/)** – manages Python toolchain and
+  dependencies
+- **Python 3.13** (automatically provisioned by `uv sync`)
+- **Canvas API token** and course identifiers with sufficient permissions
+- **Docker** (for running grader containers)
 
-### Installation
+### Complete Installation
 
 1. Clone the repository and enter it:
 
@@ -51,8 +200,12 @@ using Prefect, Docker, and reproducible local workspaces.
 
 4. Verify the CLI is working:
 
+   !!! note If you haven't activated the virtual environment created by
+   `uv sync`, prefix the command with `uv run` or activate it first with
+   `source .venv/bin/activate`.
+
    ```bash
-   uv run ccc --help
+   ccc --help
    ```
 
 ### Prefect Server (Optional)
@@ -60,83 +213,11 @@ using Prefect, Docker, and reproducible local workspaces.
 For local development, start a Prefect server:
 
 ```bash
-uv run poe prefect
+poe prefect
 ```
 
-This starts Prefect's UI at `http://localhost:4200`. The CLI commands interact
+This starts Prefect’s UI at `http://localhost:4200`. The CLI commands interact
 with this server to store blocks and create deployments.
-
-## Interactive Tutorial
-
-This tutorial walks you through the main features of Canvas Code Correction
-using the Typer‑based CLI.
-
-### 1. Configure Your First Course
-
-Use `ccc configure-course` to create a course configuration block. You'll need:
-
-- Canvas API token
-- Canvas course ID
-- Prefect S3 bucket block name (for grader assets) – create one via Prefect UI
-  or CLI
-
-```bash
-uv run ccc configure-course cs101 \
-  --token YOUR_CANVAS_TOKEN \
-  --course-id 12345 \
-  --assets-block course-assets-cs101 \
-  --docker-image yourusername/canvas-grader:latest \
-  --s3-prefix graders/cs101/
-```
-
-The command will prompt for the token if you omit `--token`. The configuration
-is stored as a Prefect block named `ccc-course-cs101`.
-
-List all configured courses:
-
-```bash
-uv run ccc list-courses
-```
-
-### 2. Run a Correction Manually
-
-Test your setup by grading a specific assignment:
-
-```bash
-uv run ccc run-once 98765 --course ccc-course-cs101
-```
-
-This downloads all submissions for assignment ID 98765, runs the grader Docker
-image on each, and uploads feedback to Canvas.
-
-To grade a single submission (dry‑run mode):
-
-```bash
-uv run ccc run-once 98765 --submission-id 54321 --dry-run
-```
-
-### 3. Start the Webhook Server
-
-For automatic grading when students submit, start the webhook server:
-
-```bash
-uv run ccc webhook serve --host 0.0.0.0 --port 8080
-```
-
-The server listens for Canvas webhook events and triggers the correction flow.
-You'll need to configure Canvas to send events to this endpoint.
-
-### 4. Create a Prefect Deployment
-
-To run corrections via Prefect's scheduler or API, create a deployment. Ensure
-your Prefect server is running (see Quick Start).
-
-```bash
-uv run ccc deploy create ccc-course-cs101
-```
-
-This registers a deployment that can be triggered by webhooks or manually
-through the Prefect UI.
 
 ## Security Features
 
@@ -158,9 +239,9 @@ Recent improvements make CCC secure by default:
 Execute the full test suite and lint before opening a pull request:
 
 ```bash
-uv run prek run
-uv run pytest
-uv run ruff check
+prek run
+pytest
+ruff check
 ```
 
 Test coverage reports are generated automatically (`--cov-report=term-missing`).
@@ -172,9 +253,9 @@ operations with RustFS mocks.
 For end‑to‑end integration tests, start the local RustFS S3‑compatible storage:
 
 ```bash
-uv run poe s3
-uv run poe rustfs-setup
-uv run pytest -m integration
+poe s3
+poe rustfs-setup
+pytest -m integration
 ```
 
 Integration tests use mock S3Bucket fixtures to avoid Prefect block registration
@@ -187,18 +268,23 @@ Comprehensive e2e tests require a running RustFS server and Prefect server:
 
 ```bash
 docker-compose up -d rustfs postgres redis prefect-server prefect-services
-uv run pytest -m e2e
+pytest -m e2e
 ```
 
 ## Documentation
 
 Detailed documentation is available in the `docs/` directory:
 
-- [Architecture Overview](docs/reference/01-architecture.md)
-- [CLI Reference](docs/reference/02-cli.md)
-- [Configuration Guide](docs/reference/03-configuration.md)
-- [Platform Setup](docs/platform-setup/) – for operators
-- [Tutorial](docs/tutorial/) – for course responsible
+- **[Architecture Overview](docs/reference/01-architecture.md)** – component
+  responsibilities and data flow
+- **[CLI Reference](docs/reference/02-cli.md)** – complete command‑line
+  reference
+- **[Configuration Guide](docs/reference/03-configuration.md)** – system setup
+  and environment variables
+- **[Platform Setup](docs/platform-setup/)** – operator‑focused guides for
+  deployment and monitoring
+- **[Tutorial](docs/tutorial/)** – course‑responsible guide for creating work
+  packages
 
 ## Contributing
 

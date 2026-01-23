@@ -3,14 +3,8 @@ requires = ["uv_build>=0.8.19,<0.9.0"]
 build-backend = "uv_build"
 
 [dependency-groups]
-docs = [
-  "zensical>=0.0.16"
-]
 dev = [
-  "pytest>=9.0.2",
-  "pytest-datadir>=1.8.0",
-  "pytest-xdist>=3.8.0",
-  "pytest-cov>=7.0.0",
+  "canvas-code-correction[test,docs]",
   "ipython>=9.9.0",
   "poethepoet>=0.40.0",
   "prek>=0.2.29",
@@ -46,10 +40,25 @@ dependencies = [
   "python-dotenv>=1.2.1",
   "canvasapi>=3.4.0",
   "boto3>=1.42.19",
+  "mkdocs>=1.6.1",
+  "mkdocs-material>=9.7.1",
+  "mkdocs-mermaid2-plugin>=1.2.3",
+  "mkdocs-glightbox>=0.5.2",
   "fastapi>=0.128.0",
   "uvicorn[standard]>=0.40.0",
   "PyJWT>=2.10.0",
   "limits>=5.6.0"
+]
+
+[project.optional-dependencies]
+docs = [
+  "zensical>=0.0.16"
+]
+test = [
+  "pytest>=9.0.2",
+  "pytest-datadir>=1.8.0",
+  "pytest-xdist>=3.8.0",
+  "pytest-cov>=7.0.0"
 ]
 
 [project.scripts]
