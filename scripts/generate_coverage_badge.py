@@ -93,7 +93,7 @@ def main():
     if args.verbose:
         print(f"Generated badge JSON: {output_path}")
         print(
-            f"Badge URL: https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/jakob1379/canvas-code-correction/main/{args.output}"
+            f"Badge URL: https://img.shields.io/endpoint?url=https://ccc.jgalabs.dk/badges/coverage.json"
         )
 
     # Print coverage percentage for logging
