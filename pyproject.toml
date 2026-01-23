@@ -10,8 +10,7 @@ dev = [
   "prek>=0.2.29",
   "ruff>=0.14.13",
   "pyrefly>=0.48.2",
-  "commitizen>=4.11.6",
-  "smokeshow>=0.5.0"
+  "commitizen>=4.11.6"
 ]
 
 [project]

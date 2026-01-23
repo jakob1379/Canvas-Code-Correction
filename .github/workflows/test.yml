@@ -35,6 +35,8 @@ jobs:
       PREFECT_API_URL: http://localhost:4200/api
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
       - name: Install uv
         uses: astral-sh/setup-uv@v4
         with:
@@ -50,20 +52,20 @@ jobs:
           # Run setup script
           uv run python scripts/setup-rustfs.py
       - name: Run unit tests
-        run: uv run pytest tests/unit -v --strict-markers --cov=src --cov-report=xml
-          --cov-report=term
+        run: uv run pytest tests/unit -v --strict-markers --cov=src/canvas_code_correction
+          --cov-report=xml --cov-report=json:coverage.json --cov-report=term
       - name: Generate HTML coverage report
         run: uv run coverage html --data-file=.coverage
-      - name: Upload coverage to smokeshow
-        if: github.event_name == 'push' || github.event_name == 'pull_request'
-        run: |
-          uv run smokeshow upload htmlcov \
-            --github-status-description="Coverage {coverage-percentage}" \
-            --github-coverage-threshold=70
-        env:
-          SMOKESHOW_AUTH_KEY: ${{ secrets.SMOKESHOW_AUTH_KEY }}
-          SMOKESHOW_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          SMOKESHOW_GITHUB_PR_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+
+      # Upload coverage artifacts for deploy-docs workflow (short retention)
+      - name: Upload coverage artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-reports
+          path: |
+            coverage.json
+            htmlcov/
+          retention-days: 1
       - name: Run integration tests (requires Canvas credentials)
         if: env.CANVAS_API_TOKEN != ''
         run: |

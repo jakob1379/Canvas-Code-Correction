@@ -1,15 +1,10 @@
 ---
 name: Deploy Documentation
 on:
-  push:
+  workflow_run:
+    workflows: [Test]
+    types: [completed]
     branches: [main]
-    paths:
-      - docs/**
-      - zensical.toml
-      - pyproject.toml
-      - .github/workflows/deploy-docs.yml
-      - docs/stylesheets/**
-      - docs/assets/**
 permissions:
   contents: read
   pages: write
@@ -20,8 +15,14 @@ jobs:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
+    # Only deploy if the test workflow succeeded
+    if: github.event.workflow_run.conclusion == 'success'
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/configure-pages@v5
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.workflow_run.head_sha }}
       - name: Install uv
         uses: astral-sh/setup-uv@v4
         with:
@@ -29,10 +30,55 @@ jobs:
           python-version: '3.13'
       - name: Install dependencies
         run: uv sync --all-groups
+
+      # Download coverage artifacts from the test workflow
+      - name: Download coverage artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: coverage-reports
+          run-id: ${{ github.event.workflow_run.id }}
+
+      # Check if any relevant files changed in the commit that triggered the test workflow
+      - name: Check changed files
+        uses: dorny/paths-filter@v3
+        id: check_paths
+        with:
+          base: main
+          ref: ${{ github.event.workflow_run.head_sha }}
+          token: ${{ github.token }}
+          filters: |
+            deploy:
+              - 'docs/**'
+              - 'zensical.toml'
+              - 'pyproject.toml'
+              - '.github/workflows/deploy-docs.yml'
+              - 'docs/stylesheets/**'
+              - 'docs/assets/**'
+              - 'src/**'
+              - 'tests/**'
+              - 'scripts/**'
+      - name: Generate coverage badge
+        if: steps.check_paths.outputs.deploy == 'true'
+        run: |
+          mkdir -p site/badges .github/badges
+          uv run python scripts/generate_coverage_badge.py \
+            --coverage-json coverage.json \
+            --output site/badges/coverage.json \
+            --verbose
+          cp site/badges/coverage.json .github/badges/coverage.json
+      - name: Move coverage reports to site directory
+        if: steps.check_paths.outputs.deploy == 'true'
+        run: |
+          mkdir -p site
+          cp -r htmlcov site/htmlcov
+          cp coverage.json site/coverage.json
       - name: Build documentation
-        run: uv run zensical build --strict
+        if: steps.check_paths.outputs.deploy == 'true'
+        run: uv run zensical build --strict --clean
       - uses: actions/upload-pages-artifact@v4
+        if: steps.check_paths.outputs.deploy == 'true'
         with:
           path: site
       - uses: actions/deploy-pages@v4
+        if: steps.check_paths.outputs.deploy == 'true'
         id: deployment
