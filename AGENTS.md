@@ -147,28 +147,30 @@ The scope should be the module or component affected (e.g., `webhook`, `runner`,
    $ git commit -m "fix(workspace): make cleanup idempotent for missing directories"
    ```
 
-### Git Flow Commands
+### Branching Workflow
 
-Use `git flow` to keep your work organized in feature branches:
+Use simple feature branching to keep your work organized:
 
 ```bash
-# Start a new feature branch
-$ git flow feat start webhook-secret-rotation
+# Start a new feature branch from main
+$ git switch -c feat/your-feature-name main
 
 # Work on the feature, commit as you go
 $ git add .
-$ git commit -m "feat(webhook): add secret rotation via Prefect blocks"
+$ git commit -m "feat(scope): description of changes"
 
-# Finish the feature (merges into develop)
-$ git flow feat finish webhook-secret-rotation
+# Push your branch and create a pull request against main
+$ git push origin feat/your-feature-name
+# Then create a pull request on GitHub against the main branch
 ```
 
 For bug fixes:
 
 ```bash
-$ git flow bugfix start cleanup-idempotent
+$ git switch -c fix/issue-description main
 # … make changes …
-$ git flow bugfix finish cleanup-idempotent
+$ git add . && git commit -m "fix(scope): description of fix"
+$ git push origin fix/issue-description
 ```
 
 ## 5. Best Practices
@@ -199,4 +201,4 @@ $ git flow bugfix finish cleanup-idempotent
 | Create a plan            | Designer  | `@designer Design a caching layer for Canvas API` |
 | Write code               | Fixer     | `@fixer Implement the caching layer`              |
 | Commit changes           | –         | `git commit -m "feat(api): add caching layer"`    |
-| Start a feature branch   | –         | `git flow feat start api-caching`                 |
+| Start a feature branch   | –         | `git switch -c feat/api-caching main`             |

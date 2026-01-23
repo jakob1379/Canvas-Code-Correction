@@ -124,8 +124,9 @@ Before deploying grader tests, ensure you have:
    blocks.
 5. **`uv`** – installed and the project dependencies resolved (`uv sync`).
 
-!!! tip Export `PREFECT_API_URL`, `PREFECT_API_KEY`, and Canvas credentials
-before running CLI commands, or update your Prefect profile to include them.
+!!! tip
+    Export `PREFECT_API_URL`, `PREFECT_API_KEY`, and Canvas credentials before running CLI commands,
+    or update your Prefect profile to include them.
 
 ## 1. Local Development with RustFS
 
@@ -210,9 +211,9 @@ $ docker build -t jakob1379/canvas-grader:latest containers/grader
 $ docker push jakob1379/canvas-grader:latest
 ```
 
-!!! note The image tag must be accessible from wherever the Prefect worker runs.
-For private registries, ensure the worker environment has the necessary
-credentials.
+!!! note
+    The image tag must be accessible from wherever the Prefect worker runs.  For private registries,
+    ensure the worker environment has the necessary credentials.
 
 ## 3. Configure Prefect Blocks
 

@@ -122,8 +122,9 @@ script is invoked with a predefined **workspace layout** and a set of
 | `CCC_POINTS_FILE`   | `/workspace/points.txt`   | Path for the point(s) awarded (one value per line).    |
 | `CCC_COMMENTS_FILE` | `/workspace/comments.txt` | Path for the plain‑text feedback shown to the student. |
 
-!!! note The container is ephemeral. Your grader should not rely on any state
-from previous submissions.
+!!! note
+    The container is ephemeral. Your grader should not rely on any state
+    from previous submissions.
 
 ## Writing Your Own Grader
 

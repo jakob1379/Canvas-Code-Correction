@@ -47,7 +47,7 @@ project repository.
 
 ## Contributing
 
-Contributions target the `dev` branch via focused pull requests. **Every change
+Contributions target the `main` branch via focused pull requests. **Every change
 must be accompanied by updated documentation** in this site.
 
 Before you start:
@@ -63,6 +63,8 @@ Before you start:
 
 For small fixes (typos, broken links) you can submit a PR directly.
 
-!!! note The project uses `git flow`. Start a new feature with
-`git flow feat start <feature-name>` and finish it with
-`git flow feat finish <feature-name>`.
+!!! note
+    The project uses simple feature branching. Start a new feature with
+    `git switch -c feat/<feature-name> main` and create a pull request against
+    `main`. Follow conventional commit naming (feat/, fix/, docs/, etc.) for branch
+    names.

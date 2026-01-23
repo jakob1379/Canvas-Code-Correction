@@ -42,7 +42,7 @@ repos:
   # Python linting and formatting with Ruff
   - repo: https://github.com/astral-sh/ruff-pre-commit
     # Ruff version.
-    rev: v0.14.13
+    rev: v0.14.14
     hooks:
       # Run the linter.
       - id: ruff-check
@@ -52,10 +52,10 @@ repos:
 
   # Formatting for various file types with Prettier
   - repo: https://github.com/rbubley/mirrors-prettier  # Using rbubley mirror
-    rev: v3.8.0
+    rev: v3.8.1
     hooks:
       - id: prettier
-        types_or: [markdown, html, css, scss, javascript, json]
+        types_or: [html, css, scss, javascript, json]
         args: [--prose-wrap=always]  # Wrap markdown prose
         additional_dependencies:
           - prettier@3.2.4  # Pin Prettier version
@@ -106,7 +106,7 @@ repos:
 
   # check for code insecurities
   - repo: https://github.com/PyCQA/bandit
-    rev: 1.9.2
+    rev: 1.9.3
     hooks:
       - id: bandit
         args: [-c, pyproject.toml]  # Example: Configure via pyproject.toml
@@ -122,14 +122,10 @@ repos:
 
   # conventional commit messages. Allows for automated changelogs and versioning based on commits
   - repo: https://github.com/commitizen-tools/commitizen
-    rev: v4.11.6
+    rev: v4.12.1
     hooks:
       - id: commitizen
         stages: [commit-msg]
-      - id: commitizen-branch  # Optional: Check branch name format
-        stages: [pre-push]
-        args: [--rev-range, origin/main..HEAD]  # Example: Check against main branch
-
   # Pyrefly static type checking
   - repo: local
     hooks:

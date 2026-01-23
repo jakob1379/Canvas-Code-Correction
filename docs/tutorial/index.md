@@ -58,7 +58,7 @@ You will create each piece in the following pages.
 First, ensure you have the prerequisites ready. Head to
 [Prerequisites](./02-prerequisites.md) to check your setup.
 
-!!! note "Platform Operators" Deploying and operating the CCC platform is
-handled by **platform operators**. After you create your work package, they will
-configure your course, set up scheduling, and monitor results. See the
-**Platform Setup** section for operator documentation.
+!!! note "Platform Operators"
+    Deploying and operating the CCC platform is handled by **platform operators**. After you create
+    your work package, they will configure your course, set up scheduling, and monitor results. See
+    the **Platform Setup** section for operator documentation.

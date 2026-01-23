@@ -32,9 +32,9 @@ operator.
 8. **Copy the token immediately** – you won’t be able to see it again. Store it
    in a secure location (password manager, encrypted note, etc.).
 
-!!! note "Screenshot guidance" After clicking **New Access Token**, you’ll see a
-form with “Purpose” and “Expires” fields. The generated token appears as a long
-string of letters and numbers once you submit the form.
+!!! note "Screenshot guidance"
+    After clicking **New Access Token**, you’ll see a form with “Purpose” and “Expires” fields. The
+    generated token appears as a long string of letters and numbers once you submit the form.
 
 ### What to do with the token
 
@@ -69,10 +69,10 @@ Docker Desktop installer for your operating system.
 
 **Docker's convenience script (for testing only)**
 
-!!! warning "Security Note" Piping `curl` directly to `sh` is generally unsafe.
-Docker's convenience script is official, but you should always inspect scripts
-from the internet before running them. This method is **not recommended for
-production environments**.
+!!! warning
+    "Security Note" Piping `curl` directly to `sh` is generally unsafe.  Docker's convenience script
+    is official, but you should always inspect scripts from the internet before running them. This
+    method is **not recommended for production environments**.
 
 ```bash
 curl -fsSL https://get.docker.com | bash

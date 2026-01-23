@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file. See
 [standard-version](https://github.com/conventional-changelog/standard-version)
 for commit guidelines.
 
-!!! note This changelog documents the legacy v1.x releases. For the v2 rewrite
+**Note:** This changelog documents the legacy v1.x releases. For the v2 rewrite
 and current development, see the
 [project roadmap](docs/current-development/01-roadmap.md) and
 [migration plan](docs/current-development/02-phase-2-migration-plan.md).
