@@ -55,17 +55,15 @@ jobs:
       - name: Generate HTML coverage report
         run: uv run coverage html --data-file=.coverage
 
-      # Cache coverage reports to avoid duplicate test runs in deploy-docs workflow
-      - name: Cache coverage reports
-        uses: actions/cache@v4
+      # Upload coverage artifacts for deploy-docs workflow (short retention)
+      - name: Upload coverage artifacts
+        uses: actions/upload-artifact@v4
         with:
+          name: coverage-reports
           path: |
             coverage.json
-            htmlcov
-          key: coverage-${{ runner.os }}-${{ hashFiles('src/**', 'tests/**', 'pyproject.toml',
-            'uv.lock') }}
-          restore-keys: |
-            coverage-${{ runner.os }}-
+            htmlcov/
+          retention-days: 1
       - name: Run integration tests (requires Canvas credentials)
         if: env.CANVAS_API_TOKEN != ''
         run: |

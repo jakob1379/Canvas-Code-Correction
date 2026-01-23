@@ -1,18 +1,12 @@
 ---
 name: Deploy Documentation
 on:
-  push:
-    branches: [main]
-    paths:
-      - docs/**
-      - zensical.toml
-      - pyproject.toml
-      - .github/workflows/deploy-docs.yml
-      - docs/stylesheets/**
-      - docs/assets/**
-      - src/**
-      - tests/**
-      - scripts/**
+  workflow_run:
+    workflows: ["Test"]
+    types:
+      - completed
+    branches:
+      - main
 permissions:
   contents: read
   pages: write
@@ -23,9 +17,14 @@ jobs:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
+    # Only deploy if the test workflow succeeded
+    if: github.event.workflow_run.conclusion == 'success'
     steps:
       - uses: actions/configure-pages@v5
       - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.workflow_run.head_sha }}
       - name: Install uv
         uses: astral-sh/setup-uv@v4
         with:
@@ -34,28 +33,35 @@ jobs:
       - name: Install dependencies
         run: uv sync --all-groups
 
-      # Restore cached coverage reports to avoid duplicate test runs
-      - name: Restore coverage reports cache
-        id: coverage-cache
-        uses: actions/cache@v4
+      # Download coverage artifacts from the test workflow
+      - name: Download coverage artifacts
+        uses: actions/download-artifact@v4
         with:
-          path: |
-            coverage.json
-            htmlcov
-          key: coverage-${{ runner.os }}-${{ hashFiles('src/**', 'tests/**', 'pyproject.toml',
-            'uv.lock') }}
-          restore-keys: |
-            coverage-${{ runner.os }}-
-      - name: Run tests with coverage
-        if: steps.coverage-cache.outputs.cache-hit != 'true'
-        run: |
-          uv run pytest \
-            --cov=src/canvas_code_correction \
-            --cov-report=json:coverage.json \
-            --cov-report=html:htmlcov \
-            --cov-report=term-missing \
-            -m "not integration and not e2e"
+          name: coverage-reports
+          run-id: ${{ github.event.workflow_run.id }}
+
+      # Check if any relevant files changed in the commit that triggered the test workflow
+      - name: Check changed files
+        uses: dorny/paths-filter@v3
+        id: check_paths
+        with:
+          base: main
+          ref: ${{ github.event.workflow_run.head_sha }}
+          token: ${{ github.token }}
+          filters: |
+            deploy:
+              - 'docs/**'
+              - 'zensical.toml'
+              - 'pyproject.toml'
+              - '.github/workflows/deploy-docs.yml'
+              - 'docs/stylesheets/**'
+              - 'docs/assets/**'
+              - 'src/**'
+              - 'tests/**'
+              - 'scripts/**'
+
       - name: Generate coverage badge
+        if: steps.check_paths.outputs.deploy == 'true'
         run: |
           mkdir -p site/badges .github/badges
           uv run python scripts/generate_coverage_badge.py \
@@ -63,15 +69,23 @@ jobs:
             --output site/badges/coverage.json \
             --verbose
           cp site/badges/coverage.json .github/badges/coverage.json
+
       - name: Move coverage reports to site directory
+        if: steps.check_paths.outputs.deploy == 'true'
         run: |
           mkdir -p site
           cp -r htmlcov site/htmlcov
           cp coverage.json site/coverage.json
+
       - name: Build documentation
+        if: steps.check_paths.outputs.deploy == 'true'
         run: uv run zensical build --strict --clean
+
       - uses: actions/upload-pages-artifact@v4
+        if: steps.check_paths.outputs.deploy == 'true'
         with:
           path: site
+
       - uses: actions/deploy-pages@v4
+        if: steps.check_paths.outputs.deploy == 'true'
         id: deployment
