@@ -61,11 +61,11 @@ def test_download_submission_files(tmp_path: Path, settings: Settings) -> None:
 
     result = download_submission_files.fn(resources, payload, tmp_path)
 
-    course.get_assignment.assert_called_once_with(5)
-    assignment.get_submission.assert_called_once_with(7)
-    resources.canvas.get_file.assert_called_once_with(101)
+    course.get_assignment.assert_called_once_with(5)  # type: ignore[attr-defined]
+    assignment.get_submission.assert_called_once_with(7)  # type: ignore[attr-defined]
+    resources.canvas.get_file.assert_called_once_with(101)  # type: ignore[attr-defined]
     expected_path = tmp_path / "code.py"
-    file_obj.download.assert_called_once_with(expected_path.as_posix())
+    file_obj.download.assert_called_once_with(expected_path.as_posix())  # type: ignore[attr-defined]
     assert result == [expected_path]
 
 
@@ -116,4 +116,4 @@ def test_download_submission_files_no_attachments(tmp_path: Path, settings: Sett
     result = download_submission_files.fn(resources, payload, tmp_path)
 
     assert result == []
-    resources.canvas.get_file.assert_not_called()
+    resources.canvas.get_file.assert_not_called()  # type: ignore[attr-defined]
