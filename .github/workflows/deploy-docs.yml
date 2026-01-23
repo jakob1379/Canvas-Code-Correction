@@ -33,7 +33,21 @@ jobs:
           python-version: '3.13'
       - name: Install dependencies
         run: uv sync --all-groups
+
+      # Restore cached coverage reports to avoid duplicate test runs
+      - name: Restore coverage reports cache
+        id: coverage-cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            coverage.json
+            htmlcov
+          key: coverage-${{ runner.os }}-${{ hashFiles('src/**', 'tests/**', 'pyproject.toml', 'uv.lock') }}
+          restore-keys: |
+            coverage-${{ runner.os }}-
+
       - name: Run tests with coverage
+        if: steps.coverage-cache.outputs.cache-hit != 'true'
         run: |
           uv run pytest \
             --cov=src/canvas_code_correction \
