@@ -28,7 +28,7 @@ by default.
 - **Grader Executor** – Runs the instructor‑provided command inside a
   Prefect‑managed worker container using a dedicated workspace. No nested Docker
   is required.
-- **Grader Configuration Blocks** – Prefect JSON blocks store course‑specific
+- **Grader Configuration Blocks** – Prefect configuration blocks store course‑specific
   grader images, resource limits, per‑assignment commands, and environment
   variables. Each course provisions a dedicated Prefect Docker work pool bound
   to its grader image.
