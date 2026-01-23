@@ -66,6 +66,15 @@ jobs:
           name: coverage-reports
           run-id: ${{ github.event.workflow_run.id }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Prepare coverage reports in docs directory
+        run: |
+          # Copy htmlcov to docs/ so zensical will include it in the build
+          rm -rf docs/htmlcov
+          cp -r htmlcov docs/htmlcov
+          # Ensure .gitignore is preserved to prevent committing coverage files
+          echo "*" > docs/htmlcov/.gitignore
+      - name: Build documentation
+        run: uv run zensical build --strict --clean
       - name: Generate coverage badge
         run: |
           mkdir -p site/badges .github/badges
@@ -74,13 +83,10 @@ jobs:
             --output site/badges/coverage.json \
             --verbose
           cp site/badges/coverage.json .github/badges/coverage.json
-      - name: Move coverage reports to site
+      - name: Copy coverage data to site
         run: |
-          mkdir -p site
-          cp -r htmlcov site/htmlcov
+          # Copy coverage.json to site for reference
           cp coverage.json site/coverage.json
-      - name: Build documentation
-        run: uv run zensical build --strict --clean
       - name: Create CNAME file for custom domain
         run: echo "ccc.jgalabs.dk" > site/CNAME
       - uses: actions/upload-pages-artifact@v4
