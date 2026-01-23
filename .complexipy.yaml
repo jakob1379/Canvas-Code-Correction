@@ -1,7 +1,0 @@
----
-# complexipy configuration
-max_cognitive_complexity: 50
-max_total_cognitive_complexity: 1000
-ignore:
-  - src/canvas_code_correction/collector.py
-  - src/canvas_code_correction/uploader.py
