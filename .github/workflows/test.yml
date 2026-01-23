@@ -55,7 +55,16 @@ jobs:
         run: uv run pytest tests/unit -v --strict-markers --cov=src/canvas_code_correction
           --cov-report=xml --cov-report=json:coverage.json --cov-report=term
       - name: Generate HTML coverage report
-        run: uv run coverage html --data-file=.coverage
+        run: |
+          if [ -f ".coverage" ]; then
+            uv run coverage html --data-file=.coverage
+          else
+            echo "Warning: .coverage file not found, skipping HTML report generation"
+            echo "List of files in current directory:"
+            ls -la
+          fi
+          # Ensure htmlcov directory exists even if empty
+          mkdir -p htmlcov
 
       # Upload coverage artifacts for deploy-docs workflow (short retention)
       - name: Upload coverage artifacts
@@ -65,7 +74,7 @@ jobs:
           path: |
             coverage.json
             htmlcov/
-          retention-days: 1
+          retention-days: 7
       - name: Run integration tests (requires Canvas credentials)
         if: env.CANVAS_API_TOKEN != ''
         run: |
