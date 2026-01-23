@@ -3,7 +3,9 @@
 from __future__ import annotations
 
 import shutil
+import stat
 from dataclasses import dataclass
+from pathlib import Path
 from typing import TYPE_CHECKING
 from uuid import uuid4
 
@@ -36,6 +38,42 @@ class WorkspaceConfig:
     run_id: str | None = None
 
 
+def _ensure_safe_directory(path: Path, mode: int = 0o700) -> None:
+    """Ensure directory exists with safe permissions.
+
+    Creates missing parent directories with the same safe mode.
+    Raises RuntimeError if path is a symlink or world-writable.
+    """
+    if path.exists():
+        st = path.stat()
+        if stat.S_ISLNK(st.st_mode):
+            raise RuntimeError(f"Directory {path} is a symlink")
+        if st.st_mode & stat.S_IWOTH:
+            raise RuntimeError(f"Directory {path} is world-writable")
+        # Directory exists and is safe
+        return
+
+    # Find the deepest existing ancestor
+    parents = []
+    current = path
+    while not current.exists():
+        parents.append(current)
+        current = current.parent
+        # Safety: avoid infinite loop (should not happen as root exists)
+        if current == current.parent:  # reached root
+            break
+
+    # Ensure existing ancestor is not a symlink
+    if current.exists():
+        st = current.stat()
+        if stat.S_ISLNK(st.st_mode):
+            raise RuntimeError(f"Parent directory {current} is a symlink")
+
+    # Create missing directories in reverse order (deepest to shallowest)
+    for missing in reversed(parents):
+        missing.mkdir(mode=mode)
+
+
 def prepare_workspace(
     config: WorkspaceConfig,
     submission_files: list[Path],
@@ -47,12 +85,13 @@ def prepare_workspace(
         / f"assignment-{config.assignment_id}"
         / f"submission-{config.assignment_id}-{config.submission_id}-{run_identifier}"
     )
+    _ensure_safe_directory(workspace_root)
 
     submission_dir = workspace_root / "submission"
     assets_dir = workspace_root / "assets"
 
-    submission_dir.mkdir(parents=True, exist_ok=False)
-    assets_dir.mkdir(parents=True, exist_ok=False)
+    _ensure_safe_directory(submission_dir)
+    _ensure_safe_directory(assets_dir)
 
     for file_path in submission_files:
         if not file_path.exists():

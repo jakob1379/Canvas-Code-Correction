@@ -35,7 +35,16 @@ class GraderSettings(BaseModel):
 class WorkspaceSettings(BaseModel):
     """Workspace directory settings."""
 
-    root: Path = Field(default_factory=lambda: Path("/tmp/ccc/workspaces"))  # noqa: S108 # nosec B108 # nosonar
+    root: Path = Field(
+        default_factory=lambda: Path("/tmp/ccc/workspaces"),  # noqa: S108
+        description=(
+            "Root directory for grading workspaces. "
+            "If placed under a world-writable parent (e.g., /tmp), "
+            "the system will enforce restrictive permissions (0o700). "
+            "Consider using a user-private location (e.g., ~/.ccc/workspaces) "
+            "in production."
+        ),
+    )  # nosec B108 # nosonar
 
 
 class WebhookSettings(BaseModel):
@@ -79,7 +88,7 @@ class Settings(BaseModel):
         workspace_root = (
             Path(block.workspace_root).expanduser()  # type: ignore[attr-defined]
             if block.workspace_root  # type: ignore[attr-defined]
-            else Path("/tmp/ccc/workspaces")  # noqa: S108 # nosec B108 # nosonar
+            else Path("/tmp/ccc/workspaces")  # noqa: S108 # nosec B108 # nosonar  # security: world-writable parent, permissions restricted
         )
         return cls(
             canvas=CanvasSettings(
