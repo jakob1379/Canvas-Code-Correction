@@ -2,9 +2,9 @@
 
 **Try It Now** (60 seconds)
 
-!!! note "Virtual Environment" All commands in this documentation assume you
-have activated the virtual environment created by `uv sync`. If you haven't
-activated it, prefix commands with `uv run`. To activate:
+!!! note "Virtual Environment"
+    All commands in this documentation assume you have activated the virtual environment created by
+    `uv sync`. If you haven't activated it, prefix commands with `uv run`. To activate:
 
     ```bash
     source .venv/bin/activate

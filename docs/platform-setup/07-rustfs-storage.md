@@ -1,7 +1,8 @@
 # RustFS Storage
 
-**Audience**: CCC platform operators **Prerequisites**: Docker installed, Python
-environment with `uv` (see [Project Setup](../project-setup.md))
+!!! note "Audience"
+    CCC platform operators **Prerequisites**: Docker installed, Python environment with `uv` (see
+    [Project Setup](../project-setup.md))
 
 **RustFS** is a lightweight S3‑compatible storage server that CCC can use for
 local development and testing. With RustFS you can emulate cloud storage on your
@@ -147,5 +148,5 @@ variables and re‑run `rustfs‑setup` (or create the Prefect block manually). 
 rest of CCC (course configuration, scheduling, and correction flows) remains
 unchanged.
 
-!!! note "Next Step" After setting up storage,
-[configure a course](01-configuring-course.md) to start scheduling corrections.
+!!! note "Next Step"
+    After setting up storage, [configure a course](01-configuring-course.md) to start scheduling corrections.

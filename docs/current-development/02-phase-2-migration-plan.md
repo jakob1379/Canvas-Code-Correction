@@ -4,8 +4,8 @@ This document is your actionable guide for migrating from the legacy bash+Python
 tooling to a Prefect‑based orchestration system. It provides step‑by‑step
 instructions, verification commands, and the current implementation status.
 
-!!! note "Before you start" Review the [project roadmap](01-roadmap.md) to
-understand the broader context.
+!!! note "Before you start"
+    Review the [project roadmap](01-roadmap.md) to understand the broader context.
 
 ## Migration Overview
 
@@ -66,8 +66,9 @@ steps to set up your test environment:
 4. **Add new fixtures dynamically** via the Canvas API; capture resulting IDs in
    `.env` for repeatability.
 
-!!! note "Important" The repository does **not** depend on static IMSCC exports.
-All test data is retrieved live from the Canvas API.
+!!! note "Important"
+    The repository does **not** depend on static IMSCC exports.  All test data is retrieved live
+    from the Canvas API.
 
 ## 3. Target Architecture (Prefect‑driven)
 

@@ -96,7 +96,7 @@ $ pytest tests/unit/test_core.py
 1. **Create a new branch** for your feature:
 
    ```bash
-   $ git switch -c feat/your-feature-name
+    $ git switch -c feat/your-feature-name main
    ```
 
 2. **Implement the feature** in the appropriate module. Follow the

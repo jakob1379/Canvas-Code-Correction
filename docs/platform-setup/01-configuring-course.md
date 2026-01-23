@@ -139,6 +139,6 @@ With a course configured, you can:
 4. **Deploy updated tests** –
    [Deploying tests to CCC](05-deploying-tests-to-ccc.md)
 
-!!! note The course block is now available to any Prefect flow that uses the
-`Course` block type. You can update its settings by running `configure-course`
-again with the same slug.
+!!! note
+    The course block is now available to any Prefect flow that uses the `Course` block type. You can
+    update its settings by running `configure-course` again with the same slug.

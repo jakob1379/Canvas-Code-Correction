@@ -1,7 +1,8 @@
 # Running Prefect Locally for Development
 
-!!! note "Audience" CCC developers and testers **Prerequisites**: Python 3.13+,
-Docker installed and running, CCC installed (`uv install -e .`)
+!!! note "Audience"
+    CCC developers and testers **Prerequisites**: Python 3.13+,
+    Docker installed and running, CCC installed (`uv install -e .`)
 
 **Prefect Orion** is the local server that orchestrates correction workflows
 when you are developing or testing CCC. This guide shows you how to start Orion,
@@ -99,8 +100,9 @@ Starting Prefect server...
 Server started on http://127.0.0.1:4200
 ```
 
-!!! note The server runs in the foreground. Keep this terminal open. You can
-stop it with `Ctrl+C`.
+!!! note
+    The server runs in the foreground. Keep this terminal open. You can
+    stop it with `Ctrl+C`.
 
 ### Verify the server
 
@@ -127,9 +129,9 @@ Created work pool 'canvas-corrections' (type: process)
 
 The pool is now visible in the Prefect UI under **Work Pools**.
 
-!!! note "Why canvas-corrections?" This is the default queue name used by the
-CCC CLI when you run `ccc run‑once`. You can use any name, but make sure your
-deployment targets the same pool.
+!!! note "Why canvas-corrections?"
+    This is the default queue name used by the CCC CLI when you run `ccc run‑once`.
+    You can use any name, but make sure your deployment targets the same pool.
 
 ## Step 3: Start a Worker
 
@@ -225,10 +227,11 @@ If you have not configured a course yet, follow
 [Configuring a Course](01-configuring-course.md). The blocks are stored in the
 local Orion server's SQLite database, so they persist across server restarts.
 
-!!! note "Important" When you run `ccc run‑once` locally, you do **not** need to
-set `PREFECT_API_KEY` (the local server does not require authentication).
-However, you still need the blocks that hold your Canvas token and S3 bucket
-details.
+!!! note "Important"
+    When you run `ccc run‑once` locally, you do **not** need to
+    set `PREFECT_API_KEY` (the local server does not require authentication).
+    However, you still need the blocks that hold your Canvas token and S3 bucket
+    details.
 
 ## Troubleshooting
 
@@ -267,7 +270,7 @@ Your local Prefect environment is ready for development. Next, you can:
 - **Monitor runs and logs** in the Prefect UI – see
   [Monitoring Results](04-monitoring-results.md).
 
-!!! tip When you are done testing, stop the Orion server (`Ctrl+C` in the first
-terminal) and the worker (`Ctrl+C` in the second terminal). The local SQLite
-database (`~/.prefect/orion.db`) retains blocks and run history for the next
-session.
+!!! tip
+    When you are done testing, stop the Orion server (`Ctrl+C` in the first terminal) and the worker
+    (`Ctrl+C` in the second terminal). The local SQLite database (`~/.prefect/orion.db`) retains
+    blocks and run history for the next session.

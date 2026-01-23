@@ -118,9 +118,9 @@ example.
 | `working_dir`                           | `CCC_WORKING_DIR`                                     | Root directory for temporary run workspaces.                      | `/tmp/ccc/runs`                          | `"/var/lib/ccc/workspaces"`                  |
 | `workspace.root`                        | `CCC_WORKSPACE_ROOT`                                  | Root directory for persistent course workspaces.                  | `/tmp/ccc/workspaces`                    | `"/var/lib/ccc/workspaces"`                  |
 
-!!! note The `webhook` section (secret, deployment name, rate limiting) is also
-configurable via the same sources. See the `Settings` model in
-`canvas_code_correction.config` for all available fields.
+!!! note
+    The `webhook` section (secret, deployment name, rate limiting) is also configurable via the same
+    sources. See the `Settings` model in `canvas_code_correction.config` for all available fields.
 
 ## RustFS Integration (Local Development)
 

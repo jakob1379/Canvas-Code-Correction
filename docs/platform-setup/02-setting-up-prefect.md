@@ -1,8 +1,8 @@
 # Setting up Prefect
 
-!!! note "Audience" CCC platform operators **Prerequisites**: Course configured
-via `ccc configure-course` (see
-[Configuring a Course](01-configuring-course.md))
+!!! note "Audience"
+    CCC platform operators **Prerequisites**: Course configured via `ccc configure-course` (see
+    [Configuring a Course](01-configuring-course.md))
 
 **Prefect** orchestrates the correction workflows in CCC. After you configure a
 course, you need to create a **Prefect deployment** (the definition of how to
@@ -170,5 +170,6 @@ Your Prefect deployment and worker are now ready. Next, you can:
   ([Monitoring results](04-monitoring-results.md))
 - **Scale workers** – add more workers to the same pool for higher throughput
 
-!!! tip Keep the worker terminal open while testing. For production, run workers
-as systemd services or containerized processes.
+!!! tip
+    Keep the worker terminal open while testing. For production, run workers as systemd services or
+    containerized processes.

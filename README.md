@@ -1,6 +1,9 @@
 <p align="center">
+[![Python 3.13](https://img.shields.io/badge/python-3.13-blue.svg)](https://www.python.org/downloads/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Tests](https://github.com/jakob1379/canvas-code-correction/actions/workflows/test.yml/badge.svg)](https://github.com/jakob1379/canvas-code-correction/actions)
+[![Coverage](https://img.shields.io/endpoint?url=https://smokeshow.helpmanual.io/badge/jakob1379/canvas-code-correction/coverage.json)](https://smokeshow.helpmanual.io/jakob1379/canvas-code-correction/)
 [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/jakob1379/canvas-code-correction)
-[![Coverage](https://img.shields.io/badge/Pytest--cov-%233F51B5?style=for-the-badge&logo=pytest&logoColor=white&labelColor=black)](https://smokeshow.helpmanual.io/org/project/branch)
 </p>
 
 # Canvas Code Correction
@@ -14,7 +17,7 @@ Copy and run these commands to install CCC and verify it works:
 
 ```bash
 # Clone the repository
-git clone https://github.com/<your-org>/canvas-code-correction.git
+git clone https://github.com/jakob1379/canvas-code-correction.git
 cd canvas-code-correction
 
 # Install dependencies with uv (Python 3.13+)
@@ -27,7 +30,7 @@ source .venv/bin/activate
 ccc --help
 ```
 
-!!! note All commands assume you have activated the virtual environment created
+**Note:** All commands assume you have activated the virtual environment created
 by `uv sync`. If you haven't activated it, prefix commands with `uv run`. This
 example shows activation via `source .venv/bin/activate`; you can also use
 `uv shell` or prefix individual commands with `uv run`.
@@ -171,7 +174,7 @@ through the Prefect UI.
 1. Clone the repository and enter it:
 
    ```bash
-   git clone https://github.com/<your-org>/canvas-code-correction.git
+   git clone https://github.com/jakob1379/canvas-code-correction.git
    cd canvas-code-correction
    ```
 
@@ -200,7 +203,7 @@ through the Prefect UI.
 
 4. Verify the CLI is working:
 
-   !!! note If you haven't activated the virtual environment created by
+   **Note:** If you haven't activated the virtual environment created by
    `uv sync`, prefix the command with `uv run` or activate it first with
    `source .venv/bin/activate`.
 

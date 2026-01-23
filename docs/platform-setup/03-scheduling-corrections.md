@@ -1,7 +1,8 @@
 # Scheduling Corrections
 
-!!! note "Audience" CCC platform operators **Prerequisites**: Prefect deployment
-created and worker running (see [Setting up Prefect](02-setting-up-prefect.md))
+!!! note "Audience"
+    CCC platform operators **Prerequisites**: Prefect deployment created and worker running (see
+    [Setting up Prefect](02-setting-up-prefect.md))
 
 ## Try It Now (60 seconds)
 
@@ -93,8 +94,8 @@ $ prefect deployment build \
 - Future flow runs create automatically at the specified times.
 - The worker picks up each run and executes the correction flow.
 
-!!! tip To remove a schedule, run the same command **without** the `--schedule`
-flag.
+!!! tip
+    To remove a schedule, run the same command **without** the `--schedule` flag.
 
 ### View and edit schedules in the Prefect UI
 
@@ -126,9 +127,9 @@ Prefect Cloud automatically provides a webhook endpoint for each deployment.
 3. Copy the **URL** shown (looks like
    `https://api.prefect.cloud/api/accounts/.../webhooks/...`).
 
-!!! note If you run a self‑hosted Prefect server, consult the
-[Prefect webhook documentation](https://docs.prefect.io/concepts/webhooks/) for
-endpoint configuration.
+!!! note
+    If you run a self‑hosted Prefect server, consult the [Prefect webhook documentation](https://docs.prefect.io/concepts/webhooks/) for
+    endpoint configuration.
 
 #### 2. Add the webhook in Canvas
 

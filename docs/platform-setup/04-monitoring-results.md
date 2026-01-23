@@ -1,7 +1,8 @@
 # Monitoring Results
 
-!!! note "Audience" CCC platform operators **Prerequisites**: Corrections
-running via Prefect (see [Scheduling corrections](03-scheduling-corrections.md))
+!!! note "Audience"
+    CCC platform operators **Prerequisites**: Corrections running via Prefect (see [Scheduling
+    corrections](03-scheduling-corrections.md))
 
 **CCC** uploads feedback and grades to Canvas after each correction run. You can
 monitor the entire process through the **Prefect dashboard** and verify the
@@ -295,6 +296,6 @@ Your correction pipeline is now fully observable. Next, you can:
 - **Review advanced topics** – see the Administration and Development sections
   for custom integrations
 
-!!! tip Keep the Prefect UI open during peak submission periods to catch
-failures early. Use the troubleshooting checklist above to resolve common issues
-in 2–5 minutes.
+!!! tip
+    Keep the Prefect UI open during peak submission periods to catch failures early. Use the
+    troubleshooting checklist above to resolve common issues in 2–5 minutes.
