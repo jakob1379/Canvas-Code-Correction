@@ -5,13 +5,11 @@ on:
     workflows: [Test]
     types: [completed]
     branches: [main]
-
 permissions:
   contents: read
   actions: read
   pages: write
   id-token: write
-
 jobs:
   check:
     runs-on: ubuntu-latest
@@ -23,7 +21,6 @@ jobs:
         with:
           fetch-depth: 0
           ref: ${{ github.event.workflow_run.head_sha }}
-
       - name: Check changed files
         id: filter
         run: |
@@ -41,7 +38,6 @@ jobs:
           else
             echo "deploy=false" >> "$GITHUB_OUTPUT"
           fi
-
   deploy:
     needs: check
     if: needs.check.outputs.deploy == 'true'
@@ -54,25 +50,20 @@ jobs:
         with:
           fetch-depth: 0
           ref: ${{ github.event.workflow_run.head_sha }}
-
       - uses: actions/configure-pages@v5
-
       - name: Install uv
         uses: astral-sh/setup-uv@v7
         with:
           enable-cache: true
           python-version: '3.13'
-
       - name: Install dependencies
         run: uv sync --all-groups
-
       - name: Download coverage artifacts
         uses: actions/download-artifact@v7
         with:
           name: coverage-reports
           run-id: ${{ github.event.workflow_run.id }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
-
       - name: Generate coverage badge
         run: |
           mkdir -p site/badges .github/badges
@@ -81,19 +72,15 @@ jobs:
             --output site/badges/coverage.json \
             --verbose
           cp site/badges/coverage.json .github/badges/coverage.json
-
       - name: Move coverage reports to site
         run: |
           mkdir -p site
           cp -r htmlcov site/htmlcov
           cp coverage.json site/coverage.json
-
       - name: Build documentation
         run: uv run zensical build --strict --clean
-
       - uses: actions/upload-pages-artifact@v4
         with:
           path: site
-
       - uses: actions/deploy-pages@v4
         id: deployment
