@@ -5,24 +5,54 @@ on:
     workflows: [Test]
     types: [completed]
     branches: [main]
-permissions:
-  contents: read
-  pages: write
-  id-token: write
 jobs:
-  deploy:
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
+  check:
     runs-on: ubuntu-latest
-    # Only deploy if the test workflow succeeded
     if: github.event.workflow_run.conclusion == 'success'
+    outputs:
+      deploy: ${{ steps.filter.outputs.deploy }}
+    permissions:
+      contents: read
     steps:
-      - uses: actions/configure-pages@v5
       - uses: actions/checkout@v6
         with:
           fetch-depth: 0
           ref: ${{ github.event.workflow_run.head_sha }}
+      - name: Check changed files
+        id: filter
+        run: |
+          sha="${{ github.event.workflow_run.head_sha }}"
+          parent=$(git rev-parse "${sha}^" 2>/dev/null || echo "")
+          if [ -z "$parent" ]; then
+            echo "deploy=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          if git diff --name-only "$parent" "$sha" -- \
+              docs src tests scripts \
+              zensical.toml pyproject.toml \
+              .github/workflows/deploy-docs.yml | grep -q .; then
+            echo "deploy=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "deploy=false" >> "$GITHUB_OUTPUT"
+          fi
+  deploy:
+    needs: check
+    if: needs.check.outputs.deploy == 'true'
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    permissions:
+      contents: read
+      actions: read
+      pages: write
+      id-token: write
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.workflow_run.head_sha }}
+      - uses: actions/configure-pages@v5
       - name: Install uv
         uses: astral-sh/setup-uv@v7
         with:
@@ -30,35 +60,13 @@ jobs:
           python-version: '3.13'
       - name: Install dependencies
         run: uv sync --all-groups
-
-      # Download coverage artifacts from the test workflow
       - name: Download coverage artifacts
         uses: actions/download-artifact@v7
         with:
           name: coverage-reports
           run-id: ${{ github.event.workflow_run.id }}
-
-      # Check if any relevant files changed in the commit that triggered the test workflow
-      - name: Check changed files
-        uses: dorny/paths-filter@v3
-        id: check_paths
-        with:
-          base: main
-          ref: ${{ github.event.workflow_run.head_sha }}
-          token: ${{ github.token }}
-          filters: |
-            deploy:
-              - 'docs/**'
-              - 'zensical.toml'
-              - 'pyproject.toml'
-              - '.github/workflows/deploy-docs.yml'
-              - 'docs/stylesheets/**'
-              - 'docs/assets/**'
-              - 'src/**'
-              - 'tests/**'
-              - 'scripts/**'
+          github-token: ${{ secrets.GITHUB_TOKEN }}
       - name: Generate coverage badge
-        if: steps.check_paths.outputs.deploy == 'true'
         run: |
           mkdir -p site/badges .github/badges
           uv run python scripts/generate_coverage_badge.py \
@@ -66,19 +74,15 @@ jobs:
             --output site/badges/coverage.json \
             --verbose
           cp site/badges/coverage.json .github/badges/coverage.json
-      - name: Move coverage reports to site directory
-        if: steps.check_paths.outputs.deploy == 'true'
+      - name: Move coverage reports to site
         run: |
           mkdir -p site
           cp -r htmlcov site/htmlcov
           cp coverage.json site/coverage.json
       - name: Build documentation
-        if: steps.check_paths.outputs.deploy == 'true'
         run: uv run zensical build --strict --clean
       - uses: actions/upload-pages-artifact@v4
-        if: steps.check_paths.outputs.deploy == 'true'
         with:
           path: site
       - uses: actions/deploy-pages@v4
-        if: steps.check_paths.outputs.deploy == 'true'
         id: deployment
