@@ -7,7 +7,7 @@ import importlib.metadata
 import json
 import tempfile
 from pathlib import Path
-from typing import Annotated
+from typing import Annotated, Optional
 
 import typer
 import uvicorn
@@ -32,21 +32,18 @@ console = Console()
 @app.command()
 def run_once(
     assignment_id: Annotated[int, typer.Argument(help="Canvas assignment ID")],
-    submission_id: Annotated[
-        int | None,
-        typer.Option(None, help="Specific submission ID (default: all submissions)"),
-    ] = None,
+    submission_id: Optional[int] = typer.Option(
+        None, "--submission-id", help="Specific submission ID (default: all submissions)"
+    ),
     course_block: Annotated[
         str,
         typer.Option("--course", "-c", help="Prefect course configuration block name"),
     ] = "default-course",
-    download_dir: Annotated[
-        Path | None,
-        typer.Option(
-            None,
-            help="Directory for downloaded submissions (default: temporary directory)",
-        ),
-    ] = None,
+    download_dir: Optional[Path] = typer.Option(
+        None,
+        "--download-dir",
+        help="Directory for downloaded submissions (default: temporary directory)",
+    ),
     dry_run: Annotated[  # noqa: FBT002
         bool,
         typer.Option("--dry-run", help="Skip actual grading and upload"),
