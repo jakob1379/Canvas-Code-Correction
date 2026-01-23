@@ -339,22 +339,27 @@ dependencies = [
     { name = "uvicorn", extra = ["standard"] },
 ]
 
+[package.optional-dependencies]
+docs = [
+    { name = "zensical" },
+]
+test = [
+    { name = "pytest" },
+    { name = "pytest-cov" },
+    { name = "pytest-datadir" },
+    { name = "pytest-xdist" },
+]
+
 [package.dev-dependencies]
 dev = [
+    { name = "canvas-code-correction", extra = ["docs", "test"] },
     { name = "commitizen" },
     { name = "ipython" },
     { name = "poethepoet" },
     { name = "prek" },
     { name = "pyrefly" },
-    { name = "pytest" },
-    { name = "pytest-cov" },
-    { name = "pytest-datadir" },
-    { name = "pytest-xdist" },
     { name = "ruff" },
     { name = "smokeshow" },
-]
-docs = [
-    { name = "zensical" },
 ]
 
 [package.metadata]
@@ -369,26 +374,28 @@ requires-dist = [
     { name = "prefect-aws", specifier = ">=0.7.4" },
     { name = "pydantic", specifier = ">=2.12.5" },
     { name = "pyjwt", specifier = ">=2.10.0" },
+    { name = "pytest", marker = "extra == 'test'", specifier = ">=9.0.2" },
+    { name = "pytest-cov", marker = "extra == 'test'", specifier = ">=7.0.0" },
+    { name = "pytest-datadir", marker = "extra == 'test'", specifier = ">=1.8.0" },
+    { name = "pytest-xdist", marker = "extra == 'test'", specifier = ">=3.8.0" },
     { name = "python-dotenv", specifier = ">=1.2.1" },
     { name = "typer", specifier = ">=0.20.1" },
     { name = "uvicorn", extras = ["standard"], specifier = ">=0.40.0" },
+    { name = "zensical", marker = "extra == 'docs'", specifier = ">=0.0.16" },
 ]
+provides-extras = ["docs", "test"]
 
 [package.metadata.requires-dev]
 dev = [
+    { name = "canvas-code-correction", extras = ["test", "docs"] },
     { name = "commitizen", specifier = ">=4.11.6" },
     { name = "ipython", specifier = ">=9.9.0" },
     { name = "poethepoet", specifier = ">=0.40.0" },
     { name = "prek", specifier = ">=0.2.29" },
     { name = "pyrefly", specifier = ">=0.48.2" },
-    { name = "pytest", specifier = ">=9.0.2" },
-    { name = "pytest-cov", specifier = ">=7.0.0" },
-    { name = "pytest-datadir", specifier = ">=1.8.0" },
-    { name = "pytest-xdist", specifier = ">=3.8.0" },
     { name = "ruff", specifier = ">=0.14.13" },
     { name = "smokeshow", specifier = ">=0.5.0" },
 ]
-docs = [{ name = "zensical", specifier = ">=0.0.16" }]
 
 [[package]]
 name = "canvasapi"
