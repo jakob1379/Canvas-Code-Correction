@@ -63,7 +63,6 @@ Before you start:
 
 For small fixes (typos, broken links) you can submit a PR directly.
 
-!!! note
-    The project uses `git flow`. Start a new feature with
-    `git flow feat start <feature-name>` and finish it with
-    `git flow feat finish <feature-name>`.
+!!! note The project uses `git flow`. Start a new feature with
+`git flow feat start <feature-name>` and finish it with
+`git flow feat finish <feature-name>`.
