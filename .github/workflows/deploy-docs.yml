@@ -2,11 +2,9 @@
 name: Deploy Documentation
 on:
   workflow_run:
-    workflows: ["Test"]
-    types:
-      - completed
-    branches:
-      - main
+    workflows: [Test]
+    types: [completed]
+    branches: [main]
 permissions:
   contents: read
   pages: write
@@ -59,7 +57,6 @@ jobs:
               - 'src/**'
               - 'tests/**'
               - 'scripts/**'
-
       - name: Generate coverage badge
         if: steps.check_paths.outputs.deploy == 'true'
         run: |
@@ -69,23 +66,19 @@ jobs:
             --output site/badges/coverage.json \
             --verbose
           cp site/badges/coverage.json .github/badges/coverage.json
-
       - name: Move coverage reports to site directory
         if: steps.check_paths.outputs.deploy == 'true'
         run: |
           mkdir -p site
           cp -r htmlcov site/htmlcov
           cp coverage.json site/coverage.json
-
       - name: Build documentation
         if: steps.check_paths.outputs.deploy == 'true'
         run: uv run zensical build --strict --clean
-
       - uses: actions/upload-pages-artifact@v4
         if: steps.check_paths.outputs.deploy == 'true'
         with:
           path: site
-
       - uses: actions/deploy-pages@v4
         if: steps.check_paths.outputs.deploy == 'true'
         id: deployment
