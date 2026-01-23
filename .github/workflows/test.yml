@@ -54,7 +54,6 @@ jobs:
           --cov-report=term
       - name: Generate HTML coverage report
         run: uv run coverage html --data-file=.coverage
-
       - name: Run integration tests (requires Canvas credentials)
         if: env.CANVAS_API_TOKEN != ''
         run: |
