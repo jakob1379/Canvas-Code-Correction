@@ -50,8 +50,8 @@ jobs:
           # Run setup script
           uv run python scripts/setup-rustfs.py
       - name: Run unit tests
-        run: uv run pytest tests/unit -v --strict-markers --cov=src/canvas_code_correction --cov-report=xml
-          --cov-report=json:coverage.json --cov-report=term
+        run: uv run pytest tests/unit -v --strict-markers --cov=src/canvas_code_correction
+          --cov-report=xml --cov-report=json:coverage.json --cov-report=term
       - name: Generate HTML coverage report
         run: uv run coverage html --data-file=.coverage
 
@@ -62,10 +62,10 @@ jobs:
           path: |
             coverage.json
             htmlcov
-          key: coverage-${{ runner.os }}-${{ hashFiles('src/**', 'tests/**', 'pyproject.toml', 'uv.lock') }}
+          key: coverage-${{ runner.os }}-${{ hashFiles('src/**', 'tests/**', 'pyproject.toml',
+            'uv.lock') }}
           restore-keys: |
             coverage-${{ runner.os }}-
-
       - name: Run integration tests (requires Canvas credentials)
         if: env.CANVAS_API_TOKEN != ''
         run: |
