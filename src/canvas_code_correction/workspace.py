@@ -2,12 +2,11 @@
 
 from __future__ import annotations
 
-import os
 import shutil
 import stat
 from dataclasses import dataclass
-from typing import TYPE_CHECKING
 from pathlib import Path
+from typing import TYPE_CHECKING
 from uuid import uuid4
 
 from prefect_aws.s3 import S3Bucket
