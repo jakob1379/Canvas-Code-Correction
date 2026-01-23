@@ -1,7 +1,7 @@
 ---
 services:
   postgres:
-    image: postgres:14
+    image: postgres:18
     environment:
       POSTGRES_USER: prefect
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
@@ -13,7 +13,7 @@ services:
       timeout: 5s
       retries: 5
   redis:
-    image: redis:7
+    image: redis:8
     volumes: [redis_data:/data]
     healthcheck:
       test: [CMD-SHELL, redis-cli ping]
