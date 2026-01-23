@@ -63,7 +63,7 @@ $ poe s3 ```
     ```
 
     ```
-    ✓ Prefect block 'course-config-cs101' saved
+    ✓ Prefect block 'ccc-course-cs101' saved
     ✓ Work pool 'course-work-pool-cs101' created
     Course 'cs101' configured successfully.
     ```
@@ -250,7 +250,7 @@ $ ccc configure-course cs101 \
   --s3-prefix graders/cs101/
 ```
 
-The command saves a Prefect JSON block named `course‑config‑<course‑slug>` (by
+The command saves a Prefect course configuration block named `ccc‑course‑<course‑slug>` (by
 default) and creates or reuses a work pool `course‑work‑pool‑<course‑slug>`.
 
 For more about course configuration, see

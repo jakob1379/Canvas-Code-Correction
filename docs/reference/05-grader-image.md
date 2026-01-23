@@ -203,7 +203,7 @@ CLI. The provisioning flow will:
 
 1. Create (or overwrite) the course work pool.
 2. Upload the grader asset folder to S3 via the configured Prefect S3 block.
-3. Persist a `course-config-<course_name>` JSON block referencing the Docker
+3. Persist a `ccc-course-<course_name>` course configuration block referencing the Docker
    image and latest asset materialization.
 
 ### Using the Provisioning Flow Directly
@@ -265,7 +265,7 @@ $ ccc configure-course my-course \
 
 ```output
 Created work pool 'course-work-pool-my-course'
-Saved configuration block 'course-config-my-course'
+Saved configuration block 'ccc-course-my-course'
 ```
 
 See the [Deploying Tests to CCC](../platform-setup/05-deploying-tests-to-ccc.md)
