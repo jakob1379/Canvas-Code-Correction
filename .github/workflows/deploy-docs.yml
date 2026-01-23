@@ -42,10 +42,10 @@ jobs:
           path: |
             coverage.json
             htmlcov
-          key: coverage-${{ runner.os }}-${{ hashFiles('src/**', 'tests/**', 'pyproject.toml', 'uv.lock') }}
+          key: coverage-${{ runner.os }}-${{ hashFiles('src/**', 'tests/**', 'pyproject.toml',
+            'uv.lock') }}
           restore-keys: |
             coverage-${{ runner.os }}-
-
       - name: Run tests with coverage
         if: steps.coverage-cache.outputs.cache-hit != 'true'
         run: |
