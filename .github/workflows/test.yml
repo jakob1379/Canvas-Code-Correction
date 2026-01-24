@@ -1,60 +1,59 @@
----
-name: Test
+name: "Test"
 on:
   push:
-    branches: [main]
+    branches: ["main"]
   pull_request:
-    branches: [main]
+    branches: ["main"]
 jobs:
   test:
-    runs-on: ubuntu-latest
+    runs-on: "ubuntu-latest"
     services:
       rustfs:
-        image: rustfs/rustfs:latest
+        image: "rustfs/rustfs:latest"
         env:
-          RUSTFS_ACCESS_KEY: rustfsadmin
-          RUSTFS_SECRET_KEY: rustfsadmin
+          RUSTFS_ACCESS_KEY: "rustfsadmin"
+          RUSTFS_SECRET_KEY: "rustfsadmin"
         options: >-
           --health-cmd="true"
           --health-interval=5s
           --health-timeout=10s
           --health-retries=20
-        ports: [9000:9000, 9001:9001]
+        ports: ["9000:9000", "9001:9001"]
     env:
-      RUSTFS_ENDPOINT: http://localhost:9000
-      RUSTFS_ACCESS_KEY: rustfsadmin
-      RUSTFS_SECRET_KEY: rustfsadmin
-      RUSTFS_BUCKET_NAME: test-assets
-      RUSTFS_PREFIX: dev
-      CANVAS_API_URL: https://canvas.instructure.com
+      RUSTFS_ENDPOINT: "http://localhost:9000"
+      RUSTFS_ACCESS_KEY: "rustfsadmin"
+      RUSTFS_SECRET_KEY: "rustfsadmin"
+      RUSTFS_BUCKET_NAME: "test-assets"
+      RUSTFS_PREFIX: "dev"
+      CANVAS_API_URL: "https://canvas.instructure.com"
       # CANVAS_API_TOKEN and CANVAS_COURSE_ID must be set as repository secrets
-      CANVAS_API_TOKEN: ${{ secrets.CANVAS_API_TOKEN }}
-      CANVAS_COURSE_ID: ${{ secrets.CANVAS_COURSE_ID }}
-      CANVAS_TEST_ASSIGNMENT_ID: ${{ secrets.CANVAS_TEST_ASSIGNMENT_ID }}
-      CCC_WORKSPACE_ROOT: /tmp/ccc/workspaces
-      PREFECT_API_URL: http://localhost:4200/api
+      CANVAS_API_TOKEN: "${{ secrets.CANVAS_API_TOKEN }}"
+      CANVAS_COURSE_ID: "${{ secrets.CANVAS_COURSE_ID }}"
+      CANVAS_TEST_ASSIGNMENT_ID: "${{ secrets.CANVAS_TEST_ASSIGNMENT_ID }}"
+      CCC_WORKSPACE_ROOT: "/tmp/ccc/workspaces"
+      PREFECT_API_URL: "http://localhost:4200/api"
     steps:
-      - uses: actions/checkout@v6
+      - uses: "actions/checkout@v6"
         with:
-          ref: ${{ github.event.pull_request.head.sha }}
-      - name: Install uv
-        uses: astral-sh/setup-uv@v7
+          ref: "${{ github.event.pull_request.head.sha }}"
+      - name: "Install uv"
+        uses: "astral-sh/setup-uv@v7"
         with:
           enable-cache: true
           python-version: '3.13'
-      - name: Install dependencies
-        run: uv sync --all-groups
-      - name: Setup RustFS for testing
-        if: env.CANVAS_API_TOKEN != ''
+      - name: "Install dependencies"
+        run: "uv sync --all-groups"
+      - name: "Setup RustFS for testing"
+        if: "env.CANVAS_API_TOKEN != ''"
         run: |
           # Wait for RustFS to be ready
            timeout 30 bash -c 'until curl -s -o /dev/null -w "%{http_code}" http://localhost:9000 | grep -q "^403$"; do sleep 1; done'
           # Run setup script
           uv run python scripts/setup-rustfs.py
-      - name: Run unit tests
-        run: uv run pytest tests/unit -v --strict-markers --cov=src/canvas_code_correction
-          --cov-report=xml --cov-report=json:coverage.json --cov-report=term
-      - name: Generate HTML coverage report
+      - name: "Run unit tests"
+        run: "uv run pytest tests/unit -v --strict-markers --cov=src/canvas_code_correction --cov-report=xml\
+          \ --cov-report=json:coverage.json --cov-report=term"
+      - name: "Generate HTML coverage report"
         run: |
           if [ -f ".coverage" ]; then
             uv run coverage html --data-file=.coverage
@@ -67,20 +66,20 @@ jobs:
           mkdir -p htmlcov
 
       # Upload coverage artifacts for deploy-docs workflow (short retention)
-      - name: Upload coverage artifacts
-        uses: actions/upload-artifact@v6
+      - name: "Upload coverage artifacts"
+        uses: "actions/upload-artifact@v6"
         with:
-          name: coverage-reports
+          name: "coverage-reports"
           path: |
             coverage.json
             htmlcov/
           retention-days: 7
-      - name: Run integration tests (requires Canvas credentials)
-        if: env.CANVAS_API_TOKEN != ''
+      - name: "Run integration tests (requires Canvas credentials)"
+        if: "env.CANVAS_API_TOKEN != ''"
         run: |
           uv run pytest tests/integration -v --strict-markers -m integration --no-cov
-      - name: Run e2e tests (requires Docker and Canvas credentials)
-        if: env.CANVAS_API_TOKEN != ''
+      - name: "Run e2e tests (requires Docker and Canvas credentials)"
+        if: "env.CANVAS_API_TOKEN != ''"
         run: |-
           # Start Docker daemon (already running on GitHub Actions)
           # Run e2e tests
