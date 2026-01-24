@@ -52,8 +52,6 @@ __pycache__/
 ##########
 # direnv #
 ##########
-/.envrc
-.direnv/
 .direnv/
 *.cover
 *.py,cover

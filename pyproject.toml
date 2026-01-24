@@ -86,6 +86,7 @@ docker-publish = {sequence = ["_docker_build", "_docker_push"], help = "Build an
 serve-docs = {cmd = "zensical serve", help = "Serve documentation locally."}
 _docker_build.cmd = "docker build -t jakob1379/canvas-grader:latest . -f containers/grader/Dockerfile"
 _docker_push.cmd = "docker push jakob1379/canvas-grader:latest"
+generate-cli-docs.shell = "uv run typer src/canvas_code_correction/cli.py utils docs --title \"CLI Reference\" --name ccc --output 'docs/reference/02-cli.md'"
 prefect.shell = 'prefect server start'
 rustfs-setup.shell = "uv run python scripts/setup-rustfs.py"
 s3.shell = "mkdir -p workspace && chmod 777 workspace && docker run --rm -p 9000:9000 -p 9001:9001 -v ./workspace:/data -e RUSTFS_ACCESS_KEY=rustfsadmin -e RUSTFS_SECRET_KEY=rustfsadmin rustfs/rustfs:latest /data"
@@ -133,3 +134,15 @@ known-first-party = ["canvas_code_correction"]
 "legacy/**/*.py" = ["T201"]
 # Ignore all linting issues in development scripts
 "scripts/**/*.py" = ["ALL"]
+
+[tool.yamlfix]
+quote_basic_values = true
+quote_representation = "\""
+preserve_quotes = true
+sequence_style = "flow_style"
+line_length = 100
+indent_mapping = 2
+indent_sequence = 4
+indent_offset = 2
+quote_keys_and_basic_values = false
+explicit_start = false
