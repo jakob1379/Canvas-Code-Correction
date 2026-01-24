@@ -10,7 +10,7 @@ from canvas_code_correction.prefect_blocks import CourseConfigBlock
 
 @pytest.mark.local
 def test_course_config_block_round_trip() -> None:
-    block_name = f"test-course-config-{uuid.uuid4()}"
+    block_name = f"test-ccc-course-{uuid.uuid4()}"
     block = CourseConfigBlock(
         canvas_api_url="https://canvas.example.com",  # type: ignore[assignment]
         canvas_token=SecretStr("token-value"),

@@ -10,7 +10,7 @@
     "env": {
       "EXTRA": "value"
     },
-    "config_block": "course-config-course-123",
+    "config_block": "ccc-course-course-123",
     "commands": {}
   },
   "assets": {
