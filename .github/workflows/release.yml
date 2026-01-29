@@ -20,19 +20,6 @@ env:
 jobs:
   build-and-push:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        image:
-          - runner
-          - grader
-        include:
-          - image: runner
-            context: containers/runner
-            dockerfile: containers/runner/Dockerfile
-
-          - image: grader
-            context: containers/grader
-            dockerfile: containers/grader/Dockerfile
 
     steps:
       - name: Checkout code
@@ -40,13 +27,6 @@ jobs:
 
       - name: Setup docker buildx
         uses: docker/setup-buildx-action@v3
-
-      - name: Cache docker layers
-        uses: actions/cache@v3
-        with:
-          path: /tmp/.buildx-cache
-          key: ${{ runner.os }}-buildx-${{ github.sha }}
-          restore-keys: ${{ runner.os }}-buildx-
 
       - name: Login to DockerHub
         if: github.event_name != 'pull_request'
@@ -59,7 +39,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ${{ env.REGISTRY}}/${{ env.ORG }}/${{ matrix.image }}
+          images: ${{ env.REGISTRY}}/${{ env.ORG }}/runner
           tags: |
             type=ref,event=branch
             type=ref,event=pr
@@ -77,10 +57,5 @@ jobs:
           push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=local,src=/tmp/.buildx-cache
-          cache-to: type=local,src=/tmp/.buildx-cache-new,mode=max
-
-      - name: Move cache
-        run: |
-          rm -rf /tmp/.buildx-cache
-          mv /tmp/.buildx-cache-new /tmp/.buildx-cache
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
