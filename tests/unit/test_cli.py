@@ -692,9 +692,7 @@ def test_webhook_serve_uvicorn_raises_exception(
 
     _ = cli_runner.invoke(app, ["webhook", "serve"])
 
-    # The exception will propagate and CLI will exit with 1
-    # Actually uvicorn.run is not wrapped in try/except, so SystemExit?
-    # Let's assume it raises and CLI exits with non-zero.
+    # The exception will propagate and CLI will exit with non-zero
     # We'll just check that uvicorn.run was called.
     mock_uvicorn_run.assert_called_once()
 
