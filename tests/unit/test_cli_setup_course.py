@@ -70,7 +70,8 @@ class TestSetupCourseNonInteractive:
         result = cli_runner.invoke(
             app,
             [
-                "setup-course",
+                "course",
+                "setup",
                 "--no-interactive",
                 "--token",
                 "test-token",
@@ -103,7 +104,8 @@ class TestSetupCourseNonInteractive:
         result = cli_runner.invoke(
             app,
             [
-                "setup-course",
+                "course",
+                "setup",
                 "--no-interactive",
                 "--course-id",
                 "13122436",
@@ -131,7 +133,8 @@ class TestSetupCourseNonInteractive:
         result = cli_runner.invoke(
             app,
             [
-                "setup-course",
+                "course",
+                "setup",
                 "--no-interactive",
                 "--token",
                 "test-token",
@@ -159,7 +162,8 @@ class TestSetupCourseNonInteractive:
         result = cli_runner.invoke(
             app,
             [
-                "setup-course",
+                "course",
+                "setup",
                 "--no-interactive",
                 "--token",
                 "test-token",
@@ -186,7 +190,8 @@ class TestSetupCourseNonInteractive:
         result = cli_runner.invoke(
             app,
             [
-                "setup-course",
+                "course",
+                "setup",
                 "--no-interactive",
                 "--token",
                 "invalid-token",
@@ -216,7 +221,8 @@ class TestSetupCourseNonInteractive:
         result = cli_runner.invoke(
             app,
             [
-                "setup-course",
+                "course",
+                "setup",
                 "--no-interactive",
                 "--token",
                 "test-token",
@@ -252,7 +258,8 @@ class TestSetupCourseNonInteractive:
         result = cli_runner.invoke(
             app,
             [
-                "setup-course",
+                "course",
+                "setup",
                 "--no-interactive",
                 "--token",
                 "test-token",
@@ -297,7 +304,8 @@ class TestSetupCourseNonInteractive:
         result = cli_runner.invoke(
             app,
             [
-                "setup-course",
+                "course",
+                "setup",
                 "--no-interactive",
                 "--token",
                 "test-token",
@@ -341,7 +349,8 @@ class TestSetupCourseNonInteractive:
         result = cli_runner.invoke(
             app,
             [
-                "setup-course",
+                "course",
+                "setup",
                 "--no-interactive",
                 "--token",
                 "test-token",
@@ -423,7 +432,7 @@ class TestSetupCourseInteractive:
             True,  # Save configuration
         ]
 
-        result = cli_runner.invoke(app, ["setup-course"])
+        result = cli_runner.invoke(app, ["course", "setup"])
 
         assert result.exit_code == 0
         assert "Course configuration saved as block: ccc-course-test-course" in result.output
@@ -445,7 +454,7 @@ class TestSetupCourseInteractive:
 
         mock_prompt.return_value = "invalid-token"
 
-        result = cli_runner.invoke(app, ["setup-course"])
+        result = cli_runner.invoke(app, ["course", "setup"])
 
         assert result.exit_code == 1
         assert "Failed to validate Canvas API token" in result.output
@@ -510,7 +519,8 @@ class TestSetupCourseEdgeCases:
         result = cli_runner.invoke(
             app,
             [
-                "setup-course",
+                "course",
+                "setup",
                 "--no-interactive",
                 "--token",
                 "test-token",
@@ -548,7 +558,8 @@ class TestSetupCourseEdgeCases:
         result = cli_runner.invoke(
             app,
             [
-                "setup-course",
+                "course",
+                "setup",
                 "--no-interactive",
                 "--token",
                 "test-token",
@@ -589,7 +600,8 @@ class TestSetupCourseEdgeCases:
         result = cli_runner.invoke(
             app,
             [
-                "setup-course",
+                "course",
+                "setup",
                 "--no-interactive",
                 "--token",
                 "test-token",
