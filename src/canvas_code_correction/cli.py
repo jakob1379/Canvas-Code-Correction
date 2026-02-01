@@ -1,4 +1,9 @@
-"""Command-line interface for Canvas Code Correction."""
+"""Command-line interface for Canvas Code Correction.
+
+This CLI is organized into two main command groups:
+- **course**: Commands for course administrators (setup, configure, run corrections)
+- **system**: Commands for platform administrators (webhook, deployments, monitoring)
+"""
 
 from __future__ import annotations
 
@@ -28,12 +33,33 @@ from canvas_code_correction.prefect_blocks import CourseConfigBlock
 from canvas_code_correction.webhooks.deployments import ensure_deployment
 from canvas_code_correction.webhooks.server import app as webhook_fastapi_app
 
-app = typer.Typer(help="Canvas Code Correction CLI")
+# Main CLI app
+app = typer.Typer(
+    help="Canvas Code Correction CLI",
+    rich_markup_mode="rich",
+    invoke_without_command=True,
+)
 console = Console()
 
+# =============================================================================
+# COURSE ADMINISTRATOR COMMANDS
+# =============================================================================
 
-@app.command()
-def run_once(
+course_app = typer.Typer(
+    help="""[bold blue]📚 Course Administration[/bold blue]
+
+Commands for course administrators to configure courses and grade submissions.
+
+[dim]Typical workflow:[/dim]
+  1. [dim]ccc course setup[/dim]     - Interactive course configuration
+  2. [dim]ccc course run[/dim]       - Grade submissions
+  3. [dim]ccc course list[/dim]      - View configured courses""",
+    rich_markup_mode="rich",
+)
+
+
+@course_app.command("run")
+def course_run(
     assignment_id: Annotated[int, typer.Argument(help="Canvas assignment ID")],
     submission_id: Annotated[
         int | None,
@@ -52,7 +78,15 @@ def run_once(
         typer.Option("--dry-run", help="Skip actual grading and upload"),
     ] = False,
 ) -> None:
-    """Run correction flow for an assignment or specific submission."""
+    """Run correction flow for an assignment or specific submission.
+
+    [blue]Examples:[/blue]
+        # Grade all submissions for an assignment
+        $ ccc course run 12345 --course ccc-course-cs101
+
+        # Grade a single submission in dry-run mode
+        $ ccc course run 12345 --submission-id 67890 --dry-run
+    """
     try:
         settings = resolve_settings_from_block(course_block)
     except Exception as e:
@@ -131,8 +165,8 @@ def run_once(
         raise typer.Exit(1) from e
 
 
-@app.command()
-def configure_course(  # noqa: PLR0913
+@course_app.command("configure")
+def course_configure(  # noqa: PLR0913
     course_slug: Annotated[str, typer.Argument(help="Unique identifier for the course")],
     canvas_token: Annotated[
         str,
@@ -178,7 +212,23 @@ def configure_course(  # noqa: PLR0913
         typer.Option("--env", "-e", help="Environment variables (KEY=VALUE)"),
     ] = None,
 ) -> None:
-    """Create or update a course configuration block."""
+    """Create or update a course configuration block.
+
+    [blue]Examples:[/blue]
+        # Basic configuration
+        $ ccc course configure cs101 \\
+            --token $CANVAS_TOKEN \\
+            --course-id 12345 \\
+            --assets-block course-assets
+
+        # With all options
+        $ ccc course configure cs101 \\
+            --token $CANVAS_TOKEN \\
+            --course-id 12345 \\
+            --assets-block course-assets \\
+            --docker-image mygrader:latest \\
+            --s3-prefix graders/cs101/
+    """
     block_name = f"ccc-course-{course_slug}"
 
     # Parse environment variables
@@ -210,8 +260,8 @@ def configure_course(  # noqa: PLR0913
         raise typer.Exit(1) from e
 
 
-@app.command()
-def setup_course(  # noqa: PLR0913, PLR0912, PLR0915
+@course_app.command("setup")
+def course_setup(  # noqa: PLR0913, PLR0912, PLR0915
     canvas_token: Annotated[
         str | None,
         typer.Option(
@@ -275,7 +325,16 @@ def setup_course(  # noqa: PLR0913, PLR0912, PLR0915
     5. Assignment mapping (link local tests to Canvas assignments)
     6. Grader configuration (Docker image, work pool, etc.)
 
-    Use --no-interactive to skip prompts and provide all values via options.
+    [blue]Examples:[/blue]
+        # Interactive mode (default)
+        $ ccc course setup
+
+        # Non-interactive with all options
+        $ ccc course setup --no-interactive \\
+            --token $CANVAS_TOKEN \\
+            --course-id 12345 \\
+            --assets-block my-bucket \\
+            --slug my-course
     """
     console.print(Panel.fit("[bold blue]Canvas Code Correction - Course Setup[/bold blue]"))
 
@@ -541,16 +600,20 @@ def setup_course(  # noqa: PLR0913, PLR0912, PLR0915
         block.save(block_name, overwrite=True)
         console.print(f"\n[green]✓ Course configuration saved as block: {block_name}[/green]")
         console.print(
-            f"[blue]You can now use: ccc run-once <assignment_id> --course {block_name}[/blue]"
+            f"[blue]You can now use: ccc course run <assignment_id> --course {block_name}[/blue]"
         )
     except Exception as e:
         console.print(f"[red]Error saving course block: {e}[/red]")
         raise typer.Exit(1) from e
 
 
-@app.command()
-def list_courses() -> None:
-    """List all configured course blocks."""
+@course_app.command("list")
+def course_list() -> None:
+    """List all configured course blocks.
+
+    [blue]Example:[/blue]
+        $ ccc course list
+    """
     try:
         blocks = CourseConfigBlock.find()  # type: ignore[attr-defined]
         if not blocks:
@@ -581,32 +644,68 @@ def list_courses() -> None:
         raise typer.Exit(1) from e
 
 
-webhook_app = typer.Typer()
+# =============================================================================
+# PLATFORM ADMINISTRATOR COMMANDS
+# =============================================================================
+
+system_app = typer.Typer(
+    help="""[bold green]🔧 Platform Administration[/bold green]
+
+Commands for platform administrators to manage infrastructure, webhooks, and deployments.
+
+[dim]Typical operations:[/dim]
+  • [dim]ccc system webhook serve[/dim]  - Start webhook server
+  • [dim]ccc system deploy create[/dim]  - Create Prefect deployment
+  • [dim]ccc system status[/dim]         - Check platform health""",
+    rich_markup_mode="rich",
+)
+
+# Webhook subcommand
+webhook_app = typer.Typer(
+    help="Manage webhook server for Canvas submissions",
+    rich_markup_mode="rich",
+)
 
 
-@webhook_app.command()
-def serve(
+@webhook_app.command("serve")
+def webhook_serve(
     host: Annotated[str, typer.Option("--host", help="Host to bind")] = "0.0.0.0",  # noqa: S104 # nosec B104 # nosonar
     port: Annotated[int, typer.Option("--port", help="Port to bind")] = 8080,
 ) -> None:
-    """Start webhook server for Canvas submissions."""
+    """Start webhook server for Canvas submissions.
+
+    [blue]Examples:[/blue]
+        # Start on default host/port
+        $ ccc system webhook serve
+
+        # Start on custom host/port
+        $ ccc system webhook serve --host 127.0.0.1 --port 9090
+    """
     console.print(f"[blue]Starting webhook server on {host}:{port}[/blue]")
     uvicorn.run(webhook_fastapi_app, host=host, port=port)
 
 
-app.add_typer(webhook_app, name="webhook")
+system_app.add_typer(webhook_app, name="webhook")
 
-deploy_app = typer.Typer()
+# Deploy subcommand
+deploy_app = typer.Typer(
+    help="Manage Prefect deployments",
+    rich_markup_mode="rich",
+)
 
 
-@deploy_app.command()
-def create(
+@deploy_app.command("create")
+def deploy_create(
     course_block: Annotated[
         str,
         typer.Argument(help="Prefect course configuration block name"),
     ],
 ) -> None:
-    """Create or update a Prefect deployment for webhook-triggered corrections."""
+    """Create or update a Prefect deployment for webhook-triggered corrections.
+
+    [blue]Example:[/blue]
+        $ ccc system deploy create ccc-course-cs101
+    """
     try:
         settings = resolve_settings_from_block(course_block)
     except Exception as e:
@@ -627,17 +726,87 @@ def create(
         raise typer.Exit(1) from e
 
 
-app.add_typer(deploy_app, name="deploy")
+system_app.add_typer(deploy_app, name="deploy")
 
 
-@app.command()
-def version() -> None:
-    """Show version information."""
+@system_app.command("status")
+def system_status() -> None:
+    """Check platform status and configuration.
+
+    [blue]Example:[/blue]
+        $ ccc system status
+    """
+    console.print("[bold blue]Platform Status[/bold blue]")
+
+    # Check Prefect connection
     try:
-        version = importlib.metadata.version("canvas-code-correction")
-    except importlib.metadata.PackageNotFoundError:
-        version = "v2.0.0a0"
-    console.print(f"Canvas Code Correction {version}")
+        import requests
+
+        prefect_url = "http://localhost:4200/api/health"
+        response = requests.get(prefect_url, timeout=5)
+        if response.status_code == 200:
+            console.print("[green]✓ Prefect server: Running[/green]")
+        else:
+            console.print(f"[yellow]⚠ Prefect server: HTTP {response.status_code}[/yellow]")
+    except Exception as e:
+        console.print(f"[red]✗ Prefect server: Not reachable ({e})[/red]")
+
+    # Check RustFS/S3
+    try:
+        import boto3
+        from botocore.exceptions import EndpointConnectionError
+
+        s3 = boto3.client(
+            "s3",
+            endpoint_url="http://localhost:9000",
+            aws_access_key_id="rustfsadmin",
+            aws_secret_access_key="rustfsadmin",
+        )
+        s3.list_buckets()
+        console.print("[green]✓ RustFS (S3): Running[/green]")
+    except EndpointConnectionError:
+        console.print("[red]✗ RustFS (S3): Not reachable[/red]")
+    except Exception as e:
+        console.print(f"[yellow]⚠ RustFS (S3): Error ({e})[/yellow]")
+
+    console.print("\n[dim]Use 'ccc course list' to see configured courses[/dim]")
+
+
+# =============================================================================
+# MAIN APP SETUP
+# =============================================================================
+
+app.add_typer(course_app, name="course")
+app.add_typer(system_app, name="system")
+
+
+@app.callback()
+def main_callback(
+    version: Annotated[
+        bool,
+        typer.Option("--version", "-v", help="Show version information"),
+    ] = False,
+) -> None:
+    """Canvas Code Correction CLI.
+
+    [bold]Command Groups:[/bold]
+    • [blue]ccc course[/blue]  - Course administration (setup, run, list)
+    • [green]ccc system[/green] - Platform administration (webhook, deploy, status)
+
+    [bold]Quick Start:[/bold]
+    1. Setup a course:    [dim]ccc course setup[/dim]
+    2. Grade submissions: [dim]ccc course run <assignment_id> --course <block>[/dim]
+    3. Start webhook:     [dim]ccc system webhook serve[/dim]
+
+    For detailed help: [dim]ccc <command> --help[/dim]
+    """
+    if version:
+        try:
+            version_str = importlib.metadata.version("canvas-code-correction")
+        except importlib.metadata.PackageNotFoundError:
+            version_str = "v2.0.0a0"
+        console.print(f"Canvas Code Correction {version_str}")
+        raise typer.Exit()
 
 
 if __name__ == "__main__":

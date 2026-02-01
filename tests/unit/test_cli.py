@@ -83,7 +83,7 @@ def test_run_once_single_submission_success(
 
     result = cli_runner.invoke(
         app,
-        ["run-once", "123", "--submission-id", "456", "--course", "test-course"],
+        ["course", "run", "123", "--submission-id", "456", "--course", "test-course"],
     )
 
     assert result.exit_code == 0
@@ -124,7 +124,7 @@ def test_run_once_batch_mode_success(
 
     result = cli_runner.invoke(
         app,
-        ["run-once", "123", "--course", "test-course"],
+        ["course", "run", "123", "--course", "test-course"],
     )
 
     assert result.exit_code == 0
@@ -168,7 +168,7 @@ def test_run_once_batch_mode_submission_error(
 
     result = cli_runner.invoke(
         app,
-        ["run-once", "123", "--course", "test-course"],
+        ["course", "run", "123", "--course", "test-course"],
     )
 
     assert result.exit_code == 0
@@ -198,7 +198,8 @@ def test_run_once_dry_run_flag(
     result = cli_runner.invoke(
         app,
         [
-            "run-once",
+            "course",
+            "run",
             "123",
             "--submission-id",
             "456",
@@ -237,7 +238,8 @@ def test_run_once_custom_download_dir(
     result = cli_runner.invoke(
         app,
         [
-            "run-once",
+            "course",
+            "run",
             "123",
             "--submission-id",
             "456",
@@ -267,12 +269,12 @@ def test_run_once_course_block_not_found(
 
     result = cli_runner.invoke(
         app,
-        ["run-once", "123", "--submission-id", "456", "--course", "missing-course"],
+        ["course", "run", "123", "--submission-id", "456", "--course", "test-course"],
     )
 
     assert result.exit_code == 1
     assert "Error loading course block" in result.output
-    mock_resolve_settings.assert_called_once_with("missing-course")
+    mock_resolve_settings.assert_called_once_with("test-course")
 
 
 @pytest.mark.local
@@ -290,7 +292,7 @@ def test_run_once_flow_raises_exception(
 
     result = cli_runner.invoke(
         app,
-        ["run-once", "123", "--submission-id", "456", "--course", "test-course"],
+        ["course", "run", "123", "--submission-id", "456", "--course", "test-course"],
     )
 
     assert result.exit_code == 1
@@ -315,7 +317,7 @@ def test_run_once_batch_mode_canvas_api_error(
 
     result = cli_runner.invoke(
         app,
-        ["run-once", "123", "--course", "test-course"],
+        ["course", "run", "123", "--course", "test-course"],
     )
 
     # The exception is not caught in the CLI, so it propagates and Typer will exit with error.
@@ -344,7 +346,8 @@ def test_configure_course_success_with_all_options(
     result = cli_runner.invoke(
         app,
         [
-            "configure-course",
+            "course",
+            "configure",
             "cs101",
             "--token",
             "test-token",
@@ -391,7 +394,8 @@ def test_configure_course_success_minimal_options(
     result = cli_runner.invoke(
         app,
         [
-            "configure-course",
+            "course",
+            "configure",
             "cs101",
             "--token",
             "test-token",
@@ -428,7 +432,8 @@ def test_configure_course_interactive_token_input(
     result = cli_runner.invoke(
         app,
         [
-            "configure-course",
+            "course",
+            "configure",
             "cs101",
             "--course-id",
             "123",
@@ -459,7 +464,8 @@ def test_configure_course_env_var_parsing(
     result = cli_runner.invoke(
         app,
         [
-            "configure-course",
+            "course",
+            "configure",
             "cs101",
             "--token",
             "t",
@@ -495,7 +501,8 @@ def test_configure_course_invalid_env_var_format(
     result = cli_runner.invoke(
         app,
         [
-            "configure-course",
+            "course",
+            "configure",
             "cs101",
             "--token",
             "t",
@@ -529,7 +536,8 @@ def test_configure_course_save_raises_exception(
     result = cli_runner.invoke(
         app,
         [
-            "configure-course",
+            "course",
+            "configure",
             "cs101",
             "--token",
             "t",
@@ -570,7 +578,7 @@ def test_list_courses_success_with_blocks(
 
     mock_block_class.load.side_effect = [mock_block1, mock_block2]
 
-    result = cli_runner.invoke(app, ["list-courses"])
+    result = cli_runner.invoke(app, ["course", "list"])
 
     assert result.exit_code == 0
     assert "Configured Courses" in result.output
@@ -589,7 +597,7 @@ def test_list_courses_empty_result(
     """Test list_courses command when no blocks found."""
     mock_block_class.find.return_value = []
 
-    result = cli_runner.invoke(app, ["list-courses"])
+    result = cli_runner.invoke(app, ["course", "list"])
 
     assert result.exit_code == 0
     assert "No course configuration blocks found" in result.output
@@ -606,7 +614,7 @@ def test_list_courses_find_raises_exception(
     """Test list_courses when find raises exception."""
     mock_block_class.find.side_effect = RuntimeError("Find failed")
 
-    result = cli_runner.invoke(app, ["list-courses"])
+    result = cli_runner.invoke(app, ["course", "list"])
 
     assert result.exit_code == 1
     assert "Error listing courses" in result.output
@@ -623,7 +631,7 @@ def test_list_courses_load_raises_exception(
     mock_block_class.find.return_value = ["ccc-course-cs101", "ccc-course-cs102"]
     mock_block_class.load.side_effect = RuntimeError("Load failed")
 
-    result = cli_runner.invoke(app, ["list-courses"])
+    result = cli_runner.invoke(app, ["course", "list"])
 
     # Should still exit with 0 and show error in table
     assert result.exit_code == 0
@@ -645,7 +653,7 @@ def test_webhook_serve_success_default_host_port(
     # Mock uvicorn.run to raise SystemExit to stop infinite loop
     mock_uvicorn_run.side_effect = SystemExit(0)
 
-    result = cli_runner.invoke(app, ["webhook", "serve"])
+    result = cli_runner.invoke(app, ["system", "webhook", "serve"])
 
     # Since we raise SystemExit, the CLI will exit with that code
     # CliRunner will catch SystemExit and treat as exit code 0
@@ -669,7 +677,7 @@ def test_webhook_serve_success_custom_host_port(
 
     result = cli_runner.invoke(
         app,
-        ["webhook", "serve", "--host", "127.0.0.1", "--port", "9090"],
+        ["system", "webhook", "serve", "--host", "127.0.0.1", "--port", "9090"],
     )
 
     assert result.exit_code == 0
@@ -690,7 +698,7 @@ def test_webhook_serve_uvicorn_raises_exception(
     """Test webhook serve when uvicorn.run raises exception."""
     mock_uvicorn_run.side_effect = RuntimeError("Uvicorn error")
 
-    _ = cli_runner.invoke(app, ["webhook", "serve"])
+    _ = cli_runner.invoke(app, ["system", "webhook", "serve"])
 
     # The exception will propagate and CLI will exit with non-zero
     # We'll just check that uvicorn.run was called.
@@ -713,7 +721,7 @@ def test_deploy_create_success(
     mock_resolve_settings.return_value = mock_settings
     mock_ensure_deployment.return_value = "ccc-course-test-deployment"
 
-    result = cli_runner.invoke(app, ["deploy", "create", "test-course"])
+    result = cli_runner.invoke(app, ["system", "deploy", "create", "test-course"])
 
     assert result.exit_code == 0
     assert "Deployment 'ccc-course-test-deployment' created/updated successfully" in result.output
@@ -730,7 +738,7 @@ def test_deploy_create_block_not_found(
     """Test deploy create when course block not found."""
     mock_resolve_settings.side_effect = ValueError("Block not found")
 
-    result = cli_runner.invoke(app, ["deploy", "create", "missing-course"])
+    result = cli_runner.invoke(app, ["system", "deploy", "create", "missing-course"])
 
     assert result.exit_code == 1
     assert "Error loading course block" in result.output
@@ -750,7 +758,7 @@ def test_deploy_create_ensure_deployment_raises_exception(
     mock_resolve_settings.return_value = mock_settings
     mock_ensure_deployment.side_effect = RuntimeError("Deployment failed")
 
-    result = cli_runner.invoke(app, ["deploy", "create", "test-course"])
+    result = cli_runner.invoke(app, ["system", "deploy", "create", "test-course"])
 
     assert result.exit_code == 1
     assert "Error creating deployment" in result.output
@@ -769,7 +777,7 @@ def test_version_success(
     """Test version command with package found."""
     mock_version.return_value = "2.0.0"
 
-    result = cli_runner.invoke(app, ["version"])
+    result = cli_runner.invoke(app, ["--version"])
 
     assert result.exit_code == 0
     assert "Canvas Code Correction 2.0.0" in result.output
@@ -787,7 +795,7 @@ def test_version_package_not_found(
 
     mock_version.side_effect = PackageNotFoundError
 
-    result = cli_runner.invoke(app, ["version"])
+    result = cli_runner.invoke(app, ["--version"])
 
     assert result.exit_code == 0
     assert "Canvas Code Correction v2.0.0a0" in result.output
