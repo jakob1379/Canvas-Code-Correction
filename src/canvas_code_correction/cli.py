@@ -1,7 +1,7 @@
 """Command-line interface for Canvas Code Correction.
 
 This CLI is organized into two main command groups:
-- **course**: Commands for course administrators (setup, configure, run corrections)
+- **course**: Commands for course administrators (setup, run corrections)
 - **system**: Commands for platform administrators (webhook, deployments, monitoring)
 """
 
@@ -10,6 +10,7 @@ from __future__ import annotations
 import asyncio
 import importlib.metadata
 import json
+import sys
 import tempfile
 from pathlib import Path
 from typing import Annotated
@@ -165,101 +166,6 @@ def course_run(
         raise typer.Exit(1) from e
 
 
-@course_app.command("configure")
-def course_configure(  # noqa: PLR0913
-    course_slug: Annotated[str, typer.Argument(help="Unique identifier for the course")],
-    canvas_token: Annotated[
-        str,
-        typer.Option(
-            "--token",
-            "-t",
-            help="Canvas API token",
-            prompt=True,
-            hide_input=True,
-        ),
-    ],
-    canvas_course_id: Annotated[int, typer.Option("--course-id", "-i", help="Canvas course ID")],
-    asset_bucket_block: Annotated[
-        str,
-        typer.Option(
-            "--assets-block",
-            "-a",
-            help="Prefect S3 bucket block name for assets",
-        ),
-    ],
-    canvas_api_url: Annotated[
-        str,
-        typer.Option("--api-url", help="Canvas instance URL"),
-    ] = "https://canvas.instructure.com",
-    asset_path_prefix: Annotated[
-        str,
-        typer.Option("--s3-prefix", "-p", help="S3 prefix for grader assets"),
-    ] = "",
-    docker_image: Annotated[
-        str | None,
-        typer.Option("--docker-image", "-d", help="Docker image for grading"),
-    ] = None,
-    work_pool_name: Annotated[
-        str | None,
-        typer.Option("--work-pool", "-w", help="Prefect work pool name"),
-    ] = None,
-    workspace_root: Annotated[
-        Path | None,
-        typer.Option("--workspace-root", help="Root directory for workspaces"),
-    ] = None,
-    env_var: Annotated[
-        list[str] | None,
-        typer.Option("--env", "-e", help="Environment variables (KEY=VALUE)"),
-    ] = None,
-) -> None:
-    """Create or update a course configuration block.
-
-    [blue]Examples:[/blue]
-        # Basic configuration
-        $ ccc course configure cs101 \\
-            --token $CANVAS_TOKEN \\
-            --course-id 12345 \\
-            --assets-block course-assets
-
-        # With all options
-        $ ccc course configure cs101 \\
-            --token $CANVAS_TOKEN \\
-            --course-id 12345 \\
-            --assets-block course-assets \\
-            --docker-image mygrader:latest \\
-            --s3-prefix graders/cs101/
-    """
-    block_name = f"ccc-course-{course_slug}"
-
-    # Parse environment variables
-    grader_env = {}
-    if env_var:
-        for env_str in env_var:
-            if "=" in env_str:
-                key, value = env_str.split("=", 1)
-                grader_env[key.strip()] = value.strip()
-            else:
-                console.print(f"[yellow]Skipping invalid env var: {env_str}[/yellow]")
-
-    try:
-        block = CourseConfigBlock(
-            canvas_api_url=HttpUrl(canvas_api_url),
-            canvas_token=SecretStr(canvas_token),
-            canvas_course_id=canvas_course_id,
-            asset_bucket_block=asset_bucket_block,
-            asset_path_prefix=asset_path_prefix,
-            workspace_root=str(workspace_root) if workspace_root else None,
-            grader_image=docker_image,
-            work_pool_name=work_pool_name,
-            grader_env=grader_env,
-        )
-        block.save(block_name, overwrite=True)
-        console.print(f"[green]Course configuration saved as block: {block_name}[/green]")
-    except Exception as e:
-        console.print(f"[red]Error saving course block: {e}[/red]")
-        raise typer.Exit(1) from e
-
-
 @course_app.command("setup")
 def course_setup(  # noqa: PLR0913, PLR0912, PLR0915
     canvas_token: Annotated[
@@ -271,6 +177,13 @@ def course_setup(  # noqa: PLR0913, PLR0912, PLR0915
             hide_input=True,
         ),
     ] = None,
+    token_stdin: Annotated[
+        bool,
+        typer.Option(
+            "--token-stdin",
+            help="Read Canvas API token from stdin",
+        ),
+    ] = False,
     canvas_api_url: Annotated[
         str,
         typer.Option("--api-url", help="Canvas instance URL"),
@@ -331,7 +244,14 @@ def course_setup(  # noqa: PLR0913, PLR0912, PLR0915
 
         # Non-interactive with all options
         $ ccc course setup --no-interactive \\
-            --token $CANVAS_TOKEN \\
+            --token-stdin \\
+            --course-id 12345 \\
+            --assets-block my-bucket \\
+            --slug my-course
+
+        # Pipe token through stdin to avoid shell history leaks
+        $ printf "%s" "$CANVAS_API_TOKEN" | ccc course setup --no-interactive \\
+            --token-stdin \\
             --course-id 12345 \\
             --assets-block my-bucket \\
             --slug my-course
@@ -339,6 +259,15 @@ def course_setup(  # noqa: PLR0913, PLR0912, PLR0915
     console.print(Panel.fit("[bold blue]Canvas Code Correction - Course Setup[/bold blue]"))
 
     # Step 1: Get API Token (required first)
+    if token_stdin:
+        if canvas_token is not None:
+            console.print("[red]Error: Use either --token or --token-stdin, not both[/red]")
+            raise typer.Exit(1)
+        canvas_token = sys.stdin.read().strip()
+        if not canvas_token:
+            console.print("[red]Error: No token received on stdin[/red]")
+            raise typer.Exit(1)
+
     if canvas_token is None:
         if interactive:
             canvas_token = Prompt.ask(
@@ -346,7 +275,9 @@ def course_setup(  # noqa: PLR0913, PLR0912, PLR0915
                 password=True,
             )
         else:
-            console.print("[red]Error: --token is required in non-interactive mode[/red]")
+            console.print(
+                "[red]Error: --token or --token-stdin is required in non-interactive mode[/red]"
+            )
             raise typer.Exit(1)
 
     # Validate token by making a test API call
@@ -474,7 +405,7 @@ def course_setup(  # noqa: PLR0913, PLR0912, PLR0915
                     default=True,
                 ):
                     console.print(
-                        "\n[yellow]Enter test mappings (press Enter with no input to finish):[/yellow]"
+                        "\n[yellow]Enter test mappings (press Enter with no input to finish):[/yellow]",
                     )
                     console.print("Format: [dim]assignment_id:/path/to/test.py[/dim]")
 
@@ -488,7 +419,7 @@ def course_setup(  # noqa: PLR0913, PLR0912, PLR0915
 
                         if ":" not in mapping:
                             console.print(
-                                "[yellow]Invalid format. Use: assignment_id:/path/to/test.py[/yellow]"
+                                "[yellow]Invalid format. Use: assignment_id:/path/to/test.py[/yellow]",
                             )
                             continue
 
@@ -500,15 +431,15 @@ def course_setup(  # noqa: PLR0913, PLR0912, PLR0915
                             env_key = f"CCC_TEST_MAP_{assignment_id}"
                             test_map_env[env_key] = test_path
                             console.print(
-                                f"[green]✓ Mapped assignment {assignment_id} → {test_path}[/green]"
+                                f"[green]✓ Mapped assignment {assignment_id} → {test_path}[/green]",
                             )
                         except ValueError:
                             console.print(
-                                "[yellow]Invalid assignment ID (must be a number)[/yellow]"
+                                "[yellow]Invalid assignment ID (must be a number)[/yellow]",
                             )
                         except Exception as e:
                             console.print(
-                                f"[yellow]Warning: Could not validate assignment: {e}[/yellow]"
+                                f"[yellow]Warning: Could not validate assignment: {e}[/yellow]",
                             )
                             # Still add it, user might know better
                             env_key = f"CCC_TEST_MAP_{assignment_id_str}"
@@ -600,7 +531,7 @@ def course_setup(  # noqa: PLR0913, PLR0912, PLR0915
         block.save(block_name, overwrite=True)
         console.print(f"\n[green]✓ Course configuration saved as block: {block_name}[/green]")
         console.print(
-            f"[blue]You can now use: ccc course run <assignment_id> --course {block_name}[/blue]"
+            f"[blue]You can now use: ccc course run <assignment_id> --course {block_name}[/blue]",
         )
     except Exception as e:
         console.print(f"[red]Error saving course block: {e}[/red]")

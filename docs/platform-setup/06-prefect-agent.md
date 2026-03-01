@@ -129,9 +129,9 @@ Created work pool 'canvas-corrections' (type: process)
 
 The pool is now visible in the Prefect UI under **Work Pools**.
 
-!!! note "Why canvas-corrections?"
-    This is the default queue name used by the CCC CLI when you run `ccc run‑once`.
-    You can use any name, but make sure your deployment targets the same pool.
+!!! note "Why canvas-corrections?" This is a simple local queue name for
+testing. CCC can use any queue name as long as your deployment and worker use
+the same pool. deployment targets the same pool.
 
 ## Step 3: Start a Worker
 
@@ -171,7 +171,7 @@ If you have a course configured, run a one‑off correction for a specific
 assignment:
 
 ```bash
-$ ccc run-once <assignment-id>
+$ ccc course run <assignment-id>
 ```
 
 Replace `<assignment-id>` with the numeric Canvas assignment ID. The command
@@ -221,17 +221,16 @@ submitted to Canvas.
 
 For local runs, you must ensure the **Prefect blocks** that store Canvas
 credentials, runner configuration, and S3 assets already exist. The
-`ccc configure-course` command creates these blocks for you.
+`ccc course setup` command creates these blocks for you.
 
 If you have not configured a course yet, follow
 [Configuring a Course](01-configuring-course.md). The blocks are stored in the
 local Orion server's SQLite database, so they persist across server restarts.
 
-!!! note "Important"
-    When you run `ccc run‑once` locally, you do **not** need to
-    set `PREFECT_API_KEY` (the local server does not require authentication).
-    However, you still need the blocks that hold your Canvas token and S3 bucket
-    details.
+!!! note "Important" When you run `ccc course run` locally, you do **not** need
+to set `PREFECT_API_KEY` (the local server does not require authentication).
+However, you still need the blocks that hold your Canvas token and S3 bucket
+details.
 
 ## Troubleshooting
 
@@ -254,7 +253,7 @@ local Orion server's SQLite database, so they persist across server restarts.
 
 ### Blocks are missing
 
-- Run `ccc configure-course` to create the necessary blocks.
+- Run `ccc course setup` to create the necessary blocks.
 - List existing blocks with `prefect block list`.
 
 ## Next Steps

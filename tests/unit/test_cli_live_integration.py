@@ -10,7 +10,6 @@ Run with: pytest -m integration
 from __future__ import annotations
 
 import os
-from pathlib import Path
 from typing import cast
 from unittest.mock import MagicMock, patch
 
@@ -30,7 +29,6 @@ def is_rustfs_available() -> bool:
     """Check if RustFS is available."""
     try:
         import boto3
-        from botocore.exceptions import EndpointConnectionError
 
         s3 = boto3.client(
             "s3",
@@ -54,6 +52,18 @@ def is_prefect_server_available() -> bool:
             timeout=5,
         )
         return response.status_code == 200
+    except Exception:
+        return False
+
+
+def is_canvas_token_valid(token: str, api_url: str) -> bool:
+    """Check whether Canvas token is currently valid."""
+    try:
+        from canvasapi import Canvas
+
+        canvas = Canvas(api_url, token)
+        _ = canvas.get_current_user()
+        return True
     except Exception:
         return False
 
@@ -103,7 +113,7 @@ def test_course_setup_non_interactive_missing_token(cli_runner: CliRunner) -> No
     )
 
     assert result.exit_code == 1
-    assert "--token is required" in result.output
+    assert "--token is required" in result.output or "--token or --token-stdin" in result.output
 
 
 # =============================================================================
@@ -122,10 +132,13 @@ def test_course_setup_live_canvas_validation(cli_runner: CliRunner) -> None:
     token = os.getenv("CANVAS_API_TOKEN")
     if not token:
         pytest.skip("Canvas API token not configured (CANVAS_API_TOKEN)")
-    token = cast(str, token)
+    token = cast("str", token)
 
     api_url = os.getenv("CANVAS_API_URL") or "https://canvas.instructure.com"
     course_id = os.getenv("CANVAS_COURSE_ID") or "13122436"
+
+    if not is_canvas_token_valid(token, api_url):
+        pytest.skip("Canvas API token is invalid or expired")
 
     # Test with valid token - should validate successfully
     with patch("canvas_code_correction.cli.CourseConfigBlock") as mock_block_class:
@@ -188,9 +201,12 @@ def test_course_setup_live_canvas_invalid_course(cli_runner: CliRunner) -> None:
     token = os.getenv("CANVAS_API_TOKEN")
     if not token:
         pytest.skip("Canvas API token not configured (CANVAS_API_TOKEN)")
-    token = cast(str, token)
+    token = cast("str", token)
 
     api_url = os.getenv("CANVAS_API_URL") or "https://canvas.instructure.com"
+
+    if not is_canvas_token_valid(token, api_url):
+        pytest.skip("Canvas API token is invalid or expired")
 
     result = cli_runner.invoke(
         app,
@@ -252,10 +268,13 @@ def test_course_setup_live_full_workflow(cli_runner: CliRunner) -> None:
     token = os.getenv("CANVAS_API_TOKEN")
     if not token:
         pytest.skip("Canvas API token not configured (CANVAS_API_TOKEN)")
-    token = cast(str, token)
+    token = cast("str", token)
 
     course_id = os.getenv("CANVAS_COURSE_ID") or "13122436"
     api_url = os.getenv("CANVAS_API_URL") or "https://canvas.instructure.com"
+
+    if not is_canvas_token_valid(token, api_url):
+        pytest.skip("Canvas API token is invalid or expired")
 
     if not is_prefect_server_available():
         pytest.skip("Prefect server not available")
@@ -313,11 +332,14 @@ def test_course_run_dry_run_live(cli_runner: CliRunner) -> None:
     token = os.getenv("CANVAS_API_TOKEN")
     if not token:
         pytest.skip("Canvas API token not configured (CANVAS_API_TOKEN)")
-    token = cast(str, token)
+    token = cast("str", token)
 
     course_id = os.getenv("CANVAS_COURSE_ID") or "13122436"
     assignment_id = os.getenv("CANVAS_TEST_ASSIGNMENT_ID") or "59160606"
     api_url = os.getenv("CANVAS_API_URL") or "https://canvas.instructure.com"
+
+    if not is_canvas_token_valid(token, api_url):
+        pytest.skip("Canvas API token is invalid or expired")
 
     if not is_prefect_server_available():
         pytest.skip("Prefect server not available")

@@ -9,13 +9,25 @@ built, grader tests uploaded to S3 storage, Prefect blocks created
     this command to configure a course immediately:
 
     ```bash
-    $ ccc configure-course cs101 \
-      --token YOUR_CANVAS_TOKEN \
-      --course-id 12345 \
-      --assets-block course-assets-cs101 \
-      --docker-image yourusername/canvas-grader:latest \
-      --s3-prefix graders/cs101/
-    ```
+    $ ccc course setup \
+
+--slug cs101 \
+ --course-id 12345 \
+ --assets-block course-assets-cs101 \
+ --docker-image yourusername/canvas-grader:latest \
+ --s3-prefix graders/cs101/ ```
+
+    To avoid leaking tokens in shell history, you can pipe the token through stdin:
+
+    ```bash
+    $ printf "%s" "$CANVAS_API_TOKEN" | ccc course setup \
+
+--slug cs101 \
+ --token-stdin \
+ --course-id 12345 \
+ --assets-block course-assets-cs101 \
+ --docker-image yourusername/canvas-grader:latest \
+ --s3-prefix graders/cs101/ ```
 
     You’ll see output similar to:
 
@@ -52,14 +64,14 @@ first (see [Deploying tests to CCC](05-deploying-tests-to-ccc.md)).
 
 ## Step 1: Configure a course with the CLI
 
-The `ccc configure-course` command creates a Prefect block that stores all
+The `ccc course setup` command creates a Prefect block that stores all
 course‑specific settings. Run it from the project root.
 
 ### Basic command
 
 ```bash
-$ ccc configure-course cs101 \
-  --token YOUR_CANVAS_TOKEN \
+$ ccc course setup \
+  --slug cs101 \
   --course-id 12345 \
   --assets-block course-assets-cs101 \
   --docker-image yourusername/canvas-grader:latest \
@@ -106,7 +118,7 @@ contains:
 - S3 prefix
 - Any environment variables
 
-**Important**: The S3 bucket block must exist before you run `configure-course`.
+**Important**: The S3 bucket block must exist before you run `course setup`.
 Create it via the Prefect UI or CLI (see
 [Setting up Prefect](02-setting-up-prefect.md)).
 
@@ -115,7 +127,7 @@ Create it via the Prefect UI or CLI (see
 List all configured courses to confirm your block was created:
 
 ```bash
-$ ccc list-courses
+$ ccc course list
 ```
 
 Output:
@@ -139,6 +151,6 @@ With a course configured, you can:
 4. **Deploy updated tests** –
    [Deploying tests to CCC](05-deploying-tests-to-ccc.md)
 
-!!! note
-    The course block is now available to any Prefect flow that uses the `Course` block type. You can
-    update its settings by running `configure-course` again with the same slug.
+!!! note The course block is now available to any Prefect flow that uses the
+`Course` block type. You can update its settings by running `course setup` again
+with the same slug.

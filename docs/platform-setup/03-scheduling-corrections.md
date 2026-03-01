@@ -185,7 +185,7 @@ behavior).
 ### Via the CCC CLI (single assignment)
 
 ```bash
-$ ccc run-once 12345
+$ ccc course run 12345
 ```
 
 Replace `12345` with the numeric Canvas assignment ID. This command creates a

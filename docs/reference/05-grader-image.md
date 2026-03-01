@@ -203,8 +203,8 @@ CLI. The provisioning flow will:
 
 1. Create (or overwrite) the course work pool.
 2. Upload the grader asset folder to S3 via the configured Prefect S3 block.
-3. Persist a `ccc-course-<course_name>` course configuration block referencing the Docker
-   image and latest asset materialization.
+3. Persist a `ccc-course-<course_slug>` block referencing the Docker image and
+   latest asset materialization.
 
 ### Using the Provisioning Flow Directly
 
@@ -257,15 +257,17 @@ Registered Prefect S3 block 'local-rustfs'.
 Configure the course to use the local RustFS block:
 
 ```bash
-$ ccc configure-course my-course \
+$ printf "%s" "$CANVAS_API_TOKEN" | ccc course setup \
+  --slug my-course \
+  --token-stdin \
+  --course-id 42 \
   --docker-image my-course/grader:latest \
   --assets-block local-rustfs \
   --s3-prefix dev
 ```
 
 ```output
-Created work pool 'course-work-pool-my-course'
-Saved configuration block 'ccc-course-my-course'
+Course configuration saved as block: ccc-course-my-course
 ```
 
 See the [Deploying Tests to CCC](../platform-setup/05-deploying-tests-to-ccc.md)
@@ -296,8 +298,8 @@ Inspect the Prefect flow run logs to confirm:
 
 - **Image accessibility**: Ensure the worker environment has credentials for
   private registries (if used).
-- **Resource limits**: Check that `--memory-limit` and `--cpu-limit` are
-  appropriate for your grader.
+- **Worker sizing**: Ensure the worker host has enough CPU and memory for your
+  grader workload.
 - **Asset synchronization**: Verify the S3 bucket/prefix contains the latest
   grader test files.
 
@@ -309,8 +311,7 @@ Your grader image is now ready for production. Continue with:
   actual test logic.
 - [Deploying Tests to CCC](../platform-setup/05-deploying-tests-to-ccc.md) –
   publish tests and configure the CCC platform.
-- [Running Corrections](../reference/06-running-corrections.md) – trigger
-  grading flows and monitor results.
+- [CLI Reference](02-cli.md) – trigger grading flows and monitor results.
 
 **Remember:** Keep your Dockerfile simple. Only add dependencies that are truly
 required for grading. The smaller the image, the faster it starts and the less

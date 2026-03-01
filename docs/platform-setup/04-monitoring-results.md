@@ -53,7 +53,7 @@ Before you start monitoring, ensure:
 If you haven’t run any corrections yet, trigger a test run with:
 
 ```bash
-$ ccc run-once <assignment-id>
+$ ccc course run <assignment-id>
 ```
 
 Replace `<assignment-id>` with a numeric Canvas assignment ID. Wait 2–3 minutes
@@ -207,7 +207,7 @@ show `Grader output:` contains a stack trace.
 with the new image tag:
 
 ```bash
-$ ccc configure-course cs101 --docker-image yourusername/canvas-grader:v2
+$ ccc course setup --slug cs101 --docker-image yourusername/canvas-grader:v2
 ```
 
 ### Issue 2: Missing submission files
@@ -219,14 +219,14 @@ $ ccc configure-course cs101 --docker-image yourusername/canvas-grader:v2
 
 1. Verify the Canvas token and course ID are correct:
    ```bash
-   $ ccc list-courses
+   $ ccc course list
    ```
 2. Ensure the assignment ID exists and students have submitted files.
 
 **Fix**: Regenerate the Canvas token and update the course block:
 
 ```bash
-$ ccc configure-course cs101 --token NEW_TOKEN
+$ printf "%s" "$NEW_TOKEN" | ccc course setup --slug cs101 --token-stdin
 ```
 
 ### Issue 3: S3 asset fetch fails
@@ -280,7 +280,7 @@ When in doubt, run a one‑off correction for a specific submission to see
 detailed output:
 
 ```bash
-$ ccc run-once <assignment-id> --submission-id <submission-id>
+$ ccc course run <assignment-id> --submission-id <submission-id>
 ```
 
 The command prints each step and stops on the first error.

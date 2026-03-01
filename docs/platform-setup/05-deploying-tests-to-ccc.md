@@ -6,7 +6,7 @@
     start assumes you have:
 
     - Docker installed and running
-    - `uv` installed (see [project setup](../README.md))
+    - `uv` installed (see [project setup](../../README.md))
     - Prefect Cloud or self-hosted Orion configured
       ([Setting up Prefect](02-setting-up-prefect.md))
     - Canvas API token and course ID stored in `.env` or Prefect blocks
@@ -14,8 +14,8 @@
     **Start the local S3 server**:
 
     ```bash
-
-$ poe s3 ```
+    $ poe s3
+    ```
 
     ```
     Starting RustFS server on http://localhost:9000
@@ -54,18 +54,18 @@ $ poe s3 ```
     **Configure the course** (replace `cs101` with your course slug):
 
     ```bash
-    $ ccc configure-course cs101 \
-      --docker-image my-grader:latest \
-      --memory-limit 2g \
-      --cpu-limit 2.0 \
-      --env PYTHONUNBUFFERED=1 \
-      --assets-block local-rustfs
-    ```
+    $ printf "%s" "$CANVAS_API_TOKEN" | ccc course setup \
+
+--slug cs101 \
+ --token-stdin \
+ --course-id 12345 \
+ --docker-image my-grader:latest \
+ --env PYTHONUNBUFFERED=1 \
+ --assets-block local-rustfs \
+ --s3-prefix graders/cs101/ ```
 
     ```
-    ✓ Prefect block 'ccc-course-cs101' saved
-    ✓ Work pool 'course-work-pool-cs101' created
-    Course 'cs101' configured successfully.
+    Course configuration saved as block: ccc-course-cs101
     ```
 
     **Create a Prefect deployment**:
@@ -217,25 +217,27 @@ $ docker push jakob1379/canvas-grader:latest
 
 ## 3. Configure Prefect Blocks
 
-Use the `ccc configure‑course` CLI to provision a Prefect work pool, record
-runner settings, and associate an S3 assets block that points to the
-bucket/prefix containing immutable grader tests.
+Use the `ccc course setup` CLI to save course settings and associate an S3
+assets block that points to the bucket/prefix containing immutable grader tests.
 
 ```bash
-$ ccc configure-course <course-slug> \
+$ ccc course setup \
+  --slug <course-slug> \
+  --token <canvas-token> \
+  --course-id <canvas-course-id> \
   --docker-image <image:tag> \
-  --memory-limit 2g \
-  --cpu-limit 2.0 \
   --env PYTHONUNBUFFERED=1 \
   --assets-block <block-name> \
-  --s3-bucket <course-assets-bucket> \
   --s3-prefix graders/<course-slug>/
 ```
 
 **Example with local RustFS** (block created by `rustfs‑setup`):
 
 ```bash
-$ ccc configure-course cs101 \
+$ printf "%s" "$CANVAS_API_TOKEN" | ccc course setup \
+  --slug cs101 \
+  --token-stdin \
+  --course-id 12345 \
   --docker-image my-grader:latest \
   --assets-block local-rustfs
 ```
@@ -243,15 +245,16 @@ $ ccc configure-course cs101 \
 **Example with production S3** (block must already exist):
 
 ```bash
-$ ccc configure-course cs101 \
+$ printf "%s" "$CANVAS_API_TOKEN" | ccc course setup \
+  --slug cs101 \
+  --token-stdin \
+  --course-id 12345 \
   --docker-image jakob1379/canvas-grader:latest \
   --assets-block course-assets-cs101 \
-  --s3-bucket course-assets \
   --s3-prefix graders/cs101/
 ```
 
-The command saves a Prefect course configuration block named `ccc‑course‑<course‑slug>` (by
-default) and creates or reuses a work pool `course‑work‑pool‑<course‑slug>`.
+The command saves a Prefect block named `ccc-course-<course-slug>`.
 
 For more about course configuration, see
 [Configuring a Course](01-configuring-course.md).
@@ -331,7 +334,7 @@ $ prefect deployment run <course-slug>-corrections
 ### One‑Off Run Targeting a Specific Submission
 
 ```bash
-$ ccc run-once <assignment-id>
+$ ccc course run <assignment-id>
 ```
 
 ### Automatic Runs via Canvas Webhook
@@ -363,7 +366,7 @@ For monitoring flow runs and results, see
 | ------------------------------ | ------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
 | **Worker cannot pull image**   | Missing Docker credentials or incorrect image tag | Ensure the worker environment has credentials for private registries and that the image tag is correct.                |
 | **Canvas API failures**        | Invalid or missing tokens/course IDs              | Verify tokens and course IDs are present in your settings (`.env` or Prefect block).                                   |
-| **Timeouts / resource issues** | Insufficient memory or CPU                        | Adjust `--memory‑limit`, `--cpu‑limit`, or `--gpu‑enabled` flags when running `configure‑course`.                      |
+| **Timeouts / resource issues** | Worker host is undersized                         | Use a stronger worker machine or reduce grader workload complexity.                                                    |
 | **No runs start**              | Work pool mismatch or worker not connected        | Confirm the work pool name in the deployment matches the running worker and that the worker log shows it is connected. |
 | **RustFS server unreachable**  | Server not running or wrong endpoint              | Check that `poe s3` is still running and that `RUSTFS_ENDPOINT` matches the server URL.                                |
 
