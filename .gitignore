@@ -2,8 +2,9 @@
 # project specific files #
 ##########################
 .env
+.env.dev
 **/code/
-src/.skylos_trace
+.skylos*
 *.log
 *.pdf
 *_scores.txt
