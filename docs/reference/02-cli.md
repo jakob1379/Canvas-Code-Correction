@@ -1,167 +1,234 @@
 # CLI Reference
 
-Canvas Code Correction CLI
+Use the `ccc` CLI to configure courses, run corrections, and operate the
+webhook/deployment stack.
 
-**Usage**:
+CCC groups commands by intent:
 
-```console
-$ ccc [OPTIONS] COMMAND [ARGS]...
+- `ccc course ...` for **course administration**
+- `ccc system ...` for **platform operations**
+
+Python requirement: **3.13+**.
+
+## Try It Now
+
+Run help to confirm the CLI is available:
+
+```bash
+$ ccc --help
 ```
 
-**Options**:
+Expected output (abbreviated):
 
-* `--install-completion`: Install completion for the current shell.
-* `--show-completion`: Show completion for the current shell, to copy it or customize the installation.
-* `--help`: Show this message and exit.
+```bash
+Usage: ccc [OPTIONS] COMMAND [ARGS]...
 
-**Commands**:
+Options:
+  --version  Show version information
+  --help     Show this message and exit
 
-* `run-once`: Run correction flow for an assignment or...
-* `configure-course`: Create or update a course configuration...
-* `list-courses`: List all configured course blocks.
-* `version`: Show version information.
-* `webhook`
-* `deploy`
-
-## `ccc run-once`
-
-Run correction flow for an assignment or specific submission.
-
-**Usage**:
-
-```console
-$ ccc run-once [OPTIONS] ASSIGNMENT_ID
+Commands:
+  course  Course administration commands
+  system  Platform administration commands
 ```
 
-**Arguments**:
+If you have not activated the environment created by `uv sync`, run commands
+with `uv run`:
 
-* `ASSIGNMENT_ID`: Canvas assignment ID  [required]
-
-**Options**:
-
-* `--submission-id INTEGER`: Specific submission ID (default: all submissions)
-* `-c, --course TEXT`: Prefect course configuration block name  [default: default-course]
-* `--download-dir PATH`: Directory for downloaded submissions (default: temporary directory)
-* `--dry-run`: Skip actual grading and upload
-* `--help`: Show this message and exit.
-
-## `ccc configure-course`
-
-Create or update a course configuration block.
-
-**Usage**:
-
-```console
-$ ccc configure-course [OPTIONS] COURSE_SLUG
+```bash
+$ uv run ccc --help
 ```
 
-**Arguments**:
+## Command Groups
 
-* `COURSE_SLUG`: Unique identifier for the course  [required]
+### Course Commands
 
-**Options**:
+Use course commands when you are configuring or grading a specific Canvas
+course.
 
-* `-t, --token TEXT`: Canvas API token  [required]
-* `-i, --course-id INTEGER`: Canvas course ID  [required]
-* `-a, --assets-block TEXT`: Prefect S3 bucket block name for assets  [required]
-* `--api-url TEXT`: Canvas instance URL  [default: https://canvas.instructure.com]
-* `-p, --s3-prefix TEXT`: S3 prefix for grader assets
-* `-d, --docker-image TEXT`: Docker image for grading
-* `-w, --work-pool TEXT`: Prefect work pool name
-* `--workspace-root PATH`: Root directory for workspaces
-* `-e, --env TEXT`: Environment variables (KEY=VALUE)
-* `--help`: Show this message and exit.
-
-## `ccc list-courses`
-
-List all configured course blocks.
-
-**Usage**:
-
-```console
-$ ccc list-courses [OPTIONS]
+```bash
+$ ccc course --help
 ```
 
-**Options**:
+Available subcommands:
 
-* `--help`: Show this message and exit.
+- `setup` – guided setup (interactive by default)
+- `run` – run corrections for an assignment or one submission
+- `list` – list saved course config blocks
 
-## `ccc version`
+### System Commands
 
-Show version information.
+Use system commands when you are managing infrastructure, webhook serving, or
+deployments.
 
-**Usage**:
-
-```console
-$ ccc version [OPTIONS]
+```bash
+$ ccc system --help
 ```
 
-**Options**:
+Available subcommands:
 
-* `--help`: Show this message and exit.
+- `webhook serve` – start webhook API server
+- `deploy create` – create/update a Prefect deployment for a course block
+- `status` – show local platform health checks
 
-## `ccc webhook`
+## Course Commands
 
-**Usage**:
+### `ccc course setup`
 
-```console
-$ ccc webhook [OPTIONS] COMMAND [ARGS]...
+Use guided setup to collect required values in dependency order (token first,
+then Canvas-derived data).
+
+Usage:
+
+```bash
+$ ccc course setup [OPTIONS]
 ```
 
-**Options**:
+Key options:
 
-* `--help`: Show this message and exit.
+| Option                           | Description                              | Default                          |
+| -------------------------------- | ---------------------------------------- | -------------------------------- |
+| `--token`, `-t`                  | Canvas API token                         | prompted in interactive mode     |
+| `--token-stdin`                  | Read Canvas API token from stdin         | `false`                          |
+| `--api-url`                      | Canvas base URL                          | `https://canvas.instructure.com` |
+| `--course-id`, `-c`              | Skip interactive course selection        | interactive select               |
+| `--assets-block`, `-a`           | Prefect S3 block name                    | prompted in interactive mode     |
+| `--assets-prefix`, `-p`          | Asset path prefix                        | `""`                             |
+| `--slug`, `-s`                   | Course slug used for block name          | inferred or prompted             |
+| `--docker-image`, `-d`           | Grader image                             | optional                         |
+| `--work-pool`, `-w`              | Prefect work pool name                   | optional                         |
+| `--test-map`                     | Mapping `assignment_id:/path/to/test.py` | optional, repeatable             |
+| `--env`, `-e`                    | Extra grader env values `KEY=VALUE`      | optional, repeatable             |
+| `--interactive/--no-interactive` | Prompt for missing values                | interactive                      |
 
-**Commands**:
+Example (non-interactive with stdin token):
 
-* `serve`: Start webhook server for Canvas submissions.
-
-### `ccc webhook serve`
-
-Start webhook server for Canvas submissions.
-
-**Usage**:
-
-```console
-$ ccc webhook serve [OPTIONS]
+```bash
+$ printf "%s" "$CANVAS_API_TOKEN" | ccc course setup --no-interactive \
+  --token-stdin \
+  --course-id 12345 \
+  --assets-block course-assets-cs101 \
+  --slug cs101 \
+  --test-map 59160606:/tests/assignment_1.py
 ```
 
-**Options**:
+Expected output (abbreviated):
 
-* `--host TEXT`: Host to bind  [default: 0.0.0.0]
-* `--port INTEGER`: Port to bind  [default: 8080]
-* `--help`: Show this message and exit.
-
-## `ccc deploy`
-
-**Usage**:
-
-```console
-$ ccc deploy [OPTIONS] COMMAND [ARGS]...
+```bash
+Canvas API token validated successfully
+Course ID 12345 validated
+Course configuration saved as block: ccc-course-cs101
 ```
 
-**Options**:
+Common error example:
 
-* `--help`: Show this message and exit.
-
-**Commands**:
-
-* `create`: Create or update a Prefect deployment for...
-
-### `ccc deploy create`
-
-Create or update a Prefect deployment for webhook-triggered corrections.
-
-**Usage**:
-
-```console
-$ ccc deploy create [OPTIONS] COURSE_BLOCK
+```bash
+$ ccc course setup --no-interactive --course-id 12345 --assets-block course-assets-cs101
+Error: --token or --token-stdin is required in non-interactive mode
 ```
 
-**Arguments**:
+### `ccc course run`
 
-* `COURSE_BLOCK`: Prefect course configuration block name  [required]
+Run grading for one assignment (batch) or one submission.
 
-**Options**:
+Usage:
 
-* `--help`: Show this message and exit.
+```bash
+$ ccc course run <assignment-id> [OPTIONS]
+```
+
+Options:
+
+| Option            | Description                      | Default          |
+| ----------------- | -------------------------------- | ---------------- |
+| `--submission-id` | Limit to one submission          | batch mode       |
+| `--course`, `-c`  | Course block name                | `default-course` |
+| `--download-dir`  | Directory for downloaded files   | temp directory   |
+| `--dry-run`       | Skip grading upload side effects | `false`          |
+
+Single-submission example:
+
+```bash
+$ ccc course run 12345 --submission-id 67890 --course ccc-course-cs101 --dry-run
+```
+
+Batch example:
+
+```bash
+$ ccc course run 12345 --course ccc-course-cs101
+```
+
+### `ccc course list`
+
+List all configured course blocks:
+
+```bash
+$ ccc course list
+```
+
+Expected output is a table containing block name, Canvas course ID, grader
+image, and assets block.
+
+## System Commands
+
+### `ccc system webhook serve`
+
+Start the FastAPI webhook server.
+
+```bash
+$ ccc system webhook serve --host 127.0.0.1 --port 8080
+```
+
+Expected output (abbreviated):
+
+```bash
+Starting webhook server on 127.0.0.1:8080
+```
+
+### `ccc system deploy create`
+
+Create or update a deployment for a configured course block.
+
+```bash
+$ ccc system deploy create ccc-course-cs101
+```
+
+Expected output (abbreviated):
+
+```bash
+Creating deployment for course block: ccc-course-cs101
+Deployment '...' created/updated successfully
+```
+
+### `ccc system status`
+
+Check local platform status (Prefect and RustFS probes).
+
+```bash
+$ ccc system status
+```
+
+Expected output includes `Prefect server` and `RustFS (S3)` health lines.
+
+## Global Options
+
+### `--version`
+
+Print installed CLI version:
+
+```bash
+$ ccc --version
+```
+
+Expected output:
+
+```bash
+Canvas Code Correction 2.0.0a0
+```
+
+## Related Docs
+
+- [Architecture Overview](01-architecture.md)
+- [Configuration Reference](03-configuration.md)
+- [Configuring a Course](../platform-setup/01-configuring-course.md)
+- [Setting up Prefect](../platform-setup/02-setting-up-prefect.md)

@@ -115,8 +115,73 @@ class TestSetupCourseNonInteractive:
         )
 
         assert result.exit_code == 1
-        assert "--token is required in non-interactive mode" in result.output
+        assert "--token or --token-stdin is required in non-interactive mode" in result.output
         mock_canvas_class.assert_not_called()
+
+    @pytest.mark.local
+    @patch("canvas_code_correction.cli.Canvas")
+    @patch("canvas_code_correction.cli.CourseConfigBlock")
+    def test_setup_course_token_from_stdin_non_interactive(
+        self,
+        mock_block_class: MagicMock,
+        mock_canvas_class: MagicMock,
+        cli_runner: CliRunner,
+        mock_canvas_course: MagicMock,
+    ) -> None:
+        """Test setup-course reads token from stdin in non-interactive mode."""
+        mock_canvas = MagicMock()
+        mock_canvas.get_current_user.return_value = MagicMock()
+        mock_canvas.get_course.return_value = mock_canvas_course
+        mock_canvas_class.return_value = mock_canvas
+
+        mock_block = MagicMock()
+        mock_block_class.return_value = mock_block
+
+        result = cli_runner.invoke(
+            app,
+            [
+                "course",
+                "setup",
+                "--no-interactive",
+                "--token-stdin",
+                "--course-id",
+                "13122436",
+                "--assets-block",
+                "test-bucket",
+                "--slug",
+                "test-course",
+            ],
+            input="stdin-token\n",
+        )
+
+        assert result.exit_code == 0
+        mock_canvas_class.assert_called_once_with("https://canvas.instructure.com", "stdin-token")
+
+    @pytest.mark.local
+    def test_setup_course_token_and_token_stdin_mutually_exclusive(
+        self,
+        cli_runner: CliRunner,
+    ) -> None:
+        """Test setup-course rejects using --token and --token-stdin together."""
+        result = cli_runner.invoke(
+            app,
+            [
+                "course",
+                "setup",
+                "--no-interactive",
+                "--token",
+                "explicit-token",
+                "--token-stdin",
+                "--course-id",
+                "13122436",
+                "--assets-block",
+                "test-bucket",
+            ],
+            input="stdin-token\n",
+        )
+
+        assert result.exit_code == 1
+        assert "Use either --token or --token-stdin, not both" in result.output
 
     @pytest.mark.local
     @patch("canvas_code_correction.cli.Canvas")

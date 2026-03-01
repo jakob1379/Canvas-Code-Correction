@@ -34,14 +34,14 @@ class TestCLICommandStructure:
         assert "🔧 Platform Administration" in result.output
 
     def test_course_help_shows_subcommands(self, cli_runner: CliRunner) -> None:
-        """Test that course group shows all subcommands."""
+        """Test that course group shows setup, run, and list."""
         result = cli_runner.invoke(app, ["course", "--help"])
 
         assert result.exit_code == 0
         assert "setup" in result.output
-        assert "configure" in result.output
         assert "run" in result.output
         assert "list" in result.output
+        assert "configure" not in result.output
 
     def test_system_help_shows_subcommands(self, cli_runner: CliRunner) -> None:
         """Test that system group shows all subcommands."""
@@ -119,14 +119,15 @@ class TestCLILegacyCommandMapping:
         cli_runner: CliRunner,
     ) -> None:
         """Test that old 'run-once' is now 'course run'."""
+        from pydantic import HttpUrl, SecretStr
+
         from canvas_code_correction.config import (
-            Settings,
             CanvasSettings,
             CourseAssetsSettings,
             GraderSettings,
+            Settings,
             WorkspaceSettings,
         )
-        from pydantic import HttpUrl, SecretStr
 
         # Create mock settings directly without loading from block
         mock_settings = Settings(
@@ -167,32 +168,8 @@ class TestCLILegacyCommandMapping:
         mock_resolve.assert_called_once_with("test-course")
 
     @pytest.mark.local
-    @patch("canvas_code_correction.cli.CourseConfigBlock")
-    def test_old_configure_course_now_course_configure(
-        self,
-        mock_block_class: MagicMock,
-        cli_runner: CliRunner,
-    ) -> None:
-        """Test that old 'configure-course' is now 'course configure'."""
-        mock_block = MagicMock()
-        mock_block_class.return_value = mock_block
+    def test_configure_command_removed(self, cli_runner: CliRunner) -> None:
+        """Test configure command has been removed in favor of setup."""
+        result = cli_runner.invoke(app, ["course", "configure", "--help"])
 
-        # Use new command structure
-        result = cli_runner.invoke(
-            app,
-            [
-                "course",
-                "configure",
-                "cs101",
-                "--token",
-                "test-token",
-                "--course-id",
-                "123",
-                "--assets-block",
-                "my-bucket",
-            ],
-        )
-
-        # Should work with new structure
-        assert result.exit_code == 0
-        mock_block.save.assert_called_once_with("ccc-course-cs101", overwrite=True)
+        assert result.exit_code != 0

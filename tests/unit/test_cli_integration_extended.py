@@ -35,27 +35,33 @@ def canvas_credentials() -> dict[str, str]:
     if not token:
         pytest.skip("Canvas API token not configured (CANVAS_API_TOKEN)")
 
+    token_value = cast("str", token)
+    api_url = os.getenv("CANVAS_API_URL") or "https://canvas.instructure.com"
+
+    try:
+        from canvasapi import Canvas
+
+        canvas = Canvas(api_url, token_value)
+        _ = canvas.get_current_user()
+    except Exception:
+        pytest.skip("Canvas API token is invalid or expired")
+
     return {
-        "token": cast(str, token),
+        "token": token_value,
         "course_id": os.getenv("CANVAS_COURSE_ID") or "13122436",
-        "api_url": os.getenv("CANVAS_API_URL") or "https://canvas.instructure.com",
+        "api_url": api_url,
         "assignment_id": os.getenv("CANVAS_TEST_ASSIGNMENT_ID") or "59160606",
     }
 
 
 # =============================================================================
-# COURSE CONFIGURE COMMAND TESTS
+# COURSE SETUP COMMAND TESTS
 # =============================================================================
 
 
 @pytest.mark.integration
-def test_course_configure_live_basic(
-    cli_runner: CliRunner, canvas_credentials: dict[str, str]
-) -> None:
-    """Test course configure command with live Canvas credentials.
-
-    Creates a course block directly without interactive prompts.
-    """
+def test_course_setup_live_basic(cli_runner: CliRunner, canvas_credentials: dict[str, str]) -> None:
+    """Test course setup command with basic non-interactive inputs."""
     with patch("canvas_code_correction.cli.CourseConfigBlock") as mock_block_class:
         mock_block = MagicMock()
         mock_block_class.return_value = mock_block
@@ -64,8 +70,10 @@ def test_course_configure_live_basic(
             app,
             [
                 "course",
-                "configure",
-                "test-configure-basic",
+                "setup",
+                "--no-interactive",
+                "--slug",
+                "test-setup-basic",
                 "--token",
                 canvas_credentials["token"],
                 "--course-id",
@@ -78,17 +86,16 @@ def test_course_configure_live_basic(
         )
 
         assert result.exit_code == 0
-        assert (
-            "Course configuration saved as block: ccc-course-test-configure-basic" in result.output
-        )
+        assert "Course configuration saved as block: ccc-course-test-setup-basic" in result.output
         mock_block.save.assert_called_once()
 
 
 @pytest.mark.integration
-def test_course_configure_live_with_all_options(
-    cli_runner: CliRunner, canvas_credentials: dict[str, str]
+def test_course_setup_live_with_all_options(
+    cli_runner: CliRunner,
+    canvas_credentials: dict[str, str],
 ) -> None:
-    """Test course configure with all optional parameters."""
+    """Test course setup with all optional parameters."""
     with patch("canvas_code_correction.cli.CourseConfigBlock") as mock_block_class:
         mock_block = MagicMock()
         mock_block_class.return_value = mock_block
@@ -97,8 +104,10 @@ def test_course_configure_live_with_all_options(
             app,
             [
                 "course",
-                "configure",
-                "test-configure-full",
+                "setup",
+                "--no-interactive",
+                "--slug",
+                "test-setup-full",
                 "--token",
                 canvas_credentials["token"],
                 "--course-id",
@@ -107,7 +116,7 @@ def test_course_configure_live_with_all_options(
                 "test-assets",
                 "--api-url",
                 canvas_credentials["api_url"],
-                "--s3-prefix",
+                "--assets-prefix",
                 "graders/test/",
                 "--docker-image",
                 "python:3.11-slim",
@@ -121,24 +130,22 @@ def test_course_configure_live_with_all_options(
         )
 
         assert result.exit_code == 0
-        assert (
-            "Course configuration saved as block: ccc-course-test-configure-full" in result.output
-        )
+        assert "Course configuration saved as block: ccc-course-test-setup-full" in result.output
 
-        # Verify environment variables were parsed
         call_kwargs = mock_block_class.call_args.kwargs
         assert call_kwargs["grader_env"] == {"KEY1": "value1", "KEY2": "value2"}
 
 
 @pytest.mark.integration
-def test_course_configure_live_missing_required(cli_runner: CliRunner) -> None:
-    """Test course configure fails when required arguments missing."""
-    # Missing --course-id and --assets-block
+def test_course_setup_live_missing_required(cli_runner: CliRunner) -> None:
+    """Test course setup fails when required non-interactive args missing."""
     result = cli_runner.invoke(
         app,
         [
             "course",
-            "configure",
+            "setup",
+            "--no-interactive",
+            "--slug",
             "test-missing",
             "--token",
             "some-token",
@@ -146,7 +153,7 @@ def test_course_configure_live_missing_required(cli_runner: CliRunner) -> None:
     )
 
     assert result.exit_code != 0
-    assert "Missing option" in result.output or "Error" in result.output
+    assert "Error" in result.output or "required" in result.output
 
 
 # =============================================================================
@@ -156,7 +163,8 @@ def test_course_configure_live_missing_required(cli_runner: CliRunner) -> None:
 
 @pytest.mark.integration
 def test_course_setup_live_with_test_mappings(
-    cli_runner: CliRunner, canvas_credentials: dict[str, str]
+    cli_runner: CliRunner,
+    canvas_credentials: dict[str, str],
 ) -> None:
     """Test course setup with test-to-assignment mappings.
 
@@ -205,7 +213,8 @@ def test_course_setup_live_with_test_mappings(
 
 @pytest.mark.integration
 def test_course_setup_live_multiple_test_mappings(
-    cli_runner: CliRunner, canvas_credentials: dict[str, str]
+    cli_runner: CliRunner,
+    canvas_credentials: dict[str, str],
 ) -> None:
     """Test course setup with multiple test mappings."""
     with patch("canvas_code_correction.cli.CourseConfigBlock") as mock_block_class:
@@ -332,7 +341,6 @@ def test_cli_help_all_commands(cli_runner: CliRunner) -> None:
         (["--help"], "Canvas Code Correction CLI"),
         (["course", "--help"], "Course Administration"),
         (["course", "setup", "--help"], "Interactively set up"),
-        (["course", "configure", "--help"], "Create or update"),
         (["course", "run", "--help"], "Run correction flow"),
         (["course", "list", "--help"], "List all configured"),
         (["system", "--help"], "Platform Administration"),
@@ -358,7 +366,8 @@ def test_cli_help_all_commands(cli_runner: CliRunner) -> None:
 
 @pytest.mark.integration
 def test_course_setup_live_special_chars_in_slug(
-    cli_runner: CliRunner, canvas_credentials: dict[str, str]
+    cli_runner: CliRunner,
+    canvas_credentials: dict[str, str],
 ) -> None:
     """Test course setup handles special characters in slug."""
     with patch("canvas_code_correction.cli.CourseConfigBlock") as mock_block_class:
@@ -391,7 +400,8 @@ def test_course_setup_live_special_chars_in_slug(
 
 @pytest.mark.integration
 def test_course_setup_live_long_slug(
-    cli_runner: CliRunner, canvas_credentials: dict[str, str]
+    cli_runner: CliRunner,
+    canvas_credentials: dict[str, str],
 ) -> None:
     """Test course setup handles long slugs."""
     with patch("canvas_code_correction.cli.CourseConfigBlock") as mock_block_class:
@@ -425,7 +435,8 @@ def test_course_setup_live_long_slug(
 
 @pytest.mark.integration
 def test_course_setup_live_invalid_env_var_format(
-    cli_runner: CliRunner, canvas_credentials: dict[str, str]
+    cli_runner: CliRunner,
+    canvas_credentials: dict[str, str],
 ) -> None:
     """Test course setup handles invalid environment variable formats gracefully."""
     with patch("canvas_code_correction.cli.CourseConfigBlock") as mock_block_class:

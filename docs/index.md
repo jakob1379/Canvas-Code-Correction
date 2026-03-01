@@ -223,8 +223,7 @@ implemented and tested:
   detection
 - **Prefect Flow Integration**: Complete end‑to‑end flow with `execute_grader`,
   `collect_results`, `upload_feedback`, and `post_grade` tasks
-- **Enhanced CLI**: New `ccc` commands for `run‑once`, `configure‑course`, and
-  `list‑courses`
+- **Enhanced CLI**: Role-based command groups for `ccc course` and `ccc system`
 - **RustFS Integration**: Configurable S3‑compatible storage backend with
   environment‑variable support for production deployments
 - **Comprehensive Test Suite**: End‑to‑end tests with docker‑compose stack

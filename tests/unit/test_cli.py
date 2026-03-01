@@ -330,227 +330,27 @@ def test_run_once_batch_mode_canvas_api_error(
     mock_resolve_settings.assert_called_once_with("test-course")
 
 
-# ----- configure_course command tests -----
+# ----- course command structure tests -----
 
 
 @pytest.mark.local
-@patch("canvas_code_correction.cli.CourseConfigBlock")
-def test_configure_course_success_with_all_options(
-    mock_block_class: MagicMock,
-    cli_runner: CliRunner,
-) -> None:
-    """Test configure_course command with all options."""
-    mock_block = MagicMock()
-    mock_block_class.return_value = mock_block
-
-    result = cli_runner.invoke(
-        app,
-        [
-            "course",
-            "configure",
-            "cs101",
-            "--token",
-            "test-token",
-            "--course-id",
-            "123",
-            "--assets-block",
-            "my-bucket",
-            "--api-url",
-            "https://canvas.test.com",
-            "--s3-prefix",
-            "grading/cs101",
-            "--docker-image",
-            "custom/image:latest",
-            "--work-pool",
-            "my-pool",
-            "--workspace-root",
-            "/tmp/workspaces",
-            "--env",
-            "KEY1=value1",
-            "--env",
-            "KEY2=value2",
-        ],
-    )
+def test_course_help_hides_configure(cli_runner: CliRunner) -> None:
+    """Test course help only advertises setup, run, and list."""
+    result = cli_runner.invoke(app, ["course", "--help"])
 
     assert result.exit_code == 0
-    assert "Course configuration saved as block: ccc-course-cs101" in result.output
-    mock_block_class.assert_called_once()
-    mock_block.save.assert_called_once_with("ccc-course-cs101", overwrite=True)
-    # Verify grader_env parsing
-    call_kwargs = mock_block_class.call_args.kwargs
-    assert call_kwargs["grader_env"] == {"KEY1": "value1", "KEY2": "value2"}
+    assert "setup" in result.output
+    assert "run" in result.output
+    assert "list" in result.output
+    assert "│ configure" not in result.output
 
 
 @pytest.mark.local
-@patch("canvas_code_correction.cli.CourseConfigBlock")
-def test_configure_course_success_minimal_options(
-    mock_block_class: MagicMock,
-    cli_runner: CliRunner,
-) -> None:
-    """Test configure_course command with only required arguments."""
-    mock_block = MagicMock()
-    mock_block_class.return_value = mock_block
+def test_course_configure_command_unavailable(cli_runner: CliRunner) -> None:
+    """Test configure command is no longer available."""
+    result = cli_runner.invoke(app, ["course", "configure", "--help"])
 
-    result = cli_runner.invoke(
-        app,
-        [
-            "course",
-            "configure",
-            "cs101",
-            "--token",
-            "test-token",
-            "--course-id",
-            "123",
-            "--assets-block",
-            "my-bucket",
-        ],
-    )
-
-    assert result.exit_code == 0
-    mock_block_class.assert_called_once()
-    # Default values should be used
-    call_kwargs = mock_block_class.call_args.kwargs
-    assert str(call_kwargs["canvas_api_url"]) == "https://canvas.instructure.com/"
-    assert call_kwargs["asset_path_prefix"] == ""
-    assert call_kwargs["grader_image"] is None
-    assert call_kwargs["work_pool_name"] is None
-    assert call_kwargs["workspace_root"] is None
-    assert call_kwargs["grader_env"] == {}
-
-
-@pytest.mark.local
-@patch("canvas_code_correction.cli.CourseConfigBlock")
-def test_configure_course_interactive_token_input(
-    mock_block_class: MagicMock,
-    cli_runner: CliRunner,
-) -> None:
-    """Test configure_course with interactive token prompt."""
-    mock_block = MagicMock()
-    mock_block_class.return_value = mock_block
-
-    # Typer will prompt for token if not provided
-    result = cli_runner.invoke(
-        app,
-        [
-            "course",
-            "configure",
-            "cs101",
-            "--course-id",
-            "123",
-            "--assets-block",
-            "my-bucket",
-        ],
-        input="test-token\n",
-    )
-
-    # The token option has prompt=True, so it will ask
-    # But with CliRunner we need to provide input
-    # However the token option also has hide_input=True, not sure if that affects.
-    # We'll just check exit code and that block was created.
-    assert result.exit_code == 0
-    mock_block_class.assert_called_once()
-
-
-@pytest.mark.local
-@patch("canvas_code_correction.cli.CourseConfigBlock")
-def test_configure_course_env_var_parsing(
-    mock_block_class: MagicMock,
-    cli_runner: CliRunner,
-) -> None:
-    """Test configure_course environment variable parsing."""
-    mock_block = MagicMock()
-    mock_block_class.return_value = mock_block
-
-    result = cli_runner.invoke(
-        app,
-        [
-            "course",
-            "configure",
-            "cs101",
-            "--token",
-            "t",
-            "--course-id",
-            "1",
-            "--assets-block",
-            "b",
-            "--env",
-            "KEY1=value1",
-            "--env",
-            "KEY2=value2=extra",  # equals in value
-        ],
-    )
-
-    assert result.exit_code == 0
-    call_kwargs = mock_block_class.call_args.kwargs
-    assert call_kwargs["grader_env"] == {
-        "KEY1": "value1",
-        "KEY2": "value2=extra",
-    }
-
-
-@pytest.mark.local
-@patch("canvas_code_correction.cli.CourseConfigBlock")
-def test_configure_course_invalid_env_var_format(
-    mock_block_class: MagicMock,
-    cli_runner: CliRunner,
-) -> None:
-    """Test configure_course with invalid env var format (no equals sign)."""
-    mock_block = MagicMock()
-    mock_block_class.return_value = mock_block
-
-    result = cli_runner.invoke(
-        app,
-        [
-            "course",
-            "configure",
-            "cs101",
-            "--token",
-            "t",
-            "--course-id",
-            "1",
-            "--assets-block",
-            "b",
-            "--env",
-            "INVALID",
-        ],
-    )
-
-    assert result.exit_code == 0
-    assert "Skipping invalid env var" in result.output
-    # Invalid env var should not be added
-    call_kwargs = mock_block_class.call_args.kwargs
-    assert call_kwargs["grader_env"] == {}
-
-
-@pytest.mark.local
-@patch("canvas_code_correction.cli.CourseConfigBlock")
-def test_configure_course_save_raises_exception(
-    mock_block_class: MagicMock,
-    cli_runner: CliRunner,
-) -> None:
-    """Test configure_course when block.save raises exception."""
-    mock_block = MagicMock()
-    mock_block.save.side_effect = RuntimeError("Save failed")
-    mock_block_class.return_value = mock_block
-
-    result = cli_runner.invoke(
-        app,
-        [
-            "course",
-            "configure",
-            "cs101",
-            "--token",
-            "t",
-            "--course-id",
-            "1",
-            "--assets-block",
-            "b",
-        ],
-    )
-
-    assert result.exit_code == 1
-    assert "Error saving course block" in result.output
-    mock_block.save.assert_called_once()
+    assert result.exit_code != 0
 
 
 # ----- list_courses command tests -----

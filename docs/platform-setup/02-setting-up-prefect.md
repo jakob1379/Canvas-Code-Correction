@@ -1,8 +1,7 @@
 # Setting up Prefect
 
-!!! note "Audience"
-    CCC platform operators **Prerequisites**: Course configured via `ccc configure-course` (see
-    [Configuring a Course](01-configuring-course.md))
+!!! note "Audience" CCC platform operators **Prerequisites**: Course configured
+via `ccc course setup` (see [Configuring a Course](01-configuring-course.md))
 
 **Prefect** orchestrates the correction workflows in CCC. After you configure a
 course, you need to create a **Prefect deployment** (the definition of how to
@@ -42,7 +41,7 @@ This guide walks you through both steps in **3 minutes**.
 
 ## Prerequisites
 
-- A course configured with `ccc configure-course` (if you haven’t, complete
+- A course configured with `ccc course setup` (if you haven’t, complete
   [Configuring a Course](01-configuring-course.md) first)
 - The same Python environment where you installed CCC (`uv run` works)
 - Docker installed and running (the worker will launch grader containers)
@@ -151,7 +150,7 @@ Flow run 'golden-sloth' created!
 ### Option C: CCC CLI (for a specific assignment)
 
 ```bash
-$ ccc run-once <assignment-id>
+$ ccc course run <assignment-id>
 ```
 
 Replace `<assignment-id>` with the numeric Canvas assignment ID. This command

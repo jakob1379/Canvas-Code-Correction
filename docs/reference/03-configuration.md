@@ -1,224 +1,139 @@
 # Configuration Reference
 
-Configure Canvas Code Correction via environment variables or a TOML file.
+CCC configuration is stored in Prefect blocks and read at runtime by CLI
+commands.
 
-## Quick Start
+## Try It Now
 
-Create a `.env` file in your project root with the minimum required settings:
-
-```bash
-# .env
-CANVAS_API_URL=https://canvas.instructure.com
-CANVAS_API_TOKEN=your_canvas_api_token_here
-CANVAS_COURSE_ID=123456
-CCC_WORKING_DIR=/tmp/ccc/runs
-```
-
-Then run any `ccc` command – the application will automatically load these
-variables.
-
-**Expected output when configuration is loaded:**
+Create a course block with the minimum required settings:
 
 ```bash
-$ ccc --help
-Canvas Code Correction CLI (v2.0.0)
-
-Usage: ccc [OPTIONS] COMMAND [ARGS]...
-
-  ...
+$ ccc course setup \
+  --slug cs101 \
+  --course-id 12345 \
+  --assets-block course-assets-cs101
 ```
 
-If you see the help screen, your environment variables are being read correctly.
-
-## Configuration Sources
-
-Canvas Code Correction reads configuration from three sources, in order of
-precedence:
-
-1. **Command‑line arguments** – highest priority (e.g., `--config custom.toml`)
-2. **Environment variables** – convenient for development and deployment
-3. **TOML configuration file** – recommended for production and team sharing
-
-The settings are merged into a single `Settings` object defined in
-`canvas_code_correction.config`.
-
-### Environment Variables
-
-Set any of the variables listed below in your shell or in a `.env` file
-(auto‑loaded by the CLI). Example for bash:
+Secure non-interactive variant:
 
 ```bash
-export CANVAS_API_URL=https://your.instructure.com
-export CANVAS_API_TOKEN=secret_token_here
-export CANVAS_COURSE_ID=98765
+$ printf "%s" "$CANVAS_API_TOKEN" | ccc course setup \
+  --token-stdin \
+  --slug cs101 \
+  --course-id 12345 \
+  --assets-block course-assets-cs101
 ```
 
-### TOML Configuration File
-
-Create a `settings.toml` file with the same structure as the `Settings` model.
-Pass it to the CLI with `ccc --config path/to/settings.toml`.
-
-```toml
-# settings.toml
-[canvas]
-api_url = "https://canvas.instructure.com"
-token = "your_canvas_api_token_here"
-course_id = 123456
-
-[assets]
-block_name = "course-assets"
-bucket = "course-assets"
-prefix = "graders/course-slug/"
-
-[runner]
-docker_image = "python:3.13-slim"
-network_disabled = false
-memory_limit = "1g"
-cpu_limit = 1.0
-
-[workspace]
-root = "/tmp/ccc/workspaces"
-
-[webhook]
-enabled = true
-secret = "optional_jwt_secret"
-require_jwt = false
-rate_limit = "10/minute"
-```
-
-## Configuration Options
-
-The following table lists every configuration key, its corresponding environment
-variable, a brief description, the default value (if any), and a concrete
-example.
-
-| Key                                     | Environment Variable                                  | Description                                                       | Default                                  | Example                                      |
-| --------------------------------------- | ----------------------------------------------------- | ----------------------------------------------------------------- | ---------------------------------------- | -------------------------------------------- |
-| **Canvas API Settings**                 |                                                       |                                                                   |                                          |                                              |
-| `canvas.api_url`                        | `CANVAS_API_URL`                                      | Base URL of your Canvas instance.                                 | `https://canvas.instructure.com`         | `https://your‑school.instructure.com`        |
-| `canvas.token`                          | `CANVAS_API_TOKEN`                                    | API token with permissions to read submissions and post grades.   | _(required)_                             | `"1~AbCdEf..."`                              |
-| `canvas.course_id`                      | `CANVAS_COURSE_ID`                                    | Numeric ID of the Canvas course.                                  | _(required)_                             | `123456`                                     |
-| **Runner (Grading Container) Settings** |                                                       |                                                                   |                                          |                                              |
-| `runner.docker_image`                   | `CCC_RUNNER_IMAGE`<br>`CCC_GRADER_IMAGE`              | Docker image used to execute grading jobs.                        | `None` (uses default from Prefect block) | `"python:3.13‑slim"`                         |
-| `runner.network_disabled`               | `CCC_RUNNER_NETWORK_DISABLED`                         | Disable network access inside the grading container.              | `false`                                  | `true`                                       |
-| `runner.memory_limit`                   | `CCC_RUNNER_MEMORY_LIMIT`                             | Memory limit for the container (supports `g`, `m`, `k` suffixes). | `None` (no limit)                        | `"2g"`                                       |
-| `runner.cpu_limit`                      | `CCC_RUNNER_CPU_LIMIT`                                | CPU quota for the container (float).                              | `None` (no limit)                        | `1.5`                                        |
-| **Asset Storage Settings**              |                                                       |                                                                   |                                          |                                              |
-| `assets.block_name`                     | `CCC_ASSETS_BLOCK`                                    | Name of the Prefect S3 block that stores grader assets.           | `""`                                     | `"course‑assets"`                            |
-| `assets.bucket`                         | `CCC_ASSETS_S3_BUCKET`                                | S3 bucket containing grader tests and fixtures.                   | `""`                                     | `"course‑assets"`                            |
-| `assets.prefix`                         | `CCC_ASSETS_S3_PREFIX`                                | Prefix (folder) inside the bucket that scopes course assets.      | `""`                                     | `"graders/course‑slug/"`                     |
-| `assets.endpoint_url`                   | `CCC_ASSETS_S3_ENDPOINT`                              | Custom S3‑compatible endpoint (e.g., RustFS, MinIO).              | `https://s3.amazonaws.com`               | `"http://localhost:9000"`                    |
-| `assets.region`                         | `CCC_ASSETS_S3_REGION`                                | AWS region for the bucket (ignored for custom endpoints).         | `None`                                   | `"us‑east‑1"`                                |
-| `assets.use_ssl`                        | `CCC_ASSETS_S3_SSL`                                   | Whether to use HTTPS for the S3 client.                           | `true`                                   | `false`                                      |
-| `assets.verify_ssl`                     | `CCC_ASSETS_S3_VERIFY`                                | Whether to verify TLS certificates.                               | `true`                                   | `false`                                      |
-| `assets.access_key`                     | `CCC_ASSETS_S3_ACCESS_KEY`<br>`AWS_ACCESS_KEY_ID`     | S3 access key (overrides AWS credentials).                        | `None`                                   | `"AKIAIOSFODNN7EXAMPLE"`                     |
-| `assets.secret_key`                     | `CCC_ASSETS_S3_SECRET_KEY`<br>`AWS_SECRET_ACCESS_KEY` | S3 secret key (overrides AWS credentials).                        | `None`                                   | `"wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY"` |
-| `assets.session_token`                  | `CCC_ASSETS_S3_SESSION_TOKEN`<br>`AWS_SESSION_TOKEN`  | Session token for temporary credentials.                          | `None`                                   | `"AQoEXAMPLE..."`                            |
-| **Workspace Settings**                  |                                                       |                                                                   |                                          |                                              |
-| `working_dir`                           | `CCC_WORKING_DIR`                                     | Root directory for temporary run workspaces.                      | `/tmp/ccc/runs`                          | `"/var/lib/ccc/workspaces"`                  |
-| `workspace.root`                        | `CCC_WORKSPACE_ROOT`                                  | Root directory for persistent course workspaces.                  | `/tmp/ccc/workspaces`                    | `"/var/lib/ccc/workspaces"`                  |
-
-!!! note
-    The `webhook` section (secret, deployment name, rate limiting) is also configurable via the same
-    sources. See the `Settings` model in `canvas_code_correction.config` for all available fields.
-
-## RustFS Integration (Local Development)
-
-For local development and testing, Canvas Code Correction can use a RustFS
-S3‑compatible storage server. The `setup‑rustfs.py` script expects the following
-environment variables:
-
-| Environment Variable | Default Value           | Description                              |
-| -------------------- | ----------------------- | ---------------------------------------- |
-| `RUSTFS_ENDPOINT`    | `http://localhost:9000` | RustFS S3 endpoint URL                   |
-| `RUSTFS_ACCESS_KEY`  | `rustfsadmin`           | Access key for RustFS                    |
-| `RUSTFS_SECRET_KEY`  | `rustfsadmin`           | Secret key for RustFS                    |
-| `RUSTFS_BUCKET_NAME` | `test‑assets`           | Bucket name for test assets              |
-| `RUSTFS_PREFIX`      | `dev`                   | Path prefix for assets within the bucket |
-
-The main application uses the standard S3 configuration variables
-(`CCC_ASSETS_S3_ENDPOINT`, `CCC_ASSETS_S3_ACCESS_KEY`, etc.) – you can point
-them to RustFS or any other S3‑compatible service.
-
-**Example .env snippet for RustFS:**
+Expected output:
 
 ```bash
-CCC_ASSETS_S3_ENDPOINT=http://localhost:9000
-CCC_ASSETS_S3_ACCESS_KEY=rustfsadmin
-CCC_ASSETS_S3_SECRET_KEY=rustfsadmin
-CCC_ASSETS_S3_BUCKET=test-assets
-CCC_ASSETS_S3_PREFIX=dev
+Course configuration saved as block: ccc-course-cs101
 ```
 
-## Advanced Configuration
-
-### Using a TOML File
-
-A TOML configuration file is the recommended way to store settings for
-production deployments and team collaboration. The file must mirror the
-structure of the `Settings` Pydantic model.
-
-```toml
-# settings.toml
-[canvas]
-api_url = "https://canvas.instructure.com"
-token = "your_canvas_api_token_here"
-course_id = 123456
-
-[assets]
-block_name = "course-assets"
-bucket = "course-assets"
-prefix = "graders/course-slug/"
-endpoint_url = "https://s3.amazonaws.com"
-region = "us-east-1"
-use_ssl = true
-verify_ssl = true
-
-[runner]
-docker_image = "python:3.13-slim"
-network_disabled = false
-memory_limit = "1g"
-cpu_limit = 1.0
-
-[workspace]
-root = "/tmp/ccc/workspaces"
-
-[webhook]
-enabled = true
-secret = "optional_jwt_secret"
-require_jwt = false
-rate_limit = "10/minute"
-```
-
-Load the file with:
+Verify the block exists:
 
 ```bash
-$ ccc --config settings.toml configure-course --slug my-course
+$ ccc course list
 ```
 
-### Precedence Rules
+## Configuration Model
 
-When the same setting appears in multiple sources, the highest‑priority source
-wins:
+CCC loads settings from `ccc-course-<slug>` blocks using
+`Settings.from_course_block`.
 
-1. **Command‑line arguments** (e.g., `--config`, `--course‑id`)
-2. **Environment variables** (set in shell or `.env`)
-3. **TOML configuration file** (if provided)
-4. **Defaults** from the `Settings` model
+The model is defined in `src/canvas_code_correction/config.py` and includes:
 
-For example, if `CANVAS_API_URL` is set in the environment and also specified in
-`settings.toml`, the environment variable takes precedence.
+- **Canvas**: `api_url`, `token`, `course_id`
+- **Assets**: `bucket_block`, `path_prefix`
+- **Grader**: `docker_image`, `work_pool_name`, `env`
+- **Workspace**: `root`
+- **Webhook**: `secret`, `deployment_name`, `enabled`, `require_jwt`,
+  `rate_limit`
 
-### Validation and Errors
+## How You Configure It
 
-The configuration is validated with Pydantic when the application starts. If a
-required field is missing or a value is invalid, you’ll see an error like:
+### Guided setup (recommended first run)
 
 ```bash
-$ ccc configure-course --slug my-course
-pydantic_core._pydantic_core.ValidationError: 1 validation error for Settings
-canvas.token
-  Field required [type=missing, input_value={}, input_type=dict]
+$ ccc course setup
 ```
 
-Check the error message for the exact field that needs correction.
+Use this when you want token validation, course discovery, and optional
+assignment-to-test mapping.
+
+### Direct setup (automation-friendly)
+
+```bash
+$ printf "%s" "$CANVAS_API_TOKEN" | ccc course setup \
+  --token-stdin \
+  --slug cs101 \
+  --course-id 12345 \
+  --assets-block course-assets-cs101 \
+  --s3-prefix graders/cs101/ \
+  --docker-image yourusername/canvas-grader:latest \
+  --work-pool course-work-pool-cs101 \
+  --env DEBUG=true
+```
+
+## Environment Variables
+
+CCC supports infrastructure and test environment variables.
+
+### Core runtime
+
+| Variable             | Purpose                       | Example                     |
+| -------------------- | ----------------------------- | --------------------------- |
+| `PREFECT_API_URL`    | Prefect API endpoint          | `http://localhost:4200/api` |
+| `PREFECT_API_KEY`    | Prefect API key (if required) | `pnu_...`                   |
+| `CCC_WORKSPACE_ROOT` | Workspace root directory      | `/tmp/ccc/workspaces`       |
+
+### Canvas (mainly for tests/scripts)
+
+| Variable                    | Purpose                             | Example                          |
+| --------------------------- | ----------------------------------- | -------------------------------- |
+| `CANVAS_API_URL`            | Canvas API URL                      | `https://canvas.instructure.com` |
+| `CANVAS_API_TOKEN`          | Canvas API token                    | `7~...`                          |
+| `CANVAS_COURSE_ID`          | Course ID used in test commands     | `13122436`                       |
+| `CANVAS_TEST_ASSIGNMENT_ID` | Assignment ID for integration tests | `59160606`                       |
+
+### RustFS / local S3-compatible storage
+
+| Variable             | Default                 | Purpose         |
+| -------------------- | ----------------------- | --------------- |
+| `RUSTFS_ENDPOINT`    | `http://localhost:9000` | RustFS endpoint |
+| `RUSTFS_ACCESS_KEY`  | `rustfsadmin`           | Access key      |
+| `RUSTFS_SECRET_KEY`  | `rustfsadmin`           | Secret key      |
+| `RUSTFS_BUCKET_NAME` | `test-assets`           | Bucket name     |
+| `RUSTFS_PREFIX`      | `dev`                   | Asset prefix    |
+
+Example shell setup:
+
+```bash
+$ export PREFECT_API_URL="http://localhost:4200/api"
+$ export CANVAS_API_URL="https://canvas.instructure.com"
+$ export CANVAS_API_TOKEN="your_token"
+$ export CANVAS_COURSE_ID="12345"
+```
+
+## Common Errors
+
+Missing required options during direct configuration:
+
+```bash
+$ ccc course setup --no-interactive --slug cs101 --assets-block course-assets-cs101
+Error: --token or --token-stdin is required in non-interactive mode
+```
+
+Invalid Canvas token during setup:
+
+```bash
+$ ccc course setup --no-interactive --token invalid --course-id 12345 --assets-block course-assets-cs101
+Error: Failed to validate Canvas API token
+```
+
+## Related Docs
+
+- [CLI Reference](02-cli.md)
+- [Configuring a Course](../platform-setup/01-configuring-course.md)
+- [Setting up Prefect](../platform-setup/02-setting-up-prefect.md)
+- [RustFS Storage](../platform-setup/07-rustfs-storage.md)
