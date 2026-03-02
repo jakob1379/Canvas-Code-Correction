@@ -41,7 +41,7 @@ repos:
   # Python linting and formatting with Ruff
   - repo: "https://github.com/astral-sh/ruff-pre-commit"
     # Ruff version.
-    rev: "v0.14.14"
+    rev: "v0.15.4"
     hooks:
       # Run the linter.
       - id: "ruff-check"
@@ -90,7 +90,7 @@ repos:
 
   # JSON Schema validation for common config files
   - repo: "https://github.com/python-jsonschema/check-jsonschema"
-    rev: "0.36.0"
+    rev: "0.37.0"
     hooks:
       - id: "check-github-workflows" # Validate GitHub workflow files
       - id: "check-dependabot" # Validate Dependabot config
@@ -98,14 +98,14 @@ repos:
 
   # Validate pyproject.toml structure
   - repo: "https://github.com/abravalheri/validate-pyproject"
-    rev: "v0.24.1"
+    rev: "v0.25"
     hooks:
       - id: "validate-pyproject"
         additional_dependencies: ['validate-pyproject-schema-store[all]']
 
   # check for code insecurities
   - repo: "https://github.com/PyCQA/bandit"
-    rev: "1.9.3"
+    rev: "1.9.4"
     hooks:
       - id: "bandit"
         args: ["-c", "pyproject.toml"] # Example: Configure via pyproject.toml
@@ -114,14 +114,14 @@ repos:
 
   # check for known package vulnureabilities
   - repo: "https://github.com/owenlamont/uv-secure"
-    rev: "0.15.4"
+    rev: "0.17.0"
     hooks:
       - id: "uv-secure"
         args: ["--no-check-uv-tool"]
 
   # conventional commit messages. Allows for automated changelogs and versioning based on commits
   - repo: "https://github.com/commitizen-tools/commitizen"
-    rev: "v4.12.1"
+    rev: "v4.13.9"
     hooks:
       - id: "commitizen"
         stages: ["commit-msg"]
