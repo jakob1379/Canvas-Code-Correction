@@ -1,38 +1,39 @@
+---
 version: 2
 updates:
-  - package-ecosystem: "github-actions"
-    directory: "/"
+  - package-ecosystem: github-actions
+    directory: /
     schedule:
-      interval: "weekly"
+      interval: weekly
     commit-message:
-      prefix: "⬆"
+      prefix: ⬆
     groups:
       actions:
         patterns: ['*']
-  - package-ecosystem: "uv"
-    directory: "/backend"
+  - package-ecosystem: uv
+    directory: /backend
     schedule:
-      interval: "weekly"
+      interval: weekly
     commit-message:
-      prefix: "⬆"
+      prefix: ⬆
     groups:
       python:
         patterns: ['*']
-  - package-ecosystem: "docker"
-    directories: ["/backend", "/frontend"]
+  - package-ecosystem: docker
+    directories: [/backend, /frontend]
     schedule:
-      interval: "weekly"
+      interval: weekly
     commit-message:
-      prefix: "⬆"
+      prefix: ⬆
     groups:
       docker:
         patterns: ['*']
-  - package-ecosystem: "docker-compose"
-    directory: "/"
+  - package-ecosystem: docker-compose
+    directory: /
     schedule:
-      interval: "weekly"
+      interval: weekly
     commit-message:
-      prefix: "⬆"
+      prefix: ⬆
     groups:
       infrastructure:
         patterns: ['*']

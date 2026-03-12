@@ -1,24 +1,25 @@
-name: "Deploy Documentation"
+---
+name: Deploy Documentation
 on:
   workflow_run:
-    workflows: ["Test"]
-    types: ["completed"]
-    branches: ["main"]
+    workflows: [Test]
+    types: [completed]
+    branches: [main]
 jobs:
   check:
-    runs-on: "ubuntu-latest"
-    if: "github.event.workflow_run.conclusion == 'success'"
+    runs-on: ubuntu-latest
+    if: github.event.workflow_run.conclusion == 'success'
     outputs:
-      deploy: "${{ steps.filter.outputs.deploy }}"
+      deploy: ${{ steps.filter.outputs.deploy }}
     permissions:
-      contents: "read"
+      contents: read
     steps:
-      - uses: "actions/checkout@v6"
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 0
-          ref: "${{ github.event.workflow_run.head_sha }}"
-      - name: "Check changed files"
-        id: "filter"
+          ref: ${{ github.event.workflow_run.head_sha }}
+      - name: Check changed files
+        id: filter
         run: |
           sha="${{ github.event.workflow_run.head_sha }}"
           parent=$(git rev-parse "${sha}^" 2>/dev/null || echo "")
@@ -35,46 +36,46 @@ jobs:
             echo "deploy=false" >> "$GITHUB_OUTPUT"
           fi
   deploy:
-    needs: "check"
-    if: "needs.check.outputs.deploy == 'true'"
-    runs-on: "ubuntu-latest"
+    needs: check
+    if: needs.check.outputs.deploy == 'true'
+    runs-on: ubuntu-latest
     environment:
-      name: "github-pages"
-      url: "${{ steps.deployment.outputs.page_url }}"
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
     permissions:
-      contents: "read"
-      actions: "read"
-      pages: "write"
-      id-token: "write"
+      contents: read
+      actions: read
+      pages: write
+      id-token: write
     steps:
-      - uses: "actions/checkout@v6"
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 0
-          ref: "${{ github.event.workflow_run.head_sha }}"
-      - uses: "actions/configure-pages@v5"
-      - name: "Install uv"
-        uses: "astral-sh/setup-uv@v7"
+          ref: ${{ github.event.workflow_run.head_sha }}
+      - uses: actions/configure-pages@v5
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
         with:
           enable-cache: true
           python-version: '3.13'
-      - name: "Install dependencies"
-        run: "uv sync --all-groups"
-      - name: "Download coverage artifacts"
-        uses: "actions/download-artifact@v8"
+      - name: Install dependencies
+        run: uv sync --all-groups
+      - name: Download coverage artifacts
+        uses: actions/download-artifact@v8
         with:
-          name: "coverage-reports"
-          run-id: "${{ github.event.workflow_run.id }}"
-          github-token: "${{ secrets.GITHUB_TOKEN }}"
-      - name: "Prepare coverage reports in docs directory"
+          name: coverage-reports
+          run-id: ${{ github.event.workflow_run.id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Prepare coverage reports in docs directory
         run: |
           # Copy htmlcov to docs/ so zensical will include it in the build
           rm -rf docs/htmlcov
           cp -r htmlcov docs/htmlcov
           # Ensure .gitignore is preserved to prevent committing coverage files
           echo "*" > docs/htmlcov/.gitignore
-      - name: "Build documentation"
-        run: "uv run zensical build --strict --clean"
-      - name: "Generate coverage badge"
+      - name: Build documentation
+        run: uv run zensical build --strict --clean
+      - name: Generate coverage badge
         run: |
           mkdir -p site/badges .github/badges
           uv run python scripts/generate_coverage_badge.py \
@@ -82,14 +83,14 @@ jobs:
             --output site/badges/coverage.json \
             --verbose
           cp site/badges/coverage.json .github/badges/coverage.json
-      - name: "Copy coverage data to site"
+      - name: Copy coverage data to site
         run: |
           # Copy coverage.json to site for reference
           cp coverage.json site/coverage.json
-      - name: "Create CNAME file for custom domain"
-        run: "echo \"ccc.jgalabs.dk\" > site/CNAME"
-      - uses: "actions/upload-pages-artifact@v4"
+      - name: Create CNAME file for custom domain
+        run: echo "ccc.jgalabs.dk" > site/CNAME
+      - uses: actions/upload-pages-artifact@v4
         with:
-          path: "site"
-      - uses: "actions/deploy-pages@v4"
-        id: "deployment"
+          path: site
+      - uses: actions/deploy-pages@v4
+        id: deployment

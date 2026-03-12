@@ -1,31 +1,32 @@
+---
 services:
   postgres:
-    image: "postgres:18"
+    image: postgres:18
     environment:
       POSTGRES_USER: prefect
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_DB: prefect
     volumes: [postgres_data:/var/lib/postgresql/data]
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U prefect"]
-      interval: "5s"
-      timeout: "5s"
+      test: [CMD-SHELL, pg_isready -U prefect]
+      interval: 5s
+      timeout: 5s
       retries: 5
   redis:
-    image: "redis:8"
-    volumes: ["redis_data:/data"]
+    image: redis:8
+    volumes: [redis_data:/data]
     healthcheck:
-      test: ["CMD-SHELL", "redis-cli ping"]
-      interval: "5s"
-      timeout: "5s"
+      test: [CMD-SHELL, redis-cli ping]
+      interval: 5s
+      timeout: 5s
       retries: 5
   prefect-server:
-    image: "prefecthq/prefect:3-latest"
+    image: prefecthq/prefect:3-latest
     depends_on:
       postgres:
-        condition: "service_healthy"
+        condition: service_healthy
       redis:
-        condition: "service_healthy"
+        condition: service_healthy
     environment:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       PREFECT_API_DATABASE_CONNECTION_URL: postgresql+asyncpg://prefect:${POSTGRES_PASSWORD}@postgres:5432/prefect
@@ -35,15 +36,15 @@ services:
       PREFECT_REDIS_MESSAGING_HOST: redis
       PREFECT_REDIS_MESSAGING_PORT: 6379
       PREFECT_REDIS_MESSAGING_DB: 0
-    command: "prefect server start --no-services"
-    ports: ["4200:4200"]
+    command: prefect server start --no-services
+    ports: [4200:4200]
   prefect-services:
-    image: "prefecthq/prefect:3-latest"
+    image: prefecthq/prefect:3-latest
     depends_on:
       postgres:
-        condition: "service_healthy"
+        condition: service_healthy
       redis:
-        condition: "service_healthy"
+        condition: service_healthy
     environment:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       PREFECT_API_DATABASE_CONNECTION_URL: postgresql+asyncpg://prefect:${POSTGRES_PASSWORD}@postgres:5432/prefect
@@ -52,34 +53,34 @@ services:
       PREFECT_REDIS_MESSAGING_HOST: redis
       PREFECT_REDIS_MESSAGING_PORT: 6379
       PREFECT_REDIS_MESSAGING_DB: 0
-    command: "prefect server services start"
+    command: prefect server services start
   prefect-worker:
-    image: "prefecthq/prefect:3-latest"
+    image: prefecthq/prefect:3-latest
     depends_on:
       prefect-server:
-        condition: "service_started"
+        condition: service_started
     environment:
-      PREFECT_API_URL: "http://prefect-server:4200/api"
-    command: "prefect worker start --pool local-pool"
+      PREFECT_API_URL: http://prefect-server:4200/api
+    command: prefect worker start --pool local-pool
   webhook-listener:
-    image: "prefecthq/prefect:3-latest"
+    image: prefecthq/prefect:3-latest
     depends_on:
       prefect-server:
-        condition: "service_started"
+        condition: service_started
     environment:
-      PREFECT_API_URL: "http://prefect-server:4200/api"
-    volumes: [".:/opt/canvas-code-correction"]
-    working_dir: "/opt/canvas-code-correction"
-    command: "sh -c \"pip install -e . && ccc webhook serve --host 0.0.0.0 --port 8080\""
-    ports: ["8080:8080"]
+      PREFECT_API_URL: http://prefect-server:4200/api
+    volumes: [.:/opt/canvas-code-correction]
+    working_dir: /opt/canvas-code-correction
+    command: sh -c "pip install -e . && ccc webhook serve --host 0.0.0.0 --port 8080"
+    ports: [8080:8080]
   rustfs:
-    image: "rustfs/rustfs:latest"
-    ports: ["9000:9000", "9001:9001"]
-    volumes: ["rustfs_data:/data"]
+    image: rustfs/rustfs:latest
+    ports: [9000:9000, 9001:9001]
+    volumes: [rustfs_data:/data]
     environment:
-      RUSTFS_ACCESS_KEY: "rustfsadmin"
-      RUSTFS_SECRET_KEY: "rustfsadmin"
-    command: "/data"
+      RUSTFS_ACCESS_KEY: rustfsadmin
+      RUSTFS_SECRET_KEY: rustfsadmin
+    command: /data
 volumes:
   postgres_data:
   redis_data:

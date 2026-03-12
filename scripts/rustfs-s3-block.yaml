@@ -1,11 +1,12 @@
+---
 # Local RustFS S3 block configuration for development
 # Register with: prefect block register -f scripts/rustfs-s3-block.yaml
 # Or use: uv run poe rustfs-setup
-block_type: "S3 Bucket"
-block_name: "local-rustfs"
-bucket_name: "test-assets"
+block_type: S3 Bucket
+block_name: local-rustfs
+bucket_name: test-assets
 credentials:
-  aws_access_key_id: "rustfsadmin"
-  aws_secret_access_key: "rustfsadmin"
-endpoint_url: "http://localhost:9000"
-region: "us-east-1"
+  aws_access_key_id: rustfsadmin
+  aws_secret_access_key: rustfsadmin
+endpoint_url: http://localhost:9000
+region: us-east-1
