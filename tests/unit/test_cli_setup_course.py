@@ -537,7 +537,7 @@ class TestSetupCourseLive:
     They will make actual API calls to Canvas.
     """
 
-    def test_setup_course_live_non_interactive(self, cli_runner: CliRunner) -> None:
+    def test_setup_course_live_non_interactive(self) -> None:
         """Test setup-course against live Canvas API in non-interactive mode.
 
         This test uses credentials from .env.dev file.
@@ -547,8 +547,6 @@ class TestSetupCourseLive:
         # Load credentials from .env.dev
         token = os.getenv("CANVAS_API_TOKEN")
         course_id = os.getenv("CANVAS_COURSE_ID")
-        api_url = os.getenv("CANVAS_API_URL", "https://canvas.instructure.com")
-
         if not token or not course_id:
             pytest.skip("Canvas credentials not available in environment")
 
