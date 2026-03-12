@@ -133,8 +133,6 @@ known-first-party = ["canvas_code_correction"]
 [tool.ruff.lint.per-file-ignores]
 # Allow assert statements and skip docstrings in tests
 "tests/**/*.py" = ["S101", "D100", "D101", "D102", "D103", "D104", "D105", "D106", "D107", "INP001", "PLR0913", "PLR2004", "ANN001", "ANN201", "ARG001", "FBT001", "PLR0915", "S108", "PLC0415", "N818", "SIM117", "RET504", "SLF001", "S105", "TC003", "TRY300", "T201"]
-# Allow print statements in legacy scripts
-"legacy/**/*.py" = ["T201"]
 # Ignore all linting issues in development scripts
 "scripts/**/*.py" = ["ALL"]
 "src/canvas_code_correction/cli.py" = ["PLR0913"]
