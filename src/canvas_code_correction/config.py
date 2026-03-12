@@ -2,11 +2,16 @@
 
 from __future__ import annotations
 
+import tempfile
 from pathlib import Path
 
 from pydantic import BaseModel, Field, HttpUrl, SecretStr
 
 from canvas_code_correction.prefect_blocks.canvas import CourseConfigBlock
+
+
+def _default_workspace_root() -> Path:
+    return Path(tempfile.gettempdir()) / "ccc" / "workspaces"
 
 
 class CanvasSettings(BaseModel):
@@ -36,7 +41,7 @@ class WorkspaceSettings(BaseModel):
     """Workspace directory settings."""
 
     root: Path = Field(
-        default_factory=lambda: Path("/tmp/ccc/workspaces"),  # noqa: S108
+        default_factory=_default_workspace_root,
         description=(
             "Root directory for grading workspaces. "
             "If placed under a world-writable parent (e.g., /tmp), "
@@ -44,7 +49,7 @@ class WorkspaceSettings(BaseModel):
             "Consider using a user-private location (e.g., ~/.ccc/workspaces) "
             "in production."
         ),
-    )  # nosec B108 # nosonar
+    )
 
 
 class WebhookSettings(BaseModel):
@@ -88,7 +93,7 @@ class Settings(BaseModel):
         workspace_root = (
             Path(block.workspace_root).expanduser()  # type: ignore[attr-defined]
             if block.workspace_root  # type: ignore[attr-defined]
-            else Path("/tmp/ccc/workspaces")  # noqa: S108 # nosec B108 # nosonar  # security: world-writable parent, permissions restricted
+            else _default_workspace_root()
         )
         return cls(
             canvas=CanvasSettings(
