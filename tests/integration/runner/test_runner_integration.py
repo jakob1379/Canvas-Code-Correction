@@ -17,11 +17,14 @@ def docker_available() -> bool:
     """Check if Docker is available and running."""
     try:
         import docker
+    except ImportError:
+        return False
 
+    try:
         client = docker.from_env()
         client.ping()
         return True
-    except Exception:
+    except docker.errors.DockerException:
         return False
 
 

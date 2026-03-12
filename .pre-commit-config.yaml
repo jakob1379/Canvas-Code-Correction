@@ -138,4 +138,5 @@ repos:
       - id: skylos
         name: skylos
         language: system
-        entry: uv run --with skylos skylos --trace --danger --quality --secrets
+        entry: uv run --with skylos skylos --danger --quality --secrets src/canvas_code_correction/
+        pass_filenames: false

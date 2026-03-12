@@ -14,6 +14,7 @@ import pytest
 import requests
 from botocore.client import Config
 from botocore.exceptions import ClientError, EndpointConnectionError
+from requests.exceptions import RequestException
 
 _MOCK_BUCKET = None  # global reference for debugging
 
@@ -43,7 +44,7 @@ def is_prefect_server_available() -> bool:
     try:
         response = requests.get(f"{prefect_api_url}/health", timeout=5)
         return response.status_code == 200
-    except Exception:
+    except RequestException:
         return False
 
 

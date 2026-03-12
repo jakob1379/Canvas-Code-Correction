@@ -3,17 +3,27 @@
 from __future__ import annotations
 
 import hashlib
-import shutil
+import logging
 import tempfile
-import urllib.request
 from dataclasses import dataclass
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
+from canvasapi.exceptions import CanvasException
 from pydantic import BaseModel, Field
 
 if TYPE_CHECKING:
     from canvasapi.submission import Submission
+
+logger = logging.getLogger(__name__)
+UPLOAD_EXCEPTION_TYPES = (
+    CanvasException,
+    NotImplementedError,
+    OSError,
+    RuntimeError,
+    TypeError,
+    ValueError,
+)
 
 
 class UploadResult(BaseModel):
@@ -57,9 +67,9 @@ class CanvasUploader:
             duplicate_result = self._find_duplicate_in_comments(comments, local_md5, config)
             if duplicate_result:
                 return duplicate_result
-        except Exception as e:  # noqa: BLE001
+        except UPLOAD_EXCEPTION_TYPES as exc:
             if config.verbose:
-                print(f"Error during duplicate check: {e}")  # noqa: T201
+                logger.warning("Error during duplicate check: %s", exc)
             # Continue with upload even if duplicate check fails
         return None
 
@@ -112,9 +122,9 @@ class CanvasUploader:
                             "attachment": attachment.get("display_name"),
                         },
                     )
-            except Exception as e:  # noqa: BLE001
+            except UPLOAD_EXCEPTION_TYPES as exc:
                 if config.verbose:
-                    print(f"Error checking attachment: {e}")  # noqa: T201
+                    logger.warning("Error checking attachment: %s", exc)
         return None
 
     def _upload_feedback_without_duplicate_check(
@@ -150,14 +160,14 @@ class CanvasUploader:
                     "upload_comments": False,
                 },
             )
-        except Exception as e:  # noqa: BLE001
+        except UPLOAD_EXCEPTION_TYPES as exc:
             return UploadResult(
                 success=False,
-                message=f"Failed to upload feedback: {e}",
+                message=f"Failed to upload feedback: {exc}",
                 duplicate=False,
                 comment_posted=False,
                 grade_posted=False,
-                details={"error": str(e), "file": str(feedback_file)},
+                details={"error": str(exc), "file": str(feedback_file)},
             )
 
     def upload_feedback(
@@ -251,14 +261,14 @@ class CanvasUploader:
                 details={"grade": grade, "upload_grades": False},
             )
 
-        except Exception as e:  # noqa: BLE001
+        except UPLOAD_EXCEPTION_TYPES as exc:
             return UploadResult(
                 success=False,
-                message=f"Failed to post grade: {e}",
+                message=f"Failed to post grade: {exc}",
                 duplicate=False,
                 comment_posted=False,
                 grade_posted=False,
-                details={"error": str(e), "grade": grade},
+                details={"error": str(exc), "grade": grade},
             )
 
     def upload_feedback_and_grade(
@@ -293,29 +303,13 @@ class CanvasUploader:
                 hash_md5.update(chunk)
         return hash_md5.hexdigest()
 
-    def _download_attachment(self, url: str, destination: Path) -> None:
+    def _download_attachment(self, _url: str, _destination: Path) -> None:
         """Download a file from a URL to destination."""
-        # Simple download implementation
-        # In practice, should use canvasapi's built-in methods or requests with auth
-        try:
-            # This is a simplified version - real implementation should handle
-            # Canvas authentication properly
-            # For now, we'll use a placeholder that raises NotImplementedError
-            # since proper implementation requires the Canvas object context
-            msg = (
-                "Attachment download requires Canvas object context. "
-                "Use submission.attachments or file.download() instead."
-            )
-            raise NotImplementedError(
-                msg,
-            )
-        except ImportError:
-            # Fallback to urllib (won't work with authenticated Canvas URLs)
-            with (
-                urllib.request.urlopen(url) as response,  # noqa: S310 # nosec B310 # nosonar
-                destination.open("wb") as out_file,
-            ):
-                shutil.copyfileobj(response, out_file)  # type: ignore[arg-type]
+        msg = (
+            "Attachment download requires Canvas object context. "
+            "Use submission.attachments or file.download() instead."
+        )
+        raise NotImplementedError(msg)
 
 
 def create_uploader_from_resources(
