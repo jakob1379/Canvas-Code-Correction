@@ -99,9 +99,6 @@ search-path = ["src"]
 
 [tool.pytest.ini_options]
 addopts = "--doctest-modules --cov=src/canvas_code_correction --cov-branch --cov-report=term-missing --cov-report=json"
-testpaths = [
-  "tests"
-]
 testpaths = ["tests"]
 markers = [
   "integration: marks tests that exercise live Canvas API",
