@@ -47,9 +47,11 @@ def _ensure_safe_directory(path: Path, mode: int = 0o700) -> None:
     if path.exists():
         st = path.stat()
         if stat.S_ISLNK(st.st_mode):
-            raise RuntimeError(f"Directory {path} is a symlink")
+            msg = f"Directory {path} is a symlink"
+            raise RuntimeError(msg)
         if st.st_mode & stat.S_IWOTH:
-            raise RuntimeError(f"Directory {path} is world-writable")
+            msg = f"Directory {path} is world-writable"
+            raise RuntimeError(msg)
         # Directory exists and is safe
         return
 
@@ -67,7 +69,8 @@ def _ensure_safe_directory(path: Path, mode: int = 0o700) -> None:
     if current.exists():
         st = current.stat()
         if stat.S_ISLNK(st.st_mode):
-            raise RuntimeError(f"Parent directory {current} is a symlink")
+            msg = f"Parent directory {current} is a symlink"
+            raise RuntimeError(msg)
 
     # Create missing directories in reverse order (deepest to shallowest)
     for missing in reversed(parents):
