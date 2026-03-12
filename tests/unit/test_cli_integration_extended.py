@@ -17,6 +17,8 @@ from typing import cast
 from unittest.mock import MagicMock, patch
 
 import pytest
+from canvasapi.exceptions import CanvasException
+from requests.exceptions import RequestException
 from typer.testing import CliRunner
 
 from canvas_code_correction.cli import app
@@ -43,7 +45,7 @@ def canvas_credentials() -> dict[str, str]:
 
         canvas = Canvas(api_url, token_value)
         _ = canvas.get_current_user()
-    except Exception:
+    except (CanvasException, RequestException):
         pytest.skip("Canvas API token is invalid or expired")
 
     return {

@@ -10,6 +10,7 @@ import requests
 from botocore.client import Config
 from botocore.exceptions import ClientError, EndpointConnectionError
 from prefect.client import get_client
+from requests.exceptions import RequestException
 
 
 def is_rustfs_available() -> bool:
@@ -37,7 +38,7 @@ def is_prefect_server_available() -> bool:
     try:
         response = requests.get(f"{prefect_api_url}/health", timeout=5)
         return response.status_code == 200
-    except Exception:
+    except RequestException:
         return False
 
 

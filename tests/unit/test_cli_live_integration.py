@@ -14,6 +14,9 @@ from typing import cast
 from unittest.mock import MagicMock, patch
 
 import pytest
+from botocore.exceptions import BotoCoreError, ClientError, EndpointConnectionError
+from canvasapi.exceptions import CanvasException
+from requests.exceptions import RequestException
 from typer.testing import CliRunner
 
 from canvas_code_correction.cli import app
@@ -38,7 +41,7 @@ def is_rustfs_available() -> bool:
         )
         s3.list_buckets()
         return True
-    except Exception:
+    except (EndpointConnectionError, ClientError, BotoCoreError):
         return False
 
 
@@ -52,7 +55,7 @@ def is_prefect_server_available() -> bool:
             timeout=5,
         )
         return response.status_code == 200
-    except Exception:
+    except RequestException:
         return False
 
 
@@ -64,7 +67,7 @@ def is_canvas_token_valid(token: str, api_url: str) -> bool:
         canvas = Canvas(api_url, token)
         _ = canvas.get_current_user()
         return True
-    except Exception:
+    except (CanvasException, RequestException):
         return False
 
 

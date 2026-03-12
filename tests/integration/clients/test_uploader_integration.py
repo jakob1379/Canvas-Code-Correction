@@ -6,7 +6,9 @@ import zipfile
 from pathlib import Path
 
 import pytest
+from canvasapi.exceptions import CanvasException
 from pydantic import SecretStr
+from requests.exceptions import RequestException
 
 from canvas_code_correction.clients import canvas_resources
 from canvas_code_correction.config import (
@@ -41,7 +43,7 @@ def build_resources_or_skip():
     )
     try:
         resources = canvas_resources.build_canvas_resources(settings)
-    except Exception as e:
+    except (CanvasException, RequestException) as e:
         # If token is expired or invalid, skip with appropriate message
         error_msg = str(e).lower()
         if "expired" in error_msg or "invalid" in error_msg or "unauthorized" in error_msg:
