@@ -45,7 +45,9 @@ The model is defined in `src/canvas_code_correction/config.py` and includes:
 
 - **Canvas**: `api_url`, `token`, `course_id`
 - **Assets**: `bucket_block`, `path_prefix`
-- **Grader**: `docker_image`, `work_pool_name`, `env`
+- **Grader**: `docker_image`, `command`, `timeout_seconds`, `memory_mb`,
+  `upload_check_duplicates`, `upload_comments`, `upload_grades`,
+  `upload_verbose`, `work_pool_name`, `env`
 - **Workspace**: `root`
 - **Webhook**: `secret`, `deployment_name`, `enabled`, `require_jwt`,
   `rate_limit`

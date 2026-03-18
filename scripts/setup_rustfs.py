@@ -2,13 +2,13 @@
 """Setup RustFS local S3 server for Canvas Code Correction development.
 
 This script:
-1. Checks if RustFS is running (default localhost:9000, configurable via RUSTFS_ENDPOINT)
+1. Checks if RustFS is running (default local endpoint, configurable via RUSTFS_ENDPOINT)
 2. Creates 'test-assets' bucket if it doesn't exist (configurable via RUSTFS_BUCKET_NAME)
 3. Uploads a test asset file for integration tests
-4. Registers a Prefect S3 block named 'local-rustfs'
+4. Optionally registers a Prefect S3 block named 'local-rustfs' when Prefect is available
 
 Configuration via environment variables:
-- RUSTFS_ENDPOINT: S3 endpoint URL (default: http://localhost:9000)
+- RUSTFS_ENDPOINT: S3 endpoint URL (default: local RustFS endpoint)
 - RUSTFS_ACCESS_KEY: Access key (default: rustfsadmin)
 - RUSTFS_SECRET_KEY: Secret key (default: rustfsadmin)
 - RUSTFS_BUCKET_NAME: Bucket name (default: test-assets)
@@ -22,17 +22,49 @@ from __future__ import annotations
 
 import os
 import sys
-from urllib.parse import urlparse
+from typing import TypedDict
+from urllib.parse import urlunparse
 
 import boto3
+import requests
 from botocore.client import Config
 from botocore.exceptions import ClientError, EndpointConnectionError
 
+LOCAL_HOST = "localhost"
+LOCAL_SCHEME = "http"
+DEFAULT_RUSTFS_PORT = "9000"
+DEFAULT_PREFECT_PORT = "4200"
 
-def get_rustfs_config():
+
+def _build_local_url(host: str, port: str, path: str = "") -> str:
+    clean_path = path if not path or path.startswith("/") else f"/{path}"
+    return urlunparse((LOCAL_SCHEME, f"{host}:{port}", clean_path, "", "", ""))
+
+
+class RustfsConfig(TypedDict):
+    endpoint_url: str
+    aws_access_key_id: str
+    aws_secret_access_key: str
+    bucket_name: str
+    prefix: str
+
+
+def _default_rustfs_endpoint() -> str:
+    host = os.getenv("RUSTFS_HOST", LOCAL_HOST)
+    port = os.getenv("RUSTFS_PORT", DEFAULT_RUSTFS_PORT)
+    return _build_local_url(host, port)
+
+
+def _default_prefect_api_url() -> str:
+    host = os.getenv("PREFECT_HOST", LOCAL_HOST)
+    port = os.getenv("PREFECT_PORT", DEFAULT_PREFECT_PORT)
+    return _build_local_url(host, port, "/api")
+
+
+def get_rustfs_config() -> RustfsConfig:
     """Return RustFS configuration from environment variables with defaults."""
     return {
-        "endpoint_url": os.getenv("RUSTFS_ENDPOINT", "http://localhost:9000"),
+        "endpoint_url": os.getenv("RUSTFS_ENDPOINT", _default_rustfs_endpoint()),
         "aws_access_key_id": os.getenv("RUSTFS_ACCESS_KEY", "rustfsadmin"),
         "aws_secret_access_key": os.getenv("RUSTFS_SECRET_KEY", "rustfsadmin"),
         "bucket_name": os.getenv("RUSTFS_BUCKET_NAME", "test-assets"),
@@ -40,7 +72,7 @@ def get_rustfs_config():
     }
 
 
-def get_bucket_owner_kwargs(endpoint_url: str) -> dict:
+def get_bucket_owner_kwargs(endpoint_url: str) -> dict[str, str]:
     """Return ExpectedBucketOwner parameter if endpoint is AWS and owner is configured."""
     bucket_owner = os.getenv("AWS_BUCKET_OWNER")
     if bucket_owner and "amazonaws.com" in endpoint_url:
@@ -99,7 +131,7 @@ def ensure_bucket_exists(bucket_name: str) -> bool:
             return False
 
 
-def upload_test_asset(bucket_name: str, prefix: str = "dev") -> None:
+def upload_test_asset(bucket_name: str, prefix: str = "dev") -> bool:
     """Upload a test asset file for integration tests."""
     config = get_rustfs_config()
     bucket_owner_kwargs = get_bucket_owner_kwargs(config["endpoint_url"])
@@ -117,8 +149,10 @@ def upload_test_asset(bucket_name: str, prefix: str = "dev") -> None:
     try:
         s3.put_object(Bucket=bucket_name, Key=key, Body=test_content, **bucket_owner_kwargs)
         print(f"✓ Uploaded test asset to '{bucket_name}/{key}'")
+        return True
     except ClientError as e:
         print(f"✗ Failed to upload test asset: {e}")
+        return False
 
 
 def register_prefect_block() -> bool:
@@ -128,17 +162,17 @@ def register_prefect_block() -> bool:
         from prefect_aws import AwsClientParameters, AwsCredentials, S3Bucket
         from pydantic import SecretStr
 
-        # Check if block already exists
         try:
             block = S3Bucket.load("local-rustfs")
             print("✓ Prefect S3 block 'local-rustfs' already exists")
             return True
         except ValueError:
-            # Block doesn't exist, create it
-            pass
+            block = None
+
+        if block is not None:
+            return True
 
         config = get_rustfs_config()
-        # Create AwsCredentials with endpoint_url in aws_client_parameters
         credentials = AwsCredentials(
             aws_access_key_id=config["aws_access_key_id"],
             aws_secret_access_key=SecretStr(config["aws_secret_access_key"]),
@@ -166,23 +200,19 @@ def register_prefect_block() -> bool:
 
 def check_prefect_server() -> bool:
     """Check if Prefect server is accessible."""
-    prefect_api_url = os.getenv("PREFECT_API_URL", "http://localhost:4200/api")
+    prefect_api_url = os.getenv("PREFECT_API_URL", _default_prefect_api_url())
+    prefect_ui_url = prefect_api_url.removesuffix("/api")
     try:
-        import httpx
-
-        response = httpx.get(f"{prefect_api_url}/health", timeout=5)
+        response = requests.get(f"{prefect_api_url}/health", timeout=5)
         if response.status_code == 200:
             print(f"✓ Prefect server is reachable at {prefect_api_url}")
             return True
         print(f"✗ Prefect server returned status {response.status_code}")
         return False
-    except ImportError:
-        print("⚠ Could not check Prefect server (httpx not available)")
-        return True  # Continue anyway
-    except Exception as e:
+    except requests.RequestException as e:
         print(f"✗ Prefect server not reachable: {e}")
         print("  Start Prefect server with: uv run poe prefect")
-        print("  Or set PREFECT_API_URL environment variable")
+        print(f"  Or open {prefect_ui_url} and confirm the API at {prefect_api_url}")
         return False
 
 
@@ -190,42 +220,45 @@ def main() -> int:
     print("Setting up RustFS for Canvas Code Correction development")
     print("=" * 60)
 
-    # Check prerequisites
     if not check_rustfs_available():
         return 1
 
     if not check_prefect_server():
         print("⚠ Continuing without Prefect server check...")
 
-    # Get configuration
     config = get_rustfs_config()
     bucket_name = config["bucket_name"]
     prefix = config["prefix"]
 
-    # Setup S3 bucket
     if not ensure_bucket_exists(bucket_name):
         return 1
 
-    # Upload test asset
-    upload_test_asset(bucket_name, prefix=prefix)
+    if not upload_test_asset(bucket_name, prefix=prefix):
+        print("✗ Setup incomplete: failed to upload the integration test asset")
+        return 1
 
-    # Register Prefect block
-    if not register_prefect_block():
+    prefect_block_registered = register_prefect_block()
+    if not prefect_block_registered:
         print("⚠ Failed to register Prefect block")
         print("  You can register it manually with:")
         print("  prefect block register -f scripts/rustfs-s3-block.yaml")
-        print("  Or create block via Prefect UI at http://localhost:4200")
+        print(
+            f"  Or create block via Prefect UI at {_build_local_url(LOCAL_HOST, DEFAULT_PREFECT_PORT)}"
+        )
 
     print("=" * 60)
-    print("Setup complete!")
+    if prefect_block_registered:
+        print("Setup complete!")
+    else:
+        print("RustFS setup complete, but Prefect block registration still needs manual follow-up.")
     print("\nNext steps:")
     print("1. Run integration tests: uv run pytest -m integration")
-    print("2. Configure a course: uv run ccc configure-course <course-slug> \\")
+    print("2. Configure a course: uv run ccc course setup")
     print(f"   --assets-block local-rustfs --s3-prefix {prefix}")
-    print("3. Run correction flow: uv run ccc run-once <assignment-id>")
+    print("3. Run correction flow: uv run ccc course run <assignment-id> --course <block>")
 
     return 0
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    raise SystemExit(main())
