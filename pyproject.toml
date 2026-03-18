@@ -33,26 +33,27 @@ classifiers = [
 dependencies = [
   "prefect[docker]>=3.6.20",
   "prefect-aws>=0.7.5",
-  "httpx>=0.28.1",
   "docker>=7.1.0",
   "pydantic>=2.12.5",
   "typer>=0.24.1",
-  "python-dotenv>=1.2.2",
   "canvasapi>=3.4.0",
   "boto3>=1.42.55",
-  "mkdocs>=1.6.1",
-  "mkdocs-material>=9.7.3",
-  "mkdocs-mermaid2-plugin>=1.2.3",
-  "mkdocs-glightbox>=0.5.2",
   "fastapi>=0.135.1",
   "uvicorn[standard]>=0.41.0",
-  "PyJWT>=2.10.0",
+  "PyJWT>=2.12.0",
   "limits>=5.8.0",
-  "slugify>=0.0.1"
+  "requests>=2.32.5",
+  "rich>=14.1.0",
+  "python-slugify>=8.0.4"
 ]
 
 [project.optional-dependencies]
 docs = [
+  "httpx>=0.28.1",
+  "mkdocs>=1.6.1",
+  "mkdocs-material>=9.7.3",
+  "mkdocs-mermaid2-plugin>=1.2.3",
+  "mkdocs-glightbox>=0.5.2",
   "zensical>=0.0.24"
 ]
 test = [
@@ -90,7 +91,7 @@ _docker_build.cmd = "docker build -t jakob1379/canvas-grader:latest . -f contain
 _docker_push.cmd = "docker push jakob1379/canvas-grader:latest"
 generate-cli-docs.shell = "uv run typer src/canvas_code_correction/cli.py utils docs --title \"CLI Reference\" --name ccc --output 'docs/reference/02-cli.md'"
 prefect.shell = 'prefect server start'
-rustfs-setup.shell = "uv run python scripts/setup-rustfs.py"
+rustfs-setup.shell = "uv run python scripts/setup_rustfs.py"
 s3.shell = "mkdir -p workspace && chmod 777 workspace && docker run --rm -p 9000:9000 -p 9001:9001 -v ./workspace:/data -e RUSTFS_ACCESS_KEY=rustfsadmin -e RUSTFS_SECRET_KEY=rustfsadmin rustfs/rustfs:latest /data"
 
 [tool.pyrefly]
@@ -98,7 +99,7 @@ python-version = "3.13"
 search-path = ["src"]
 
 [tool.pytest.ini_options]
-addopts = "--doctest-modules --cov=src/canvas_code_correction --cov-branch --cov-report=term-missing --cov-report=json"
+addopts = "--doctest-modules --cov=src/canvas_code_correction --cov=scripts --cov-branch --cov-report=term-missing --cov-report=json"
 testpaths = ["tests"]
 markers = [
   "integration: marks tests that exercise live Canvas API",
@@ -123,6 +124,9 @@ ignore = []
 
 [tool.ruff.lint.flake8-bugbear]
 extend-immutable-calls = ["typer.Option", "typer.Argument"]
+
+[tool.ruff.lint.flake8-type-checking]
+runtime-evaluated-base-classes = ["pydantic.BaseModel"]
 
 [tool.ruff.lint.isort]
 known-first-party = ["canvas_code_correction"]

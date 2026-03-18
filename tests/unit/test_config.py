@@ -8,12 +8,12 @@ from unittest.mock import MagicMock, patch
 import pytest
 from pydantic import HttpUrl, SecretStr
 
+from canvas_code_correction.bootstrap import load_settings_from_course_block
 from canvas_code_correction.config import (
     CanvasSettings,
     Settings,
     WebhookSettings,
     WorkspaceSettings,
-    resolve_settings_from_block,
 )
 from canvas_code_correction.prefect_blocks.canvas import CourseConfigBlock
 
@@ -39,10 +39,10 @@ def mock_course_block() -> MagicMock:
 
 
 @pytest.mark.local
-def test_settings_from_course_block(mock_course_block: MagicMock) -> None:
-    """Test Settings.from_course_block with a mock block."""
+def test_load_settings_from_course_block(mock_course_block: MagicMock) -> None:
+    """Test load_settings_from_course_block with a mock block."""
     with patch.object(CourseConfigBlock, "load", return_value=mock_course_block):
-        settings = Settings.from_course_block("dummy-block")
+        settings = load_settings_from_course_block("dummy-block")
         assert settings.canvas.api_url == mock_course_block.canvas_api_url
         assert settings.canvas.token.get_secret_value() == "secret-token"
         assert settings.canvas.course_id == 123
@@ -61,29 +61,29 @@ def test_settings_from_course_block(mock_course_block: MagicMock) -> None:
 
 
 @pytest.mark.local
-def test_settings_from_course_block_with_workspace_root(mock_course_block: MagicMock) -> None:
-    """Test Settings.from_course_block with a custom workspace root."""
+def test_load_settings_from_course_block_with_workspace_root(mock_course_block: MagicMock) -> None:
+    """Test loader with a custom workspace root."""
     mock_course_block.workspace_root = "/custom/workspace"
     with patch.object(CourseConfigBlock, "load", return_value=mock_course_block):
-        settings = Settings.from_course_block("dummy-block")
+        settings = load_settings_from_course_block("dummy-block")
         assert settings.workspace.root == Path("/custom/workspace").expanduser()
 
 
 @pytest.mark.local
-def test_settings_from_course_block_with_webhook_secret(mock_course_block: MagicMock) -> None:
-    """Test Settings.from_course_block with webhook secret."""
+def test_load_settings_from_course_block_with_webhook_secret(mock_course_block: MagicMock) -> None:
+    """Test loader with webhook secret."""
     mock_course_block.webhook_secret = SecretStr("supersecret")
     with patch.object(CourseConfigBlock, "load", return_value=mock_course_block):
-        settings = Settings.from_course_block("dummy-block")
+        settings = load_settings_from_course_block("dummy-block")
         assert settings.webhook.secret is not None
         assert settings.webhook.secret.get_secret_value() == "supersecret"
 
 
 @pytest.mark.local
-def test_resolve_settings_from_block(mock_course_block: MagicMock) -> None:
-    """Test resolve_settings_from_block wrapper."""
+def test_load_settings_from_course_block_returns_settings(mock_course_block: MagicMock) -> None:
+    """Test loader returns Settings objects."""
     with patch.object(CourseConfigBlock, "load", return_value=mock_course_block):
-        settings = resolve_settings_from_block("dummy-block")
+        settings = load_settings_from_course_block("dummy-block")
         assert isinstance(settings, Settings)
         assert settings.canvas.course_id == 123
 

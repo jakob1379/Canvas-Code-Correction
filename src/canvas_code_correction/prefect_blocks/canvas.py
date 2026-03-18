@@ -11,7 +11,7 @@ class CourseConfigBlock(Block):
 
     _block_type_name = "CCC Course Config"
 
-    canvas_api_url: HttpUrl = Field(default=HttpUrl("https://canvas.instructure.com"))
+    canvas_api_url: HttpUrl
     canvas_token: SecretStr
     canvas_course_id: int
 
@@ -23,6 +23,13 @@ class CourseConfigBlock(Block):
     grader_image: str | None = None
     work_pool_name: str | None = None
     grader_env: dict[str, str] = Field(default_factory=dict)
+    grader_command: list[str] = Field(default_factory=lambda: ["sh", "main.sh"])
+    grader_timeout_seconds: int = 300
+    grader_memory_mb: int | None = 512
+    grader_upload_check_duplicates: bool = True
+    grader_upload_comments: bool = True
+    grader_upload_grades: bool = True
+    grader_upload_verbose: bool = False
 
     # Webhook configuration
     webhook_secret: SecretStr | None = Field(
@@ -40,4 +47,8 @@ class CourseConfigBlock(Block):
     webhook_require_jwt: bool = Field(
         default=False,
         description="Require JWT validation for Canvas webhooks (uses webhook_secret)",
+    )
+    webhook_rate_limit: str = Field(
+        default="10/minute",
+        description="Rate limit for webhook requests (e.g., '10/minute', '100/hour')",
     )

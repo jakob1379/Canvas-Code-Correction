@@ -3,11 +3,10 @@
 from __future__ import annotations
 
 import tempfile
+from importlib import import_module
 from pathlib import Path
 
 from pydantic import BaseModel, Field, HttpUrl, SecretStr
-
-from canvas_code_correction.prefect_blocks.canvas import CourseConfigBlock
 
 
 def _default_workspace_root() -> Path:
@@ -35,6 +34,13 @@ class GraderSettings(BaseModel):
     docker_image: str | None = None
     work_pool_name: str | None = None
     env: dict[str, str] = Field(default_factory=dict)
+    command: list[str] = Field(default_factory=lambda: ["sh", "main.sh"])
+    timeout_seconds: int = 300
+    memory_mb: int | None = 512
+    upload_check_duplicates: bool = True
+    upload_comments: bool = True
+    upload_grades: bool = True
+    upload_verbose: bool = False
 
 
 class WorkspaceSettings(BaseModel):
@@ -86,41 +92,17 @@ class Settings(BaseModel):
     workspace: WorkspaceSettings
     webhook: WebhookSettings = Field(default_factory=WebhookSettings)
 
-    @classmethod
-    def from_course_block(cls, block_name: str) -> Settings:
-        """Create Settings instance from a Prefect course configuration block."""
-        block = CourseConfigBlock.load(block_name)  # type: ignore[attr-defined]
-        workspace_root = (
-            Path(block.workspace_root).expanduser()  # type: ignore[attr-defined]
-            if block.workspace_root  # type: ignore[attr-defined]
-            else _default_workspace_root()
+    def to_flow_payload(self) -> dict[str, object]:
+        """Return a JSON-safe payload consumed by webhook-bound Prefect flows."""
+        payload = self.model_dump(mode="json")
+        payload["canvas"]["token"] = self.canvas.token.get_secret_value()
+        payload["webhook"]["secret"] = (
+            self.webhook.secret.get_secret_value() if self.webhook.secret else None
         )
-        return cls(
-            canvas=CanvasSettings(
-                api_url=block.canvas_api_url,  # type: ignore[attr-defined]
-                token=block.canvas_token,  # type: ignore[attr-defined]
-                course_id=block.canvas_course_id,  # type: ignore[attr-defined]
-            ),
-            assets=CourseAssetsSettings(
-                bucket_block=block.asset_bucket_block,  # type: ignore[attr-defined]
-                path_prefix=block.asset_path_prefix,  # type: ignore[attr-defined]
-            ),
-            grader=GraderSettings(
-                docker_image=block.grader_image,  # type: ignore[attr-defined]
-                work_pool_name=block.work_pool_name,  # type: ignore[attr-defined]
-                env=dict(block.grader_env),  # type: ignore[attr-defined]
-            ),
-            workspace=WorkspaceSettings(root=workspace_root),
-            webhook=WebhookSettings(
-                secret=block.webhook_secret,  # type: ignore[attr-defined]
-                deployment_name=block.deployment_name,  # type: ignore[attr-defined]
-                enabled=block.webhook_enabled,  # type: ignore[attr-defined]
-                require_jwt=block.webhook_require_jwt,  # type: ignore[attr-defined]
-                rate_limit="10/minute",
-            ),
-        )
+        return payload
 
 
 def resolve_settings_from_block(block_name: str) -> Settings:
-    """Load :class:`Settings` from a Prefect course configuration block."""
-    return Settings.from_course_block(block_name)
+    """Load settings from a persisted course block."""
+    bootstrap = import_module("canvas_code_correction.bootstrap")
+    return bootstrap.load_settings_from_course_block(block_name)

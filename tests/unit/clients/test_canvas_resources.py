@@ -6,6 +6,7 @@ from unittest.mock import Mock
 import pytest
 from pydantic import SecretStr
 
+from canvas_code_correction.bootstrap import load_settings_from_course_block
 from canvas_code_correction.clients import canvas_resources
 from canvas_code_correction.config import (
     CanvasSettings,
@@ -72,7 +73,7 @@ def test_settings_from_course_block(monkeypatch):
 
     monkeypatch.setattr(CourseConfigBlock, "load", classmethod(fake_load))
 
-    settings = Settings.from_course_block("my-block")
+    settings = load_settings_from_course_block("my-block")
 
     assert str(settings.canvas.api_url).rstrip("/") == "https://block.canvas.test"
     assert settings.canvas.token.get_secret_value() == "block-token"

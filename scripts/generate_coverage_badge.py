@@ -11,12 +11,30 @@ Usage:
 
 import json
 import argparse
-import os
 import sys
 from pathlib import Path
+from typing import Literal, Sequence, TypedDict
+
+BadgeColor = Literal["brightgreen", "green", "yellowgreen", "yellow", "orange", "red"]
 
 
-def determine_color(coverage_percent: float) -> str:
+class CoverageTotals(TypedDict):
+    percent_covered: float
+
+
+class CoverageReport(TypedDict):
+    totals: CoverageTotals
+
+
+class BadgeData(TypedDict):
+    schemaVersion: int
+    label: str
+    message: str
+    color: str
+    namedLogo: str
+
+
+def determine_color(coverage_percent: float) -> BadgeColor:
     """Determine badge color based on coverage percentage."""
     if coverage_percent >= 90:
         return "brightgreen"
@@ -32,7 +50,24 @@ def determine_color(coverage_percent: float) -> str:
         return "red"
 
 
-def main():
+def load_coverage_percent(coverage_path: Path) -> float:
+    try:
+        with coverage_path.open("r") as f:
+            data: CoverageReport = json.load(f)
+    except FileNotFoundError as exc:
+        raise RuntimeError(f"Coverage file not found: {coverage_path}") from exc
+    except json.JSONDecodeError as exc:
+        raise RuntimeError(f"Invalid JSON in {coverage_path}: {exc}") from exc
+
+    try:
+        coverage_percent = data["totals"]["percent_covered"]
+    except KeyError as exc:
+        raise RuntimeError(f"Missing expected key in coverage JSON: {exc}") from exc
+
+    return round(coverage_percent, 2)
+
+
+def main(argv: Sequence[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Generate shields.io coverage badge JSON")
     parser.add_argument(
         "--coverage-json",
@@ -46,35 +81,19 @@ def main():
     )
     parser.add_argument("--verbose", "-v", action="store_true", help="Print verbose output")
 
-    args = parser.parse_args()
+    args = parser.parse_args(argv)
 
-    # Read coverage JSON
     try:
-        with open(args.coverage_json, "r") as f:
-            data = json.load(f)
-    except FileNotFoundError:
-        print(f"Error: Coverage file not found: {args.coverage_json}", file=sys.stderr)
-        sys.exit(1)
-    except json.JSONDecodeError as e:
-        print(f"Error: Invalid JSON in {args.coverage_json}: {e}", file=sys.stderr)
-        sys.exit(1)
-
-    # Extract coverage percentage
-    try:
-        coverage_percent = data["totals"]["percent_covered"]
-        coverage_percent = round(coverage_percent, 2)
-    except KeyError as e:
-        print(f"Error: Missing expected key in coverage JSON: {e}", file=sys.stderr)
-        sys.exit(1)
+        coverage_percent = load_coverage_percent(Path(args.coverage_json))
+    except RuntimeError as exc:
+        print(f"Error: {exc}", file=sys.stderr)
+        return 1
 
     if args.verbose:
         print(f"Coverage: {coverage_percent}%")
 
-    # Determine badge color
     color = determine_color(coverage_percent)
-
-    # Create badge JSON structure for shields.io endpoint
-    badge_data = {
+    badge_data: BadgeData = {
         "schemaVersion": 1,
         "label": "coverage",
         "message": f"{coverage_percent}%",
@@ -82,11 +101,9 @@ def main():
         "namedLogo": "python",
     }
 
-    # Ensure output directory exists
     output_path = Path(args.output)
     output_path.parent.mkdir(parents=True, exist_ok=True)
 
-    # Write badge JSON
     with open(output_path, "w") as f:
         json.dump(badge_data, f, indent=2)
 
@@ -96,11 +113,10 @@ def main():
             f"Badge URL: https://img.shields.io/endpoint?url=https://ccc.jgalabs.dk/badges/coverage.json"
         )
 
-    # Print coverage percentage for logging
     print(f"Coverage percentage: {coverage_percent}%")
 
     return 0
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    raise SystemExit(main())

@@ -21,6 +21,13 @@ def test_course_config_block_round_trip() -> None:
         grader_image="example/image:latest",
         work_pool_name="course-pool",
         grader_env={"FOO": "BAR"},
+        grader_command=["sh", "run.sh"],
+        grader_timeout_seconds=600,
+        grader_memory_mb=2048,
+        grader_upload_check_duplicates=False,
+        grader_upload_comments=False,
+        grader_upload_grades=True,
+        grader_upload_verbose=True,
     )
 
     block.save(block_name, overwrite=True)
@@ -35,5 +42,12 @@ def test_course_config_block_round_trip() -> None:
         assert loaded.grader_image == "example/image:latest"  # type: ignore[attr-defined]
         assert loaded.work_pool_name == "course-pool"  # type: ignore[attr-defined]
         assert loaded.grader_env == {"FOO": "BAR"}  # type: ignore[attr-defined]
+        assert loaded.grader_command == ["sh", "run.sh"]  # type: ignore[attr-defined]
+        assert loaded.grader_timeout_seconds == 600  # type: ignore[attr-defined]
+        assert loaded.grader_memory_mb == 2048  # type: ignore[attr-defined]
+        assert loaded.grader_upload_check_duplicates is False  # type: ignore[attr-defined]
+        assert loaded.grader_upload_comments is False  # type: ignore[attr-defined]
+        assert loaded.grader_upload_grades is True  # type: ignore[attr-defined]
+        assert loaded.grader_upload_verbose is True  # type: ignore[attr-defined]
     finally:
         CourseConfigBlock.delete(block_name)
