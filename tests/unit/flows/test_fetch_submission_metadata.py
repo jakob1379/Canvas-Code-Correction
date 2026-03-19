@@ -6,7 +6,8 @@ from canvas_code_correction.clients.canvas_resources import CanvasResources
 from canvas_code_correction.config import Settings
 from canvas_code_correction.flows.correction import (
     CorrectSubmissionPayload,
-    fetch_submission_metadata,
+    SubmissionMetadata,
+    _fetch_submission_metadata,
 )
 
 
@@ -53,7 +54,7 @@ def test_fetch_submission_metadata_returns_serializable_dict(monkeypatch):
 
     payload = CorrectSubmissionPayload(assignment_id=10, submission_id=20)
 
-    result = fetch_submission_metadata.fn(resources, payload)
+    result = _fetch_submission_metadata(resources, payload)
 
     course.get_assignment.assert_called_once_with(10)
     assignment.get_submission.assert_called_once_with(
@@ -66,7 +67,7 @@ def test_fetch_submission_metadata_returns_serializable_dict(monkeypatch):
         ],
     )
 
-    assert result == {
-        "assignment": {"id": 10, "name": "Assignment"},
-        "submission": {"id": 20, "workflow_state": "submitted"},
-    }
+    assert result == SubmissionMetadata(
+        assignment={"id": 10, "name": "Assignment"},
+        submission={"id": 20, "workflow_state": "submitted"},
+    )

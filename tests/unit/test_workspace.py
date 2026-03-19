@@ -5,17 +5,9 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from canvas_code_correction.config import (
-    CanvasSettings,
-    CourseAssetsSettings,
-    GraderSettings,
-    Settings,
-    WorkspaceSettings,
-)
 from canvas_code_correction.workspace import (
     WorkspaceConfig,
     WorkspacePaths,
-    build_workspace_config,
     prepare_workspace,
 )
 
@@ -47,36 +39,6 @@ def test_workspace_paths() -> None:
     assert paths.root == root
     assert paths.submission_dir == submission_dir
     assert paths.assets_dir == assets_dir
-
-
-def test_build_workspace_config() -> None:
-    """Test building workspace config from settings."""
-    from pydantic import SecretStr
-
-    settings = Settings(
-        canvas=CanvasSettings(
-            api_url="https://canvas.example.com",
-            token=SecretStr("dummy"),
-            course_id=1,
-        ),
-        grader=GraderSettings(),
-        workspace=WorkspaceSettings(root=Path("/tmp/workspaces")),
-        assets=CourseAssetsSettings(
-            bucket_block="test-bucket",
-            path_prefix="test/prefix",
-        ),
-    )
-    config = build_workspace_config(
-        settings,
-        assignment_id=100,
-        submission_id=200,
-    )
-    assert config.workspace_root == Path("/tmp/workspaces")
-    assert config.bucket_block == "test-bucket"
-    assert config.path_prefix == "test/prefix"
-    assert config.assignment_id == 100
-    assert config.submission_id == 200
-    assert config.run_id is None
 
 
 @patch("canvas_code_correction.workspace.S3Bucket")
@@ -242,3 +204,50 @@ def test_prepare_workspace_submission_file_not_exists(mock_s3_bucket_class, tmp_
     dest_missing = workspace_paths.submission_dir / missing_file.name
     assert dest_exists.exists()
     assert not dest_missing.exists()
+
+
+@patch("canvas_code_correction.workspace.S3Bucket")
+def test_prepare_workspace_rejects_world_writable_root(
+    mock_s3_bucket_class,
+    tmp_path: Path,
+) -> None:
+    unsafe_root = tmp_path / "unsafe-root"
+    unsafe_root.mkdir(mode=0o777)
+    unsafe_root.chmod(0o777)
+
+    config = WorkspaceConfig(
+        workspace_root=unsafe_root,
+        bucket_block="test-bucket",
+        path_prefix="prefix",
+        assignment_id=11,
+        submission_id=12,
+    )
+
+    with pytest.raises(RuntimeError, match="world-writable"):
+        prepare_workspace(config, [])
+
+    mock_s3_bucket_class.load.assert_not_called()
+
+
+@patch("canvas_code_correction.workspace.S3Bucket")
+def test_prepare_workspace_rejects_symlink_root(
+    mock_s3_bucket_class,
+    tmp_path: Path,
+) -> None:
+    real_root = tmp_path / "real-root"
+    real_root.mkdir()
+    symlink_root = tmp_path / "linked-root"
+    symlink_root.symlink_to(real_root, target_is_directory=True)
+
+    config = WorkspaceConfig(
+        workspace_root=symlink_root,
+        bucket_block="test-bucket",
+        path_prefix="prefix",
+        assignment_id=13,
+        submission_id=14,
+    )
+
+    with pytest.raises(RuntimeError, match="symlink"):
+        prepare_workspace(config, [])
+
+    mock_s3_bucket_class.load.assert_not_called()

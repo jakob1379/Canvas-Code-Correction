@@ -8,6 +8,7 @@ import pytest
 
 from canvas_code_correction.uploader import (
     CanvasUploader,
+    UploadBatchResult,
     UploadConfig,
     UploadResult,
     create_uploader_from_resources,
@@ -128,6 +129,24 @@ def test_upload_feedback_with_duplicate_check() -> None:
     assert result.duplicate is True
     assert "duplicate" in result.message.lower()
     assert result.comment_posted is False
+
+
+@pytest.mark.local
+def test_upload_feedback_duplicate_check_failure_is_explicit(tmp_path: Path) -> None:
+    """Test duplicate-check errors fail explicitly instead of uploading."""
+    test_file = tmp_path / "feedback.zip"
+    test_file.write_bytes(b"zip-data")
+
+    mock_submission = Mock()
+    mock_submission.refresh.side_effect = RuntimeError("Canvas unavailable")
+    uploader = CanvasUploader(mock_submission)
+
+    result = uploader.upload_feedback(test_file, UploadConfig(check_duplicates=True))
+
+    assert result.success is False
+    assert result.details["stage"] == "duplicate_check"
+    assert "Duplicate check failed" in result.message
+    assert not mock_submission.upload_comment.called
 
 
 @pytest.mark.local
@@ -266,40 +285,61 @@ def test_upload_feedback_and_grade() -> None:
         tmp.flush()
 
         config = UploadConfig(check_duplicates=False)
-        feedback_result, grade_result = uploader.upload_feedback_and_grade(tmp_path, "85.5", config)
+        batch_result = uploader.upload_feedback_and_grade(tmp_path, "85.5", config)
 
-        assert feedback_result is not None
-        assert grade_result is not None
-        assert feedback_result.comment_posted is True
-        assert grade_result.grade_posted is True
+        assert isinstance(batch_result, UploadBatchResult)
+        assert batch_result.feedback is not None
+        assert batch_result.grade is not None
+        assert batch_result.feedback.comment_posted is True
+        assert batch_result.grade.grade_posted is True
 
 
 @pytest.mark.local
-def test_upload_feedback_and_grade_partial() -> None:
-    """Test upload_feedback_and_grade with partial inputs."""
+def test_upload_feedback_and_grade_reuses_upload_methods() -> None:
+    """Test upload_feedback_and_grade delegates to both upload helpers."""
     mock_submission = Mock()
+    feedback_result = UploadResult(
+        success=True,
+        message="feedback uploaded",
+        duplicate=False,
+        grade_posted=False,
+        comment_posted=True,
+        details={},
+    )
+    grade_result = UploadResult(
+        success=True,
+        message="grade posted",
+        duplicate=False,
+        grade_posted=True,
+        comment_posted=False,
+        details={},
+    )
     uploader = CanvasUploader(mock_submission)
+    config = UploadConfig()
 
-    # Only feedback, no grade
     with tempfile.NamedTemporaryFile(suffix=".zip") as tmp:
         tmp_path = Path(tmp.name)
-        tmp.write(b"test")
+        tmp.write(b"feedback")
         tmp.flush()
 
-        feedback_result, grade_result = uploader.upload_feedback_and_grade(
-            tmp_path,
-            None,
-            UploadConfig(),
-        )
+        with (
+            patch.object(
+                uploader,
+                "upload_feedback",
+                return_value=feedback_result,
+            ) as mock_feedback,
+            patch.object(uploader, "upload_grade", return_value=grade_result) as mock_grade,
+        ):
+            batch_result = uploader.upload_feedback_and_grade(
+                tmp_path,
+                "85.5",
+                config,
+            )
 
-        assert feedback_result is not None
-        assert grade_result is None
-
-    # Only grade, no feedback
-    feedback_result, grade_result = uploader.upload_feedback_and_grade(None, "85.5", UploadConfig())
-
-    assert feedback_result is None
-    assert grade_result is not None
+    assert batch_result.feedback is feedback_result
+    assert batch_result.grade is grade_result
+    mock_feedback.assert_called_once_with(tmp_path, config)
+    mock_grade.assert_called_once_with("85.5", config)
 
 
 @pytest.mark.local
@@ -345,10 +385,16 @@ def test_check_feedback_duplicate_exception_verbose() -> None:
     uploader = CanvasUploader(mock_submission)
     config = UploadConfig(verbose=True)
 
-    with patch.object(uploader, "_get_submission_comments", side_effect=Exception("Test error")):
+    with patch.object(
+        uploader,
+        "_refresh_submission_and_get_comments",
+        side_effect=RuntimeError("Test error"),
+    ):
         result = uploader._check_feedback_duplicate(Path("dummy.zip"), config)
 
-    assert result is None
+    assert result is not None
+    assert result.success is False
+    assert result.details["stage"] == "duplicate_check"
 
 
 @pytest.mark.local
@@ -370,17 +416,19 @@ def test_check_attachment_duplicate_exception_verbose() -> None:
     config = UploadConfig(verbose=True)
     attachment = {"url": "http://example.com/file.zip", "display_name": "file.zip"}
 
-    with patch.object(uploader, "_download_attachment", side_effect=Exception("Download error")):
+    with patch.object(uploader, "_download_attachment", side_effect=RuntimeError("Download error")):
         result = uploader._check_attachment_duplicate(attachment, "hash", config)
 
-    assert result is None
+    assert result is not None
+    assert result.success is False
+    assert result.details["stage"] == "duplicate_check"
 
 
 @pytest.mark.local
 def test_upload_feedback_exception() -> None:
     """Test feedback upload when upload_comment raises exception."""
     mock_submission = Mock()
-    mock_submission.upload_comment = Mock(side_effect=Exception("Upload failed"))
+    mock_submission.upload_comment = Mock(side_effect=RuntimeError("Upload failed"))
     uploader = CanvasUploader(mock_submission)
     config = UploadConfig(upload_comments=True, check_duplicates=False)
 
@@ -400,7 +448,7 @@ def test_upload_grade_exception() -> None:
     """Test grade upload when edit raises exception."""
     mock_submission = Mock()
     mock_submission.grade = "75.0"
-    mock_submission.edit = Mock(side_effect=Exception("Edit failed"))
+    mock_submission.edit = Mock(side_effect=RuntimeError("Edit failed"))
     uploader = CanvasUploader(mock_submission)
     config = UploadConfig(upload_grades=True, check_duplicates=False)
 
@@ -410,20 +458,20 @@ def test_upload_grade_exception() -> None:
 
 
 @pytest.mark.local
-def test_upload_feedback_and_grade_both_none() -> None:
-    """Test upload_feedback_and_grade with both arguments None."""
+def test_download_attachment_writes_response_content(tmp_path: Path) -> None:
+    """Test that _download_attachment streams bytes to disk."""
     mock_submission = Mock()
     uploader = CanvasUploader(mock_submission)
+    destination = tmp_path / "attachment.zip"
+    response = Mock()
+    response.iter_content.return_value = [b"hello", b"", b"world"]
+    response.__enter__ = Mock(return_value=response)
+    response.__exit__ = Mock(return_value=None)
+    response.raise_for_status = Mock()
 
-    with pytest.raises(ValueError, match="At least one of feedback_file or grade must be provided"):
-        uploader.upload_feedback_and_grade(None, None)
+    with patch("canvas_code_correction.uploader.requests.get", return_value=response) as mock_get:
+        uploader._download_attachment("http://example.com/file.zip", destination)
 
-
-@pytest.mark.local
-def test_download_attachment_not_implemented() -> None:
-    """Test that _download_attachment raises NotImplementedError."""
-    mock_submission = Mock()
-    uploader = CanvasUploader(mock_submission)
-
-    with pytest.raises(NotImplementedError):
-        uploader._download_attachment("http://example.com/file.zip", Path("/tmp/dest"))
+    assert destination.read_bytes() == b"helloworld"
+    mock_get.assert_called_once_with("http://example.com/file.zip", stream=True, timeout=30)
+    response.raise_for_status.assert_called_once_with()

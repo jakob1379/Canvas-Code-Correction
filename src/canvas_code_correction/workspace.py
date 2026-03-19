@@ -8,8 +8,6 @@ from uuid import uuid4
 
 from prefect_aws.s3 import S3Bucket
 
-from canvas_code_correction.config import Settings
-
 
 @dataclass(frozen=True)
 class WorkspacePaths:
@@ -39,36 +37,44 @@ def _ensure_safe_directory(path: Path, mode: int = 0o700) -> None:
     Raises RuntimeError if path is a symlink or world-writable.
     """
     if path.exists():
-        st = path.stat()
-        if stat.S_ISLNK(st.st_mode):
-            msg = f"Directory {path} is a symlink"
-            raise RuntimeError(msg)
-        if st.st_mode & stat.S_IWOTH:
-            msg = f"Directory {path} is world-writable"
-            raise RuntimeError(msg)
-        # Directory exists and is safe
+        _validate_directory(path)
         return
 
-    # Find the deepest existing ancestor
-    parents = []
+    base = _existing_ancestor(path)
+    _validate_directory(base)
+
+    for parent in reversed(_missing_parent_directories(path, base)):
+        parent.mkdir(mode=mode)
+
+
+def _existing_ancestor(path: Path) -> Path:
     current = path
     while not current.exists():
-        parents.append(current)
-        current = current.parent
-        # Safety: avoid infinite loop (should not happen as root exists)
-        if current == current.parent:  # reached root
-            break
-
-    # Ensure existing ancestor is not a symlink
-    if current.exists():
-        st = current.stat()
-        if stat.S_ISLNK(st.st_mode):
-            msg = f"Parent directory {current} is a symlink"
+        current_parent = current.parent
+        if current_parent == current:
+            msg = f"Could not resolve existing ancestor for {path}"
             raise RuntimeError(msg)
+        current = current_parent
+    return current
 
-    # Create missing directories in reverse order (deepest to shallowest)
-    for missing in reversed(parents):
-        missing.mkdir(mode=mode)
+
+def _missing_parent_directories(path: Path, existing_ancestor: Path) -> list[Path]:
+    missing: list[Path] = []
+    current = path
+    while current != existing_ancestor:
+        missing.append(current)
+        current = current.parent
+    return missing
+
+
+def _validate_directory(path: Path) -> None:
+    if path.is_symlink():
+        msg = f"Directory {path} is a symlink"
+        raise RuntimeError(msg)
+
+    if path.stat().st_mode & stat.S_IWOTH:
+        msg = f"Directory {path} is world-writable"
+        raise RuntimeError(msg)
 
 
 def prepare_workspace(
@@ -103,32 +109,20 @@ def prepare_workspace(
     if prefix:
         download_kwargs["from_path"] = prefix
 
-    if hasattr(bucket, "download_folder"):
-        bucket.download_folder(local_path=str(assets_dir), **download_kwargs)
-    elif hasattr(bucket, "get_directory"):
-        bucket.get_directory(local_path=str(assets_dir), **download_kwargs)
-    else:  # pragma: no cover - defensive fallback
-        msg = "S3Bucket block missing download method"
-        raise AttributeError(msg)
+    download_folder = getattr(bucket, "download_folder", None)
+    if callable(download_folder):
+        download_folder(local_path=str(assets_dir), **download_kwargs)
+
+    else:
+        get_directory = getattr(bucket, "get_directory", None)
+        if callable(get_directory):
+            get_directory(local_path=str(assets_dir), **download_kwargs)
+        else:  # pragma: no cover - defensive fallback
+            msg = "S3Bucket block missing download method"
+            raise TypeError(msg)
 
     return WorkspacePaths(
         root=workspace_root,
         submission_dir=submission_dir,
         assets_dir=assets_dir,
-    )
-
-
-def build_workspace_config(
-    settings: Settings,
-    *,
-    assignment_id: int,
-    submission_id: int,
-) -> WorkspaceConfig:
-    """Construct :class:`WorkspaceConfig` from application settings."""
-    return WorkspaceConfig(
-        workspace_root=settings.workspace.root,
-        bucket_block=settings.assets.bucket_block,
-        path_prefix=settings.assets.path_prefix,
-        assignment_id=assignment_id,
-        submission_id=submission_id,
     )

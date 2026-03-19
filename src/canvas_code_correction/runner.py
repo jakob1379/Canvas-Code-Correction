@@ -5,7 +5,7 @@ import subprocess  # nosec B404 # nosonar
 import time
 from dataclasses import dataclass
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, TypedDict, cast
 
 import docker
 import requests
@@ -59,6 +59,16 @@ class MountPoint:
     read_only: bool = True
 
 
+class ContainerRunKwargs(TypedDict, total=False):
+    """Docker `containers.run` keyword arguments derived from resource limits."""
+
+    cpu_shares: int
+    mem_limit: int
+    memswap_limit: int
+    read_only: bool
+    network_disabled: bool
+
+
 class GraderExecutor:
     """Executes grader commands inside Docker containers with security constraints."""
 
@@ -77,7 +87,6 @@ class GraderExecutor:
         """Run the grader command inside a container with the specified mounts."""
         start_time = time.monotonic()
 
-        # Prepare mount configuration for Docker
         docker_mounts = [
             Mount(
                 target=str(mount.target),
@@ -88,8 +97,7 @@ class GraderExecutor:
             for mount in mounts
         ]
 
-        # Prepare resource constraints for Docker run
-        run_kwargs = {}
+        run_kwargs: ContainerRunKwargs = {}
         if config.resource_limits.cpu_shares is not None:
             run_kwargs["cpu_shares"] = config.resource_limits.cpu_shares
         if config.resource_limits.memory_mb is not None:
@@ -101,27 +109,27 @@ class GraderExecutor:
 
         container: Container | None = None
         try:
-            # Pull image if not available locally
             try:
                 self.client.images.get(config.docker_image)
             except ImageNotFound:
                 self.client.images.pull(config.docker_image)
 
-            # Create and run container
-            container = self.client.containers.run(  # type: ignore[call-arg]
-                image=config.docker_image,
-                command=config.command,
-                working_dir=str(config.working_directory),
-                environment=config.environment,
-                user=config.user,
-                mounts=docker_mounts,
-                **run_kwargs,
-                detach=True,
-                stdout=True,
-                stderr=True,
+            container = cast(
+                "Container",
+                self.client.containers.run(
+                    image=config.docker_image,
+                    command=config.command,
+                    working_dir=str(config.working_directory),
+                    environment=config.environment,
+                    user=config.user,
+                    mounts=docker_mounts,
+                    **run_kwargs,
+                    detach=True,
+                    stdout=True,
+                    stderr=True,
+                ),
             )
 
-            # Wait for container with timeout
             try:
                 result = container.wait(
                     timeout=config.resource_limits.timeout_seconds,
@@ -137,7 +145,6 @@ class GraderExecutor:
                 exit_code = 124  # Standard timeout exit code
                 timed_out = True
 
-            # Get logs
             stdout = container.logs(stdout=True, stderr=False).decode(
                 "utf-8",
                 errors="replace",
@@ -169,7 +176,6 @@ class GraderExecutor:
                 container_id=container.id if container else None,
             )
         finally:
-            # Clean up container
             if container:
                 with contextlib.suppress(DockerException):
                     container.remove(force=True)

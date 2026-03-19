@@ -14,7 +14,7 @@ from canvas_code_correction.config import (
 )
 from canvas_code_correction.flows.correction import (
     CorrectSubmissionPayload,
-    download_submission_files,
+    _download_submission_files,
 )
 
 
@@ -57,7 +57,7 @@ def test_download_submission_files(tmp_path: Path, settings: Settings) -> None:
 
     payload = CorrectSubmissionPayload(assignment_id=5, submission_id=7)
 
-    result = download_submission_files.fn(resources, payload, tmp_path)
+    result = _download_submission_files(resources, payload, tmp_path)
 
     course.get_assignment.assert_called_once_with(5)  # type: ignore[attr-defined]
     assignment.get_submission.assert_called_once_with(7)  # type: ignore[attr-defined]
@@ -89,7 +89,7 @@ def test_download_submission_files_missing_filename(tmp_path: Path, settings: Se
 
     payload = CorrectSubmissionPayload(assignment_id=1, submission_id=2)
 
-    result = download_submission_files.fn(resources, payload, tmp_path)
+    result = _download_submission_files(resources, payload, tmp_path)
 
     expected_path = tmp_path / "attachment-202"
     file_obj.download.assert_called_once_with(expected_path.as_posix())
@@ -111,7 +111,7 @@ def test_download_submission_files_no_attachments(tmp_path: Path, settings: Sett
 
     payload = CorrectSubmissionPayload(assignment_id=1, submission_id=2)
 
-    result = download_submission_files.fn(resources, payload, tmp_path)
+    result = _download_submission_files(resources, payload, tmp_path)
 
     assert result == []
     resources.canvas.get_file.assert_not_called()  # type: ignore[attr-defined]
