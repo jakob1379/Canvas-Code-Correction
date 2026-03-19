@@ -14,8 +14,8 @@ from canvas_code_correction.config import (
 )
 from canvas_code_correction.flows.correction import (
     CorrectSubmissionPayload,
-    download_submission_files,
-    fetch_submission_metadata,
+    _download_submission_files,
+    _fetch_submission_metadata,
 )
 from canvas_code_correction.workspace import WorkspaceConfig, prepare_workspace
 
@@ -65,10 +65,10 @@ def test_download_submission_files_live(tmp_path: Path) -> None:
         submission_id=int(submission_id),
     )
 
-    metadata = fetch_submission_metadata.fn(resources, payload)
-    assert metadata["submission"]["user_id"] == submission_id
+    metadata = _fetch_submission_metadata(resources, payload)
+    assert metadata.submission["user_id"] == submission_id
 
-    files = download_submission_files.fn(resources, payload, tmp_path)
+    files = _download_submission_files(resources, payload, tmp_path)
 
     assert isinstance(files, list)
     for file_path in files:

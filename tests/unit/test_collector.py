@@ -1,5 +1,8 @@
 """Unit tests for the ResultCollector."""
 
+from __future__ import annotations
+
+import json
 import zipfile
 from pathlib import Path
 from unittest.mock import patch
@@ -124,33 +127,47 @@ def test_collect_alternative_points_file(tmp_path: Path) -> None:
 
 
 @pytest.mark.local
-def test_parse_points_file_various_formats(tmp_path: Path) -> None:
-    """Test parsing points files with various formats."""
-    workspace = tmp_path / "workspace"
-    submission_dir = workspace / "submission"
-    submission_dir.mkdir(parents=True)
-    collector = ResultCollector(workspace)
-
-    test_cases = [
+@pytest.mark.parametrize(
+    ("content", "expected"),
+    [
         ("10.5", 10.5),
         ("10.5\n5.0\n2.5", 18.0),
         ("", 0.0),
         (" 10.5  \n  ", 10.5),
         ("10\n20\n30", 60.0),
-        ("Score: 10.5 points", 10.5),  # Extract number from text
-        ("Total: 25.5/30", 25.5),  # Extract first number
-        ("1.5 2.5 3.5", 7.5),  # Multiple numbers on one line
-    ]
+        ("Score: 10.5 points", 10.5),
+        ("Total: 25.5/30", 25.5),
+        ("1.5 2.5 3.5", 7.5),
+    ],
+)
+def test_collect_parses_supported_points_formats(
+    tmp_path: Path,
+    content: str,
+    expected: float,
+) -> None:
+    """Test points parsing through the public collect API."""
+    workspace = tmp_path / "workspace"
+    submission_dir = workspace / "submission"
+    submission_dir.mkdir(parents=True)
+    (submission_dir / "points.txt").write_text(content)
 
-    for content, expected in test_cases:
-        points_file = submission_dir / "points.txt"
-        points_file.write_text(content)
+    collector = ResultCollector(workspace)
+    result = collector.collect()
 
-        # Use private method for testing
-        result = collector._parse_points_file(points_file)
-        assert result == pytest.approx(expected, abs=0.01), f"Failed for content: {content}"
+    assert result.grading_result.points == pytest.approx(expected, abs=0.01)
 
-        points_file.unlink()
+
+@pytest.mark.local
+def test_collect_rejects_malformed_points_content(tmp_path: Path) -> None:
+    workspace = tmp_path / "workspace"
+    submission_dir = workspace / "submission"
+    submission_dir.mkdir(parents=True)
+    (submission_dir / "points.txt").write_text(" / ")
+
+    collector = ResultCollector(workspace)
+
+    with pytest.raises(ValueError, match="No numeric points found"):
+        collector.collect()
 
 
 @pytest.mark.local
@@ -201,6 +218,8 @@ def test_create_feedback_zip(tmp_path: Path) -> None:
         assert zf.read("points.txt").decode() == "85.5\n"
         assert zf.read("comments.txt").decode() == "Good job!\n"
         assert zf.read("errors.log").decode() == "Some errors\n"
+        metadata = json.loads(zf.read("metadata.json").decode())
+        assert metadata["collected_at"].endswith("+00:00")
 
 
 @pytest.mark.local
@@ -304,64 +323,24 @@ def test_collect_missing_submission_dir(tmp_path: Path) -> None:
     """Test collection when submission directory doesn't exist."""
     workspace = tmp_path / "workspace"
     collector = ResultCollector(workspace)
-    with pytest.raises(ValueError, match="Submission directory not found"):
+    with pytest.raises(FileNotFoundError, match="Submission directory not found"):
         collector.collect()
 
 
 @pytest.mark.local
-def test_find_comments_file_no_txt_files(tmp_path: Path) -> None:
-    """Test finding comments file when no txt files exist."""
+def test_collect_without_comment_file_returns_none(tmp_path: Path) -> None:
+    """Test comment discovery through the public collect API."""
     workspace = tmp_path / "workspace"
     submission_dir = workspace / "submission"
     submission_dir.mkdir(parents=True)
-    # Create only points file and errors log
-    points_file = submission_dir / "points.txt"
-    points_file.write_text("10.0")
-    errors_log = submission_dir / ERRORS_LOG_FILENAME
-    errors_log.write_text("")
+    (submission_dir / "points.txt").write_text("10.0")
+    (submission_dir / ERRORS_LOG_FILENAME).write_text("")
+
     collector = ResultCollector(workspace)
-    # submission_dir_name=None, no txt files => comments_file=None
-    comments_file, comments = collector._find_comments_file(submission_dir, None)
-    assert comments_file is None
-    assert comments is None
+    result = collector.collect()
 
-
-@pytest.mark.local
-def test_parse_line_numbers_value_error() -> None:
-    """Test parsing line numbers with invalid float conversion."""
-    import re
-
-    from canvas_code_correction.collector import ResultCollector
-
-    collector = ResultCollector(Path("/tmp"))
-    # Mock re.findall to return a string that float() can't parse
-    with patch.object(re, "findall", return_value=["1.2.3"]):
-        numbers = collector._parse_line_numbers("dummy")
-        assert numbers == []  # ValueError should be caught and skipped
-
-
-@pytest.mark.local
-def test_parse_fraction_format_empty_parts() -> None:
-    """Test parsing fraction format with empty parts after split."""
-    from canvas_code_correction.collector import ResultCollector
-
-    collector = ResultCollector(Path("/tmp"))
-    # Line with only slash? Actually "/" splits to ["", ""] which is not empty.
-    # So maybe line like " / "? Let's test.
-    result = collector._parse_fraction_format(" / ")
-    assert result is None  # because no numbers in first part
-
-
-@pytest.mark.local
-def test_sum_numbers_from_line_empty() -> None:
-    """Test summing numbers from empty line."""
-    from canvas_code_correction.collector import ResultCollector
-
-    collector = ResultCollector(Path("/tmp"))
-    result = collector._sum_numbers_from_line("")
-    assert result == 0.0
-    result = collector._sum_numbers_from_line("   ")
-    assert result == 0.0
+    assert result.grading_result.comments is None
+    assert result.grading_result.comments_file_path is None
 
 
 @pytest.mark.local

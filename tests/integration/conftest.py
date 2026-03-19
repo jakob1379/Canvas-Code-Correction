@@ -2,9 +2,8 @@
 
 import os
 import sys
-from collections.abc import Iterator
+from collections.abc import Callable, Iterator
 from pathlib import Path
-from typing import Any
 from unittest.mock import Mock, patch
 
 import boto3
@@ -13,8 +12,6 @@ import requests
 from botocore.client import Config
 from botocore.exceptions import ClientError, EndpointConnectionError
 from requests.exceptions import RequestException
-
-_MOCK_BUCKET = None  # global reference for debugging
 
 
 def is_rustfs_available() -> bool:
@@ -112,51 +109,57 @@ def clean_bucket(s3_client, rustfs_config: dict[str, str], ensure_test_bucket: s
     # Optionally clean up after test as well
 
 
-@pytest.fixture
-def mock_s3bucket_load(rustfs_config: dict[str, str], s3_client) -> Iterator[None]:  # noqa: C901
-    """Mock S3Bucket.load to return a mock bucket that downloads from test RustFS."""
-    global _MOCK_BUCKET  # noqa: PLW0603
-    bucket_name = rustfs_config["bucket_name"]
+def _download_bucket_prefix(
+    s3_client,
+    bucket_name: str,
+    local_path: str,
+    from_path: str = "",
+) -> None:
+    print(
+        f"DEBUG GET_DIRECTORY CALLED: bucket={bucket_name}, "
+        f"from_path={from_path!r}, local_path={local_path}",
+        file=sys.stderr,
+    )
+    local_path_obj = Path(local_path)
+    local_path_obj.mkdir(parents=True, exist_ok=True)
 
-    # Create a mock bucket with get_directory method that uses s3_client
-    class NoDownloadFolderMock(Mock):
-        def __getattr__(self, name: str) -> Any:  # noqa: ANN401
-            if name == "download_folder":
-                msg = f"'{self.__class__.__name__}' object has no attribute '{name}'"
-                raise AttributeError(msg)
-            return super().__getattr__(name)
+    prefix = from_path.rstrip("/")
+    if prefix:
+        prefix += "/"
 
-    mock_bucket = NoDownloadFolderMock()
+    response = s3_client.list_objects_v2(Bucket=bucket_name, Prefix=prefix)
+    for obj in response.get("Contents", []):
+        key = obj["Key"]
+        if key.endswith("/"):
+            continue
+        relative_key = key[len(prefix) :] if prefix and key.startswith(prefix) else key
+        if not relative_key:
+            continue
+        local_file = local_path_obj / relative_key
+        local_file.parent.mkdir(parents=True, exist_ok=True)
+        s3_client.download_file(bucket_name, key, str(local_file))
+
+
+def _make_get_directory_side_effect(s3_client, bucket_name: str) -> Callable[[str, str], None]:
+    def side_effect(local_path: str, from_path: str = "") -> None:
+        _download_bucket_prefix(s3_client, bucket_name, local_path, from_path)
+
+    return side_effect
+
+
+def _build_mock_bucket(bucket_name: str, s3_client) -> Mock:
+    mock_bucket = Mock(spec_set=["bucket_name", "get_directory"])
     mock_bucket.bucket_name = bucket_name
+    mock_bucket.get_directory = Mock(
+        side_effect=_make_get_directory_side_effect(s3_client, bucket_name),
+    )
+    return mock_bucket
 
-    def get_directory_side_effect(local_path: str, from_path: str = "") -> None:
-        print(
-            f"DEBUG GET_DIRECTORY CALLED: bucket={bucket_name}, "
-            f"from_path={from_path!r}, local_path={local_path}",
-            file=sys.stderr,
-        )
-        # Actually download files
-        local_path_obj = Path(local_path)
-        local_path_obj.mkdir(parents=True, exist_ok=True)
-        prefix = from_path.rstrip("/")
-        if prefix:
-            prefix += "/"
-        response = s3_client.list_objects_v2(Bucket=bucket_name, Prefix=prefix)
-        if "Contents" in response:
-            for obj in response["Contents"]:
-                key = obj["Key"]
-                if key.endswith("/"):
-                    continue
-                relative_key = key[len(prefix) :] if prefix and key.startswith(prefix) else key
-                if not relative_key:
-                    continue
-                local_file = local_path_obj / relative_key
-                local_file.parent.mkdir(parents=True, exist_ok=True)
-                s3_client.download_file(bucket_name, key, str(local_file))
 
-    mock_bucket.get_directory = Mock(side_effect=get_directory_side_effect)
-
-    _MOCK_BUCKET = mock_bucket  # store for debugging
+@pytest.fixture
+def mock_s3bucket_load(rustfs_config: dict[str, str], s3_client) -> Iterator[Mock]:
+    """Mock S3Bucket.load to return a mock bucket that downloads from test RustFS."""
+    mock_bucket = _build_mock_bucket(rustfs_config["bucket_name"], s3_client)
 
     with patch("canvas_code_correction.workspace.S3Bucket.load") as mock_load:
 
@@ -169,9 +172,8 @@ def mock_s3bucket_load(rustfs_config: dict[str, str], s3_client) -> Iterator[Non
 
         mock_load.side_effect = load_side_effect
         print("DEBUG: S3Bucket.load patched", file=sys.stderr)
-        yield
+        yield mock_bucket
 
-    # After test, print call info
     if mock_bucket.get_directory.called:
         print(
             f"DEBUG: get_directory was called {mock_bucket.get_directory.call_count} times",

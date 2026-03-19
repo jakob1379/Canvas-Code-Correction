@@ -122,16 +122,16 @@ def test_upload_feedback_and_grade_dry_run_live() -> None:
 
     try:
         config = UploadConfig(dry_run=True, upload_comments=True, upload_grades=True)
-        feedback_result, grade_result = uploader.upload_feedback_and_grade(
+        batch_result = uploader.upload_feedback_and_grade(
             feedback_file=tmp_path,
             grade="90.0",
             config=config,
         )
-        assert feedback_result is not None
-        assert grade_result is not None
-        assert feedback_result.success is True
-        assert grade_result.success is True
-        assert feedback_result.details.get("dry_run") is True
-        assert grade_result.details.get("dry_run") is True
+        assert batch_result.feedback is not None
+        assert batch_result.grade is not None
+        assert batch_result.feedback.success is True
+        assert batch_result.grade.success is True
+        assert batch_result.feedback.details.get("dry_run") is True
+        assert batch_result.grade.details.get("dry_run") is True
     finally:
         tmp_path.unlink(missing_ok=True)

@@ -1,15 +1,28 @@
 """Collects and packages grader results for upload to Canvas."""
 
 import json
+import logging
 import re
 import zipfile
 from dataclasses import dataclass
+from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any
 
 from pydantic import BaseModel
 
 ERRORS_LOG_FILENAME = "errors.log"
+
+type JsonScalar = str | int | float | bool | None
+type JsonValue = JsonScalar | list[JsonScalar] | dict[str, JsonScalar]
+
+logger = logging.getLogger(__name__)
+
+
+class CollectionMetadata(BaseModel):
+    """Metadata describing collected grader artifacts."""
+
+    points_file: str = ""
+    submission_dir: str = ""
 
 
 class GradingResult(BaseModel):
@@ -21,7 +34,7 @@ class GradingResult(BaseModel):
     comments_file_path: Path | None = None
     artifacts_zip_path: Path | None = None
     errors_log_path: Path | None = None
-    metadata: dict[str, Any] = {}
+    metadata: CollectionMetadata = CollectionMetadata()
 
 
 @dataclass(frozen=True)
@@ -43,7 +56,6 @@ class ResultCollector:
         self.workspace_root = workspace_root
 
     def _find_points_file(self, submission_dir: Path) -> Path:
-        """Find points file in submission directory."""
         points_files = list(submission_dir.glob("*_points.txt"))
         if not points_files:
             points_files = list(submission_dir.glob("points.txt"))
@@ -57,7 +69,6 @@ class ResultCollector:
         submission_dir: Path,
         submission_dir_name: str | None,
     ) -> tuple[Path | None, str | None]:
-        """Find comments file and read its content."""
         comments_file = None
         comments = None
         if submission_dir_name:
@@ -81,12 +92,10 @@ class ResultCollector:
         return comments_file, comments
 
     def _find_artifacts_zip(self, submission_dir: Path) -> Path | None:
-        """Find artifacts zip file."""
         zip_files = list(submission_dir.glob("*.zip"))
         return zip_files[0] if zip_files else None
 
     def _find_errors_log(self, submission_dir: Path) -> Path | None:
-        """Find errors log file."""
         errors_log = submission_dir / ERRORS_LOG_FILENAME
         return errors_log if errors_log.exists() else None
 
@@ -98,35 +107,19 @@ class ResultCollector:
         submission_dir = self.workspace_root / "submission"
         if not submission_dir.exists():
             msg = f"Submission directory not found: {submission_dir}"
-            raise ValueError(
+            raise FileNotFoundError(
                 msg,
             )
 
-        # Determine the base name for files (currently unused, reserved for future naming)
-        if submission_dir_name:
-            # Could be used to prefix output files in future
-            pass
-
-        # Find all relevant files
         discovered_files = list(submission_dir.glob("*"))
-
-        # Find points file and parse points
         points_file = self._find_points_file(submission_dir)
         points = self._parse_points_file(points_file)
-
-        # Find comments file and content
         comments_file, comments = self._find_comments_file(
             submission_dir,
             submission_dir_name,
         )
-
-        # Find artifacts zip
         artifacts_zip = self._find_artifacts_zip(submission_dir)
-
-        # Find errors log
         errors_log = self._find_errors_log(submission_dir)
-
-        # Create grading result
         grading_result = GradingResult(
             points=points,
             points_file_content=points_file.read_text(
@@ -137,14 +130,10 @@ class ResultCollector:
             comments_file_path=comments_file,
             artifacts_zip_path=artifacts_zip,
             errors_log_path=errors_log,
-            metadata={
-                "points_file": str(
-                    points_file.relative_to(self.workspace_root),
-                ),
-                "submission_dir": str(
-                    submission_dir.relative_to(self.workspace_root),
-                ),
-            },
+            metadata=CollectionMetadata(
+                points_file=str(points_file.relative_to(self.workspace_root)),
+                submission_dir=str(submission_dir.relative_to(self.workspace_root)),
+            ),
         )
 
         return CollectionResult(
@@ -154,18 +143,22 @@ class ResultCollector:
         )
 
     def _parse_line_numbers(self, line: str) -> list[float]:
-        """Extract all numbers from a line using regex."""
         numbers = re.findall(r"[-+]?(?:\d+(?:\.\d*)?|\.\d+)", line)
         result = []
         for num in numbers:
-            try:
-                result.append(float(num))
-            except ValueError:
-                continue
+            parsed_num = self._parse_float(num)
+            if parsed_num is not None:
+                result.append(parsed_num)
         return result
 
+    def _parse_float(self, value: str) -> float | None:
+        try:
+            return float(value)
+        except ValueError as exc:
+            logger.debug("Ignoring invalid point token: %s", exc)
+            return None
+
     def _parse_fraction_format(self, line: str) -> float | None:
-        """Parse fraction format like '25.5/30' and return numerator."""
         if "/" not in line:
             return None
         parts = line.split("/")
@@ -173,16 +166,14 @@ class ResultCollector:
         return nums[0] if nums else None
 
     def _sum_numbers_from_line(self, line: str) -> float:
-        """Sum all numbers found in a line."""
         cleaned_line = line.strip()
         if not cleaned_line:
             return 0.0
 
         # Try direct float conversion
-        try:
-            return float(cleaned_line)
-        except ValueError:
-            pass
+        parsed = self._parse_float(cleaned_line)
+        if parsed is not None:
+            return parsed
 
         # Try fraction format
         fraction_num = self._parse_fraction_format(cleaned_line)
@@ -191,6 +182,9 @@ class ResultCollector:
 
         # General case: sum all numbers
         numbers = self._parse_line_numbers(cleaned_line)
+        if not numbers:
+            msg = f"No numeric points found in line: {cleaned_line}"
+            raise ValueError(msg)
         return sum(numbers)
 
     def _parse_points_file(self, points_file: Path) -> float:
@@ -211,7 +205,8 @@ class ResultCollector:
         self,
         result: GradingResult,
         output_path: Path | None = None,
-        include_errors_log: bool = True,  # noqa: FBT001, FBT002
+        *,
+        include_errors_log: bool = True,
     ) -> Path:
         """Create a zip file with feedback for upload."""
         if output_path is None:
@@ -233,9 +228,7 @@ class ResultCollector:
             # Add metadata as JSON
             metadata = {
                 "points": result.points,
-                "collected_at": json.dumps(
-                    str(Path.cwd()),
-                ),  # Simple timestamp placeholder
+                "collected_at": datetime.now(UTC).isoformat(),
                 "files_included": [],
             }
             zipf.writestr("metadata.json", json.dumps(metadata, indent=2))
