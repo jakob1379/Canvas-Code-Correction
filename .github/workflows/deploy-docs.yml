@@ -75,18 +75,6 @@ jobs:
           echo "*" > docs/htmlcov/.gitignore
       - name: Build documentation
         run: uv run zensical build --strict --clean
-      - name: Generate coverage badge
-        run: |
-          mkdir -p site/badges .github/badges
-          uv run python scripts/generate_coverage_badge.py \
-            --coverage-json coverage.json \
-            --output site/badges/coverage.json \
-            --verbose
-          cp site/badges/coverage.json .github/badges/coverage.json
-      - name: Copy coverage data to site
-        run: |
-          # Copy coverage.json to site for reference
-          cp coverage.json site/coverage.json
       - name: Create CNAME file for custom domain
         run: echo "ccc.jgalabs.dk" > site/CNAME
       - uses: actions/upload-pages-artifact@v4
