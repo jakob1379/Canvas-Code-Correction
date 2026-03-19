@@ -2,11 +2,15 @@
 
 from datetime import UTC, datetime
 
+import pytest
+from pydantic import ValidationError
+
 from canvas_code_correction.webhooks.models import (
     CanvasWebhookMetadata,
     CanvasWebhookPayload,
     SubmissionCreatedEvent,
     SubmissionUpdatedEvent,
+    UnsupportedSubmissionEventError,
 )
 
 
@@ -33,9 +37,9 @@ def test_submission_created_event() -> None:
         user_id="789",
         workflow_state="submitted",
     )
-    assert event.assignment_id == "123"
-    assert event.submission_id == "456"
-    assert event.user_id == "789"
+    assert event.assignment_id == 123
+    assert event.submission_id == 456
+    assert event.user_id == 789
     assert event.late is False
     assert event.missing is False
 
@@ -51,7 +55,7 @@ def test_submission_updated_event_inherits() -> None:
         user_id="789",
         workflow_state="graded",
     )
-    assert event.assignment_id == "123"
+    assert event.assignment_id == 123
     assert isinstance(event, SubmissionCreatedEvent)
 
 
@@ -76,8 +80,8 @@ def test_canvas_webhook_payload_parsing() -> None:
     assert payload.get_event_type() == "submission_created"
     event = payload.parse_submission_event()
     assert isinstance(event, SubmissionCreatedEvent)
-    assert event.assignment_id == "123"
-    assert event.submission_id == "456"
+    assert event.assignment_id == 123
+    assert event.submission_id == 456
 
 
 def test_canvas_webhook_payload_invalid_event() -> None:
@@ -88,10 +92,32 @@ def test_canvas_webhook_payload_invalid_event() -> None:
             event_time=datetime.now(UTC),
             producer="canvas",
         ),
-        body={},
+        body={
+            "assignment_id": "123",
+            "submission_id": "456",
+            "submission_type": "online_text_entry",
+            "submitted_at": datetime.now(UTC).isoformat(),
+            "updated_at": datetime.now(UTC).isoformat(),
+            "user_id": "789",
+            "workflow_state": "submitted",
+        },
     )
     assert payload.get_event_type() == "assignment_created"
-    assert payload.parse_submission_event() is None
+    with pytest.raises(UnsupportedSubmissionEventError):
+        payload.parse_submission_event()
+
+
+def test_canvas_webhook_payload_invalid_submission_body() -> None:
+    """Test CanvasWebhookPayload with malformed submission event body."""
+    with pytest.raises(ValidationError):
+        CanvasWebhookPayload(
+            metadata=CanvasWebhookMetadata(
+                event_name="submission_created",
+                event_time=datetime.now(UTC),
+                producer="canvas",
+            ),
+            body={"assignment_id": "123"},
+        )
 
 
 def test_webhook_response() -> None:

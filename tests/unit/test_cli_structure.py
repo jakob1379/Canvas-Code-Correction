@@ -81,8 +81,8 @@ class TestCLINoDevStackRequired:
 
         This test doesn't require Prefect server or any external services.
         """
-        with patch("canvas_code_correction.cli.CourseConfigBlock") as mock_block_class:
-            mock_block_class.find.return_value = []
+        with patch("canvas_code_correction.cli.find_course_block_names") as mock_find_course_blocks:
+            mock_find_course_blocks.return_value = []
 
             result = cli_runner.invoke(app, ["course", "list"])
 
@@ -108,7 +108,7 @@ class TestCLILegacyCommandMapping:
     """Verify old command mappings work correctly."""
 
     @pytest.mark.local
-    @patch("canvas_code_correction.cli.resolve_settings_from_block")
+    @patch("canvas_code_correction.cli.load_settings_from_course_block")
     @patch("canvas_code_correction.cli.correct_submission_flow")
     def test_old_run_once_now_course_run(
         self,

@@ -1,9 +1,25 @@
 """Pydantic models for Canvas webhook payload validation."""
 
-from datetime import datetime
-from typing import Any
+from __future__ import annotations
 
-from pydantic import BaseModel, HttpUrl, ValidationError
+from datetime import datetime
+from typing import Final, Literal, cast
+
+from pydantic import BaseModel, HttpUrl
+
+type SubmissionEventName = Literal["submission_created", "submission_updated"]
+
+SUPPORTED_SUBMISSION_EVENTS: Final[frozenset[SubmissionEventName]] = frozenset(
+    {"submission_created", "submission_updated"},
+)
+
+
+class UnsupportedSubmissionEventError(ValueError):
+    """Raised when a webhook event is not a supported submission event."""
+
+
+class InvalidSubmissionEventError(ValueError):
+    """Raised when a supported submission event payload is malformed."""
 
 
 class CanvasWebhookMetadata(BaseModel):
@@ -38,13 +54,13 @@ class CanvasWebhookMetadata(BaseModel):
 class SubmissionCreatedEvent(BaseModel):
     """Submission created event body from Canvas webhook."""
 
-    assignment_id: str
-    submission_id: str
+    assignment_id: int
+    submission_id: int
     attempt: int | None = None
     body: str | None = None
     grade: str | None = None
     graded_at: datetime | None = None
-    group_id: str | None = None
+    group_id: int | None = None
     late: bool = False
     lti_assignment_id: str | None = None
     lti_user_id: str | None = None
@@ -54,7 +70,7 @@ class SubmissionCreatedEvent(BaseModel):
     submitted_at: datetime
     updated_at: datetime
     url: HttpUrl | None = None
-    user_id: str
+    user_id: int
     workflow_state: str
 
 
@@ -66,23 +82,29 @@ class CanvasWebhookPayload(BaseModel):
     """Complete Canvas webhook payload."""
 
     metadata: CanvasWebhookMetadata
-    body: dict[str, Any]
+    body: SubmissionCreatedEvent | SubmissionUpdatedEvent
 
     def get_event_type(self) -> str:
         """Extract event type from metadata."""
         return self.metadata.event_name
 
-    def parse_submission_event(self) -> SubmissionCreatedEvent | SubmissionUpdatedEvent | None:
-        """Parse body into specific event model based on event type."""
+    def get_submission_event_type(self) -> SubmissionEventName:
+        """Return the event name narrowed to supported submission events."""
         event_type = self.get_event_type()
-        try:
-            if event_type == "submission_created":
-                return SubmissionCreatedEvent(**self.body)
-            if event_type == "submission_updated":
-                return SubmissionUpdatedEvent(**self.body)
-        except ValidationError:
-            return None
-        return None
+        if event_type not in SUPPORTED_SUBMISSION_EVENTS:
+            msg = f"Unsupported event type: {event_type}"
+            raise UnsupportedSubmissionEventError(msg)
+        return cast("SubmissionEventName", event_type)
+
+    def parse_submission_event(self) -> SubmissionCreatedEvent | SubmissionUpdatedEvent:
+        """Parse body into a specific submission event model."""
+        event_type = self.get_submission_event_type()
+        if event_type == "submission_created":
+            return SubmissionCreatedEvent.model_validate(self.body.model_dump())
+        if event_type == "submission_updated":
+            return SubmissionUpdatedEvent.model_validate(self.body.model_dump())
+        msg = f"Invalid payload for {event_type}"
+        raise InvalidSubmissionEventError(msg)
 
 
 class WebhookResponse(BaseModel):
