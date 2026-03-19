@@ -604,7 +604,7 @@ def test_webhook_serve_uvicorn_raises_exception(
 
 @pytest.mark.local
 @patch("canvas_code_correction.cli.load_settings_from_course_block")
-@patch("canvas_code_correction.webhooks.deployments.ensure_deployment", new_callable=AsyncMock)
+@patch("canvas_code_correction.cli.ensure_deployment", new_callable=AsyncMock)
 def test_deploy_create_success(
     mock_ensure_deployment: AsyncMock,
     mock_resolve_settings: MagicMock,
@@ -646,7 +646,7 @@ def test_deploy_create_block_not_found(
 
 @pytest.mark.local
 @patch("canvas_code_correction.cli.load_settings_from_course_block")
-@patch("canvas_code_correction.webhooks.deployments.ensure_deployment", new_callable=AsyncMock)
+@patch("canvas_code_correction.cli.ensure_deployment", new_callable=AsyncMock)
 def test_deploy_create_ensure_deployment_raises_exception(
     mock_ensure_deployment: AsyncMock,
     mock_resolve_settings: MagicMock,
