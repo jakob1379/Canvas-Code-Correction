@@ -1,15 +1,29 @@
 """Unit tests for the CLI module."""
 
 from pathlib import Path
+from typing import TYPE_CHECKING
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from typer.testing import CliRunner
 
+from canvas_code_correction.bootstrap import load_settings_from_course_block
 from canvas_code_correction.cli import app
-from canvas_code_correction.config import Settings
-from canvas_code_correction.flows import FlowArtifacts
+from canvas_code_correction.flows.correction import (
+    CollectedResults,
+    CorrectionResults,
+    CorrectionUploads,
+    ExecutionSummary,
+    FeedbackUploadResult,
+    FlowArtifacts,
+    GradeUploadResult,
+    SubmissionMetadata,
+)
 from canvas_code_correction.prefect_blocks.canvas import CourseConfigBlock
+from canvas_code_correction.webhooks.deployments import DeploymentEnsureResult
+
+if TYPE_CHECKING:
+    from canvas_code_correction.config import Settings
 
 
 @pytest.fixture
@@ -33,10 +47,18 @@ def mock_course_block() -> MagicMock:
     mock.grader_image = "test/image:latest"
     mock.work_pool_name = "test-pool"
     mock.grader_env = {}
+    mock.grader_command = ["sh", "main.sh"]
+    mock.grader_timeout_seconds = 300
+    mock.grader_memory_mb = 512
+    mock.grader_upload_check_duplicates = True
+    mock.grader_upload_comments = True
+    mock.grader_upload_grades = True
+    mock.grader_upload_verbose = False
     mock.webhook_secret = None
     mock.deployment_name = None
     mock.webhook_enabled = True
     mock.webhook_require_jwt = False
+    mock.webhook_rate_limit = "10/minute"
     return mock
 
 
@@ -45,18 +67,67 @@ def mock_settings(mock_course_block: MagicMock) -> Settings:
     """Return a Settings object from a mock course block."""
     # Mock the load method to return our mock block
     with patch.object(CourseConfigBlock, "load", return_value=mock_course_block):
-        return Settings.from_course_block("dummy-block")
+        return load_settings_from_course_block("dummy-block")
 
 
 @pytest.fixture
 def mock_flow_artifacts(tmp_path: Path) -> FlowArtifacts:
     """Return mock FlowArtifacts for testing."""
     return FlowArtifacts(
-        submission_metadata={"assignment": {}, "submission": {}},
+        submission_metadata=SubmissionMetadata(assignment={}, submission={}),
         downloaded_files=[tmp_path / "file1.txt"],
         workspace=None,
-        results={},
-        uploads={},
+        results=CorrectionResults(
+            execution=ExecutionSummary(
+                exit_code=0,
+                timed_out=False,
+                duration_seconds=0.0,
+                stdout="",
+                stderr="",
+                container_id=None,
+            ),
+            collection=CollectedResults(
+                points=None,
+                comments="",
+                points_file_content="",
+                feedback_zip_path=tmp_path / "feedback.zip",
+                artifacts_zip_path=None,
+                errors_log_path=None,
+                discovered_files=[],
+                validation_issues=[],
+                metadata={},
+            ),
+            feedback_upload=FeedbackUploadResult(
+                success=False,
+                message="",
+                duplicate=False,
+                comment_posted=False,
+                details=None,
+            ),
+            grade_upload=GradeUploadResult(
+                success=False,
+                message="",
+                duplicate=False,
+                grade_posted=False,
+                details=None,
+            ),
+        ),
+        uploads=CorrectionUploads(
+            feedback=FeedbackUploadResult(
+                success=False,
+                message="",
+                duplicate=False,
+                comment_posted=False,
+                details=None,
+            ),
+            grade=GradeUploadResult(
+                success=False,
+                message="",
+                duplicate=False,
+                grade_posted=False,
+                details=None,
+            ),
+        ),
     )
 
 
@@ -64,7 +135,7 @@ def mock_flow_artifacts(tmp_path: Path) -> FlowArtifacts:
 
 
 @pytest.mark.local
-@patch("canvas_code_correction.cli.resolve_settings_from_block")
+@patch("canvas_code_correction.cli.load_settings_from_course_block")
 @patch("canvas_code_correction.cli.correct_submission_flow")
 def test_run_once_single_submission_success(
     mock_flow: MagicMock,
@@ -91,7 +162,30 @@ def test_run_once_single_submission_success(
 
 
 @pytest.mark.local
-@patch("canvas_code_correction.cli.resolve_settings_from_block")
+@patch("canvas_code_correction.cli.load_settings_from_course_block")
+@patch("canvas_code_correction.cli.correct_submission_flow")
+def test_run_once_submission_id_zero_still_uses_single_submission_mode(
+    mock_flow: MagicMock,
+    mock_resolve_settings: MagicMock,
+    cli_runner: CliRunner,
+    mock_settings: Settings,
+    mock_flow_artifacts: FlowArtifacts,
+) -> None:
+    mock_resolve_settings.return_value = mock_settings
+    mock_flow.return_value = mock_flow_artifacts
+
+    result = cli_runner.invoke(
+        app,
+        ["course", "run", "123", "--submission-id", "0", "--course", "test-course"],
+    )
+
+    assert result.exit_code == 0
+    assert "submission 0" in result.output
+    mock_flow.assert_called_once()
+
+
+@pytest.mark.local
+@patch("canvas_code_correction.cli.load_settings_from_course_block")
 @patch("canvas_code_correction.cli.build_canvas_resources")
 @patch("canvas_code_correction.cli.correct_submission_flow")
 def test_run_once_batch_mode_success(
@@ -135,7 +229,7 @@ def test_run_once_batch_mode_success(
 
 
 @pytest.mark.local
-@patch("canvas_code_correction.cli.resolve_settings_from_block")
+@patch("canvas_code_correction.cli.load_settings_from_course_block")
 @patch("canvas_code_correction.cli.build_canvas_resources")
 @patch("canvas_code_correction.cli.correct_submission_flow")
 def test_run_once_batch_mode_submission_error(
@@ -169,18 +263,18 @@ def test_run_once_batch_mode_submission_error(
         ["course", "run", "123", "--course", "test-course"],
     )
 
-    assert result.exit_code == 0
+    assert result.exit_code == 1
     assert "Batch mode: processing all submissions" in result.output
     assert "Error processing submission 100" in result.output
     assert "Submission 101 processed successfully" in result.output
-    assert "Batch processing completed" in result.output
+    assert "Batch processing completed with failures: 100" in result.output
     mock_resolve_settings.assert_called_once_with("test-course")
     mock_build_canvas_resources.assert_called_once_with(mock_settings)
     assert mock_flow.call_count == 2
 
 
 @pytest.mark.local
-@patch("canvas_code_correction.cli.resolve_settings_from_block")
+@patch("canvas_code_correction.cli.load_settings_from_course_block")
 @patch("canvas_code_correction.cli.correct_submission_flow")
 def test_run_once_dry_run_flag(
     mock_flow: MagicMock,
@@ -216,7 +310,7 @@ def test_run_once_dry_run_flag(
 
 
 @pytest.mark.local
-@patch("canvas_code_correction.cli.resolve_settings_from_block")
+@patch("canvas_code_correction.cli.load_settings_from_course_block")
 @patch("canvas_code_correction.cli.correct_submission_flow")
 def test_run_once_custom_download_dir(
     mock_flow: MagicMock,
@@ -257,7 +351,7 @@ def test_run_once_custom_download_dir(
 
 
 @pytest.mark.local
-@patch("canvas_code_correction.cli.resolve_settings_from_block")
+@patch("canvas_code_correction.cli.load_settings_from_course_block")
 def test_run_once_course_block_not_found(
     mock_resolve_settings: MagicMock,
     cli_runner: CliRunner,
@@ -276,7 +370,7 @@ def test_run_once_course_block_not_found(
 
 
 @pytest.mark.local
-@patch("canvas_code_correction.cli.resolve_settings_from_block")
+@patch("canvas_code_correction.cli.load_settings_from_course_block")
 @patch("canvas_code_correction.cli.correct_submission_flow")
 def test_run_once_flow_raises_exception(
     mock_flow: MagicMock,
@@ -299,7 +393,7 @@ def test_run_once_flow_raises_exception(
 
 
 @pytest.mark.local
-@patch("canvas_code_correction.cli.resolve_settings_from_block")
+@patch("canvas_code_correction.cli.load_settings_from_course_block")
 @patch("canvas_code_correction.cli.build_canvas_resources")
 def test_run_once_batch_mode_canvas_api_error(
     mock_build_canvas_resources: MagicMock,
@@ -355,14 +449,15 @@ def test_course_configure_command_unavailable(cli_runner: CliRunner) -> None:
 
 
 @pytest.mark.local
-@patch("canvas_code_correction.cli.CourseConfigBlock")
+@patch("canvas_code_correction.cli.load_course_block")
+@patch("canvas_code_correction.cli.find_course_block_names")
 def test_list_courses_success_with_blocks(
-    mock_block_class: MagicMock,
+    mock_find_course_blocks: MagicMock,
+    mock_load_course_block: MagicMock,
     cli_runner: CliRunner,
 ) -> None:
     """Test list_courses command when blocks exist."""
-    # Mock find to return block names
-    mock_block_class.find.return_value = ["ccc-course-cs101", "ccc-course-cs102"]
+    mock_find_course_blocks.return_value = ["ccc-course-cs101", "ccc-course-cs102"]
 
     # Mock load for each block
     mock_block1 = MagicMock()
@@ -374,7 +469,7 @@ def test_list_courses_success_with_blocks(
     mock_block2.grader_image = None
     mock_block2.asset_bucket_block = "bucket2"
 
-    mock_block_class.load.side_effect = [mock_block1, mock_block2]
+    mock_load_course_block.side_effect = [mock_block1, mock_block2]
 
     result = cli_runner.invoke(app, ["course", "list"])
 
@@ -382,60 +477,61 @@ def test_list_courses_success_with_blocks(
     assert "Configured Courses" in result.output
     assert "ccc-course-cs101" in result.output
     assert "ccc-course-cs102" in result.output
-    mock_block_class.find.assert_called_once()
-    assert mock_block_class.load.call_count == 2
+    mock_find_course_blocks.assert_called_once()
+    assert mock_load_course_block.call_count == 2
 
 
 @pytest.mark.local
-@patch("canvas_code_correction.cli.CourseConfigBlock")
+@patch("canvas_code_correction.cli.find_course_block_names")
 def test_list_courses_empty_result(
-    mock_block_class: MagicMock,
+    mock_find_course_blocks: MagicMock,
     cli_runner: CliRunner,
 ) -> None:
     """Test list_courses command when no blocks found."""
-    mock_block_class.find.return_value = []
+    mock_find_course_blocks.return_value = []
 
     result = cli_runner.invoke(app, ["course", "list"])
 
     assert result.exit_code == 0
     assert "No course configuration blocks found" in result.output
-    mock_block_class.find.assert_called_once()
-    mock_block_class.load.assert_not_called()
+    mock_find_course_blocks.assert_called_once()
 
 
 @pytest.mark.local
-@patch("canvas_code_correction.cli.CourseConfigBlock")
+@patch("canvas_code_correction.cli.find_course_block_names")
 def test_list_courses_find_raises_exception(
-    mock_block_class: MagicMock,
+    mock_find_course_blocks: MagicMock,
     cli_runner: CliRunner,
 ) -> None:
     """Test list_courses when find raises exception."""
-    mock_block_class.find.side_effect = RuntimeError("Find failed")
+    mock_find_course_blocks.side_effect = RuntimeError("Find failed")
 
     result = cli_runner.invoke(app, ["course", "list"])
 
     assert result.exit_code == 1
     assert "Error listing courses" in result.output
-    mock_block_class.find.assert_called_once()
+    mock_find_course_blocks.assert_called_once()
 
 
 @pytest.mark.local
-@patch("canvas_code_correction.cli.CourseConfigBlock")
+@patch("canvas_code_correction.cli.load_course_block")
+@patch("canvas_code_correction.cli.find_course_block_names")
 def test_list_courses_load_raises_exception(
-    mock_block_class: MagicMock,
+    mock_find_course_blocks: MagicMock,
+    mock_load_course_block: MagicMock,
     cli_runner: CliRunner,
 ) -> None:
     """Test list_courses when load raises exception for a block."""
-    mock_block_class.find.return_value = ["ccc-course-cs101", "ccc-course-cs102"]
-    mock_block_class.load.side_effect = RuntimeError("Load failed")
+    mock_find_course_blocks.return_value = ["ccc-course-cs101", "ccc-course-cs102"]
+    mock_load_course_block.side_effect = RuntimeError("Load failed")
 
     result = cli_runner.invoke(app, ["course", "list"])
 
     # Should still exit with 0 and show error in table
     assert result.exit_code == 0
     assert "Error: Load failed" in result.output
-    mock_block_class.find.assert_called_once()
-    assert mock_block_class.load.call_count == 2
+    mock_find_course_blocks.assert_called_once()
+    assert mock_load_course_block.call_count == 2
 
 
 # ----- webhook serve command tests -----
@@ -456,10 +552,10 @@ def test_webhook_serve_success_default_host_port(
     # Since we raise SystemExit, the CLI will exit with that code
     # CliRunner will catch SystemExit and treat as exit code 0
     assert result.exit_code == 0
-    assert "Starting webhook server on 0.0.0.0:8080" in result.output
+    assert "Starting webhook server on 127.0.0.1:8080" in result.output
     mock_uvicorn_run.assert_called_once_with(
         mock_uvicorn_run.call_args[0][0],  # webhook_fastapi_app
-        host="0.0.0.0",  # noqa: S104
+        host="127.0.0.1",
         port=8080,
     )
 
@@ -507,8 +603,8 @@ def test_webhook_serve_uvicorn_raises_exception(
 
 
 @pytest.mark.local
-@patch("canvas_code_correction.cli.resolve_settings_from_block")
-@patch("canvas_code_correction.cli.ensure_deployment", new_callable=AsyncMock)
+@patch("canvas_code_correction.cli.load_settings_from_course_block")
+@patch("canvas_code_correction.webhooks.deployments.ensure_deployment", new_callable=AsyncMock)
 def test_deploy_create_success(
     mock_ensure_deployment: AsyncMock,
     mock_resolve_settings: MagicMock,
@@ -517,18 +613,23 @@ def test_deploy_create_success(
 ) -> None:
     """Test deploy create command success."""
     mock_resolve_settings.return_value = mock_settings
-    mock_ensure_deployment.return_value = "ccc-course-test-deployment"
+    mock_ensure_deployment.return_value = DeploymentEnsureResult(
+        deployment_name="ccc-course-test-deployment",
+        work_pool_name="local-pool",
+        ensured=True,
+        deployment_id="deployment-id-123",
+    )
 
     result = cli_runner.invoke(app, ["system", "deploy", "create", "test-course"])
 
     assert result.exit_code == 0
     assert "Deployment 'ccc-course-test-deployment' created/updated successfully" in result.output
     mock_resolve_settings.assert_called_once_with("test-course")
-    mock_ensure_deployment.assert_called_once_with("test-course", mock_settings)
+    mock_ensure_deployment.assert_called_once_with(mock_settings, "test-course")
 
 
 @pytest.mark.local
-@patch("canvas_code_correction.cli.resolve_settings_from_block")
+@patch("canvas_code_correction.cli.load_settings_from_course_block")
 def test_deploy_create_block_not_found(
     mock_resolve_settings: MagicMock,
     cli_runner: CliRunner,
@@ -544,8 +645,8 @@ def test_deploy_create_block_not_found(
 
 
 @pytest.mark.local
-@patch("canvas_code_correction.cli.resolve_settings_from_block")
-@patch("canvas_code_correction.cli.ensure_deployment", new_callable=AsyncMock)
+@patch("canvas_code_correction.cli.load_settings_from_course_block")
+@patch("canvas_code_correction.webhooks.deployments.ensure_deployment", new_callable=AsyncMock)
 def test_deploy_create_ensure_deployment_raises_exception(
     mock_ensure_deployment: AsyncMock,
     mock_resolve_settings: MagicMock,
@@ -560,7 +661,7 @@ def test_deploy_create_ensure_deployment_raises_exception(
 
     assert result.exit_code == 1
     assert "Error creating deployment" in result.output
-    mock_ensure_deployment.assert_called_once_with("test-course", mock_settings)
+    mock_ensure_deployment.assert_called_once_with(mock_settings, "test-course")
 
 
 # ----- version command tests -----

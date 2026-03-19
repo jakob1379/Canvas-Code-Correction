@@ -237,7 +237,7 @@ using the Typer‑based CLI.
 
 ### 1. Configure Your First Course
 
-Use `ccc configure-course` to create a course configuration block. You'll need:
+Use `ccc course setup` to create a course configuration block. You'll need:
 
 - Canvas API token
 - Canvas course ID
@@ -245,21 +245,21 @@ Use `ccc configure-course` to create a course configuration block. You'll need:
   or CLI
 
 ```bash
-uv run ccc configure-course cs101 \
-  --token YOUR_CANVAS_TOKEN \
+printf "%s" "$CANVAS_API_TOKEN" | uv run ccc course setup \
+  --no-interactive \
+  --token-stdin \
+  --api-url https://canvas.example.edu \
   --course-id 12345 \
-  --assets-block course-assets-cs101 \
-  --docker-image yourusername/canvas-grader:latest \
-  --s3-prefix graders/cs101/
+  --docker-image yourusername/canvas-grader:latest
 ```
 
-The command will prompt for the token if you omit `--token`. The configuration
-is stored as a Prefect block named `ccc-course-cs101`.
+The command will prompt for values in interactive mode if you omit the non-
+interactive flags. The configuration is stored as a Prefect course block.
 
 List all configured courses:
 
 ```bash
-uv run ccc list-courses
+uv run ccc course list
 ```
 
 ### 2. Run a Correction Manually
@@ -267,7 +267,7 @@ uv run ccc list-courses
 Test your setup by grading a specific assignment:
 
 ```bash
-uv run ccc run-once 98765 --course ccc-course-cs101
+uv run ccc course run 98765 --course ccc-course-cs101
 ```
 
 This downloads all submissions for assignment ID 98765, runs the grader Docker
@@ -276,7 +276,7 @@ image on each, and uploads feedback to Canvas.
 To grade a single submission (dry‑run mode):
 
 ```bash
-uv run ccc run-once 98765 --submission-id 54321 --dry-run
+uv run ccc course run 98765 --course ccc-course-cs101 --submission-id 54321 --dry-run
 ```
 
 ### 3. Start the Webhook Server
@@ -284,7 +284,7 @@ uv run ccc run-once 98765 --submission-id 54321 --dry-run
 For automatic grading when students submit, start the webhook server:
 
 ```bash
-uv run ccc webhook serve --host 0.0.0.0 --port 8080
+uv run ccc system webhook serve --host 0.0.0.0 --port 8080
 ```
 
 The server listens for Canvas webhook events and triggers the correction flow.
@@ -296,7 +296,7 @@ To run corrections via Prefect's scheduler or API, create a deployment. Ensure
 your Prefect server is running (see Quick Start).
 
 ```bash
-uv run ccc deploy create ccc-course-cs101
+uv run ccc system deploy create ccc-course-cs101
 ```
 
 This registers a deployment that can be triggered by webhooks or manually

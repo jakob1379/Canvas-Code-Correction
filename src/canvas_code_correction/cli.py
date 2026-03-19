@@ -5,6 +5,9 @@ This CLI is organized into two main command groups:
 - **system**: Commands for platform administrators (webhook, deployments, monitoring)
 """
 
+from __future__ import annotations
+
+import argparse
 import asyncio
 import importlib.metadata
 import io
@@ -12,9 +15,10 @@ import json
 import os
 import sys
 import tempfile
+from dataclasses import dataclass
 from http import HTTPStatus
 from pathlib import Path
-from typing import Annotated
+from typing import TYPE_CHECKING, Annotated, TypedDict, cast
 
 import boto3
 import requests
@@ -22,7 +26,6 @@ import typer
 import uvicorn
 from botocore.exceptions import BotoCoreError, EndpointConnectionError
 from canvasapi import Canvas
-from canvasapi.course import Course
 from canvasapi.exceptions import CanvasException
 from pydantic import HttpUrl, SecretStr
 from rich.console import Console
@@ -31,9 +34,13 @@ from rich.prompt import Confirm, IntPrompt, Prompt
 from rich.table import Table
 from slugify import slugify
 
-from canvas_code_correction.clients import build_canvas_resources
-from canvas_code_correction.config import resolve_settings_from_block
-from canvas_code_correction.flows import (
+from canvas_code_correction.bootstrap import (
+    find_course_block_names,
+    load_course_block,
+    load_settings_from_course_block,
+)
+from canvas_code_correction.clients.canvas_resources import build_canvas_resources
+from canvas_code_correction.flows.correction import (
     CorrectSubmissionPayload,
     correct_submission_flow,
 )
@@ -41,6 +48,13 @@ from canvas_code_correction.prefect_blocks import CourseConfigBlock
 from canvas_code_correction.webhooks.deployments import ensure_deployment
 from canvas_code_correction.webhooks.server import app as webhook_fastapi_app
 
+if TYPE_CHECKING:
+    from collections.abc import Callable
+
+    from canvasapi.course import Course
+
+    from canvas_code_correction.config import Settings
+    from canvas_code_correction.flows.correction import FlowArtifacts
 # Main CLI app
 app = typer.Typer(
     help="Canvas Code Correction CLI",
@@ -54,6 +68,20 @@ ASCII_DELETE = 127
 BATCH_SUBMISSION_EXCEPTIONS = (RuntimeError, ValueError, TypeError, KeyError, OSError)
 COURSE_BLOCK_LOAD_EXCEPTIONS = (RuntimeError, ValueError, TypeError, KeyError, AttributeError)
 SUGGESTED_SLUG_EXCEPTIONS = (CanvasException, requests.RequestException)
+CANVAS_API_URL_DEFAULT = "https://canvas.instructure.com"
+CANVAS_URL_SCHEME = "https://"
+DEFAULT_PREFECT_HEALTH_URL = "http://localhost:4200/api/health"
+DEFAULT_RUSTFS_ENDPOINT = "http://localhost:9000"
+
+
+def _run_cli_step[T](step: str, action: Callable[[], T]) -> T:
+    try:
+        return action()
+    except typer.Exit:
+        raise
+    except Exception as exc:
+        console.print(f"[red]{step}: {exc}[/red]")
+        raise typer.Exit(1) from exc
 
 
 def _has_control_chars(value: str) -> bool:
@@ -82,7 +110,7 @@ def _resolve_canvas_api_url(
     *,
     interactive: bool,
 ) -> str:
-    if interactive and canvas_api_url == "https://canvas.instructure.com":
+    if interactive and canvas_api_url == CANVAS_API_URL_DEFAULT:
         canvas_api_url = Prompt.ask(
             "Enter your Canvas instance URL",
             default=canvas_api_url,
@@ -105,7 +133,7 @@ def _resolve_canvas_api_url(
         normalized_url = normalized_url.split("/api/v1", 1)[0]
 
     if "://" not in normalized_url:
-        normalized_url = f"https://{normalized_url}"
+        normalized_url = f"{CANVAS_URL_SCHEME}{normalized_url}"
 
     return normalized_url.rstrip("/")
 
@@ -118,17 +146,20 @@ def _resolve_canvas_token(
 ) -> str:
     if token_stdin:
         if canvas_token is not None:
-            console.print("[red]Error: Use either --token or --token-stdin, not both[/red]")
+            console.print(
+                "[red]Error: Use either direct input or stdin "
+                "for the Canvas credential, not both[/red]",
+            )
             raise typer.Exit(1)
 
         token_from_stdin = sys.stdin.read().strip()
         if not token_from_stdin:
-            console.print("[red]Error: No token received on stdin[/red]")
+            console.print("[red]Error: No Canvas credential received on stdin[/red]")
             raise typer.Exit(1)
 
         if _has_control_chars(token_from_stdin):
             console.print(
-                "[red]Error: Canvas API token from stdin contains control characters[/red]",
+                "[red]Error: Canvas credential from stdin contains control characters[/red]",
             )
             console.print(
                 '[yellow]Tip: Use `printf %s "$CANVAS_API_TOKEN"` '
@@ -149,13 +180,13 @@ def _resolve_canvas_token(
 
     normalized_token = canvas_token.strip()
     if not normalized_token:
-        console.print("[red]Error: Canvas API token cannot be empty[/red]")
+        console.print("[red]Error: Canvas credential cannot be empty[/red]")
         raise typer.Exit(1)
 
     if _has_control_chars(normalized_token):
-        console.print("[red]Error: Canvas API token contains control characters[/red]")
+        console.print("[red]Error: Canvas credential contains control characters[/red]")
         console.print(
-            "[yellow]Tip: Re-paste the token or use --token-stdin "
+            "[yellow]Tip: Re-paste the credential or use stdin input "
             "with printf to avoid shell artifacts[/yellow]",
         )
         raise typer.Exit(1)
@@ -167,19 +198,19 @@ def _build_canvas_client(canvas_api_url: str, canvas_token: str) -> Canvas:
     try:
         canvas = Canvas(canvas_api_url, canvas_token)
         _ = canvas.get_current_user()
-        console.print("[green]✓ Canvas API token validated successfully[/green]")
+        console.print("[green]✓ Canvas access validated successfully[/green]")
     except (CanvasException, requests.RequestException) as exc:
         error_msg = str(exc)
         # Provide more helpful error messages for common issues
         if "port 80" in error_msg.lower() or "bad request" in error_msg.lower():
-            console.print("[red]Error: Failed to validate Canvas API token.[/red]")
+            console.print("[red]Error: Failed to validate Canvas access.[/red]")
             console.print("[yellow]This error often occurs when:[/yellow]")
-            console.print("  • The Canvas URL is incorrect (missing https://)")
-            console.print("  • The API token is invalid or expired")
+            console.print(f"  • The Canvas URL is incorrect (missing {CANVAS_URL_SCHEME})")
+            console.print("  • The provided Canvas credential is invalid or expired")
             console.print("  • There's a proxy or firewall blocking HTTPS requests")
             console.print(f"[dim]Attempted URL: {canvas_api_url}[/dim]")
         else:
-            console.print(f"[red]Error: Failed to validate Canvas API token: {exc}[/red]")
+            console.print("[red]Error: Failed to validate Canvas access.[/red]")
         raise typer.Exit(1) from exc
     else:
         return canvas
@@ -366,6 +397,65 @@ def _collect_test_mappings(
     return _request_test_mappings(course)
 
 
+def _parse_course_run_options(args: list[str]) -> CourseRunOptions:
+    parser = argparse.ArgumentParser(add_help=False)
+    parser.add_argument("--submission-id", type=int, default=None)
+    parser.add_argument("--course", "-c", default="default-course")
+    parser.add_argument("--download-dir", type=Path, default=None)
+    parser.add_argument("--dry-run", action="store_true")
+
+    parsed, unknown_args = parser.parse_known_args(args)
+    if unknown_args:
+        console.print(f"[red]Unknown option(s): {', '.join(unknown_args)}[/red]")
+        raise typer.Exit(2)
+
+    return CourseRunOptions(
+        submission_id=parsed.submission_id,
+        course_block=parsed.course,
+        download_dir=parsed.download_dir,
+        dry_run=parsed.dry_run,
+    )
+
+
+def _parse_course_setup_options(args: list[str]) -> CourseSetupOptions:
+    parser = argparse.ArgumentParser(add_help=False)
+    parser.add_argument("--token-stdin", action="store_true")
+    parser.add_argument("--token", default=None)
+    parser.add_argument("--api-url", "-u", default=CANVAS_API_URL_DEFAULT)
+    parser.add_argument("--course-id", "-c", type=int, default=0)
+    parser.add_argument("--docker-image", "-d", default="jakob1379/canvas-grader:latest")
+    parser.add_argument("--map-assignments", action="append", default=None)
+    parser.add_argument("--env", "-e", action="append", default=None)
+    parser.add_argument("--interactive", dest="interactive", action="store_true")
+    parser.add_argument("--no-interactive", dest="interactive", action="store_false")
+    parser.set_defaults(interactive=True)
+
+    parser.add_argument("--assets-block", default=None)
+    parser.add_argument("--slug", default=None)
+    parser.add_argument("--assets-prefix", default=None)
+    parser.add_argument("--work-pool", default=None)
+
+    parsed, unknown_args = parser.parse_known_args(args)
+    if unknown_args:
+        console.print(f"[red]Unknown option(s): {', '.join(unknown_args)}[/red]")
+        raise typer.Exit(2)
+
+    return CourseSetupOptions(
+        token_stdin=parsed.token_stdin,
+        canvas_api_url=parsed.api_url,
+        canvas_token=parsed.token or "",
+        course_id=parsed.course_id,
+        docker_image=parsed.docker_image,
+        map_assignments=parsed.map_assignments or [],
+        env_var=parsed.env or [],
+        interactive=parsed.interactive,
+        assets_block=parsed.assets_block or "",
+        slug=parsed.slug or "",
+        assets_prefix=parsed.assets_prefix or "",
+        work_pool=parsed.work_pool or "",
+    )
+
+
 def _prompt_optional_value(
     value: str | None,
     prompt_text: str,
@@ -391,6 +481,270 @@ def _build_grader_env(env_var: list[str] | None, test_map_env: dict[str, str]) -
     return grader_env
 
 
+def _resolve_course_run_download_dir(download_dir: Path | None) -> Path:
+    if download_dir is not None:
+        return download_dir
+    resolved = Path(tempfile.mkdtemp(prefix="ccc-download-"))
+    console.print(f"[yellow]Using temporary download directory: {resolved}[/yellow]")
+    return resolved
+
+
+def _print_flow_result(result: FlowArtifacts) -> None:
+    console.print("[green]Correction flow completed successfully![/green]")
+    console.print(
+        json.dumps(
+            {
+                "submission_metadata_keys": list(result.submission_metadata.keys()),
+                "downloaded_files_count": len(result.downloaded_files),
+                "workspace": str(result.workspace.root) if result.workspace else None,
+                "results_keys": list(result.results.keys()),
+            },
+            indent=2,
+        ),
+    )
+
+
+def _run_single_submission(
+    payload: CorrectSubmissionPayload,
+    settings: Settings,
+    *,
+    download_dir: Path,
+    dry_run: bool,
+) -> FlowArtifacts:
+    if dry_run:
+        console.print("[yellow]Dry run enabled - no actual grading or upload will occur[/yellow]")
+    return _run_cli_step(
+        "Error running correction flow",
+        lambda: correct_submission_flow(
+            payload,
+            settings,
+            download_dir=download_dir,
+            dry_run=dry_run,
+        ),
+    )
+
+
+def _run_assignment_batch(
+    assignment_id: int,
+    settings: Settings,
+    *,
+    download_dir: Path,
+    dry_run: bool,
+) -> None:
+    console.print(
+        f"[blue]Batch mode: processing all submissions for assignment {assignment_id}[/blue]",
+    )
+    resources = build_canvas_resources(settings)
+    assignment = resources.course.get_assignment(assignment_id)
+    submissions = assignment.get_submissions()
+    failed_submission_ids: list[int] = []
+    for submission in submissions:
+        sub_id = submission.id
+        console.print(f"[blue]Processing submission {sub_id}[/blue]")
+        payload = CorrectSubmissionPayload(
+            assignment_id=assignment_id,
+            submission_id=sub_id,
+        )
+        try:
+            correct_submission_flow(
+                payload,
+                settings,
+                resources=resources,
+                download_dir=download_dir,
+                dry_run=dry_run,
+            )
+            console.print(f"[green]Submission {sub_id} processed successfully[/green]")
+        except BATCH_SUBMISSION_EXCEPTIONS as exc:
+            console.print(f"[red]Error processing submission {sub_id}: {exc}[/red]")
+            failed_submission_ids.append(sub_id)
+            continue
+
+    if failed_submission_ids:
+        console.print(
+            "[red]Batch processing completed with failures: "
+            f"{', '.join(str(sub_id) for sub_id in failed_submission_ids)}[/red]",
+        )
+        raise typer.Exit(1)
+
+    console.print("[green]Batch processing completed![/green]")
+
+
+@dataclass(frozen=True)
+class CourseSetupConfig:
+    """Resolved course setup values passed through setup helper functions."""
+
+    block_name: str
+    canvas_api_url: str
+    canvas_token: str
+    selected_course_id: int
+    assets_block: str
+    assets_prefix: str
+    work_pool: str
+    docker_image: str
+    test_map_count: int
+    grader_env: dict[str, str]
+
+
+@dataclass(frozen=True)
+class CourseRunOptions:
+    """Resolved course run options parsed from command arguments."""
+
+    submission_id: int | None
+    course_block: str
+    download_dir: Path | None
+    dry_run: bool
+
+
+@dataclass(frozen=True)
+class CourseSetupOptions:
+    """Resolved course setup options parsed from command arguments."""
+
+    token_stdin: bool
+    canvas_api_url: str
+    canvas_token: str
+    course_id: int
+    docker_image: str
+    map_assignments: list[str]
+    env_var: list[str]
+    interactive: bool
+    assets_block: str
+    slug: str
+    assets_prefix: str
+    work_pool: str
+
+
+class CourseConfigBlockPayload(TypedDict):
+    """Typed payload for creating a CourseConfigBlock."""
+
+    canvas_api_url: HttpUrl
+    canvas_token: SecretStr
+    canvas_course_id: int
+    asset_bucket_block: str
+    asset_path_prefix: str
+    grader_image: str
+    work_pool_name: str
+    grader_env: dict[str, str]
+
+
+def _derive_course_setup_defaults(
+    selected_course_id: int,
+    course: Course,
+    options: CourseSetupOptions,
+) -> tuple[str, str, str, str, str]:
+    try:
+        course_code = course.course_code or f"course-{selected_course_id}"
+        course_slug = f"{selected_course_id}-{slugify(course_code)}"
+    except SUGGESTED_SLUG_EXCEPTIONS:
+        course_slug = f"{selected_course_id}-course"
+
+    if options.slug:
+        course_slug = slugify(options.slug)
+
+    block_name = f"ccc-course-{course_slug}"
+    resolved_assets_block = options.assets_block or f"ccc-assets-{course_slug}"
+    resolved_assets_prefix = options.assets_prefix or f"graders/{course_slug}/"
+    resolved_work_pool = options.work_pool or f"course-work-pool-{course_slug}"
+    return (
+        block_name,
+        course_slug,
+        resolved_assets_block,
+        resolved_assets_prefix,
+        resolved_work_pool,
+    )
+
+
+def _build_course_setup_config(
+    selected_course_id: int,
+    course: Course,
+    options: CourseSetupOptions,
+) -> CourseSetupConfig:
+    block_name, _course_slug, assets_block, assets_prefix, work_pool = (
+        _derive_course_setup_defaults(
+            selected_course_id,
+            course,
+            options=options,
+        )
+    )
+    resolved_docker_image = _resolve_docker_image(
+        options.docker_image,
+        interactive=options.interactive,
+    )
+    test_map_env = _collect_test_mappings(
+        course,
+        options.map_assignments,
+        interactive=options.interactive,
+    )
+    grader_env = _build_grader_env(options.env_var, test_map_env)
+
+    return CourseSetupConfig(
+        block_name=block_name,
+        canvas_api_url=options.canvas_api_url,
+        canvas_token=options.canvas_token or "",
+        selected_course_id=selected_course_id,
+        assets_block=assets_block,
+        assets_prefix=assets_prefix,
+        work_pool=work_pool,
+        docker_image=resolved_docker_image,
+        test_map_count=len(test_map_env),
+        grader_env=grader_env,
+    )
+
+
+def _resolve_docker_image(docker_image: str, *, interactive: bool) -> str:
+    if not interactive:
+        return docker_image
+    return Prompt.ask("Docker image for grading", default=docker_image)
+
+
+def _print_course_setup_summary(config: CourseSetupConfig) -> None:
+    console.print("\n[bold]Configuration Summary:[/bold]")
+    summary_table = Table(show_header=False)
+    summary_table.add_column("Setting", style="cyan")
+    summary_table.add_column("Value", style="green")
+    summary_table.add_row("Block Name", config.block_name)
+    summary_table.add_row("Canvas API URL", config.canvas_api_url)
+    summary_table.add_row("Canvas Course ID", str(config.selected_course_id))
+    summary_table.add_row("Assets Block", config.assets_block)
+    summary_table.add_row("Assets Prefix", config.assets_prefix)
+    summary_table.add_row("Work Pool", config.work_pool)
+    summary_table.add_row("Docker Image", config.docker_image)
+    summary_table.add_row("Test Mappings", str(config.test_map_count))
+    console.print(summary_table)
+
+
+def _build_course_block_payload(
+    config: CourseSetupConfig,
+) -> CourseConfigBlockPayload:
+    """Build payload for CourseConfigBlock in one place."""
+    return {
+        "canvas_api_url": HttpUrl(config.canvas_api_url),
+        "canvas_token": SecretStr(config.canvas_token),
+        "canvas_course_id": config.selected_course_id,
+        "asset_bucket_block": config.assets_block,
+        "asset_path_prefix": config.assets_prefix,
+        "grader_image": config.docker_image,
+        "work_pool_name": config.work_pool,
+        "grader_env": config.grader_env,
+    }
+
+
+def _save_course_block(*, config: CourseSetupConfig) -> None:
+    try:
+        block = CourseConfigBlock(
+            **cast("CourseConfigBlockPayload", _build_course_block_payload(config)),
+        )
+        block.save(config.block_name, overwrite=True)
+    except (RuntimeError, ValueError, TypeError) as exc:
+        console.print(f"[red]Error saving course block: {exc}[/red]")
+        raise typer.Exit(1) from exc
+
+    console.print(f"\n[green]✓ Course configuration saved as block: {config.block_name}[/green]")
+    console.print(
+        f"[blue]You can now use: ccc course run <assignment_id> --course"
+        f" {config.block_name}[/blue]",
+    )
+
+
 # =============================================================================
 # COURSE ADMINISTRATOR COMMANDS
 # =============================================================================
@@ -398,36 +752,23 @@ def _build_grader_env(env_var: list[str] | None, test_map_env: dict[str, str]) -
 course_app = typer.Typer(
     help="""[bold blue]📚 Course Administration[/bold blue]
 
-Commands for course administrators to configure courses and grade submissions.
+Commands for course administrators to set up courses and grade submissions.
 
 [dim]Typical workflow:[/dim]
   1. [dim]ccc course setup[/dim]     - Interactive course configuration
   2. [dim]ccc course run[/dim]       - Grade submissions
-  3. [dim]ccc course list[/dim]      - View configured courses""",
+  3. [dim]ccc course list[/dim]      - View saved courses""",
     rich_markup_mode="rich",
 )
 
 
-@course_app.command("run")
+@course_app.command(
+    "run",
+    context_settings={"allow_extra_args": True, "ignore_unknown_options": True},
+)
 def course_run(
+    ctx: typer.Context,
     assignment_id: Annotated[int, typer.Argument(help="Canvas assignment ID")],
-    *,
-    submission_id: Annotated[
-        int | None,
-        typer.Option(help="Specific submission ID (default: all submissions)"),
-    ] = None,
-    course_block: Annotated[
-        str,
-        typer.Option("--course", "-c", help="Prefect course configuration block name"),
-    ] = "default-course",
-    download_dir: Annotated[
-        Path | None,
-        typer.Option(help="Directory for downloaded submissions (default: temporary directory)"),
-    ] = None,
-    dry_run: Annotated[
-        bool,
-        typer.Option("--dry-run", help="Skip actual grading and upload"),
-    ] = False,
 ) -> None:
     """Run correction flow for an assignment or specific submission.
 
@@ -438,122 +779,47 @@ def course_run(
         # Grade a single submission in dry-run mode
         $ ccc course run 12345 --submission-id 67890 --dry-run
     """
-    try:
-        settings = resolve_settings_from_block(course_block)
-    except Exception as e:
-        console.print(f"[red]Error loading course block '{course_block}': {e}[/red]")
-        raise typer.Exit(1) from e
+    options = _parse_course_run_options(ctx.args)
 
-    if download_dir is None:
-        download_dir = Path(tempfile.mkdtemp(prefix="ccc-download-"))
-        console.print(f"[yellow]Using temporary download directory: {download_dir}[/yellow]")
+    settings = _run_cli_step(
+        "Error loading course block",
+        lambda: load_settings_from_course_block(options.course_block),
+    )
 
-    if submission_id:
+    resolved_download_dir = _resolve_course_run_download_dir(options.download_dir)
+
+    if options.submission_id is not None:
         payload = CorrectSubmissionPayload(
             assignment_id=assignment_id,
-            submission_id=submission_id,
+            submission_id=options.submission_id,
         )
         console.print(
             f"[blue]Running correction for assignment {assignment_id}, "
-            f"submission {submission_id}[/blue]",
+            f"submission {options.submission_id}[/blue]",
         )
     else:
-        # Batch mode: process all submissions
-        console.print(
-            f"[blue]Batch mode: processing all submissions for assignment {assignment_id}[/blue]",
+        _run_assignment_batch(
+            assignment_id,
+            settings,
+            download_dir=resolved_download_dir,
+            dry_run=options.dry_run,
         )
-        resources = build_canvas_resources(settings)
-        assignment = resources.course.get_assignment(assignment_id)
-        submissions = assignment.get_submissions()
-        for submission in submissions:
-            sub_id = submission.id
-            console.print(f"[blue]Processing submission {sub_id}[/blue]")
-            payload = CorrectSubmissionPayload(
-                assignment_id=assignment_id,
-                submission_id=sub_id,
-            )
-            try:
-                result = correct_submission_flow(
-                    payload,
-                    settings,
-                    download_dir=download_dir,
-                    dry_run=dry_run,
-                )
-                console.print(f"[green]Submission {sub_id} processed successfully[/green]")
-                # Optional: collect summary
-            except BATCH_SUBMISSION_EXCEPTIONS as exc:
-                console.print(f"[red]Error processing submission {sub_id}: {exc}[/red]")
-                # Continue with next submission
-                continue
-
-        console.print("[green]Batch processing completed![/green]")
         raise typer.Exit(0)
 
-    if dry_run:
-        console.print("[yellow]Dry run enabled - no actual grading or upload will occur[/yellow]")
-
-    try:
-        result = correct_submission_flow(
-            payload,
-            settings,
-            download_dir=download_dir,
-            dry_run=dry_run,
-        )
-        console.print("[green]Correction flow completed successfully![/green]")
-        console.print(
-            json.dumps(
-                {
-                    "submission_metadata_keys": list(result.submission_metadata.keys()),
-                    "downloaded_files_count": len(result.downloaded_files),
-                    "workspace": str(result.workspace.root) if result.workspace else None,
-                    "results_keys": list(result.results.keys()),
-                },
-                indent=2,
-            ),
-        )
-    except Exception as e:
-        console.print(f"[red]Error running correction flow: {e}[/red]")
-        raise typer.Exit(1) from e
+    result = _run_single_submission(
+        payload,
+        settings,
+        download_dir=resolved_download_dir,
+        dry_run=options.dry_run,
+    )
+    _print_flow_result(result)
 
 
-@course_app.command("setup")
-def course_setup(
-    *,
-    token_stdin: Annotated[
-        bool,
-        typer.Option(
-            "--token-stdin",
-            help="Read Canvas API token from stdin",
-        ),
-    ] = False,
-    canvas_api_url: Annotated[
-        str,
-        typer.Option("--api-url", "-u", help="Canvas instance URL"),
-    ] = "https://canvas.instructure.com",
-    course_id: Annotated[
-        int | None,
-        typer.Option("--course-id", "-c", help="Canvas course ID (skip interactive selection)"),
-    ] = None,
-    docker_image: Annotated[
-        str,
-        typer.Option("--docker-image", "-d", help="Docker image for grading"),
-    ] = "jakob1379/canvas-grader:latest",
-    map_assignments: Annotated[
-        list[str] | None,
-        typer.Option(
-            "--map-assignments",
-            help="Map assignments to test files: 'assignment_id:/path/to/test.py'",
-        ),
-    ] = None,
-    env_var: Annotated[
-        list[str] | None,
-        typer.Option("--env", "-e", help="Environment variables (KEY=VALUE)"),
-    ] = None,
-    interactive: Annotated[
-        bool,
-        typer.Option("--interactive/--no-interactive", help="Enable interactive prompts"),
-    ] = True,
-) -> None:
+@course_app.command(
+    "setup",
+    context_settings={"allow_extra_args": True, "ignore_unknown_options": True},
+)
+def course_setup(ctx: typer.Context) -> None:
     r"""Interactively set up a course configuration with guided prompts.
 
     This command guides you through setting up a course configuration step by step:
@@ -580,122 +846,86 @@ def course_setup(
     """
     console.print(Panel.fit("[bold blue]Canvas Code Correction - Course Setup[/bold blue]"))
 
+    options = _parse_course_setup_options(ctx.args)
+
     canvas_api_url = _resolve_canvas_api_url(
-        canvas_api_url,
-        interactive=interactive,
+        options.canvas_api_url,
+        interactive=options.interactive,
     )
 
     # Read token from stdin or prompt interactively
     canvas_token = _resolve_canvas_token(
-        None,
-        token_stdin=token_stdin,
-        interactive=interactive,
+        options.canvas_token,
+        token_stdin=options.token_stdin,
+        interactive=options.interactive,
     )
 
     canvas = _build_canvas_client(canvas_api_url, canvas_token)
     selected_course_id, course = _resolve_course_selection(
         canvas,
-        course_id,
-        interactive=interactive,
+        options.course_id or None,
+        interactive=options.interactive,
     )
 
-    try:
-        course_code = course.course_code or f"course-{selected_course_id}"
-        course_slug = f"{selected_course_id}-{slugify(course_code)}"
-    except SUGGESTED_SLUG_EXCEPTIONS:
-        course_slug = f"{selected_course_id}-course"
+    setup_config = _build_course_setup_config(
+        selected_course_id,
+        course,
+        CourseSetupOptions(
+            token_stdin=options.token_stdin,
+            canvas_api_url=canvas_api_url,
+            canvas_token=canvas_token,
+            course_id=options.course_id,
+            docker_image=options.docker_image,
+            map_assignments=options.map_assignments,
+            env_var=options.env_var,
+            interactive=options.interactive,
+            assets_block=options.assets_block,
+            slug=options.slug,
+            assets_prefix=options.assets_prefix,
+            work_pool=options.work_pool,
+        ),
+    )
 
-    assets_block = f"ccc-assets-{course_slug}"
-    assets_prefix = f"graders/{course_slug}/"
-    work_pool = f"course-work-pool-{course_slug}"
+    _print_course_setup_summary(setup_config)
 
-    if interactive:
-        docker_image = Prompt.ask(
-            "Docker image for grading",
-            default=docker_image,
-        )
-
-    test_map_env = _collect_test_mappings(course, map_assignments, interactive=interactive)
-    grader_env = _build_grader_env(env_var, test_map_env)
-
-    block_name = f"ccc-course-{course_slug}"
-
-    console.print("\n[bold]Configuration Summary:[/bold]")
-    summary_table = Table(show_header=False)
-    summary_table.add_column("Setting", style="cyan")
-    summary_table.add_column("Value", style="green")
-    summary_table.add_row("Block Name", block_name)
-    summary_table.add_row("Canvas API URL", canvas_api_url)
-    summary_table.add_row("Canvas Course ID", str(selected_course_id))
-    summary_table.add_row("Assets Block", assets_block)
-    summary_table.add_row("Assets Prefix", assets_prefix)
-    summary_table.add_row("Work Pool", work_pool)
-    summary_table.add_row("Docker Image", docker_image)
-    summary_table.add_row("Test Mappings", str(len(test_map_env)))
-
-    console.print(summary_table)
-
-    if interactive and not Confirm.ask("\nSave this configuration?", default=True):
+    if options.interactive and not Confirm.ask("\nSave this configuration?", default=True):
         console.print("[yellow]Configuration cancelled[/yellow]")
         raise typer.Exit(0)
 
-    try:
-        block = CourseConfigBlock(
-            canvas_api_url=HttpUrl(canvas_api_url),
-            canvas_token=SecretStr(canvas_token),
-            canvas_course_id=selected_course_id,
-            asset_bucket_block=assets_block,
-            asset_path_prefix=assets_prefix,
-            workspace_root=None,
-            grader_image=docker_image,
-            work_pool_name=work_pool,
-            grader_env=grader_env,
-        )
-        block.save(block_name, overwrite=True)
-        console.print(f"\n[green]✓ Course configuration saved as block: {block_name}[/green]")
-        console.print(
-            f"[blue]You can now use: ccc course run <assignment_id> --course {block_name}[/blue]",
-        )
-    except (RuntimeError, ValueError, TypeError) as exc:
-        console.print(f"[red]Error saving course block: {exc}[/red]")
-        raise typer.Exit(1) from exc
+    _save_course_block(config=setup_config)
 
 
 @course_app.command("list")
 def course_list() -> None:
-    """List all configured course blocks.
+    """List all saved course blocks.
 
     [blue]Example:[/blue]
         $ ccc course list
     """
-    try:
-        blocks = CourseConfigBlock.find()  # type: ignore[attr-defined]
-        if not blocks:
-            console.print("[yellow]No course configuration blocks found[/yellow]")
-            return
+    blocks = _run_cli_step("Error listing courses", find_course_block_names)
+    if not blocks:
+        console.print("[yellow]No course configuration blocks found[/yellow]")
+        return
 
-        table = Table(title="Configured Courses")
-        table.add_column("Block Name", style="cyan")
-        table.add_column("Canvas Course ID", style="green")
-        table.add_column("Docker Image", style="yellow")
-        table.add_column("Assets Block", style="blue")
+    table = Table(title="Configured Courses")
+    table.add_column("Block Name", style="cyan")
+    table.add_column("Canvas Course ID", style="green")
+    table.add_column("Docker Image", style="yellow")
+    table.add_column("Assets Block", style="blue")
 
-        for block_slug in blocks:
-            try:
-                block = CourseConfigBlock.load(block_slug)
-                table.add_row(
-                    block_slug,
-                    str(block.canvas_course_id),  # type: ignore[attr-defined]
-                    block.grader_image or "Not set",  # type: ignore[attr-defined]
-                    block.asset_bucket_block,  # type: ignore[attr-defined]
-                )
-            except COURSE_BLOCK_LOAD_EXCEPTIONS as exc:
-                table.add_row(block_slug, f"Error: {exc}", "", "")
+    for block_slug in blocks:
+        try:
+            block = load_course_block(block_slug)
+            table.add_row(
+                block_slug,
+                str(block.canvas_course_id),
+                block.grader_image or "Not set",
+                block.asset_bucket_block,
+            )
+        except COURSE_BLOCK_LOAD_EXCEPTIONS as exc:
+            table.add_row(block_slug, f"Error: {exc}", "", "")
 
-        console.print(table)
-    except Exception as e:
-        console.print(f"[red]Error listing courses: {e}[/red]")
-        raise typer.Exit(1) from e
+    console.print(table)
 
 
 # =============================================================================
@@ -723,7 +953,7 @@ webhook_app = typer.Typer(
 
 @webhook_app.command("serve")
 def webhook_serve(
-    host: Annotated[str, typer.Option("--host", help="Host to bind")] = "0.0.0.0",  # noqa: S104 # nosec B104 # nosonar
+    host: Annotated[str, typer.Option("--host", help="Host to bind")] = "127.0.0.1",
     port: Annotated[int, typer.Option("--port", help="Port to bind")] = 8080,
 ) -> None:
     """Start webhook server for Canvas submissions.
@@ -760,24 +990,32 @@ def deploy_create(
     [blue]Example:[/blue]
         $ ccc system deploy create ccc-course-cs101
     """
-    try:
-        settings = resolve_settings_from_block(course_block)
-    except Exception as e:
-        console.print(f"[red]Error loading course block '{course_block}': {e}[/red]")
-        raise typer.Exit(1) from e
+    settings = _run_cli_step(
+        "Error loading course block",
+        lambda: load_settings_from_course_block(course_block),
+    )
 
     console.print(f"[blue]Creating deployment for course block: {course_block}[/blue]")
 
-    try:
-        deployment_name = asyncio.run(ensure_deployment(course_block, settings))
-        console.print(f"[green]Deployment '{deployment_name}' created/updated successfully[/green]")
+    deployment_result = _run_cli_step(
+        "Error creating deployment",
+        lambda: asyncio.run(ensure_deployment(settings, course_block)),
+    )
+    if not deployment_result.ensured:
         console.print(
-            f"[yellow]Note: Ensure work pool "
-            f"'{settings.grader.work_pool_name or 'local-pool'}' exists and has workers[/yellow]",
+            "[red]Error creating deployment: "
+            f"{deployment_result.error_type or 'Error'}: "
+            f"{deployment_result.error or 'unknown error'}[/red]",
         )
-    except Exception as e:
-        console.print(f"[red]Error creating deployment: {e}[/red]")
-        raise typer.Exit(1) from e
+        raise typer.Exit(1)
+    console.print(
+        "[green]Deployment "
+        f"'{deployment_result.deployment_name}' created/updated successfully[/green]",
+    )
+    console.print(
+        f"[yellow]Note: Ensure work pool "
+        f"'{settings.grader.work_pool_name or 'local-pool'}' exists and has workers[/yellow]",
+    )
 
 
 system_app.add_typer(deploy_app, name="deploy")
@@ -793,7 +1031,7 @@ def system_status() -> None:
     console.print("[bold blue]Platform Status[/bold blue]")
 
     # Check Prefect connection
-    prefect_url = "http://localhost:4200/api/health"
+    prefect_url = DEFAULT_PREFECT_HEALTH_URL
     try:
         response = requests.get(prefect_url, timeout=5)
     except requests.RequestException as exc:
@@ -805,7 +1043,7 @@ def system_status() -> None:
             console.print(f"[yellow]⚠ Prefect server: HTTP {response.status_code}[/yellow]")
 
     # Check RustFS/S3
-    rustfs_endpoint = os.environ.get("RUSTFS_ENDPOINT_URL", "http://localhost:9000")
+    rustfs_endpoint = os.environ.get("RUSTFS_ENDPOINT", DEFAULT_RUSTFS_ENDPOINT)
     rustfs_access_key = os.environ.get("RUSTFS_ACCESS_KEY")
     rustfs_secret_key = os.environ.get("RUSTFS_SECRET_KEY")
 
@@ -830,7 +1068,7 @@ def system_status() -> None:
         else:
             console.print("[green]✓ RustFS (S3): Running[/green]")
 
-    console.print("\n[dim]Use 'ccc course list' to see configured courses[/dim]")
+    console.print("\n[dim]Use 'ccc course list' to see saved courses[/dim]")
 
 
 # =============================================================================

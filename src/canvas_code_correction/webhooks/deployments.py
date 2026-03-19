@@ -1,14 +1,72 @@
 """Proper deployment management for webhook-triggered flows using Prefect 3.x."""
 
+from __future__ import annotations
+
 import logging
-from typing import Any
+from dataclasses import dataclass
+from inspect import isawaitable
+from typing import TYPE_CHECKING, Protocol, cast
 
+from prefect.client.orchestration import get_client
 from prefect.deployments.flow_runs import run_deployment
+from prefect.exceptions import ObjectNotFound
 
-from canvas_code_correction.config import Settings
-from canvas_code_correction.webhooks.flows import webhook_correction_flow
+from canvas_code_correction.webhooks import flows as webhook_flows
+
+if TYPE_CHECKING:
+    from prefect.client.schemas.objects import FlowRun
+
+    from canvas_code_correction.config import Settings
+
+    class _DeployableWebhookFlow(Protocol):
+        name: str
+
+        def deploy(self, *args: object, **kwargs: object) -> object: ...
+
 
 logger = logging.getLogger(__name__)
+
+WEBHOOK_FLOW_NAME = "webhook-correction-flow"
+
+
+def _get_webhook_correction_flow() -> _DeployableWebhookFlow:
+    return cast("_DeployableWebhookFlow", webhook_flows.webhook_correction_flow)
+
+
+def _serialize_settings_for_flow(settings: Settings) -> dict[str, object]:
+    return settings.to_flow_payload()
+
+
+@dataclass(frozen=True)
+class DeploymentTarget:
+    """Resolved deployment identity for a course."""
+
+    name: str
+    work_pool_name: str
+
+
+@dataclass(frozen=True)
+class DeploymentEnsureResult:
+    """Outcome of ensuring a deployment exists."""
+
+    deployment_name: str
+    work_pool_name: str
+    ensured: bool
+    deployment_id: str | None = None
+    error: str | None = None
+    error_type: str | None = None
+
+
+@dataclass(frozen=True)
+class TriggerDeploymentResult:
+    """Outcome of triggering a Prefect deployment run."""
+
+    deployment_name: str
+    success: bool
+    flow_run_id: str | None = None
+    error: str | None = None
+    stage: str | None = None
+    error_type: str | None = None
 
 
 def get_deployment_name(settings: Settings, course_block: str) -> str:
@@ -16,39 +74,73 @@ def get_deployment_name(settings: Settings, course_block: str) -> str:
     if settings.webhook.deployment_name:
         return settings.webhook.deployment_name
 
-    # Default: ccc-{slug}-deployment  # noqa: ERA001
-    # Remove "ccc-course-" prefix if present
     slug = course_block
     if course_block.startswith("ccc-course-"):
         slug = course_block[11:]
     return f"ccc-{slug}-deployment"
 
 
+def resolve_deployment_target(settings: Settings, course_block: str) -> DeploymentTarget:
+    """Resolve deployment name and work pool for a course."""
+    return DeploymentTarget(
+        name=get_deployment_name(settings, course_block),
+        work_pool_name=settings.grader.work_pool_name or "local-pool",
+    )
+
+
 async def ensure_deployment(
-    course_block: str,
     settings: Settings,
-) -> str:
+    course_block: str,
+) -> DeploymentEnsureResult:
     """Ensure a deployment exists for the given course block.
 
-    Creates the deployment if it doesn't exist using flow.deploy().
-    Returns deployment name.
+    Creates the deployment if it doesn't exist using flow.deploy() and returns
+    a DeploymentEnsureResult describing the outcome.
     """
-    deployment_name = get_deployment_name(settings, course_block)
+    target = resolve_deployment_target(settings, course_block)
+    webhook_flow = _get_webhook_correction_flow()
+    deployment_full_name = f"{webhook_flow.name}/{target.name}"
 
-    # Use work pool from settings, fallback to "local-pool" (from docker-compose)
-    work_pool_name = settings.grader.work_pool_name or "local-pool"
+    async with get_client() as client:
+        try:
+            deployment = await client.read_deployment_by_name(deployment_full_name)
+        except ObjectNotFound:
+            deployment = None
+        except Exception as exc:
+            logger.exception(
+                "Failed to inspect deployment %s for course %s",
+                target.name,
+                course_block,
+            )
+            return DeploymentEnsureResult(
+                deployment_name=target.name,
+                work_pool_name=target.work_pool_name,
+                ensured=False,
+                error=str(exc),
+                error_type=type(exc).__name__,
+            )
 
-    logger.debug("Ensuring deployment %s exists for course %s", deployment_name, course_block)
+    if deployment is not None:
+        return DeploymentEnsureResult(
+            deployment_name=target.name,
+            work_pool_name=target.work_pool_name,
+            ensured=True,
+            deployment_id=str(deployment.id),
+        )
+
+    logger.debug("Ensuring deployment %s exists for course %s", target.name, course_block)
 
     # Deploy the flow
     # flow.deploy() will create or update the deployment
     try:
-        deployment_id = webhook_correction_flow.deploy(  # type: ignore[attr-defined]
-            name=deployment_name,
-            work_pool_name=work_pool_name,
+        deployment_id = webhook_flow.deploy(
+            name=target.name,
+            work_pool_name=target.work_pool_name,
             parameters={
-                "course_block": course_block,
-                # assignment_id and submission_id will be provided at runtime
+                "course": {
+                    "course_block": course_block,
+                    "settings": _serialize_settings_for_flow(settings),
+                },
                 "download_dir": None,  # Let flow create temp dir
                 "dry_run": False,
             },
@@ -59,71 +151,100 @@ async def ensure_deployment(
 
         logger.info(
             "Created/updated deployment %s (ID: %s) for course %s on work pool %s",
-            deployment_name,
+            target.name,
             deployment_id,
             course_block,
-            work_pool_name,
+            target.work_pool_name,
+        )
+        return DeploymentEnsureResult(
+            deployment_name=target.name,
+            work_pool_name=target.work_pool_name,
+            ensured=True,
+            deployment_id=str(deployment_id),
         )
 
-    except Exception:
+    except Exception as exc:
         logger.exception(
             "Failed to create deployment %s for course %s",
-            deployment_name,
+            target.name,
             course_block,
         )
-        # If deployment fails, we can still try to run it (might already exist)
-        # Don't re-raise, as the deployment might already exist
-
-    return deployment_name
+        return DeploymentEnsureResult(
+            deployment_name=target.name,
+            work_pool_name=target.work_pool_name,
+            ensured=False,
+            error=str(exc),
+            error_type=type(exc).__name__,
+        )
 
 
 async def trigger_deployment(
+    settings: Settings,
     course_block: str,
     assignment_id: int,
     submission_id: int,
-    settings: Settings,
-) -> str | None:
+) -> TriggerDeploymentResult:
     """Trigger deployment for a submission using Prefect's run_deployment.
 
-    Returns flow run ID if successful, None otherwise.
+    Returns structured run outcome.
     """
-    try:
-        # Ensure deployment exists (idempotent)
-        deployment_name = await ensure_deployment(course_block, settings)
+    ensure_result = await ensure_deployment(settings, course_block)
+    if not ensure_result.ensured:
+        return TriggerDeploymentResult(
+            deployment_name=ensure_result.deployment_name,
+            success=False,
+            error=ensure_result.error or "Deployment provisioning failed",
+            stage="ensure",
+            error_type=ensure_result.error_type,
+        )
 
-        # Run deployment
-        flow_run = run_deployment(  # type: ignore[attr-defined]
-            name=deployment_name,
+    try:
+        run_target = resolve_deployment_target(settings, course_block)
+        flow_run_result = run_deployment(
+            name=f"{WEBHOOK_FLOW_NAME}/{run_target.name}",
             parameters={
-                "assignment_id": assignment_id,
-                "submission_id": submission_id,
+                "course": {
+                    "course_block": course_block,
+                    "settings": _serialize_settings_for_flow(settings),
+                },
+                "submission": {
+                    "assignment_id": assignment_id,
+                    "submission_id": submission_id,
+                },
                 "download_dir": None,  # Let flow create temp dir
                 "dry_run": False,
             },
             timeout=0,  # No timeout
         )
+        flow_run = await flow_run_result if isawaitable(flow_run_result) else flow_run_result
+        flow_run = cast("FlowRun", flow_run)
 
+        flow_run_id = str(flow_run.id)
         logger.info(
             "Triggered deployment %s for assignment %s submission %s -> flow run %s",
-            deployment_name,
+            ensure_result.deployment_name,
             assignment_id,
             submission_id,
-            flow_run.id,  # type: ignore[attr-defined]
+            flow_run_id,
         )
 
-        return str(flow_run.id)  # type: ignore[attr-defined]
+        return TriggerDeploymentResult(
+            deployment_name=ensure_result.deployment_name,
+            success=True,
+            flow_run_id=flow_run_id,
+        )
 
-    except Exception:
+    except Exception as exc:
         logger.exception(
             "Failed to trigger deployment for %s (assignment %s, submission %s)",
             course_block,
             assignment_id,
             submission_id,
         )
-        return None
-
-
-# Legacy alias for backward compatibility
-async def trigger_flow(*args: Any, **kwargs: Any) -> str | None:  # noqa: ANN401
-    """Legacy alias for trigger_deployment."""
-    return await trigger_deployment(*args, **kwargs)
+        return TriggerDeploymentResult(
+            deployment_name=ensure_result.deployment_name,
+            success=False,
+            error=str(exc),
+            stage="trigger",
+            error_type=type(exc).__name__,
+        )
