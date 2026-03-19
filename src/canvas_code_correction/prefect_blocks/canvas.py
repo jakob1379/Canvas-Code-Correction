@@ -1,7 +1,5 @@
 """Prefect block definitions for course configuration."""
 
-from __future__ import annotations
-
 from prefect.blocks.core import Block
 from pydantic import Field, HttpUrl, SecretStr
 

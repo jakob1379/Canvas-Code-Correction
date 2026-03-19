@@ -1,7 +1,5 @@
 """Prefect flow scaffolding exports."""
 
-from __future__ import annotations
-
 from .correction import (
     CorrectSubmissionPayload,
     FlowArtifacts,

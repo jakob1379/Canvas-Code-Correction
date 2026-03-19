@@ -1,10 +1,8 @@
 """Top-level Prefect scaffolding for Canvas correction workflows."""
 
-from __future__ import annotations
-
 from dataclasses import dataclass
 from pathlib import Path
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
 from prefect import flow, task
 
@@ -13,6 +11,7 @@ from canvas_code_correction.clients import (
     build_canvas_resources,
 )
 from canvas_code_correction.collector import ResultCollector
+from canvas_code_correction.config import Settings
 from canvas_code_correction.runner import (
     GraderConfig,
     GraderExecutor,
@@ -24,9 +23,6 @@ from canvas_code_correction.workspace import (
     build_workspace_config,
     prepare_workspace,
 )
-
-if TYPE_CHECKING:
-    from canvas_code_correction.config import Settings
 
 
 @dataclass(frozen=True)

@@ -1,16 +1,11 @@
 """Helpers for constructing reusable Canvas API resources."""
 
-from __future__ import annotations
-
 from dataclasses import dataclass
-from typing import TYPE_CHECKING
 
 from canvasapi import Canvas
+from canvasapi.course import Course
 
-if TYPE_CHECKING:
-    from canvasapi.course import Course
-
-    from canvas_code_correction.config import Settings
+from canvas_code_correction.config import Settings
 
 
 @dataclass(frozen=True)

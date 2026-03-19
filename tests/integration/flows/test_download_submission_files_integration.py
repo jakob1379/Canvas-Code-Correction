@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 import os
 from pathlib import Path
 
@@ -20,6 +18,8 @@ from canvas_code_correction.flows.correction import (
     fetch_submission_metadata,
 )
 from canvas_code_correction.workspace import WorkspaceConfig, prepare_workspace
+
+pytestmark = pytest.mark.usefixtures("clean_bucket", "mock_s3bucket_load")
 
 
 @pytest.mark.integration

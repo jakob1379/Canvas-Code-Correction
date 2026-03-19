@@ -18,11 +18,9 @@ Prerequisites:
 - Prefect server running (run 'uv run poe prefect' or docker-compose up)
 """
 
-from __future__ import annotations
-
 import os
 import sys
-from typing import TypedDict
+from typing import NamedTuple
 from urllib.parse import urlunparse
 
 import boto3
@@ -41,7 +39,7 @@ def _build_local_url(host: str, port: str, path: str = "") -> str:
     return urlunparse((LOCAL_SCHEME, f"{host}:{port}", clean_path, "", "", ""))
 
 
-class RustfsConfig(TypedDict):
+class RustfsConfig(NamedTuple):
     endpoint_url: str
     aws_access_key_id: str
     aws_secret_access_key: str
@@ -63,13 +61,13 @@ def _default_prefect_api_url() -> str:
 
 def get_rustfs_config() -> RustfsConfig:
     """Return RustFS configuration from environment variables with defaults."""
-    return {
-        "endpoint_url": os.getenv("RUSTFS_ENDPOINT", _default_rustfs_endpoint()),
-        "aws_access_key_id": os.getenv("RUSTFS_ACCESS_KEY", "rustfsadmin"),
-        "aws_secret_access_key": os.getenv("RUSTFS_SECRET_KEY", "rustfsadmin"),
-        "bucket_name": os.getenv("RUSTFS_BUCKET_NAME", "test-assets"),
-        "prefix": os.getenv("RUSTFS_PREFIX", "dev"),
-    }
+    return RustfsConfig(
+        endpoint_url=os.getenv("RUSTFS_ENDPOINT", _default_rustfs_endpoint()),
+        aws_access_key_id=os.getenv("RUSTFS_ACCESS_KEY", "rustfsadmin"),
+        aws_secret_access_key=os.getenv("RUSTFS_SECRET_KEY", "rustfsadmin"),
+        bucket_name=os.getenv("RUSTFS_BUCKET_NAME", "test-assets"),
+        prefix=os.getenv("RUSTFS_PREFIX", "dev"),
+    )
 
 
 def get_bucket_owner_kwargs(endpoint_url: str) -> dict[str, str]:
@@ -86,30 +84,30 @@ def check_rustfs_available() -> bool:
     try:
         s3 = boto3.client(
             "s3",
-            endpoint_url=config["endpoint_url"],
-            aws_access_key_id=config["aws_access_key_id"],
-            aws_secret_access_key=config["aws_secret_access_key"],
+            endpoint_url=config.endpoint_url,
+            aws_access_key_id=config.aws_access_key_id,
+            aws_secret_access_key=config.aws_secret_access_key,
             config=Config(signature_version="s3v4"),
         )
         s3.list_buckets()
-        print(f"✓ RustFS is reachable at {config['endpoint_url']}")
+        print(f"✓ RustFS is reachable at {config.endpoint_url}")
         return True
     except (EndpointConnectionError, ClientError) as e:
         print(f"✗ RustFS not reachable: {e}")
         print("  Start RustFS with: uv run poe s3")
-        print(f"  Configure endpoint via RUSTFS_ENDPOINT (current: {config['endpoint_url']})")
+        print(f"  Configure endpoint via RUSTFS_ENDPOINT (current: {config.endpoint_url})")
         return False
 
 
 def ensure_bucket_exists(bucket_name: str) -> bool:
     """Create bucket if it doesn't exist."""
     config = get_rustfs_config()
-    bucket_owner_kwargs = get_bucket_owner_kwargs(config["endpoint_url"])
+    bucket_owner_kwargs = get_bucket_owner_kwargs(config.endpoint_url)
     s3 = boto3.client(
         "s3",
-        endpoint_url=config["endpoint_url"],
-        aws_access_key_id=config["aws_access_key_id"],
-        aws_secret_access_key=config["aws_secret_access_key"],
+        endpoint_url=config.endpoint_url,
+        aws_access_key_id=config.aws_access_key_id,
+        aws_secret_access_key=config.aws_secret_access_key,
         config=Config(signature_version="s3v4"),
     )
     try:
@@ -134,12 +132,12 @@ def ensure_bucket_exists(bucket_name: str) -> bool:
 def upload_test_asset(bucket_name: str, prefix: str = "dev") -> bool:
     """Upload a test asset file for integration tests."""
     config = get_rustfs_config()
-    bucket_owner_kwargs = get_bucket_owner_kwargs(config["endpoint_url"])
+    bucket_owner_kwargs = get_bucket_owner_kwargs(config.endpoint_url)
     s3 = boto3.client(
         "s3",
-        endpoint_url=config["endpoint_url"],
-        aws_access_key_id=config["aws_access_key_id"],
-        aws_secret_access_key=config["aws_secret_access_key"],
+        endpoint_url=config.endpoint_url,
+        aws_access_key_id=config.aws_access_key_id,
+        aws_secret_access_key=config.aws_secret_access_key,
         config=Config(signature_version="s3v4"),
     )
 
@@ -174,20 +172,20 @@ def register_prefect_block() -> bool:
 
         config = get_rustfs_config()
         credentials = AwsCredentials(
-            aws_access_key_id=config["aws_access_key_id"],
-            aws_secret_access_key=SecretStr(config["aws_secret_access_key"]),
+            aws_access_key_id=config.aws_access_key_id,
+            aws_secret_access_key=SecretStr(config.aws_secret_access_key),
             region_name="us-east-1",
             aws_client_parameters=AwsClientParameters(
-                endpoint_url=config["endpoint_url"],
+                endpoint_url=config.endpoint_url,
             ),
         )
 
         block = S3Bucket(
-            bucket_name=config["bucket_name"],
+            bucket_name=config.bucket_name,
             credentials=credentials,
         )
         block.save("local-rustfs", overwrite=True)
-        print(f"✓ Registered Prefect S3 block 'local-rustfs' for bucket {config['bucket_name']}")
+        print(f"✓ Registered Prefect S3 block 'local-rustfs' for bucket {config.bucket_name}")
         return True
     except ImportError as e:
         print(f"✗ Failed to import Prefect modules: {e}")
@@ -227,8 +225,8 @@ def main() -> int:
         print("⚠ Continuing without Prefect server check...")
 
     config = get_rustfs_config()
-    bucket_name = config["bucket_name"]
-    prefix = config["prefix"]
+    bucket_name = config.bucket_name
+    prefix = config.prefix
 
     if not ensure_bucket_exists(bucket_name):
         return 1

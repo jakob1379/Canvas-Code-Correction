@@ -1,8 +1,7 @@
 """Prefect flows for webhook-triggered correction."""
 
-from __future__ import annotations
-
-from typing import TYPE_CHECKING, Any
+from pathlib import Path
+from typing import Any
 
 from prefect import flow, task
 
@@ -11,9 +10,6 @@ from canvas_code_correction.flows import (
     CorrectSubmissionPayload,
     correct_submission_flow,
 )
-
-if TYPE_CHECKING:
-    from pathlib import Path
 
 
 @task

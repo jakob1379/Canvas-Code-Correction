@@ -1,11 +1,11 @@
-from __future__ import annotations
-
 import uuid
 
 import pytest
 from pydantic import SecretStr
 
 from canvas_code_correction.prefect_blocks import CourseConfigBlock
+
+pytestmark = pytest.mark.usefixtures("prefect_testing_environment")
 
 
 @pytest.mark.local

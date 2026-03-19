@@ -1,7 +1,5 @@
 """Docker-based grader executor with resource limits and security hardening."""
 
-from __future__ import annotations
-
 import contextlib
 import subprocess  # nosec B404 # nosonar
 import time

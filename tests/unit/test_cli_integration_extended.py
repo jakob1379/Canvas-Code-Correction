@@ -10,8 +10,6 @@ Required environment variables from .env.dev:
 - CANVAS_TEST_ASSIGNMENT_ID (default: 59160606)
 """
 
-from __future__ import annotations
-
 import os
 from typing import cast
 from unittest.mock import MagicMock, patch

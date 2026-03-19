@@ -1,21 +1,16 @@
 """Authentication and validation for Canvas webhooks."""
 
-from __future__ import annotations
-
 import hashlib
 import hmac
 import json
 from http import HTTPStatus
-from typing import TYPE_CHECKING
 
 import jwt
 import requests
 from jwt.exceptions import InvalidTokenError
+from pydantic import SecretStr
 
-if TYPE_CHECKING:
-    from pydantic import SecretStr
-
-    from canvas_code_correction.config import Settings
+from canvas_code_correction.config import Settings
 
 
 def validate_jwt_token(token: str, secret: SecretStr | None) -> bool:

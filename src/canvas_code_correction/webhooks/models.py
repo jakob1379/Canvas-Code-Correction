@@ -1,7 +1,5 @@
 """Pydantic models for Canvas webhook payload validation."""
 
-from __future__ import annotations
-
 from datetime import datetime
 from typing import Any
 

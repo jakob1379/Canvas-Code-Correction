@@ -1,7 +1,5 @@
 """Pytest fixtures for end-to-end tests with docker-compose services."""
 
-from __future__ import annotations
-
 import os
 
 import boto3

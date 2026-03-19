@@ -1,7 +1,5 @@
 """Unit tests for Canvas webhook models."""
 
-from __future__ import annotations
-
 from datetime import UTC, datetime
 
 from canvas_code_correction.webhooks.models import (

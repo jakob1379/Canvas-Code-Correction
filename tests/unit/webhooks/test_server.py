@@ -1,7 +1,5 @@
 """Unit tests for webhook server endpoints."""
 
-from __future__ import annotations
-
 from datetime import UTC, datetime
 from unittest.mock import AsyncMock, patch
 

@@ -1,16 +1,12 @@
 """Proper deployment management for webhook-triggered flows using Prefect 3.x."""
 
-from __future__ import annotations
-
 import logging
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
 from prefect.deployments.flow_runs import run_deployment
 
+from canvas_code_correction.config import Settings
 from canvas_code_correction.webhooks.flows import webhook_correction_flow
-
-if TYPE_CHECKING:
-    from canvas_code_correction.config import Settings
 
 logger = logging.getLogger(__name__)
 
