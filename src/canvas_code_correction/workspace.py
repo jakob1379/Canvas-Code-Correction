@@ -1,20 +1,14 @@
 """Utilities for preparing per-run workspaces for grading."""
 
-from __future__ import annotations
-
 import shutil
 import stat
 from dataclasses import dataclass
 from pathlib import Path
-from typing import TYPE_CHECKING
 from uuid import uuid4
 
 from prefect_aws.s3 import S3Bucket
 
-if TYPE_CHECKING:
-    from pathlib import Path
-
-    from canvas_code_correction.config import Settings
+from canvas_code_correction.config import Settings
 
 
 @dataclass(frozen=True)

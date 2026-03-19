@@ -5,8 +5,6 @@ This CLI is organized into two main command groups:
 - **system**: Commands for platform administrators (webhook, deployments, monitoring)
 """
 
-from __future__ import annotations
-
 import asyncio
 import importlib.metadata
 import io
@@ -16,7 +14,7 @@ import sys
 import tempfile
 from http import HTTPStatus
 from pathlib import Path
-from typing import TYPE_CHECKING, Annotated
+from typing import Annotated
 
 import boto3
 import requests
@@ -24,6 +22,7 @@ import typer
 import uvicorn
 from botocore.exceptions import BotoCoreError, EndpointConnectionError
 from canvasapi import Canvas
+from canvasapi.course import Course
 from canvasapi.exceptions import CanvasException
 from pydantic import HttpUrl, SecretStr
 from rich.console import Console
@@ -41,9 +40,6 @@ from canvas_code_correction.flows import (
 from canvas_code_correction.prefect_blocks import CourseConfigBlock
 from canvas_code_correction.webhooks.deployments import ensure_deployment
 from canvas_code_correction.webhooks.server import app as webhook_fastapi_app
-
-if TYPE_CHECKING:
-    from canvasapi.course import Course
 
 # Main CLI app
 app = typer.Typer(

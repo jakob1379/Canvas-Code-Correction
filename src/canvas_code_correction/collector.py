@@ -1,7 +1,5 @@
 """Collects and packages grader results for upload to Canvas."""
 
-from __future__ import annotations
-
 import json
 import re
 import zipfile

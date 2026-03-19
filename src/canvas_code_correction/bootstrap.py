@@ -1,7 +1,5 @@
 """Boundary helpers for loading runtime configuration from external systems."""
 
-from __future__ import annotations
-
 from pathlib import Path
 from typing import TYPE_CHECKING, cast
 

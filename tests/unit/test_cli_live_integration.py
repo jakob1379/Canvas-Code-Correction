@@ -7,8 +7,6 @@ These tests verify CLI commands work with:
 Run with: pytest -m integration
 """
 
-from __future__ import annotations
-
 import os
 from typing import cast
 from unittest.mock import MagicMock, patch

@@ -1,7 +1,5 @@
 """Configuration helpers for Canvas Code Correction."""
 
-from __future__ import annotations
-
 import tempfile
 from importlib import import_module
 from pathlib import Path

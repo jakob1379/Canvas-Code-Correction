@@ -1,7 +1,5 @@
 """Integration tests for Canvas webhook signals with mocked Canvas API."""
 
-from __future__ import annotations
-
 from datetime import UTC, datetime
 from unittest.mock import AsyncMock, Mock, patch
 

@@ -4,8 +4,6 @@ These tests verify the CLI command structure works correctly without requiring
 the full dev stack (RustFS, Prefect server, Canvas API).
 """
 
-from __future__ import annotations
-
 from unittest.mock import MagicMock, patch
 
 import pytest

@@ -1,7 +1,5 @@
 """Unit tests for the GraderExecutor."""
 
-from __future__ import annotations
-
 from pathlib import Path
 from unittest.mock import Mock, patch
 

@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 import importlib.util
 import sys
 import types
@@ -29,13 +27,13 @@ def test_get_rustfs_config_reads_environment(monkeypatch: pytest.MonkeyPatch) ->
     monkeypatch.setenv("RUSTFS_BUCKET_NAME", "bucket")
     monkeypatch.setenv("RUSTFS_PREFIX", "course")
 
-    assert module.get_rustfs_config() == {
-        "endpoint_url": "https://s3.amazonaws.com",
-        "aws_access_key_id": "key",
-        "aws_secret_access_key": "secret",
-        "bucket_name": "bucket",
-        "prefix": "course",
-    }
+    assert module.get_rustfs_config() == module.RustfsConfig(
+        endpoint_url="https://s3.amazonaws.com",
+        aws_access_key_id="key",
+        aws_secret_access_key="secret",
+        bucket_name="bucket",
+        prefix="course",
+    )
 
 
 @pytest.mark.local
@@ -51,13 +49,13 @@ def test_ensure_bucket_exists_creates_missing_bucket() -> None:
         patch.object(
             module,
             "get_rustfs_config",
-            return_value={
-                "endpoint_url": "http://localhost:9000",
-                "aws_access_key_id": "key",
-                "aws_secret_access_key": "secret",
-                "bucket_name": "bucket",
-                "prefix": "dev",
-            },
+            return_value=module.RustfsConfig(
+                endpoint_url="http://localhost:9000",
+                aws_access_key_id="key",
+                aws_secret_access_key="secret",
+                bucket_name="bucket",
+                prefix="dev",
+            ),
         ),
         patch.object(module.boto3, "client", return_value=s3_client),
     ):
@@ -72,7 +70,7 @@ def test_register_prefect_block_creates_block_when_missing() -> None:
     module = _load_module()
 
     fake_blocks_core = types.ModuleType("prefect.blocks.core")
-    fake_blocks_core.Block = object
+    setattr(fake_blocks_core, "Block", object)
 
     class FakeAwsClientParameters:
         def __init__(self, endpoint_url: str) -> None:
@@ -111,21 +109,21 @@ def test_register_prefect_block_creates_block_when_missing() -> None:
             self.__class__.saved.append((name, overwrite))
 
     fake_prefect_aws = types.ModuleType("prefect_aws")
-    fake_prefect_aws.AwsClientParameters = FakeAwsClientParameters
-    fake_prefect_aws.AwsCredentials = FakeAwsCredentials
-    fake_prefect_aws.S3Bucket = FakeS3Bucket
+    setattr(fake_prefect_aws, "AwsClientParameters", FakeAwsClientParameters)
+    setattr(fake_prefect_aws, "AwsCredentials", FakeAwsCredentials)
+    setattr(fake_prefect_aws, "S3Bucket", FakeS3Bucket)
 
     with (
         patch.object(
             module,
             "get_rustfs_config",
-            return_value={
-                "endpoint_url": "http://localhost:9000",
-                "aws_access_key_id": "key",
-                "aws_secret_access_key": "secret",
-                "bucket_name": "bucket",
-                "prefix": "dev",
-            },
+            return_value=module.RustfsConfig(
+                endpoint_url="http://localhost:9000",
+                aws_access_key_id="key",
+                aws_secret_access_key="secret",
+                bucket_name="bucket",
+                prefix="dev",
+            ),
         ),
         patch.dict(
             sys.modules,
@@ -157,13 +155,13 @@ def test_main_runs_setup_sequence(capsys: pytest.CaptureFixture[str]) -> None:
         patch.object(
             module,
             "get_rustfs_config",
-            return_value={
-                "endpoint_url": "http://localhost:9000",
-                "aws_access_key_id": "key",
-                "aws_secret_access_key": "secret",
-                "bucket_name": "bucket",
-                "prefix": "dev",
-            },
+            return_value=module.RustfsConfig(
+                endpoint_url="http://localhost:9000",
+                aws_access_key_id="key",
+                aws_secret_access_key="secret",
+                bucket_name="bucket",
+                prefix="dev",
+            ),
         ),
         patch.object(module, "ensure_bucket_exists", return_value=True) as mock_bucket,
         patch.object(module, "upload_test_asset") as mock_upload,
@@ -192,13 +190,13 @@ def test_main_fails_when_test_asset_upload_fails(
         patch.object(
             module,
             "get_rustfs_config",
-            return_value={
-                "endpoint_url": "http://localhost:9000",
-                "aws_access_key_id": "key",
-                "aws_secret_access_key": "secret",
-                "bucket_name": "bucket",
-                "prefix": "dev",
-            },
+            return_value=module.RustfsConfig(
+                endpoint_url="http://localhost:9000",
+                aws_access_key_id="key",
+                aws_secret_access_key="secret",
+                bucket_name="bucket",
+                prefix="dev",
+            ),
         ),
         patch.object(module, "ensure_bucket_exists", return_value=True),
         patch.object(module, "upload_test_asset", return_value=False),

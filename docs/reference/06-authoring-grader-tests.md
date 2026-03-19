@@ -10,8 +10,6 @@ Copy the following Python script to a file named `grader.py`. This grader lists
 the submission files, awards one point, and writes feedback.
 
 ```python
-from __future__ import annotations
-
 import json
 import os
 from pathlib import Path

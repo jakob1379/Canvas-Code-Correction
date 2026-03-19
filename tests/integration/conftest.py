@@ -1,7 +1,5 @@
 """Shared fixtures for integration tests."""
 
-from __future__ import annotations
-
 import os
 import sys
 from collections.abc import Iterator
@@ -101,7 +99,7 @@ def ensure_test_bucket(s3_client, rustfs_config: dict[str, str]) -> str:
     return bucket_name
 
 
-@pytest.fixture(autouse=True)
+@pytest.fixture
 def clean_bucket(s3_client, rustfs_config: dict[str, str], ensure_test_bucket: str):
     """Delete all objects in the test bucket before each test."""
     bucket_name = ensure_test_bucket
@@ -114,7 +112,7 @@ def clean_bucket(s3_client, rustfs_config: dict[str, str], ensure_test_bucket: s
     # Optionally clean up after test as well
 
 
-@pytest.fixture(autouse=True)
+@pytest.fixture
 def mock_s3bucket_load(rustfs_config: dict[str, str], s3_client) -> Iterator[None]:  # noqa: C901
     """Mock S3Bucket.load to return a mock bucket that downloads from test RustFS."""
     global _MOCK_BUCKET  # noqa: PLW0603

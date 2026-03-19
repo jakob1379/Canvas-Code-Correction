@@ -1,19 +1,15 @@
 """Idempotent upload of feedback and grades to Canvas with duplicate detection."""
 
-from __future__ import annotations
-
 import hashlib
 import logging
 import tempfile
 from dataclasses import dataclass
 from pathlib import Path
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
 from canvasapi.exceptions import CanvasException
+from canvasapi.submission import Submission
 from pydantic import BaseModel, Field
-
-if TYPE_CHECKING:
-    from canvasapi.submission import Submission
 
 logger = logging.getLogger(__name__)
 UPLOAD_EXCEPTION_TYPES = (

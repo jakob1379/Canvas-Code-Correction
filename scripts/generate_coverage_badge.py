@@ -9,29 +9,50 @@ Usage:
     python scripts/generate_coverage_badge.py --coverage-json coverage.json --output .github/badges/coverage.json
 """
 
-import json
 import argparse
+import json
 import sys
+from dataclasses import asdict, dataclass
 from pathlib import Path
-from typing import Literal, Sequence, TypedDict
+from typing import Any, Literal, Sequence
 
 BadgeColor = Literal["brightgreen", "green", "yellowgreen", "yellow", "orange", "red"]
 
 
-class CoverageTotals(TypedDict):
+@dataclass(frozen=True)
+class CoverageTotals:
     percent_covered: float
 
 
-class CoverageReport(TypedDict):
+@dataclass(frozen=True)
+class CoverageReport:
     totals: CoverageTotals
 
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> "CoverageReport":
+        totals = data.get("totals")
+        if not isinstance(totals, dict):
+            raise RuntimeError("Missing expected key in coverage JSON: 'totals'")
 
-class BadgeData(TypedDict):
+        percent_covered = totals.get("percent_covered")
+        if percent_covered is None:
+            raise RuntimeError("Missing expected key in coverage JSON: 'percent_covered'")
+        if not isinstance(percent_covered, int | float):
+            raise RuntimeError("Coverage percentage must be numeric")
+
+        return cls(totals=CoverageTotals(percent_covered=float(percent_covered)))
+
+
+@dataclass(frozen=True)
+class BadgeData:
     schemaVersion: int
     label: str
     message: str
     color: str
     namedLogo: str
+
+    def to_dict(self) -> dict[str, object]:
+        return asdict(self)
 
 
 def determine_color(coverage_percent: float) -> BadgeColor:
@@ -53,18 +74,18 @@ def determine_color(coverage_percent: float) -> BadgeColor:
 def load_coverage_percent(coverage_path: Path) -> float:
     try:
         with coverage_path.open("r") as f:
-            data: CoverageReport = json.load(f)
+            data = json.load(f)
     except FileNotFoundError as exc:
         raise RuntimeError(f"Coverage file not found: {coverage_path}") from exc
     except json.JSONDecodeError as exc:
         raise RuntimeError(f"Invalid JSON in {coverage_path}: {exc}") from exc
 
-    try:
-        coverage_percent = data["totals"]["percent_covered"]
-    except KeyError as exc:
-        raise RuntimeError(f"Missing expected key in coverage JSON: {exc}") from exc
+    if not isinstance(data, dict):
+        raise RuntimeError("Coverage JSON root must be an object")
 
-    return round(coverage_percent, 2)
+    report = CoverageReport.from_dict(data)
+
+    return round(report.totals.percent_covered, 2)
 
 
 def main(argv: Sequence[str] | None = None) -> int:
@@ -93,19 +114,19 @@ def main(argv: Sequence[str] | None = None) -> int:
         print(f"Coverage: {coverage_percent}%")
 
     color = determine_color(coverage_percent)
-    badge_data: BadgeData = {
-        "schemaVersion": 1,
-        "label": "coverage",
-        "message": f"{coverage_percent}%",
-        "color": color,
-        "namedLogo": "python",
-    }
+    badge_data = BadgeData(
+        schemaVersion=1,
+        label="coverage",
+        message=f"{coverage_percent}%",
+        color=color,
+        namedLogo="python",
+    )
 
     output_path = Path(args.output)
     output_path.parent.mkdir(parents=True, exist_ok=True)
 
     with open(output_path, "w") as f:
-        json.dump(badge_data, f, indent=2)
+        json.dump(badge_data.to_dict(), f, indent=2)
 
     if args.verbose:
         print(f"Generated badge JSON: {output_path}")
