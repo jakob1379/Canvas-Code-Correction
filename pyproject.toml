@@ -96,8 +96,8 @@ s3.shell = "mkdir -p workspace && chmod 777 workspace && docker run --rm -p 9000
 python-version = "3.13"
 search-path = ["src"]
 
-[tool.pytest.ini_options]
-addopts = "--doctest-modules --cov=src/canvas_code_correction --cov=scripts --cov-branch --cov-report=term-missing --cov-report=json -m 'not integration and not e2e'"
+[tool.pytest]
+addopts = ["--doctest-modules", "--cov=src/canvas_code_correction", "--cov=scripts", "--cov-branch", "--cov-report=term-missing", "--cov-report=json", "-m='not integration and not e2e'"]
 testpaths = ["tests"]
 markers = [
   "integration: marks tests that exercise live Canvas API",
