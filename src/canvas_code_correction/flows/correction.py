@@ -416,10 +416,16 @@ def collect_results(
     # Validate results
     issues = collector.validate_result(collection_result.grading_result)
 
-    metadata = cast(
-        "dict[str, CanvasMetadataValue]",
-        collection_result.grading_result.metadata.model_dump(),
-    )
+    raw_metadata = collection_result.grading_result.metadata
+    if hasattr(raw_metadata, "model_dump"):
+        metadata = cast(
+            "dict[str, CanvasMetadataValue]",
+            raw_metadata.model_dump(),
+        )
+    elif isinstance(raw_metadata, dict):
+        metadata = cast("dict[str, CanvasMetadataValue]", dict(raw_metadata))
+    else:
+        metadata = {}
 
     return CollectedResults(
         points=collection_result.grading_result.points,

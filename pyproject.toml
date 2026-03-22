@@ -97,7 +97,7 @@ python-version = "3.13"
 search-path = ["src"]
 
 [tool.pytest]
-addopts = ["--doctest-modules", "--cov=src/canvas_code_correction", "--cov=scripts", "--cov-branch", "--cov-report=term-missing", "--cov-report=json", "-m='not integration and not e2e'"]
+addopts = ["--doctest-modules", "--cov=src/canvas_code_correction", "--cov=scripts", "--cov-branch", "--cov-report=term-missing", "--cov-report=json", "-m", "not integration and not e2e"]
 testpaths = ["tests"]
 markers = [
   "integration: marks tests that exercise live Canvas API",
