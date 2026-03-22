@@ -13,7 +13,7 @@ from pydantic import BaseModel
 ERRORS_LOG_FILENAME = "errors.log"
 
 type JsonScalar = str | int | float | bool | None
-type JsonValue = JsonScalar | list[JsonScalar] | dict[str, JsonScalar]
+type CanvasMetadataValue = JsonScalar | list[JsonScalar] | dict[str, JsonScalar]
 
 logger = logging.getLogger(__name__)
 
