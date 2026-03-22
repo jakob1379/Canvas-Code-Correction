@@ -13,7 +13,7 @@ from canvas_code_correction.clients.canvas_resources import (
     CanvasResources,
     build_canvas_resources,
 )
-from canvas_code_correction.collector import JsonValue, ResultCollector
+from canvas_code_correction.collector import CanvasMetadataValue, ResultCollector
 from canvas_code_correction.runner import (
     GraderConfig,
     GraderExecutor,
@@ -58,8 +58,8 @@ class FlowArtifacts:
 class SubmissionMetadata:
     """Serializable submission context fetched from Canvas."""
 
-    assignment: dict[str, JsonValue]
-    submission: dict[str, JsonValue]
+    assignment: dict[str, CanvasMetadataValue]
+    submission: dict[str, CanvasMetadataValue]
 
     def keys(self) -> tuple[str, str]:
         """Return metadata tuple keys used for serialization."""
@@ -90,7 +90,7 @@ class CollectedResults:
     errors_log_path: Path | None
     discovered_files: list[Path]
     validation_issues: list[str]
-    metadata: dict[str, JsonValue]
+    metadata: dict[str, CanvasMetadataValue]
 
 
 @dataclass(frozen=True)
@@ -218,7 +218,7 @@ def _fetch_submission_metadata(
     )
 
 
-def _canvas_object_to_dict(obj: object) -> dict[str, JsonValue]:
+def _canvas_object_to_dict(obj: object) -> dict[str, CanvasMetadataValue]:
     if hasattr(obj, "attributes"):
         attributes = obj.attributes
         if isinstance(attributes, dict) and attributes:
@@ -228,11 +228,11 @@ def _canvas_object_to_dict(obj: object) -> dict[str, JsonValue]:
     return _filter_canvas_value_dict(raw)
 
 
-def _filter_canvas_value_dict(raw: object) -> dict[str, JsonValue]:
+def _filter_canvas_value_dict(raw: object) -> dict[str, CanvasMetadataValue]:
     if not isinstance(raw, dict):
         return {}
 
-    result: dict[str, JsonValue] = {}
+    result: dict[str, CanvasMetadataValue] = {}
     for key, value in raw.items():
         if not isinstance(key, str) or key.startswith("_"):
             continue
@@ -244,21 +244,21 @@ def _filter_canvas_value_dict(raw: object) -> dict[str, JsonValue]:
     return result
 
 
-def _to_canvas_json_value(value: object) -> JsonValue | None:
+def _to_canvas_json_value(value: object) -> CanvasMetadataValue | None:
     if isinstance(value, (str, int, float, bool)) or value is None:
         return value
 
     if isinstance(value, list) and all(
         isinstance(item, (str, int, float, bool)) or item is None for item in value
     ):
-        return cast("JsonValue", value)
+        return cast("CanvasMetadataValue", value)
 
     if isinstance(value, dict) and all(
         isinstance(map_key, str)
         and (isinstance(map_value, (str, int, float, bool)) or map_value is None)
         for map_key, map_value in value.items()
     ):
-        return cast("JsonValue", value)
+        return cast("CanvasMetadataValue", value)
 
     return None
 
@@ -417,7 +417,7 @@ def collect_results(
     issues = collector.validate_result(collection_result.grading_result)
 
     metadata = cast(
-        "dict[str, JsonValue]",
+        "dict[str, CanvasMetadataValue]",
         collection_result.grading_result.metadata.model_dump(),
     )
 
