@@ -3,31 +3,32 @@
 **Audience**: CCC platform operators **Prerequisites**: Grader Docker image
 built, grader tests uploaded to S3 storage, Prefect blocks created
 
-!!! note "Try It Now (60 seconds)"
+??? note "Try It Now (60 seconds)"
 
     If you have a Canvas API token, course ID, and an S3 bucket block ready, run
     this command to configure a course immediately:
 
     ```bash
     $ ccc course setup \
-
---slug cs101 \
- --course-id 12345 \
- --assets-block course-assets-cs101 \
- --docker-image yourusername/canvas-grader:latest \
- --s3-prefix graders/cs101/ ```
+      --slug cs101 \
+      --course-id 12345 \
+      --assets-block course-assets-cs101 \
+      --docker-image yourusername/canvas-grader:latest \
+      --s3-prefix graders/cs101/
+    ```
 
     To avoid leaking tokens in shell history, you can pipe the token through stdin:
 
     ```bash
     $ printf "%s" "$CANVAS_API_TOKEN" | ccc course setup \
 
---slug cs101 \
- --token-stdin \
- --course-id 12345 \
- --assets-block course-assets-cs101 \
- --docker-image yourusername/canvas-grader:latest \
- --s3-prefix graders/cs101/ ```
+      --slug cs101 \
+      --token-stdin \
+      --course-id 12345 \
+      --assets-block course-assets-cs101 \
+      --docker-image yourusername/canvas-grader:latest \
+      --s3-prefix graders/cs101/
+    ```
 
     You’ll see output similar to:
 
@@ -151,6 +152,8 @@ With a course configured, you can:
 4. **Deploy updated tests** –
    [Deploying tests to CCC](05-deploying-tests-to-ccc.md)
 
-!!! note The course block is now available to any Prefect flow that uses the
-`Course` block type. You can update its settings by running `course setup` again
-with the same slug.
+!!! note
+
+    The course block is now available to any Prefect flow that uses the
+    `Course` block type. You can update its settings by running `course setup`
+    again with the same slug.
