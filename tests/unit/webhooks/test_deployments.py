@@ -230,6 +230,67 @@ def test_ensure_deployment_failure(mock_get_flow: MagicMock) -> None:
     mock_flow.deploy.assert_called_once()
 
 
+@patch("canvas_code_correction.webhooks.deployments._get_webhook_correction_flow")
+def test_ensure_deployment_redeploys_when_existing(mock_get_flow: MagicMock) -> None:
+    mock_flow = mock_get_flow.return_value
+    mock_flow.name = "webhook-correction-flow"
+    mock_flow.deploy.return_value = "deployment-id-456"
+
+    async_client = AsyncMock()
+    async_client.__aenter__.return_value = AsyncMock(
+        read_deployment_by_name=AsyncMock(return_value=MagicMock(id="existing-deployment")),
+    )
+
+    settings = Settings(
+        canvas=CanvasSettings(
+            api_url=HttpUrl("https://canvas.instructure.com"),
+            token=SecretStr("fake"),
+            course_id=1,
+        ),
+        assets=CourseAssetsSettings(bucket_block="test"),
+        grader=GraderSettings(work_pool_name="test-pool"),
+        workspace=WorkspaceSettings(),
+        webhook=WebhookSettings(),
+    )
+
+    with patch("canvas_code_correction.webhooks.deployments.get_client", return_value=async_client):
+        result = asyncio.run(ensure_deployment(settings, "test-course"))
+
+    assert result == DeploymentEnsureResult(
+        deployment_name="ccc-test-course-deployment",
+        work_pool_name="test-pool",
+        ensured=True,
+        deployment_id="deployment-id-456",
+    )
+    mock_flow.deploy.assert_called_once()
+    async_client.__aenter__.return_value.read_deployment_by_name.assert_awaited_once()
+
+
+@patch("canvas_code_correction.webhooks.deployments._get_webhook_correction_flow")
+def test_ensure_deployment_awaits_async_deploy(mock_get_flow: MagicMock) -> None:
+    mock_flow = mock_get_flow.return_value
+    mock_flow.name = "webhook-correction-flow"
+    mock_flow.deploy = AsyncMock(return_value="deployment-id-async")
+
+    settings = Settings(
+        canvas=CanvasSettings(
+            api_url=HttpUrl("https://canvas.instructure.com"),
+            token=SecretStr("fake"),
+            course_id=1,
+        ),
+        assets=CourseAssetsSettings(bucket_block="test"),
+        grader=GraderSettings(work_pool_name="test-pool"),
+        workspace=WorkspaceSettings(),
+        webhook=WebhookSettings(),
+    )
+
+    result = asyncio.run(ensure_deployment(settings, "test-course"))
+
+    assert result.deployment_id == "deployment-id-async"
+    mock_flow.deploy.assert_called_once()
+    mock_flow.deploy.assert_awaited_once()
+
+
 @patch("canvas_code_correction.webhooks.deployments.run_deployment")
 @patch("canvas_code_correction.webhooks.deployments._get_webhook_correction_flow")
 def test_trigger_deployment_success(

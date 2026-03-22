@@ -101,11 +101,13 @@ async def ensure_deployment(
     webhook_flow = _get_webhook_correction_flow()
     deployment_full_name = f"{webhook_flow.name}/{target.name}"
 
+    deployment_exists = False
     async with get_client() as client:
         try:
-            deployment = await client.read_deployment_by_name(deployment_full_name)
+            await client.read_deployment_by_name(deployment_full_name)
+            deployment_exists = True
         except ObjectNotFound:
-            deployment = None
+            pass
         except Exception as exc:
             logger.exception(
                 "Failed to inspect deployment %s for course %s",
@@ -120,20 +122,15 @@ async def ensure_deployment(
                 error_type=type(exc).__name__,
             )
 
-    if deployment is not None:
-        return DeploymentEnsureResult(
-            deployment_name=target.name,
-            work_pool_name=target.work_pool_name,
-            ensured=True,
-            deployment_id=str(deployment.id),
-        )
-
-    logger.debug("Ensuring deployment %s exists for course %s", target.name, course_block)
+    if deployment_exists:
+        logger.debug("Updating deployment %s for course %s", target.name, course_block)
+    else:
+        logger.debug("Creating deployment %s for course %s", target.name, course_block)
 
     # Deploy the flow
     # flow.deploy() will create or update the deployment
     try:
-        deployment_id = webhook_flow.deploy(
+        deployment_handle = webhook_flow.deploy(
             name=target.name,
             work_pool_name=target.work_pool_name,
             parameters={
@@ -149,10 +146,15 @@ async def ensure_deployment(
             ignore_warnings=True,
         )
 
+        deployment_id = (
+            await deployment_handle if isawaitable(deployment_handle) else deployment_handle
+        )
+        deployment_id_str = str(deployment_id)
+
         logger.info(
             "Created/updated deployment %s (ID: %s) for course %s on work pool %s",
             target.name,
-            deployment_id,
+            deployment_id_str,
             course_block,
             target.work_pool_name,
         )
@@ -160,7 +162,7 @@ async def ensure_deployment(
             deployment_name=target.name,
             work_pool_name=target.work_pool_name,
             ensured=True,
-            deployment_id=str(deployment_id),
+            deployment_id=deployment_id_str,
         )
 
     except Exception as exc:

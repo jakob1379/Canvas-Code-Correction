@@ -340,6 +340,15 @@ async def handle_canvas_webhook(
     rate_limit_check(course_block, context.settings.webhook.rate_limit, context.limiter)
     canvas_payload = await validate_webhook(request, course_block, context.settings)
 
+    event_type = canvas_payload.get_event_type()
+    if event_type not in SUPPORTED_SUBMISSION_EVENTS:
+        response.status_code = status.HTTP_200_OK
+        return WebhookResponse(
+            success=True,
+            message=f"Ignored unsupported event: {event_type}",
+            course_block=course_block,
+        )
+
     assignment_id, submission_id, event_type = _parse_submission_target(canvas_payload)
 
     delivery_key = _build_delivery_key(

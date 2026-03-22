@@ -159,15 +159,27 @@ def test_handle_canvas_webhook_unsupported_event(
 
         payload = create_canvas_webhook_payload(event_name="assignment_created")
 
-        response = client.post(
-            "/webhooks/canvas/test-course",
-            json=payload,
-            headers={"Authorization": "Bearer dummy"},
+        mock_runner = AsyncMock()
+        webhook_server.app.dependency_overrides[webhook_server.get_webhook_runner] = lambda: (
+            mock_runner
         )
+        try:
+            response = client.post(
+                "/webhooks/canvas/test-course",
+                json=payload,
+                headers={"Authorization": "Bearer dummy"},
+            )
+        finally:
+            webhook_server.app.dependency_overrides.pop(
+                webhook_server.get_webhook_runner,
+                None,
+            )
 
-    assert response.status_code == 422
+    assert response.status_code == 200
     data = response.json()
-    assert "Unsupported event type" in data["detail"]
+    assert data["success"] is True
+    assert data["message"] == "Ignored unsupported event: assignment_created"
+    mock_runner.assert_not_called()
 
 
 @patch("canvas_code_correction.webhooks.server.load_settings_from_course_block")

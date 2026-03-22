@@ -242,15 +242,21 @@ def _resolve_provided_course(canvas: Canvas, course_id: int) -> tuple[int, Cours
 
 def _resolve_interactive_course_selection(canvas: Canvas) -> tuple[int, Course]:
     courses = _prompt_course_selection(_fetch_canvas_courses(canvas))
-    courses_by_id = {course.id: course for course in courses}
+    total_courses = len(courses)
     while True:
-        course_id = IntPrompt.ask("Enter Canvas course ID")
-        course = courses_by_id.get(course_id)
-        if course is None:
-            console.print(f"[yellow]Course ID {course_id} not found. Please try again.[/yellow]")
+        selection = IntPrompt.ask(f"Select a course [1-{total_courses}]")
+        if not 1 <= selection <= total_courses:
+            console.print(
+                "[yellow]Selection "
+                f"{selection} is not between 1 and {total_courses}. "
+                "Please try again.[/yellow]",
+            )
             continue
-        console.print(f"[green]✓ Selected: {course.name or 'Unnamed'}[/green]")
-        return course_id, course
+        course = courses[selection - 1]
+        console.print(
+            f"[green]✓ Selected: {course.name or 'Unnamed'} (Canvas ID: {course.id})[/green]",
+        )
+        return course.id, course
 
 
 def _prompt_course_selection(courses: list[Course]) -> list[Course]:
@@ -398,7 +404,7 @@ def _parse_course_setup_options(args: list[str]) -> CourseSetupOptions:
     parser = argparse.ArgumentParser(add_help=False)
     parser.add_argument("--token-stdin", action="store_true")
     parser.add_argument("--token", default=None)
-    parser.add_argument("--api-url", "-u", default=CANVAS_API_URL_DEFAULT)
+    parser.add_argument("--api-url", "-u", default=None)
     parser.add_argument("--course-id", "-c", type=int, default=0)
     parser.add_argument("--docker-image", "-d", default="jakob1379/canvas-grader:latest")
     parser.add_argument(
@@ -586,7 +592,7 @@ class CourseSetupOptions:
     """Resolved course setup options parsed from command arguments."""
 
     token_stdin: bool
-    canvas_api_url: str
+    canvas_api_url: str | None
     canvas_token: str | None
     course_id: int
     docker_image: str
@@ -680,7 +686,7 @@ def _build_course_setup_config(
 
     return CourseSetupConfig(
         block_name=block_name,
-        canvas_api_url=options.canvas_api_url,
+        canvas_api_url=options.canvas_api_url or CANVAS_API_URL_DEFAULT,
         canvas_token=options.canvas_token or "",
         selected_course_id=selected_course_id,
         assets_block=assets_block,
@@ -850,14 +856,23 @@ def course_setup(ctx: typer.Context) -> None:
 
     options = _parse_course_setup_options(ctx.args)
 
-    canvas_api_url = _resolve_canvas_api_url(options.canvas_api_url)
-
-    # Read token from stdin or prompt interactively
+    # Read token from stdin or prompt interactively first
     canvas_token = _resolve_canvas_token(
         options.canvas_token,
         token_stdin=options.token_stdin,
         interactive=options.interactive,
     )
+
+    canvas_api_url_input = (
+        _prompt_optional_value(
+            options.canvas_api_url,
+            "Canvas host (domain or https:// URL)",
+            interactive=options.interactive,
+            default=CANVAS_API_URL_DEFAULT,
+        )
+        or CANVAS_API_URL_DEFAULT
+    )
+    canvas_api_url = _resolve_canvas_api_url(canvas_api_url_input)
 
     canvas = _build_canvas_client(canvas_api_url, canvas_token)
     selected_course_id, course = _resolve_course_selection(
