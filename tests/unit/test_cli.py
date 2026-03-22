@@ -1,7 +1,6 @@
 """Unit tests for the CLI module."""
 
 from pathlib import Path
-from typing import TYPE_CHECKING
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -9,6 +8,7 @@ from typer.testing import CliRunner
 
 from canvas_code_correction.bootstrap import load_settings_from_course_block
 from canvas_code_correction.cli import app
+from canvas_code_correction.config import Settings
 from canvas_code_correction.flows.correction import (
     CollectedResults,
     CorrectionResults,
@@ -21,9 +21,6 @@ from canvas_code_correction.flows.correction import (
 )
 from canvas_code_correction.prefect_blocks.canvas import CourseConfigBlock
 from canvas_code_correction.webhooks.deployments import DeploymentEnsureResult
-
-if TYPE_CHECKING:
-    from canvas_code_correction.config import Settings
 
 
 @pytest.fixture
