@@ -67,7 +67,7 @@ ASCII_CONTROL_MAX = 32
 ASCII_DELETE = 127
 BATCH_SUBMISSION_EXCEPTIONS = (RuntimeError, ValueError, TypeError, KeyError, OSError)
 COURSE_BLOCK_LOAD_EXCEPTIONS = (RuntimeError, ValueError, TypeError, KeyError, AttributeError)
-SUGGESTED_SLUG_EXCEPTIONS = (CanvasException, requests.RequestException)
+SUGGESTED_SLUG_EXCEPTIONS = (CanvasException, requests.RequestException, TypeError, AttributeError)
 CANVAS_API_URL_DEFAULT = "https://canvas.instructure.com"
 CANVAS_URL_SCHEME = "https://"
 DEFAULT_PREFECT_HEALTH_URL = "http://localhost:4200/api/health"
@@ -105,18 +105,8 @@ def _switch_stdin_to_tty_for_prompts() -> None:
         raise typer.Exit(1) from exc
 
 
-def _resolve_canvas_api_url(
-    canvas_api_url: str,
-    *,
-    interactive: bool,
-) -> str:
-    if interactive and canvas_api_url == CANVAS_API_URL_DEFAULT:
-        canvas_api_url = Prompt.ask(
-            "Enter your Canvas instance URL",
-            default=canvas_api_url,
-        )
-
-    normalized_url = canvas_api_url.strip()
+def _resolve_canvas_api_url(canvas_api_url: str | None) -> str:
+    normalized_url = (canvas_api_url or CANVAS_API_URL_DEFAULT).strip()
     if not normalized_url:
         console.print("[red]Error: Canvas API URL cannot be empty[/red]")
         raise typer.Exit(1)
@@ -147,8 +137,7 @@ def _resolve_canvas_token(
     if token_stdin:
         if canvas_token is not None:
             console.print(
-                "[red]Error: Use either direct input or stdin "
-                "for the Canvas credential, not both[/red]",
+                "[red]Use either --token or --token-stdin, not both[/red]",
             )
             raise typer.Exit(1)
 
@@ -174,7 +163,7 @@ def _resolve_canvas_token(
             canvas_token = Prompt.ask("Enter your Canvas API token", password=True)
         else:
             console.print(
-                "[red]Error: --token or --token-stdin is required in non-interactive mode[/red]",
+                "[red]--token or --token-stdin is required in non-interactive mode[/red]",
             )
             raise typer.Exit(1)
 
@@ -200,17 +189,17 @@ def _build_canvas_client(canvas_api_url: str, canvas_token: str) -> Canvas:
         _ = canvas.get_current_user()
         console.print("[green]✓ Canvas access validated successfully[/green]")
     except (CanvasException, requests.RequestException) as exc:
+        console.print("[red]Failed to validate Canvas API token[/red]")
         error_msg = str(exc)
-        # Provide more helpful error messages for common issues
         if "port 80" in error_msg.lower() or "bad request" in error_msg.lower():
-            console.print("[red]Error: Failed to validate Canvas access.[/red]")
             console.print("[yellow]This error often occurs when:[/yellow]")
             console.print(f"  • The Canvas URL is incorrect (missing {CANVAS_URL_SCHEME})")
             console.print("  • The provided Canvas credential is invalid or expired")
             console.print("  • There's a proxy or firewall blocking HTTPS requests")
             console.print(f"[dim]Attempted URL: {canvas_api_url}[/dim]")
-        else:
-            console.print("[red]Error: Failed to validate Canvas access.[/red]")
+        raise typer.Exit(1) from exc
+    except Exception as exc:  # pragma: no cover - safety net for unexpected failures
+        console.print("[red]Failed to validate Canvas API token[/red]")
         raise typer.Exit(1) from exc
     else:
         return canvas
@@ -243,8 +232,8 @@ def _resolve_course_selection(
 def _resolve_provided_course(canvas: Canvas, course_id: int) -> tuple[int, Course]:
     try:
         course = canvas.get_course(course_id)
-    except (CanvasException, requests.RequestException) as exc:
-        console.print(f"[red]Error: Course ID {course_id} not found: {exc}[/red]")
+    except (CanvasException, requests.RequestException, Exception) as exc:
+        console.print(f"[red]Course ID {course_id} not found[/red]")
         raise typer.Exit(1) from exc
     else:
         console.print(f"[green]✓ Course ID {course_id} validated[/green]")
@@ -253,15 +242,13 @@ def _resolve_provided_course(canvas: Canvas, course_id: int) -> tuple[int, Cours
 
 def _resolve_interactive_course_selection(canvas: Canvas) -> tuple[int, Course]:
     courses = _prompt_course_selection(_fetch_canvas_courses(canvas))
-    selected_course = courses[_prompt_course_index(len(courses))]
-    course_id = selected_course.id
-
-    try:
-        course = canvas.get_course(course_id)
-    except (CanvasException, requests.RequestException) as exc:
-        console.print(f"[red]Error: Course ID {course_id} not found[/red]")
-        raise typer.Exit(1) from exc
-    else:
+    courses_by_id = {course.id: course for course in courses}
+    while True:
+        course_id = IntPrompt.ask("Enter Canvas course ID")
+        course = courses_by_id.get(course_id)
+        if course is None:
+            console.print(f"[yellow]Course ID {course_id} not found. Please try again.[/yellow]")
+            continue
         console.print(f"[green]✓ Selected: {course.name or 'Unnamed'}[/green]")
         return course_id, course
 
@@ -280,16 +267,6 @@ def _prompt_course_selection(courses: list[Course]) -> list[Course]:
 
     console.print()
     return courses
-
-
-def _prompt_course_index(course_count: int) -> int:
-    while True:
-        selection = IntPrompt.ask(f"Select a course (1-{course_count})")
-        if 1 <= selection <= course_count:
-            return selection - 1
-        console.print(
-            f"[yellow]Please enter a number between 1 and {course_count}[/yellow]",
-        )
 
 
 def _parse_test_mappings(mappings: list[str]) -> dict[str, str]:
@@ -424,7 +401,13 @@ def _parse_course_setup_options(args: list[str]) -> CourseSetupOptions:
     parser.add_argument("--api-url", "-u", default=CANVAS_API_URL_DEFAULT)
     parser.add_argument("--course-id", "-c", type=int, default=0)
     parser.add_argument("--docker-image", "-d", default="jakob1379/canvas-grader:latest")
-    parser.add_argument("--map-assignments", action="append", default=None)
+    parser.add_argument(
+        "--map-assignments",
+        "--test-map",
+        dest="map_assignments",
+        action="append",
+        default=None,
+    )
     parser.add_argument("--env", "-e", action="append", default=None)
     parser.add_argument("--interactive", dest="interactive", action="store_true")
     parser.add_argument("--no-interactive", dest="interactive", action="store_false")
@@ -443,16 +426,16 @@ def _parse_course_setup_options(args: list[str]) -> CourseSetupOptions:
     return CourseSetupOptions(
         token_stdin=parsed.token_stdin,
         canvas_api_url=parsed.api_url,
-        canvas_token=parsed.token or "",
+        canvas_token=parsed.token or None,
         course_id=parsed.course_id,
         docker_image=parsed.docker_image,
         map_assignments=parsed.map_assignments or [],
         env_var=parsed.env or [],
         interactive=parsed.interactive,
-        assets_block=parsed.assets_block or "",
-        slug=parsed.slug or "",
-        assets_prefix=parsed.assets_prefix or "",
-        work_pool=parsed.work_pool or "",
+        assets_block=parsed.assets_block or None,
+        slug=parsed.slug or None,
+        assets_prefix=parsed.assets_prefix or None,
+        work_pool=parsed.work_pool or None,
     )
 
 
@@ -461,11 +444,14 @@ def _prompt_optional_value(
     prompt_text: str,
     *,
     interactive: bool,
+    default: str | None = None,
 ) -> str | None:
     if value is not None or not interactive:
         return value
-    response = Prompt.ask(prompt_text, default="")
-    return response or None
+    response = Prompt.ask(prompt_text, default=default or "")
+    if not response:
+        return default
+    return response
 
 
 def _build_grader_env(env_var: list[str] | None, test_map_env: dict[str, str]) -> dict[str, str]:
@@ -601,16 +587,16 @@ class CourseSetupOptions:
 
     token_stdin: bool
     canvas_api_url: str
-    canvas_token: str
+    canvas_token: str | None
     course_id: int
     docker_image: str
     map_assignments: list[str]
     env_var: list[str]
     interactive: bool
-    assets_block: str
-    slug: str
-    assets_prefix: str
-    work_pool: str
+    assets_block: str | None
+    slug: str | None
+    assets_prefix: str | None
+    work_pool: str | None
 
 
 class CourseConfigBlockPayload(TypedDict):
@@ -626,31 +612,13 @@ class CourseConfigBlockPayload(TypedDict):
     grader_env: dict[str, str]
 
 
-def _derive_course_setup_defaults(
-    selected_course_id: int,
-    course: Course,
-    options: CourseSetupOptions,
-) -> tuple[str, str, str, str, str]:
+def _suggest_course_slug(selected_course_id: int, course: Course) -> str:
     try:
         course_code = course.course_code or f"course-{selected_course_id}"
-        course_slug = f"{selected_course_id}-{slugify(course_code)}"
+        suggested = f"{selected_course_id}-{slugify(str(course_code))}"
     except SUGGESTED_SLUG_EXCEPTIONS:
-        course_slug = f"{selected_course_id}-course"
-
-    if options.slug:
-        course_slug = slugify(options.slug)
-
-    block_name = f"ccc-course-{course_slug}"
-    resolved_assets_block = options.assets_block or f"ccc-assets-{course_slug}"
-    resolved_assets_prefix = options.assets_prefix or f"graders/{course_slug}/"
-    resolved_work_pool = options.work_pool or f"course-work-pool-{course_slug}"
-    return (
-        block_name,
-        course_slug,
-        resolved_assets_block,
-        resolved_assets_prefix,
-        resolved_work_pool,
-    )
+        suggested = f"{selected_course_id}-course"
+    return suggested
 
 
 def _build_course_setup_config(
@@ -658,13 +626,47 @@ def _build_course_setup_config(
     course: Course,
     options: CourseSetupOptions,
 ) -> CourseSetupConfig:
-    block_name, _course_slug, assets_block, assets_prefix, work_pool = (
-        _derive_course_setup_defaults(
-            selected_course_id,
-            course,
-            options=options,
-        )
+    suggested_slug = _suggest_course_slug(selected_course_id, course)
+    slug_input = _prompt_optional_value(
+        options.slug,
+        "Course slug",
+        interactive=options.interactive,
+        default=suggested_slug,
     )
+    course_slug = slugify(slug_input or suggested_slug)
+    block_name = f"ccc-course-{course_slug}"
+
+    default_assets_block = f"ccc-assets-{course_slug}"
+    if options.assets_block:
+        assets_block = options.assets_block
+    else:
+        if not options.interactive:
+            console.print("[red]--assets-block is required in non-interactive mode[/red]")
+            raise typer.Exit(1)
+        prompted_assets_block = _prompt_optional_value(
+            None,
+            "Assets block (Prefect block storing S3 credentials)",
+            interactive=True,
+            default=default_assets_block,
+        )
+        assets_block = prompted_assets_block or default_assets_block
+
+    assets_prefix_input = _prompt_optional_value(
+        options.assets_prefix,
+        "Assets prefix (S3 path prefix)",
+        interactive=options.interactive,
+        default=f"graders/{course_slug}/",
+    )
+    assets_prefix = assets_prefix_input or f"graders/{course_slug}/"
+
+    work_pool_input = _prompt_optional_value(
+        options.work_pool,
+        "Work pool name",
+        interactive=options.interactive,
+        default=f"course-work-pool-{course_slug}",
+    )
+    work_pool = work_pool_input or f"course-work-pool-{course_slug}"
+
     resolved_docker_image = _resolve_docker_image(
         options.docker_image,
         interactive=options.interactive,
@@ -848,10 +850,7 @@ def course_setup(ctx: typer.Context) -> None:
 
     options = _parse_course_setup_options(ctx.args)
 
-    canvas_api_url = _resolve_canvas_api_url(
-        options.canvas_api_url,
-        interactive=options.interactive,
-    )
+    canvas_api_url = _resolve_canvas_api_url(options.canvas_api_url)
 
     # Read token from stdin or prompt interactively
     canvas_token = _resolve_canvas_token(

@@ -29,10 +29,18 @@ def mock_course_block() -> MagicMock:
     mock.grader_image = "test/image:latest"
     mock.work_pool_name = "test-pool"
     mock.grader_env = {}
+    mock.grader_command = ["sh", "main.sh"]
+    mock.grader_timeout_seconds = 300
+    mock.grader_memory_mb = 512
+    mock.grader_upload_check_duplicates = True
+    mock.grader_upload_comments = True
+    mock.grader_upload_grades = True
+    mock.grader_upload_verbose = False
     mock.webhook_secret = None
     mock.deployment_name = None
     mock.webhook_enabled = True
     mock.webhook_require_jwt = False
+    mock.webhook_rate_limit = "10/minute"
     return mock
 
 

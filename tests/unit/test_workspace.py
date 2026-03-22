@@ -173,7 +173,7 @@ def test_prepare_workspace_no_download_method(mock_s3_bucket_class, tmp_path: Pa
         submission_id=8,
     )
 
-    with pytest.raises(AttributeError, match="S3Bucket block missing download method"):
+    with pytest.raises(TypeError, match="S3Bucket block missing download method"):
         prepare_workspace(config, [])
 
 
