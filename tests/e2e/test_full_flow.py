@@ -1,5 +1,7 @@
 """End-to-end test of the Canvas Code Correction pipeline."""
 
+from __future__ import annotations
+
 import os
 import tempfile
 import zipfile
