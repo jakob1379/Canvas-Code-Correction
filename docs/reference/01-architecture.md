@@ -21,29 +21,31 @@ by default.
 
 ## Component Responsibilities
 
-- **Prefect Flow** – Coordinates the download, execution, upload, and reporting
-  tasks. Runs entirely locally via the Prefect Orion/worker.
-- **CanvasClient** – Encapsulates Canvas API access (download submissions,
-  upload comments, post grades) with automatic retries and structured logging.
-- **Grader Executor** – Runs the instructor‑provided command inside a
-  Prefect‑managed worker container using a dedicated workspace. No nested Docker
-  is required.
+- **Prefect Flows** – `webhook_correction_flow` loads course settings and
+  dispatches `correct_submission_flow`, which coordinates metadata fetch,
+  download, workspace preparation, grader execution, result collection, and
+  Canvas uploads.
+- **CanvasResources** – Bundles the `canvasapi.Canvas` client, resolved course,
+  and application settings so Prefect tasks share a consistent Canvas context.
+- **GraderExecutor** – Runs the instructor‑provided command inside Docker using
+  a dedicated workspace and explicit resource limits.
 - **Grader Configuration Blocks** – Prefect configuration blocks store course‑specific
   grader images, resource limits, per‑assignment commands, and environment
   variables. Each course provisions a dedicated Prefect Docker work pool bound
   to its grader image.
-- **Result Collector** – Extracts `points.txt`, `comments.txt`, artefacts, and
+- **ResultCollector** – Extracts `points.txt`, `comments.txt`, artefacts, and
   metadata produced by the grader and prepares zipped feedback for upload.
-- **Uploader** – Posts comments and grades back to Canvas while skipping
+- **CanvasUploader** – Posts comments and grades back to Canvas while skipping
   duplicate attachments.
-- **Submission Workspace** – A transient directory inside the worker container
-  where submission attachments are staged and grader artefacts are produced.
+- **Submission Workspace** – `prepare_workspace` creates a transient run
+  directory, stages submission attachments, and downloads grader assets before
+  execution begins.
 - **Asset Storage (RustFS)** – S3‑compatible object storage for immutable grader
   assets (tests, fixtures, helper scripts). Configurable via environment
   variables for local development and production deployments.
-- **Prefect Webhook** – Canvas events call Prefect’s native webhook endpoint,
-  which queues a flow run without additional services. Optional custom shims can
-  be added later only if advanced preprocessing is required.
+- **FastAPI Webhook Server** – Canvas events hit a FastAPI endpoint that rate
+  limits requests, verifies webhook signatures, validates payloads, and triggers
+  Prefect deployments.
 
 ## New Services (Phase 2)
 
@@ -69,47 +71,52 @@ completing the end‑to‑end correction pipeline.
 
 ## Prefect Flow Sequence
 
-The following diagram illustrates the sequence of events when a Canvas webhook
-triggers a grading run.
+The following diagram illustrates the current webhook-to-grading path.
 
 ```mermaid
 sequenceDiagram
     autonumber
     participant Webhook as Canvas Webhook
-    participant WebhookEndpoint as Prefect Webhook Endpoint
-    participant Prefect as Prefect Orion
-    participant Worker as Prefect Worker
-    participant Runner as Docker Runner
-    participant Canvas as Canvas API
+    participant FastAPI as FastAPI Webhook Server
+    participant Deployments as Prefect Deployments
+    participant WebhookFlow as webhook_correction_flow
+    participant CorrectionFlow as correct_submission_flow
+    participant Workspace as prepare_workspace
+    participant Runner as GraderExecutor
+    participant Uploader as CanvasUploader
+    participant CanvasAPI as Canvas API
 
-    Webhook->>WebhookEndpoint: submission_created payload
-    WebhookEndpoint->>Prefect: create flow run (assignment_id, submission_id)
-    Prefect->>Worker: dispatch run
-    Worker->>Runner: start course worker container (non-root UID/GID)
-    Runner->>Canvas: fetch submission artefacts
-    Runner->>Runner: execute instructor tests, create feedback zip & points
-    Runner->>Canvas: upload feedback & grade
-    Runner->>Prefect: report artefacts & logs
-    Prefect->>WebhookEndpoint: completion callback (optional)
+    Webhook->>FastAPI: POST submission_created payload
+    FastAPI->>FastAPI: rate limit + verify signature + validate payload
+    FastAPI->>Deployments: ensure deployment + run_deployment(...)
+    Deployments->>WebhookFlow: start flow run
+    WebhookFlow->>CorrectionFlow: load settings and call correction flow
+    CorrectionFlow->>CanvasAPI: fetch metadata and download attachments
+    CorrectionFlow->>Workspace: stage submission and download assets
+    CorrectionFlow->>Runner: execute_in_workspace(...)
+    Runner->>CorrectionFlow: exit code, logs, timing
+    CorrectionFlow->>Uploader: upload_feedback() + upload_grade()
+    Uploader->>CanvasAPI: post comment attachment and grade
 ```
 
 **Step‑by‑step explanation**
 
-1. **Webhook trigger** – Canvas sends a `submission_created` payload to the
-   Prefect webhook endpoint.
-2. **Flow creation** – The endpoint creates a Prefect flow run with the
-   assignment and submission identifiers.
-3. **Worker dispatch** – Prefect dispatches the run to a worker that matches the
-   course’s Docker work pool.
-4. **Container start** – The worker starts a course‑specific container running
-   as an unprivileged user.
-5. **Download** – The container fetches the submission artefacts from the Canvas
-   API.
-6. **Execution** – The grader command runs inside the container, producing a
-   feedback zip and a points file.
-7. **Upload** – The container uploads the feedback and grade back to Canvas.
-8. **Reporting** – The container reports artefacts and logs to Prefect; an
-   optional completion callback can be sent to the webhook endpoint.
+1. **Webhook trigger** – Canvas sends a `submission_created` or
+   `submission_updated` payload to the FastAPI webhook server.
+2. **Validation** – The server rate limits the request, verifies the Canvas
+   signature, and validates the JSON payload.
+3. **Deployment launch** – The webhook handler ensures the course deployment
+   exists and starts `webhook_correction_flow` through Prefect.
+4. **Flow handoff** – `webhook_correction_flow` loads course settings and calls
+   `correct_submission_flow` with the assignment and submission identifiers.
+5. **Download** – The correction flow fetches submission metadata and downloads
+   attachment files from the Canvas API.
+6. **Workspace prep** – `prepare_workspace` copies submission files into a run
+   directory and pulls grader assets from the configured S3-compatible bucket.
+7. **Execution and collection** – `GraderExecutor` runs the grader command, then
+   `ResultCollector` assembles feedback, points, and artefact metadata.
+8. **Upload** – `CanvasUploader` posts the feedback zip and grade back to
+   Canvas.
 
 ## Component Diagram
 
@@ -118,68 +125,88 @@ relationships.
 
 ```mermaid
 graph TD
-  subgraph Prefect
-    F1[Prefect Flow]
-    T1[Download Task]
-    T2[Run Container Task]
-    T3[Upload Task]
-    F1 --> T1
-    F1 --> T2
-    F1 --> T3
-  end
-
-  subgraph Application
-    C1[CanvasClient]
-    R1["RunnerService (adapter)"]
-    S1[SubmissionStore]
-    W1[Prefect Webhook]
-  end
-
   Canvas[(Canvas API)]
-  Registry[(Container Registry)]
+  Assets[(RustFS / S3 bucket)]
 
-  W1 -->|schedule| F1
-  T1 --> C1
-  T1 --> S1
-  T2 --> R1
-  R1 --> Registry
-  R1 --> S1
-  T3 --> C1
-  C1 --> Canvas
+  subgraph Webhooks
+    FastAPI[FastAPI Webhook Server]
+    Deployments[Deployment Helpers]
+  end
+
+  subgraph Prefect
+    WebhookFlow[webhook_correction_flow]
+    CorrectionFlow[correct_submission_flow]
+    FetchTask[fetch_submission_metadata + download_submission_files]
+    WorkspaceTask[prepare_workspace_task]
+    ExecuteTask[execute_grader]
+    CollectTask[collect_results]
+    UploadTask[upload_feedback + post_grade]
+  end
+
+  subgraph Services
+    CanvasResources[CanvasResources]
+    Workspace[WorkspacePaths]
+    Runner[GraderExecutor]
+    Collector[ResultCollector]
+    Uploader[CanvasUploader]
+  end
+
+  FastAPI -->|verify + parse| Deployments
+  Deployments -->|run deployment| WebhookFlow
+  WebhookFlow --> CorrectionFlow
+  CorrectionFlow --> FetchTask
+  CorrectionFlow --> WorkspaceTask
+  CorrectionFlow --> ExecuteTask
+  CorrectionFlow --> CollectTask
+  CorrectionFlow --> UploadTask
+
+  FetchTask --> CanvasResources
+  CanvasResources --> Canvas
+  WorkspaceTask --> Workspace
+  Workspace --> Assets
+  ExecuteTask --> Runner
+  ExecuteTask --> Workspace
+  CollectTask --> Collector
+  Collector --> Workspace
+  UploadTask --> Uploader
+  Uploader --> Canvas
 ```
 
 **Key interactions**
 
-- The **Prefect Webhook** schedules the **Prefect Flow** when a Canvas
-  submission is created.
-- The **Download Task** uses the **CanvasClient** to fetch submissions and
-  stores them in the **SubmissionStore**.
-- The **Run Container Task** calls the **RunnerService** adapter, which pulls
-  the course‑specific grader image from the **Container Registry** and executes
-  it with the staged submission.
-- The **Upload Task** again uses the **CanvasClient** to post feedback and
-  grades back to the **Canvas API**.
+- The **FastAPI Webhook Server** validates Canvas requests and asks Prefect to
+  launch the per-course deployment.
+- `webhook_correction_flow` acts as the bridge between webhook-triggered runs
+  and the main correction flow.
+- The fetch tasks use **CanvasResources** to retrieve submission metadata and
+  download attachment files from the **Canvas API**.
+- `prepare_workspace_task` materializes **WorkspacePaths**, copies the
+  submission, and downloads grader assets from **RustFS / S3**.
+- `execute_grader`, `collect_results`, and the upload tasks delegate to
+  **GraderExecutor**, **ResultCollector**, and **CanvasUploader** respectively.
 
 ## Data Flow Stages
 
 1. **Schedule** – A Canvas webhook or CLI call triggers a Prefect flow run with
    assignment and submission identifiers.
-2. **Download** – The **CanvasClient** fetches the submission attachment(s) into
-   an isolated workspace (or object storage). Metadata persists alongside
-   artefacts for traceability.
-3. **Execute** – Prefect starts a course‑specific Docker worker container
-   (non‑root UID/GID, resource quotas) and invokes the grader command directly
-   inside the container. All artefacts stay within the container filesystem.
-4. **Collect** – Prefect captures stdout/stderr, collects the feedback zip,
-   points, and logs, and stores them for inspection.
-5. **Upload** – Feedback and grades are pushed back to Canvas idempotently (MD5
-   and filename checks). Failures trigger Prefect retries.
+2. **Download** – **CanvasResources** retrieves submission metadata and
+   attachment files from Canvas into a run-specific download directory.
+3. **Prepare workspace** – `prepare_workspace` creates isolated directories,
+   copies the downloaded submission, and materializes grader assets from the
+   configured S3-compatible bucket.
+4. **Execute** – `GraderExecutor` bind-mounts the submission and assets into a
+   Docker container with resource limits, network isolation, and a read-only
+   root filesystem.
+5. **Collect** – `ResultCollector` parses `points.txt`, `comments.txt`, and
+   artefacts, then builds the feedback zip for upload.
+6. **Upload** – `CanvasUploader` posts feedback and grades back to Canvas
+   idempotently using duplicate checks. Failures surface through Prefect.
 
 ## Security Considerations
 
-- **Unprivileged containers** – Each worker container runs as an unprivileged
-  UID/GID baked into the base grader image. The filesystem vanishes when the
-  container exits, so no submissions persist on the host.
+- **Unprivileged containers** – Each grader container can run as an
+  unprivileged UID/GID and is removed after execution. Submission files live in
+  a per-run workspace that is bind-mounted into the container.
 - **Network isolation** – Network is disabled by default unless explicitly
   required for dependencies.
 - **Secret management** – Canvas API tokens are stored using Prefect blocks or
