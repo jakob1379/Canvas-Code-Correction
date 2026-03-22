@@ -483,13 +483,14 @@ class TestSetupCourseInteractive:
         # Setup prompts
         mock_prompt.side_effect = [
             "test-token",  # API token
+            "",  # Canvas host (accept default)
             "test-course",  # Course slug
             "test-bucket",  # Assets block
             "graders/test-course/",  # Assets prefix
             "",  # Docker image (empty)
             "",  # Work pool (empty)
         ]
-        mock_int_prompt.return_value = 13122436  # Course ID
+        mock_int_prompt.return_value = 1  # Select first course from list
         mock_confirm.side_effect = [
             False,  # Don't map tests
             True,  # Save configuration
@@ -500,6 +501,8 @@ class TestSetupCourseInteractive:
         assert result.exit_code == 0
         assert "Course configuration saved as block: ccc-course-test-course" in result.output
         mock_block.save.assert_called_once()
+        assert mock_prompt.call_args_list[1].args[0] == "Canvas host (domain or https:// URL)"
+        assert mock_int_prompt.call_args_list[0].args[0] == "Select a course [1-1]"
 
     @pytest.mark.local
     @patch("canvas_code_correction.cli.Canvas")
@@ -515,7 +518,10 @@ class TestSetupCourseInteractive:
         mock_canvas.get_current_user.side_effect = Exception("Invalid token")
         mock_canvas_class.return_value = mock_canvas
 
-        mock_prompt.return_value = "invalid-token"
+        mock_prompt.side_effect = [
+            "invalid-token",
+            "",
+        ]
 
         result = cli_runner.invoke(app, ["course", "setup"])
 
