@@ -4,14 +4,10 @@ build-backend = "uv_build"
 
 [dependency-groups]
 dev = [
-  "canvas-code-correction[test,docs]",
-  "ipython>=9.10.0",
+  "canvas-code-correction[ci,docs,test]",
+  "ipython>=9.11.0",
   "poethepoet>=0.42.1",
-  "prek>=0.3.4",
-  "ruff>=0.15.4",
-  "pyrefly>=0.54.0",
-  "commitizen>=4.13.9",
-  "smokeshow>=0.5.0"
+  "commitizen>=4.13.9"
 ]
 
 [project]
@@ -31,19 +27,19 @@ classifiers = [
   "Operating System :: POSIX :: Linux"
 ]
 dependencies = [
-  "prefect[docker]>=3.6.20",
-  "prefect-aws>=0.7.5",
+  "prefect[docker]>=3.6.23",
+  "prefect-aws>=0.7.6",
   "docker>=7.1.0",
   "pydantic>=2.12.5",
   "typer>=0.24.1",
-  "canvasapi>=3.4.0",
-  "boto3>=1.42.55",
+  "canvasapi>=3.5.0",
+  "boto3>=1.42.70",
   "fastapi>=0.135.1",
-  "uvicorn[standard]>=0.41.0",
+  "uvicorn[standard]>=0.42.0",
   "PyJWT>=2.12.0",
   "limits>=5.8.0",
   "requests>=2.32.5",
-  "rich>=14.1.0",
+  "rich>=14.3.3",
   "python-slugify>=8.0.4"
 ]
 
@@ -52,13 +48,19 @@ docs = [
   "httpx>=0.28.1",
   "mkdocs-mermaid2-plugin>=1.2.3",
   "mkdocs-glightbox>=0.5.2",
-  "zensical>=0.0.24"
+  "zensical>=0.0.28"
 ]
 test = [
   "pytest>=9.0.2",
   "pytest-datadir>=1.8.0",
   "pytest-xdist>=3.8.0",
-  "pytest-cov>=7.0.0"
+  "pytest-cov>=7.1.0"
+]
+ci = [
+  "prek>=0.3.6",
+  "pyrefly>=0.57.1",
+  "ruff>=0.15.7",
+  "smokeshow>=0.5.0"
 ]
 
 [project.scripts]
@@ -135,3 +137,11 @@ known-first-party = ["canvas_code_correction"]
 # Ignore all linting issues in development scripts
 "scripts/**/*.py" = ["ALL"]
 "src/canvas_code_correction/cli.py" = ["PLR0913"]
+
+[tool.uv.sources]
+canvas-code-correction = {workspace = true}
+
+[tool.uv.workspace]
+members = [
+  "."
+]
