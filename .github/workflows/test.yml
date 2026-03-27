@@ -45,13 +45,19 @@ jobs:
           python-version: '3.13'
       - name: Install dependencies
         run: uv sync --all-groups
+      - name: Check formatting
+        run: uv run ruff format --check .
+      - name: Run lint checks
+        run: uv run ruff check .
+      - name: Run type checks
+        run: uv run pyrefly check src
       - name: Setup RustFS for testing
         if: env.CANVAS_API_TOKEN != ''
         run: |
           # Wait for RustFS to be ready
-           timeout 30 bash -c 'until curl -s -o /dev/null -w "%{http_code}" http://localhost:9000 | grep -q "^403$"; do sleep 1; done'
+          timeout 30 bash -c 'until curl -s -o /dev/null -w "%{http_code}" http://localhost:9000 | grep -q "^403$"; do sleep 1; done'
           # Run setup script
-          uv run python scripts/setup-rustfs.py
+          uv run python scripts/setup_rustfs.py
       - name: Run unit tests
         run: uv run pytest tests/unit -v --strict-markers --cov=src/canvas_code_correction
           --cov-report=xml --cov-report=term
@@ -91,4 +97,4 @@ jobs:
         run: |-
           # Start Docker daemon (already running on GitHub Actions)
           # Run e2e tests
-           uv run pytest tests/e2e -v --strict-markers -m e2e --no-cov
+          uv run pytest tests/e2e -v --strict-markers -m e2e --no-cov

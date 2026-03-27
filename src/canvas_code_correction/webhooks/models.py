@@ -18,10 +18,6 @@ class UnsupportedSubmissionEventError(ValueError):
     """Raised when a webhook event is not a supported submission event."""
 
 
-class InvalidSubmissionEventError(ValueError):
-    """Raised when a supported submission event payload is malformed."""
-
-
 class CanvasWebhookMetadata(BaseModel):
     """Metadata section of Canvas webhook payload."""
 
@@ -99,12 +95,10 @@ class CanvasWebhookPayload(BaseModel):
     def parse_submission_event(self) -> SubmissionCreatedEvent | SubmissionUpdatedEvent:
         """Parse body into a specific submission event model."""
         event_type = self.get_submission_event_type()
-        if event_type == "submission_created":
-            return SubmissionCreatedEvent.model_validate(self.body.model_dump())
-        if event_type == "submission_updated":
-            return SubmissionUpdatedEvent.model_validate(self.body.model_dump())
-        msg = f"Invalid payload for {event_type}"
-        raise InvalidSubmissionEventError(msg)
+        event_model: type[SubmissionCreatedEvent | SubmissionUpdatedEvent] = (
+            SubmissionCreatedEvent if event_type == "submission_created" else SubmissionUpdatedEvent
+        )
+        return event_model.model_validate(self.body.model_dump())
 
 
 class WebhookResponse(BaseModel):

@@ -1,6 +1,7 @@
 """Unit tests for configuration module."""
 
 from pathlib import Path
+from typing import cast
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -29,7 +30,7 @@ def mock_course_block() -> MagicMock:
     mock.grader_image = "test/image:latest"
     mock.work_pool_name = "test-pool"
     mock.grader_env = {}
-    mock.grader_command = ["sh", "main.sh"]
+    mock.grader_command = ["sh", "/workspace/assets/main.sh"]
     mock.grader_timeout_seconds = 300
     mock.grader_memory_mb = 512
     mock.grader_upload_check_duplicates = True
@@ -98,7 +99,7 @@ def test_load_settings_from_course_block_returns_settings(mock_course_block: Mag
 def test_canvas_settings_validation() -> None:
     """Test CanvasSettings validation."""
     settings = CanvasSettings(
-        api_url="https://canvas.example.com",
+        api_url=cast("HttpUrl", "https://canvas.example.com"),
         token=SecretStr("token"),
         course_id=456,
     )

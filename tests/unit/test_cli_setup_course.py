@@ -1,11 +1,13 @@
 """Integration tests for the setup-course CLI command."""
 
 from pathlib import Path
+from types import SimpleNamespace
 from unittest.mock import MagicMock, patch
 
 import pytest
 from typer.testing import CliRunner
 
+from canvas_code_correction import cli_course
 from canvas_code_correction.cli import app
 
 
@@ -182,6 +184,63 @@ class TestSetupCourseNonInteractive:
         assert "Use either --token or --token-stdin, not both" in result.output
 
     @pytest.mark.local
+    def test_setup_course_reads_stdin_before_switching_to_tty(
+        self,
+    ) -> None:
+        """Interactive token-stdin mode must consume the pipe before TTY prompts begin."""
+        events: list[str] = []
+        ctx = SimpleNamespace(
+            args=[
+                "--token-stdin",
+                "--course-id",
+                "13122436",
+                "--assets-block",
+                "test-bucket",
+                "--slug",
+                "test-course",
+            ],
+        )
+
+        def fake_resolve_canvas_token(*_args: object, **_kwargs: object) -> str:
+            events.append("resolve-token")
+            return "stdin-token"
+
+        def fake_switch_stdin(_console: object) -> None:
+            events.append("switch-tty")
+
+        fake_course = SimpleNamespace(id=13122436, name="Test Course", course_code="TEST-101")
+        fake_setup_config = SimpleNamespace(block_name="ccc-course-test-course")
+
+        with (
+            patch.object(
+                cli_course,
+                "_resolve_canvas_token",
+                side_effect=fake_resolve_canvas_token,
+            ),
+            patch.object(cli_course, "_build_canvas_client", return_value=MagicMock()),
+            patch.object(
+                cli_course,
+                "_resolve_course_selection",
+                return_value=(13122436, fake_course),
+            ),
+            patch.object(cli_course, "_build_course_setup_config", return_value=fake_setup_config),
+            patch.object(cli_course, "_print_course_setup_summary"),
+            patch.object(cli_course, "_save_course_block"),
+        ):
+            cli_course.course_setup_command(
+                ctx,
+                console=MagicMock(),
+                Canvas=MagicMock(),
+                CourseConfigBlock=MagicMock(),
+                Prompt=MagicMock(),
+                IntPrompt=MagicMock(),
+                Confirm=MagicMock(),
+                _switch_stdin_to_tty_for_prompts=fake_switch_stdin,
+            )
+
+        assert events[:2] == ["resolve-token", "switch-tty"]
+
+    @pytest.mark.local
     @patch("canvas_code_correction.cli.Canvas")
     def test_setup_course_missing_course_id_non_interactive(
         self,
@@ -266,7 +325,7 @@ class TestSetupCourseNonInteractive:
         )
 
         assert result.exit_code == 1
-        assert "Failed to validate Canvas API token" in result.output
+        assert "Failed to validate Canvas credentials" in result.output
 
     @pytest.mark.local
     @patch("canvas_code_correction.cli.Canvas")
@@ -526,7 +585,7 @@ class TestSetupCourseInteractive:
         result = cli_runner.invoke(app, ["course", "setup"])
 
         assert result.exit_code == 1
-        assert "Failed to validate Canvas API token" in result.output
+        assert "Failed to validate Canvas credentials" in result.output
 
 
 @pytest.mark.integration

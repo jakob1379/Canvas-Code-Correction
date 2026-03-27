@@ -76,6 +76,32 @@ def prefect_client(prefect_server_available: bool):
 
 
 @pytest.fixture(scope="session")
+def ensure_local_rustfs_block(
+    prefect_server_available: bool,
+    rustfs_config: dict[str, str],
+):
+    """Ensure the local RustFS Prefect block exists."""
+    from prefect_aws import AwsClientParameters, AwsCredentials, S3Bucket
+    from pydantic import SecretStr
+
+    try:
+        S3Bucket.load("local-rustfs")
+        return True
+    except ValueError:
+        pass
+
+    credentials = AwsCredentials(
+        aws_access_key_id=rustfs_config["aws_access_key_id"],
+        aws_secret_access_key=SecretStr(rustfs_config["aws_secret_access_key"]),
+        region_name="us-east-1",
+        aws_client_parameters=AwsClientParameters(endpoint_url=rustfs_config["endpoint_url"]),
+    )
+    block = S3Bucket(bucket_name=rustfs_config["bucket_name"], credentials=credentials)
+    block.save("local-rustfs", overwrite=True)
+    return True
+
+
+@pytest.fixture(scope="session")
 def s3_client(rustfs_config: dict[str, str], rustfs_available: bool):
     """Get boto3 S3 client configured for RustFS."""
     client = boto3.client(

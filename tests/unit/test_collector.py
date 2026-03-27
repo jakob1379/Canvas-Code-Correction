@@ -11,6 +11,7 @@ import pytest
 
 from canvas_code_correction.collector import (
     ERRORS_LOG_FILENAME,
+    CollectionMetadata,
     CollectionResult,
     GradingResult,
     ResultCollector,
@@ -193,7 +194,7 @@ def test_create_feedback_zip(tmp_path: Path) -> None:
         comments_file_path=submission_dir / "comments.txt",
         artifacts_zip_path=None,
         errors_log_path=errors_log,
-        metadata={},
+        metadata=CollectionMetadata(),
     )
 
     output_zip = tmp_path / "feedback.zip"
@@ -235,7 +236,7 @@ def test_create_feedback_zip_without_errors(tmp_path: Path) -> None:
         comments_file_path=None,
         artifacts_zip_path=None,
         errors_log_path=None,
-        metadata={},
+        metadata=CollectionMetadata(),
     )
 
     output_zip = tmp_path / "feedback.zip"
@@ -266,7 +267,7 @@ def test_validate_result() -> None:
         comments_file_path=Path("/tmp/comments.txt"),
         artifacts_zip_path=Path("/tmp/artifacts.zip"),
         errors_log_path=Path("/tmp/errors.log"),
-        metadata={},
+        metadata=CollectionMetadata(),
     )
 
     # Mock file existence
@@ -282,7 +283,7 @@ def test_validate_result() -> None:
         comments_file_path=None,
         artifacts_zip_path=None,
         errors_log_path=None,
-        metadata={},
+        metadata=CollectionMetadata(),
     )
 
     issues = collector.validate_result(negative_result)
@@ -296,7 +297,7 @@ def test_validate_result() -> None:
         comments_file_path=None,
         artifacts_zip_path=None,
         errors_log_path=None,
-        metadata={},
+        metadata=CollectionMetadata(),
     )
 
     issues = collector.validate_result(high_result)
@@ -310,7 +311,7 @@ def test_validate_result() -> None:
         comments_file_path=None,
         artifacts_zip_path=Path("/tmp/nonexistent.zip"),
         errors_log_path=None,
-        metadata={},
+        metadata=CollectionMetadata(),
     )
 
     with patch.object(Path, "exists", return_value=False):
@@ -355,7 +356,7 @@ def test_create_feedback_zip_empty_points_content(tmp_path: Path) -> None:
         comments_file_path=None,
         artifacts_zip_path=None,
         errors_log_path=None,
-        metadata={},
+        metadata=CollectionMetadata(),
     )
     output_zip = tmp_path / "feedback.zip"
     collector.create_feedback_zip(grading_result, output_path=output_zip)

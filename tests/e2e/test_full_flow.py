@@ -7,6 +7,7 @@ import tempfile
 import zipfile
 from pathlib import Path
 from types import SimpleNamespace
+from typing import Any, cast
 from unittest.mock import patch
 
 import pytest
@@ -134,6 +135,7 @@ def _build_offline_flow_settings(tmp_path: Path) -> Settings:
 def test_full_correction_pipeline(
     rustfs_config: dict[str, str],
     rustfs_available: bool,
+    ensure_local_rustfs_block: bool,
     s3_client,
     ensure_test_bucket: str,
 ) -> None:
@@ -227,7 +229,7 @@ echo "Good job!" > comments.txt
         # Run grader (simple test using alpine image)
         config = GraderConfig(
             docker_image="alpine:latest",
-            command=["sh", "main.sh"],
+            command=["sh", "/workspace/assets/main.sh"],
             working_directory=Path("/workspace/submission"),
             resource_limits=ResourceLimits(timeout_seconds=30),
         )
@@ -279,8 +281,11 @@ def test_full_correction_pipeline_offline_contract(tmp_path: Path) -> None:
     submission = _FakeSubmission()
     assignment = _FakeAssignment(submission)
     resources = CanvasResources(
-        canvas=_FakeCanvas({101: _FakeCanvasFile("submission.py", b'print("hello")\n')}),  # type: ignore[arg-type]
-        course=_FakeCourse(assignment),  # type: ignore[arg-type]
+        canvas=cast(
+            "Any",
+            _FakeCanvas({101: _FakeCanvasFile("submission.py", b'print("hello")\n')}),
+        ),
+        course=cast("Any", _FakeCourse(assignment)),
         settings=settings,
     )
 

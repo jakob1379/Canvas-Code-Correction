@@ -57,3 +57,4 @@ __pycache__/
 *.cover
 *.py,cover
 /.desloppify/
+/.envrc

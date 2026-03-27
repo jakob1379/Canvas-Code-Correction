@@ -21,7 +21,7 @@ class CourseConfigBlock(Block):
     grader_image: str | None = None
     work_pool_name: str | None = None
     grader_env: dict[str, str] = Field(default_factory=dict)
-    grader_command: list[str] = Field(default_factory=lambda: ["sh", "main.sh"])
+    grader_command: list[str] = Field(default_factory=lambda: ["sh", "/workspace/assets/main.sh"])
     grader_timeout_seconds: int = 300
     grader_memory_mb: int | None = 512
     grader_upload_check_duplicates: bool = True
@@ -50,3 +50,6 @@ class CourseConfigBlock(Block):
         default="10/minute",
         description="Rate limit for webhook requests (e.g., '10/minute', '100/hour')",
     )
+
+
+__all__ = ["CourseConfigBlock"]
