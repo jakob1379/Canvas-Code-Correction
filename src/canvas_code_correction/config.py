@@ -1,7 +1,6 @@
 """Configuration helpers for Canvas Code Correction."""
 
 import tempfile
-from importlib import import_module
 from pathlib import Path
 
 from pydantic import BaseModel, Field, HttpUrl, SecretStr
@@ -79,6 +78,14 @@ class WebhookSettings(BaseModel):
         default="10/minute",
         description="Rate limit for webhook requests (e.g., '10/minute', '100/hour')",
     )
+    allow_canvas_api_fallback: bool = Field(
+        default=False,
+        description=(
+            "Allow webhook requests without JWT/HMAC signatures to fall back to "
+            "Canvas API existence checks. Disabled by default because it weakens "
+            "request authentication."
+        ),
+    )
 
 
 class Settings(BaseModel):
@@ -98,9 +105,3 @@ class Settings(BaseModel):
             self.webhook.secret.get_secret_value() if self.webhook.secret else None
         )
         return payload
-
-
-def resolve_settings_from_block(block_name: str) -> Settings:
-    """Load settings from a persisted course block."""
-    bootstrap = import_module("canvas_code_correction.bootstrap")
-    return bootstrap.load_settings_from_course_block(block_name)

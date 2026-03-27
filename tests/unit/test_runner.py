@@ -54,7 +54,7 @@ def test_resource_limits_defaults() -> None:
     assert limits.memory_mb is None
 
 
-@patch("canvas_code_correction.runner.docker")
+@patch("canvas_code_correction.flows.runner.docker")
 @pytest.mark.local
 def test_grader_executor_initialization(mock_docker) -> None:
     """Test GraderExecutor initialization."""
@@ -70,7 +70,7 @@ def test_grader_executor_initialization(mock_docker) -> None:
     assert executor2.client is custom_client
 
 
-@patch("canvas_code_correction.runner.docker")
+@patch("canvas_code_correction.flows.runner.docker")
 @pytest.mark.local
 def test_execute_with_mocks(mock_docker) -> None:
     """Test execute method with mocked Docker client."""
@@ -134,7 +134,7 @@ def test_execute_with_mocks(mock_docker) -> None:
     assert result.container_id == "test-container-id"
 
 
-@patch("canvas_code_correction.runner.docker")
+@patch("canvas_code_correction.flows.runner.docker")
 @pytest.mark.local
 def test_execute_timeout(mock_docker) -> None:
     """Test execute method with timeout."""
@@ -181,7 +181,7 @@ def test_execute_timeout(mock_docker) -> None:
     assert result.stderr == "stderr output"
 
 
-@patch("canvas_code_correction.runner.docker")
+@patch("canvas_code_correction.flows.runner.docker")
 @pytest.mark.local
 def test_execute_docker_error(mock_docker) -> None:
     """Test execute method handling Docker errors."""
@@ -207,8 +207,8 @@ def test_execute_docker_error(mock_docker) -> None:
     config = GraderConfig(docker_image="test/image:latest")
 
     # Patch the imported exceptions in the runner module
-    with patch("canvas_code_correction.runner.ImageNotFound", MockDockerException):
-        with patch("canvas_code_correction.runner.DockerException", MockDockerException):
+    with patch("canvas_code_correction.flows.runner.ImageNotFound", MockDockerException):
+        with patch("canvas_code_correction.flows.runner.DockerException", MockDockerException):
             result = executor.execute(config, [])
 
     assert result.exit_code == 1
@@ -217,9 +217,9 @@ def test_execute_docker_error(mock_docker) -> None:
     assert result.timed_out is False
 
 
-@patch("canvas_code_correction.runner.docker")
+@patch("canvas_code_correction.flows.runner.docker")
 @pytest.mark.local
-@patch("canvas_code_correction.runner.Mount")
+@patch("canvas_code_correction.flows.runner.Mount")
 def test_execute_in_workspace(mock_mount, mock_docker) -> None:
     """Test execute_in_workspace convenience method."""
 
@@ -257,8 +257,8 @@ def test_execute_in_workspace(mock_mount, mock_docker) -> None:
     assets_dir.mkdir(parents=True, exist_ok=True)
 
     # Patch the imported exceptions in the runner module
-    with patch("canvas_code_correction.runner.ImageNotFound", MockDockerException):
-        with patch("canvas_code_correction.runner.DockerException", MockDockerException):
+    with patch("canvas_code_correction.flows.runner.ImageNotFound", MockDockerException):
+        with patch("canvas_code_correction.flows.runner.DockerException", MockDockerException):
             result = executor.execute_in_workspace(config, submission_dir, assets_dir)
 
     # Verify execute was called (implicitly by execute_in_workspace)
@@ -299,7 +299,7 @@ def test_execute_in_workspace(mock_mount, mock_docker) -> None:
         shutil.rmtree(assets_dir)
 
 
-@patch("canvas_code_correction.runner.docker")
+@patch("canvas_code_correction.flows.runner.docker")
 @pytest.mark.local
 def test_execute_with_resource_limits(mock_docker) -> None:
     """Test execute method with all resource limits set."""
@@ -374,7 +374,7 @@ def test_create_default_grader_config_no_command() -> None:
     assert config.resource_limits.read_only_rootfs is True
 
 
-@patch("canvas_code_correction.runner.docker")
+@patch("canvas_code_correction.flows.runner.docker")
 @pytest.mark.local
 def test_execute_image_pull_success(mock_docker) -> None:
     """Test execute when image is pulled successfully."""
@@ -410,7 +410,7 @@ def test_execute_image_pull_success(mock_docker) -> None:
     assert result.exit_code == 0
 
 
-@patch("canvas_code_correction.runner.docker")
+@patch("canvas_code_correction.flows.runner.docker")
 @pytest.mark.local
 def test_execute_requests_timeout(mock_docker) -> None:
     """Test execute with requests.exceptions.Timeout."""
@@ -448,7 +448,7 @@ def test_execute_requests_timeout(mock_docker) -> None:
     assert result.stderr == "stderr output"
 
 
-@patch("canvas_code_correction.runner.docker")
+@patch("canvas_code_correction.flows.runner.docker")
 @pytest.mark.local
 def test_execute_connection_error(mock_docker) -> None:
     """Test execute with requests.exceptions.ConnectionError."""
@@ -486,7 +486,7 @@ def test_execute_connection_error(mock_docker) -> None:
     assert result.stderr == "stderr output"
 
 
-@patch("canvas_code_correction.runner.docker")
+@patch("canvas_code_correction.flows.runner.docker")
 @pytest.mark.local
 def test_execute_with_zero_memory_limits(mock_docker) -> None:
     """Test execute with zero memory limits (edge case)."""

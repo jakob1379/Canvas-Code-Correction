@@ -131,8 +131,8 @@ def test_validate_canvas_signature_jwt_required() -> None:
         mock_validate.assert_not_called()
 
 
-def test_validate_canvas_signature_jwt_not_required() -> None:
-    """Test Canvas signature validation when JWT not required."""
+def test_validate_canvas_signature_requires_explicit_canvas_api_fallback() -> None:
+    """Test secret-less webhook auth is denied by default."""
     from canvas_code_correction.webhooks.auth import validate_canvas_signature
 
     settings = Settings(
@@ -151,7 +151,45 @@ def test_validate_canvas_signature_jwt_not_required() -> None:
         ),
     )
 
-    # When JWT not required, validation falls back to Canvas API verification
+    with patch("canvas_code_correction.webhooks.auth.verify_via_canvas_api") as mock_verify:
+        result = validate_canvas_signature(
+            settings,
+            b"payload",
+            WebhookSignatureHeaders(),
+        )
+        assert result == WebhookVerificationResult(
+            success=False,
+            message=(
+                "Webhook verification is not configured; set a webhook secret, "
+                "require JWT, or explicitly enable Canvas API fallback"
+            ),
+            status_code=401,
+            mode="unconfigured",
+        )
+        mock_verify.assert_not_called()
+
+
+def test_validate_canvas_signature_uses_explicit_canvas_api_fallback() -> None:
+    """Test Canvas API fallback remains available when explicitly enabled."""
+    from canvas_code_correction.webhooks.auth import validate_canvas_signature
+
+    settings = Settings(
+        canvas=CanvasSettings(
+            api_url=HttpUrl("https://canvas.instructure.com"),
+            token=SecretStr("fake"),
+            course_id=1,
+        ),
+        assets=CourseAssetsSettings(bucket_block="test"),
+        grader=GraderSettings(),
+        workspace=WorkspaceSettings(),
+        webhook=WebhookSettings(
+            enabled=True,
+            require_jwt=False,
+            secret=None,
+            allow_canvas_api_fallback=True,
+        ),
+    )
+
     with patch("canvas_code_correction.webhooks.auth.verify_via_canvas_api") as mock_verify:
         mock_verify.return_value = WebhookVerificationResult(
             success=True,
