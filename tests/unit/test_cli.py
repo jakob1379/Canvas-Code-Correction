@@ -44,7 +44,7 @@ def mock_course_block() -> MagicMock:
     mock.grader_image = "test/image:latest"
     mock.work_pool_name = "test-pool"
     mock.grader_env = {}
-    mock.grader_command = ["sh", "main.sh"]
+    mock.grader_command = ["sh", "/workspace/assets/main.sh"]
     mock.grader_timeout_seconds = 300
     mock.grader_memory_mb = 512
     mock.grader_upload_check_duplicates = True

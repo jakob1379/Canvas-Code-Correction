@@ -265,6 +265,22 @@ def test_handle_canvas_webhook_rate_limit(
     assert response.status_code == 429
     data = response.json()
     assert "Rate limit exceeded" in data["detail"]
+    mock_verify.assert_not_called()
+
+
+def test_get_rate_limited_settings_skips_disabled_webhooks(mock_settings: Settings) -> None:
+    """Disabled webhooks should still return a 403 from validation, not a 429."""
+    mock_settings.webhook.enabled = False
+    mock_limiter = MagicMock()
+
+    result = webhook_server.get_rate_limited_settings(
+        "test-course",
+        settings=mock_settings,
+        limiter=mock_limiter,
+    )
+
+    assert result is mock_settings
+    mock_limiter.hit.assert_not_called()
 
 
 @patch("canvas_code_correction.webhooks.server.load_settings_from_course_block")

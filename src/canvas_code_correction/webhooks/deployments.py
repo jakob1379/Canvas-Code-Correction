@@ -9,7 +9,7 @@ from typing import TYPE_CHECKING, Protocol, cast
 
 from prefect.client.orchestration import get_client
 from prefect.deployments.flow_runs import run_deployment
-from prefect.exceptions import ObjectNotFound
+from prefect.exceptions import ObjectNotFound, PrefectException
 
 from canvas_code_correction.webhooks import flows as webhook_flows
 
@@ -27,10 +27,7 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 WEBHOOK_FLOW_NAME = "webhook-correction-flow"
-
-
-def _get_webhook_correction_flow() -> _DeployableWebhookFlow:
-    return cast("_DeployableWebhookFlow", webhook_flows.webhook_correction_flow)
+_EXPECTED_DEPLOYMENT_ERRORS = (PrefectException, OSError)
 
 
 def _serialize_settings_for_flow(settings: Settings) -> dict[str, object]:
@@ -98,7 +95,7 @@ async def ensure_deployment(
     a DeploymentEnsureResult describing the outcome.
     """
     target = resolve_deployment_target(settings, course_block)
-    webhook_flow = _get_webhook_correction_flow()
+    webhook_flow = cast("_DeployableWebhookFlow", webhook_flows.webhook_correction_flow)
     deployment_full_name = f"{webhook_flow.name}/{target.name}"
 
     deployment_exists = False
@@ -107,8 +104,8 @@ async def ensure_deployment(
             await client.read_deployment_by_name(deployment_full_name)
             deployment_exists = True
         except ObjectNotFound:
-            pass
-        except Exception as exc:
+            deployment_exists = False
+        except _EXPECTED_DEPLOYMENT_ERRORS as exc:
             logger.exception(
                 "Failed to inspect deployment %s for course %s",
                 target.name,
@@ -165,7 +162,7 @@ async def ensure_deployment(
             deployment_id=deployment_id_str,
         )
 
-    except Exception as exc:
+    except _EXPECTED_DEPLOYMENT_ERRORS as exc:
         logger.exception(
             "Failed to create deployment %s for course %s",
             target.name,
@@ -236,7 +233,7 @@ async def trigger_deployment(
             flow_run_id=flow_run_id,
         )
 
-    except Exception as exc:
+    except _EXPECTED_DEPLOYMENT_ERRORS as exc:
         logger.exception(
             "Failed to trigger deployment for %s (assignment %s, submission %s)",
             course_block,

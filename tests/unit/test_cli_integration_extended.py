@@ -277,7 +277,7 @@ def test_course_setup_live_malformed_token(cli_runner: CliRunner) -> None:
     )
 
     assert result.exit_code == 1
-    assert "Failed to validate Canvas API token" in result.output
+    assert "Failed to validate Canvas credentials" in result.output
 
 
 @pytest.mark.integration
@@ -299,7 +299,7 @@ def test_course_setup_live_empty_token(cli_runner: CliRunner) -> None:
     )
 
     assert result.exit_code == 1
-    assert "Failed to validate Canvas API token" in result.output
+    assert "Failed to validate Canvas credentials" in result.output
 
 
 @pytest.mark.integration

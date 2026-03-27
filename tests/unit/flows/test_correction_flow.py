@@ -562,7 +562,7 @@ def test_correct_submission_flow_orchestrates_stages(tmp_path: Path) -> None:
     )
     mock_create_default.assert_called_once_with(
         docker_image="jakob1379/canvas-grader:latest",
-        command=["sh", "main.sh"],
+        command=["sh", "/workspace/assets/main.sh"],
         timeout_seconds=300,
         memory_mb=512,
     )

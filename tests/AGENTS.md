@@ -1,1 +1,1 @@
-- autouse is a deadly sin that produces unwanted sideeffects, never use that.
+- `autouse=True` is a deadly sin that produces unwanted sideeffects, never use that.

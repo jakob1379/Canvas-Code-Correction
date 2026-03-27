@@ -22,7 +22,6 @@ if TYPE_CHECKING:
 
 from canvas_code_correction.webhooks.models import (
     CanvasWebhookPayload,
-    InvalidSubmissionEventError,
     UnsupportedSubmissionEventError,
 )
 
@@ -205,7 +204,6 @@ def verify_via_canvas_api(
 
     try:
         payload_model = payload or CanvasWebhookPayload.model_validate_json(payload_body)
-        payload_model.get_submission_event_type()
         event = payload_model.parse_submission_event()
 
         # Make API call to Canvas
@@ -234,8 +232,6 @@ def verify_via_canvas_api(
             status_code = HTTPStatus.BAD_REQUEST.value
         else:
             message = "Webhook payload missing assignment or submission id"
-    except InvalidSubmissionEventError:
-        message = "Webhook payload missing assignment or submission id"
     except requests.RequestException as exc:
         message = f"Canvas API verification error: {exc}"
         status_code = HTTPStatus.BAD_GATEWAY.value
@@ -254,17 +250,28 @@ def validate_canvas_signature(
     headers: WebhookSignatureHeaders,
     payload: CanvasWebhookPayload | None = None,
 ) -> WebhookVerificationResult:
-    """Validate Canvas webhook signature using JWT or Canvas API verification.
+    """Validate Canvas webhook signature using configured verification mode.
 
     If webhook_require_jwt is True, validates JWT token from Authorization header.
-    Otherwise, validates HMAC when a shared webhook secret is configured and uses
-    Canvas API verification only when no shared secret is available.
+    Otherwise, validates HMAC when a shared webhook secret is configured. Canvas
+    API fallback is only allowed when explicitly enabled.
     """
     if settings.webhook.require_jwt:
         return _jwt_verification_result(settings, headers)
 
     if settings.webhook.secret is not None:
         return _hmac_verification_result(settings, payload_body, headers)
+
+    if not settings.webhook.allow_canvas_api_fallback:
+        return WebhookVerificationResult(
+            success=False,
+            message=(
+                "Webhook verification is not configured; set a webhook secret, "
+                "require JWT, or explicitly enable Canvas API fallback"
+            ),
+            status_code=HTTPStatus.UNAUTHORIZED.value,
+            mode="unconfigured",
+        )
 
     if payload is None:
         return verify_via_canvas_api(settings, payload_body)

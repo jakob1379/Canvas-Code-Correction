@@ -91,7 +91,7 @@ def test_register_prefect_block_creates_block_when_missing() -> None:
             self.aws_client_parameters = aws_client_parameters
 
     class FakeS3Bucket:
-        created: list[FakeS3Bucket] = []
+        created: list["FakeS3Bucket"] = []
         saved: list[tuple[str, bool]] = []
         load_calls: list[str] = []
 

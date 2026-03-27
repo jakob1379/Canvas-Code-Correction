@@ -2,20 +2,19 @@
 
 from __future__ import annotations
 
+from collections.abc import Mapping
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, cast
+from pathlib import Path
+from typing import cast
 
 from prefect import flow
+from pydantic import BaseModel
 
 from canvas_code_correction.config import Settings
 from canvas_code_correction.flows.correction import (
     CorrectSubmissionPayload,
     correct_submission_flow,
 )
-
-if TYPE_CHECKING:
-    from collections.abc import Mapping
-    from pathlib import Path
 
 
 @dataclass(frozen=True)
@@ -41,19 +40,28 @@ class WebhookCourseContext:
         return cls._from_mapping(cast("Mapping[str, object]", value))
 
 
+class WebhookSubmissionPayloadModel(BaseModel):
+    """Validated webhook submission payload accepted by the flow boundary."""
+
+    assignment_id: int
+    submission_id: int
+    workspace_id: str | None = None
+
+
 def _coerce_submission_payload(
     submission: CorrectSubmissionPayload | Mapping[str, object],
 ) -> CorrectSubmissionPayload:
     if isinstance(submission, CorrectSubmissionPayload):
         return submission
+    if not isinstance(submission, Mapping):
+        msg = "submission must be a mapping or CorrectSubmissionPayload"
+        raise TypeError(msg)
 
-    workspace_id = submission.get("workspace_id")
-    assignment_id = cast("str | int", submission["assignment_id"])
-    submission_id = cast("str | int", submission["submission_id"])
+    validated_submission = WebhookSubmissionPayloadModel.model_validate(submission)
     return CorrectSubmissionPayload(
-        assignment_id=int(assignment_id),
-        submission_id=int(submission_id),
-        workspace_id=str(workspace_id) if workspace_id is not None else None,
+        assignment_id=validated_submission.assignment_id,
+        submission_id=validated_submission.submission_id,
+        workspace_id=validated_submission.workspace_id,
     )
 
 
@@ -83,6 +91,7 @@ def webhook_correction_flow(
     This flow receives already-loaded settings and runs the standard
     correction flow for the given submission.
     """
+    download_dir = Path(download_dir) if download_dir is not None else None
     course_context = WebhookCourseContext.from_value(course)
     submission_payload = _coerce_submission_payload(submission)
 
