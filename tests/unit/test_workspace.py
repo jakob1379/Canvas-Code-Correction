@@ -41,7 +41,7 @@ def test_workspace_paths() -> None:
     assert paths.assets_dir == assets_dir
 
 
-@patch("canvas_code_correction.workspace.S3Bucket")
+@patch("canvas_code_correction.flows.workspace.S3Bucket")
 def test_prepare_workspace_with_submission_files(mock_s3_bucket_class, tmp_path: Path) -> None:
     """Test workspace preparation with submission files."""
     mock_bucket = MagicMock()
@@ -82,7 +82,7 @@ def test_prepare_workspace_with_submission_files(mock_s3_bucket_class, tmp_path:
     # but that's fine
 
 
-@patch("canvas_code_correction.workspace.S3Bucket")
+@patch("canvas_code_correction.flows.workspace.S3Bucket")
 def test_prepare_workspace_with_assets_download(mock_s3_bucket_class, tmp_path: Path) -> None:
     """Test workspace preparation with asset download (download_folder method)."""
     mock_bucket = MagicMock()
@@ -108,7 +108,7 @@ def test_prepare_workspace_with_assets_download(mock_s3_bucket_class, tmp_path: 
     )
 
 
-@patch("canvas_code_correction.workspace.S3Bucket")
+@patch("canvas_code_correction.flows.workspace.S3Bucket")
 def test_prepare_workspace_with_assets_get_directory(mock_s3_bucket_class, tmp_path: Path) -> None:
     """Test workspace preparation with asset download (get_directory method)."""
     mock_bucket = MagicMock()
@@ -133,7 +133,7 @@ def test_prepare_workspace_with_assets_get_directory(mock_s3_bucket_class, tmp_p
     )
 
 
-@patch("canvas_code_correction.workspace.S3Bucket")
+@patch("canvas_code_correction.flows.workspace.S3Bucket")
 def test_prepare_workspace_empty_prefix(mock_s3_bucket_class, tmp_path: Path) -> None:
     """Test workspace preparation with empty path prefix."""
     mock_bucket = MagicMock()
@@ -156,7 +156,7 @@ def test_prepare_workspace_empty_prefix(mock_s3_bucket_class, tmp_path: Path) ->
     )
 
 
-@patch("canvas_code_correction.workspace.S3Bucket")
+@patch("canvas_code_correction.flows.workspace.S3Bucket")
 def test_prepare_workspace_no_download_method(mock_s3_bucket_class, tmp_path: Path) -> None:
     """Test workspace preparation when bucket lacks download methods."""
     mock_bucket = MagicMock()
@@ -177,7 +177,7 @@ def test_prepare_workspace_no_download_method(mock_s3_bucket_class, tmp_path: Pa
         prepare_workspace(config, [])
 
 
-@patch("canvas_code_correction.workspace.S3Bucket")
+@patch("canvas_code_correction.flows.workspace.S3Bucket")
 def test_prepare_workspace_submission_file_not_exists(mock_s3_bucket_class, tmp_path: Path) -> None:
     """Test workspace preparation when a submission file doesn't exist."""
     # Create a file that exists and one that doesn't
@@ -206,7 +206,7 @@ def test_prepare_workspace_submission_file_not_exists(mock_s3_bucket_class, tmp_
     assert not dest_missing.exists()
 
 
-@patch("canvas_code_correction.workspace.S3Bucket")
+@patch("canvas_code_correction.flows.workspace.S3Bucket")
 def test_prepare_workspace_rejects_world_writable_root(
     mock_s3_bucket_class,
     tmp_path: Path,
@@ -229,7 +229,7 @@ def test_prepare_workspace_rejects_world_writable_root(
     mock_s3_bucket_class.load.assert_not_called()
 
 
-@patch("canvas_code_correction.workspace.S3Bucket")
+@patch("canvas_code_correction.flows.workspace.S3Bucket")
 def test_prepare_workspace_rejects_symlink_root(
     mock_s3_bucket_class,
     tmp_path: Path,

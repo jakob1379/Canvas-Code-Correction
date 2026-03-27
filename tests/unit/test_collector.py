@@ -9,7 +9,7 @@ from unittest.mock import patch
 
 import pytest
 
-from canvas_code_correction.flows.collector import (
+from canvas_code_correction.collector import (
     ERRORS_LOG_FILENAME,
     CollectionMetadata,
     CollectionResult,

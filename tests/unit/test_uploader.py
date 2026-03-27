@@ -58,7 +58,7 @@ def test_uploader_initialization() -> None:
     assert uploader.submission is mock_submission
 
 
-@patch("canvas_code_correction.uploader.Path")
+@patch("canvas_code_correction.flows.uploader.Path")
 @pytest.mark.local
 def test_upload_feedback_file_not_found(mock_path) -> None:
     """Test upload_feedback when file doesn't exist."""
@@ -112,7 +112,7 @@ def test_upload_feedback_with_duplicate_check() -> None:
     uploader = CanvasUploader(mock_submission)
 
     # Mock file operations and MD5 calculation
-    with patch("canvas_code_correction.uploader.Path") as mock_path:
+    with patch("canvas_code_correction.flows.uploader.Path") as mock_path:
         mock_path.exists.return_value = True
         mock_path.stat.return_value.st_size = 100
 
@@ -121,7 +121,7 @@ def test_upload_feedback_with_duplicate_check() -> None:
             patch.object(uploader, "_calculate_md5", return_value="test_hash"),
             patch.object(uploader, "_download_attachment"),
             patch("builtins.open", Mock()),
-            patch("canvas_code_correction.uploader.hashlib") as mock_hashlib,
+            patch("canvas_code_correction.flows.uploader.hashlib") as mock_hashlib,
         ):
             mock_md5 = Mock()
             mock_md5.hexdigest.return_value = "test_hash"  # Same hash = duplicate
@@ -501,7 +501,10 @@ def test_download_attachment_writes_response_content(tmp_path: Path) -> None:
     response.__exit__ = Mock(return_value=None)
     response.raise_for_status = Mock()
 
-    with patch("canvas_code_correction.uploader.requests.get", return_value=response) as mock_get:
+    with patch(
+        "canvas_code_correction.flows.uploader.requests.get",
+        return_value=response,
+    ) as mock_get:
         uploader._download_attachment("http://example.com/file.zip", destination)
 
     assert destination.read_bytes() == b"helloworld"
