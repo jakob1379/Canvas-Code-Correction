@@ -4,7 +4,7 @@ from pathlib import Path
 from unittest.mock import patch
 
 import pytest
-from pydantic import HttpUrl, SecretStr
+from pydantic import HttpUrl, SecretStr, ValidationError
 
 from canvas_code_correction.config import (
     CanvasSettings,
@@ -141,3 +141,21 @@ def test_webhook_correction_flow_returns_execution_summary(tmp_path: Path) -> No
         results_keys=["execution", "collection", "feedback_upload", "grade_upload"],
     )
     mock_correct_submission.assert_called_once()
+
+
+@pytest.mark.local
+def test_webhook_correction_flow_validates_submission_mapping(tmp_path: Path) -> None:
+    settings = _make_settings()
+
+    with pytest.raises(ValidationError):
+        webhook_correction_flow.fn(
+            course=WebhookCourseContext(
+                course_block="course-block",
+                settings=settings.to_flow_payload(),
+            ),
+            submission={
+                "assignment_id": "not-an-int",
+                "submission_id": 456,
+            },
+            download_dir=tmp_path / "downloads",
+        )

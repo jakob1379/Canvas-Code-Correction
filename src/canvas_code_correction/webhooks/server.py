@@ -3,58 +3,37 @@
 from __future__ import annotations
 
 import logging
-from collections.abc import Awaitable, Callable
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from time import monotonic
 from typing import TYPE_CHECKING, Annotated
 
-from fastapi import Depends, FastAPI, HTTPException, Request, Response, status
+from fastapi import Depends, FastAPI, HTTPException, Request, status
+from fastapi.responses import JSONResponse
 from limits import parse
 from limits.storage import MemoryStorage
 from limits.strategies import MovingWindowRateLimiter
 from pydantic import ValidationError
 
+import canvas_code_correction.webhooks.handler as webhook_handler
 from canvas_code_correction.bootstrap import CourseBlockLoadError, load_settings_from_course_block
-from canvas_code_correction.config import Settings
+from canvas_code_correction.config import Settings  # noqa: TC001
 from canvas_code_correction.webhooks.auth import verify_canvas_webhook
 from canvas_code_correction.webhooks.deployments import trigger_deployment
-from canvas_code_correction.webhooks.models import (
-    SUPPORTED_SUBMISSION_EVENTS,
-    CanvasWebhookPayload,
-    InvalidSubmissionEventError,
-    UnsupportedSubmissionEventError,
-    WebhookResponse,
-)
-
-logger = logging.getLogger(__name__)
+from canvas_code_correction.webhooks.models import CanvasWebhookPayload
 
 if TYPE_CHECKING:
-    from canvas_code_correction.webhooks.deployments import TriggerDeploymentResult
+    from collections.abc import Callable
+
+    from canvas_code_correction.webhooks.models import WebhookResponse
+
+logger = logging.getLogger(__name__)
 
 app = FastAPI(
     title="Canvas Code Correction Webhook Server",
     description="Receives Canvas webhooks and triggers correction flows",
     version="2.0.0",
 )
-
-
-WebhookDeploymentRunner = Callable[
-    [Settings, str, int, int],
-    Awaitable["TriggerDeploymentResult"],
-]
-
-
-def _new_rate_limiter() -> MovingWindowRateLimiter:
-    return MovingWindowRateLimiter(MemoryStorage())
-
-
-def _new_run_gate() -> WebhookRunGate:
-    return WebhookRunGate()
-
-
-def _default_webhook_runtime_state_factory() -> WebhookRuntimeState:
-    return _build_runtime_state()
 
 
 @dataclass(frozen=True)
@@ -65,16 +44,6 @@ class WebhookRuntimeState:
     run_gate: WebhookRunGate
 
 
-@dataclass(frozen=True)
-class WebhookRequestContext:
-    """Typed request-scoped dependencies for webhook handling."""
-
-    settings: Settings
-    limiter: MovingWindowRateLimiter
-    run_gate: WebhookRunGate
-    run_webhook_flow: WebhookDeploymentRunner
-
-
 @dataclass
 class RuntimeStateFactoryHolder:
     """Mutable holder used to override runtime state factories in tests."""
@@ -82,16 +51,22 @@ class RuntimeStateFactoryHolder:
     factory: Callable[[], WebhookRuntimeState]
 
 
-_runtime_state_factory_holder = RuntimeStateFactoryHolder(
-    factory=_default_webhook_runtime_state_factory,
-)
+@dataclass(frozen=True)
+class ValidatedWebhookRequest:
+    """Validated webhook request data needed by the route handler."""
+
+    settings: Settings
+    canvas_payload: CanvasWebhookPayload
 
 
 def _build_runtime_state() -> WebhookRuntimeState:
     return WebhookRuntimeState(
-        rate_limiter=_new_rate_limiter(),
-        run_gate=_new_run_gate(),
+        rate_limiter=MovingWindowRateLimiter(MemoryStorage()),
+        run_gate=WebhookRunGate(),
     )
+
+
+_runtime_state_factory_holder = RuntimeStateFactoryHolder(factory=_build_runtime_state)
 
 
 def get_webhook_runtime_state_factory() -> Callable[[], WebhookRuntimeState]:
@@ -110,7 +85,7 @@ def reset_runtime_state(fastapi_app: FastAPI | None = None) -> None:
     target_app.state.webhook_runtime_state = get_webhook_runtime_state_factory()()
 
 
-def get_webhook_runtime_state(request: Request) -> WebhookRuntimeState:
+def ensure_webhook_runtime_state(request: Request) -> WebhookRuntimeState:
     """Return cached runtime state for the current app, creating it if needed."""
     state = getattr(request.app.state, "webhook_runtime_state", None)
     if state is None:
@@ -120,22 +95,17 @@ def get_webhook_runtime_state(request: Request) -> WebhookRuntimeState:
 
 
 def get_rate_limiter(
-    state: Annotated[WebhookRuntimeState, Depends(get_webhook_runtime_state)],
+    state: Annotated[WebhookRuntimeState, Depends(ensure_webhook_runtime_state)],
 ) -> MovingWindowRateLimiter:
     """Expose the request-shared rate limiter dependency."""
     return state.rate_limiter
 
 
 def get_run_gate(
-    state: Annotated[WebhookRuntimeState, Depends(get_webhook_runtime_state)],
+    state: Annotated[WebhookRuntimeState, Depends(ensure_webhook_runtime_state)],
 ) -> WebhookRunGate:
     """Expose the request-shared duplicate-run gate dependency."""
     return state.run_gate
-
-
-def get_webhook_settings(course_block: str) -> Settings:
-    """Load course settings for a webhook request."""
-    return load_settings_from_course_block(course_block)
 
 
 @dataclass
@@ -163,20 +133,10 @@ class WebhookRunGate:
         self._entries.pop(key, None)
 
 
-def _build_delivery_key(
-    course_block: str,
-    payload: CanvasWebhookPayload,
-    assignment_id: int,
-    submission_id: int,
-) -> str:
-    request_id = payload.metadata.request_id or payload.metadata.event_time.isoformat()
-    return f"{course_block}:{payload.get_event_type()}:{assignment_id}:{submission_id}:{request_id}"
-
-
 def load_settings_or_404(course_block: str) -> Settings:
     """Load settings for a course block."""
     try:
-        return get_webhook_settings(course_block)
+        return load_settings_from_course_block(course_block)
     except CourseBlockLoadError as exc:
         if isinstance(exc.cause, ValueError):
             raise HTTPException(
@@ -215,54 +175,9 @@ def rate_limit_check(
         )
 
 
-def _parse_submission_target(
-    canvas_payload: CanvasWebhookPayload,
-) -> tuple[int, int, str]:
-    event_type = canvas_payload.get_event_type()
-    if event_type not in SUPPORTED_SUBMISSION_EVENTS:
-        raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
-            detail=f"Unsupported event type: {event_type}",
-        )
-
-    try:
-        submission_event = canvas_payload.parse_submission_event()
-    except UnsupportedSubmissionEventError as exc:
-        raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
-            detail=str(exc),
-        ) from exc
-    except InvalidSubmissionEventError as exc:
-        raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
-            detail="Invalid submission event payload",
-        ) from exc
-
-    assignment_id = submission_event.assignment_id
-    submission_id = submission_event.submission_id
-    return assignment_id, submission_id, event_type
-
-
-def get_webhook_runner() -> WebhookDeploymentRunner:
+def get_webhook_runner() -> webhook_handler.WebhookDeploymentRunner:
     """Return the deployment trigger callable used by webhook requests."""
     return trigger_deployment
-
-
-def _build_webhook_request_context(
-    settings: Annotated[Settings, Depends(load_settings_or_404)],
-    limiter: Annotated[MovingWindowRateLimiter, Depends(get_rate_limiter)],
-    run_gate: Annotated[WebhookRunGate, Depends(get_run_gate)],
-    run_webhook_flow: Annotated[
-        WebhookDeploymentRunner,
-        Depends(get_webhook_runner),
-    ],
-) -> WebhookRequestContext:
-    return WebhookRequestContext(
-        settings=settings,
-        limiter=limiter,
-        run_gate=run_gate,
-        run_webhook_flow=run_webhook_flow,
-    )
 
 
 def _payload_validation_detail(error: ValidationError) -> str:
@@ -323,6 +238,23 @@ async def validate_webhook(
     return canvas_payload
 
 
+async def get_validated_webhook_request(
+    request: Request,
+    course_block: str,
+    settings: Annotated[Settings, Depends(load_settings_or_404)],
+) -> ValidatedWebhookRequest:
+    """Load settings and validate the inbound webhook before route handling."""
+    canvas_payload = await validate_webhook(request, course_block, settings)
+    return ValidatedWebhookRequest(settings=settings, canvas_payload=canvas_payload)
+
+
+def _json_webhook_response(
+    status_code: int,
+    response: WebhookResponse,
+) -> JSONResponse:
+    return JSONResponse(status_code=status_code, content=response.model_dump())
+
+
 @app.get("/health")
 def health() -> dict[str, str]:
     """Health check endpoint."""
@@ -331,67 +263,23 @@ def health() -> dict[str, str]:
 
 @app.post("/webhooks/canvas/{course_block}")
 async def handle_canvas_webhook(
-    request: Request,
-    response: Response,
     course_block: str,
-    context: Annotated[WebhookRequestContext, Depends(_build_webhook_request_context)],
-) -> WebhookResponse:
+    validated: Annotated[ValidatedWebhookRequest, Depends(get_validated_webhook_request)],
+    limiter: Annotated[MovingWindowRateLimiter, Depends(get_rate_limiter)],
+    run_gate: Annotated[WebhookRunGate, Depends(get_run_gate)],
+    run_webhook_flow: Annotated[
+        webhook_handler.WebhookDeploymentRunner,
+        Depends(get_webhook_runner),
+    ],
+) -> JSONResponse:
     """Handle incoming Canvas webhook."""
-    rate_limit_check(course_block, context.settings.webhook.rate_limit, context.limiter)
-    canvas_payload = await validate_webhook(request, course_block, context.settings)
-
-    event_type = canvas_payload.get_event_type()
-    if event_type not in SUPPORTED_SUBMISSION_EVENTS:
-        response.status_code = status.HTTP_200_OK
-        return WebhookResponse(
-            success=True,
-            message=f"Ignored unsupported event: {event_type}",
-            course_block=course_block,
-        )
-
-    assignment_id, submission_id, event_type = _parse_submission_target(canvas_payload)
-
-    delivery_key = _build_delivery_key(
+    rate_limit_check(course_block, validated.settings.webhook.rate_limit, limiter)
+    orchestration = await webhook_handler.process_webhook_orchestration(
         course_block,
-        canvas_payload,
-        assignment_id,
-        submission_id,
-    )
-    if not context.run_gate.try_acquire(delivery_key):
-        return WebhookResponse(
-            success=True,
-            message="Duplicate webhook ignored",
-            course_block=course_block,
-            assignment_id=assignment_id,
-            submission_id=submission_id,
-        )
-
-    deployment_result = await context.run_webhook_flow(
-        context.settings,
-        course_block,
-        assignment_id,
-        submission_id,
+        validated.settings,
+        validated.canvas_payload,
+        run_gate,
+        run_webhook_flow,
     )
 
-    if deployment_result.success:
-        response.status_code = status.HTTP_202_ACCEPTED
-        return WebhookResponse(
-            success=True,
-            message=f"Correction flow triggered for {event_type}",
-            flow_run_id=deployment_result.flow_run_id,
-            course_block=course_block,
-            assignment_id=assignment_id,
-            submission_id=submission_id,
-        )
-    context.run_gate.release(delivery_key)
-    response.status_code = status.HTTP_502_BAD_GATEWAY
-    return WebhookResponse(
-        success=False,
-        message=(
-            f"Failed to trigger correction flow during {deployment_result.stage} "
-            f"({deployment_result.error_type or 'unknown'}): {deployment_result.error}"
-        ),
-        course_block=course_block,
-        assignment_id=assignment_id,
-        submission_id=submission_id,
-    )
+    return _json_webhook_response(orchestration.status_code, orchestration.response)

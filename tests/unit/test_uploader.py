@@ -2,12 +2,16 @@
 
 import tempfile
 from pathlib import Path
+from typing import cast
 from unittest.mock import Mock, patch
 
 import pytest
+import requests
 
 from canvas_code_correction.uploader import (
+    AttachmentWithUrl,
     CanvasUploader,
+    SubmissionCommentInfo,
     UploadBatchResult,
     UploadConfig,
     UploadResult,
@@ -403,7 +407,7 @@ def test_find_duplicate_in_comments_missing_url() -> None:
     mock_submission = Mock()
     uploader = CanvasUploader(mock_submission)
     config = UploadConfig()
-    comments = [{"attachments": [{"display_name": "file.zip"}]}]  # missing url
+    comments = cast("list[SubmissionCommentInfo]", [{"attachments": []}])
     result = uploader._find_duplicate_in_comments(comments, "hash", config)
     assert result is None
 
@@ -414,7 +418,10 @@ def test_check_attachment_duplicate_exception_verbose() -> None:
     mock_submission = Mock()
     uploader = CanvasUploader(mock_submission)
     config = UploadConfig(verbose=True)
-    attachment = {"url": "http://example.com/file.zip", "display_name": "file.zip"}
+    attachment = cast(
+        "AttachmentWithUrl",
+        {"url": "http://example.com/file.zip", "display_name": "file.zip"},
+    )
 
     with patch.object(uploader, "_download_attachment", side_effect=RuntimeError("Download error")):
         result = uploader._check_attachment_duplicate(attachment, "hash", config)
@@ -422,6 +429,31 @@ def test_check_attachment_duplicate_exception_verbose() -> None:
     assert result is not None
     assert result.success is False
     assert result.details["stage"] == "duplicate_check"
+
+
+@pytest.mark.local
+def test_check_attachment_duplicate_requests_exception_returns_upload_result() -> None:
+    """Test attachment download network errors stay in UploadResult form."""
+    mock_submission = Mock()
+    uploader = CanvasUploader(mock_submission)
+    config = UploadConfig(verbose=True)
+    attachment = cast(
+        "AttachmentWithUrl",
+        {"url": "http://example.com/file.zip", "display_name": "file.zip"},
+    )
+
+    with patch.object(
+        uploader,
+        "_download_attachment",
+        side_effect=requests.RequestException("network down"),
+    ):
+        result = uploader._check_attachment_duplicate(attachment, "hash", config)
+
+    assert result is not None
+    assert result.success is False
+    assert result.message == "Duplicate check failed for existing attachment: network down"
+    assert result.details["stage"] == "duplicate_check"
+    assert result.details["attachment"] == "file.zip"
 
 
 @pytest.mark.local

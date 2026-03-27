@@ -54,7 +54,10 @@ def client() -> TestClient:
 def reset_webhook_runtime_state() -> Iterator[None]:
     previous_factory = webhook_server.get_webhook_runtime_state_factory()
     webhook_server.set_webhook_runtime_state_factory(
-        webhook_server._default_webhook_runtime_state_factory,
+        lambda: webhook_server.WebhookRuntimeState(
+            rate_limiter=webhook_server.MovingWindowRateLimiter(webhook_server.MemoryStorage()),
+            run_gate=webhook_server.WebhookRunGate(),
+        ),
     )
     webhook_server.reset_runtime_state(app)
     try:

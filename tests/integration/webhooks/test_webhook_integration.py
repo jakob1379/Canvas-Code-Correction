@@ -85,6 +85,42 @@ def test_webhook_server_end_to_end(
 @pytest.mark.integration
 @pytest.mark.usefixtures("reset_rate_limiter_cache")
 @patch("canvas_code_correction.webhooks.server.load_settings_from_course_block")
+@patch("canvas_code_correction.webhooks.deployments.run_deployment")
+@patch("canvas_code_correction.webhooks.deployments.webhook_flows.webhook_correction_flow")
+def test_webhook_server_handoff_uses_real_deployment_runner(
+    mock_webhook_flow: Mock,
+    mock_run_deployment: Mock,
+    mock_resolve_settings: Mock,
+    client: TestClient,
+    mock_settings: Settings,
+) -> None:
+    """Test webhook request flows through the real deployment runner path."""
+    mock_settings.webhook.secret = SecretStr("shared-secret")
+    mock_resolve_settings.return_value = mock_settings
+    mock_webhook_flow.name = "webhook-correction-flow"
+    mock_webhook_flow.deploy.return_value = "deployment-id-123"
+    mock_run_deployment.return_value = Mock(id="flow-run-456")
+
+    payload = create_canvas_webhook_payload()
+    headers = create_hmac_headers(payload, "shared-secret")
+
+    response = client.post(
+        "/webhooks/canvas/test-course",
+        json=payload,
+        headers=headers,
+    )
+
+    assert response.status_code == 202
+    body = response.json()
+    assert body["success"] is True
+    assert body["flow_run_id"] == "flow-run-456"
+    mock_webhook_flow.deploy.assert_called_once()
+    mock_run_deployment.assert_called_once()
+
+
+@pytest.mark.integration
+@pytest.mark.usefixtures("reset_rate_limiter_cache")
+@patch("canvas_code_correction.webhooks.server.load_settings_from_course_block")
 def test_webhook_disabled(
     mock_resolve_settings: Mock,
     client: TestClient,
