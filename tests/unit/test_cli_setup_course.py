@@ -266,7 +266,7 @@ class TestSetupCourseNonInteractive:
         )
 
         assert result.exit_code == 1
-        assert "Failed to validate Canvas API token" in result.output
+        assert "Failed to validate Canvas credentials" in result.output
 
     @pytest.mark.local
     @patch("canvas_code_correction.cli.Canvas")
@@ -526,7 +526,7 @@ class TestSetupCourseInteractive:
         result = cli_runner.invoke(app, ["course", "setup"])
 
         assert result.exit_code == 1
-        assert "Failed to validate Canvas API token" in result.output
+        assert "Failed to validate Canvas credentials" in result.output
 
 
 @pytest.mark.integration

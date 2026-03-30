@@ -2,12 +2,16 @@
 
 import tempfile
 from pathlib import Path
+from typing import cast
 from unittest.mock import Mock, patch
 
 import pytest
+import requests
 
 from canvas_code_correction.uploader import (
+    AttachmentWithUrl,
     CanvasUploader,
+    SubmissionCommentInfo,
     UploadBatchResult,
     UploadConfig,
     UploadResult,
@@ -54,7 +58,7 @@ def test_uploader_initialization() -> None:
     assert uploader.submission is mock_submission
 
 
-@patch("canvas_code_correction.uploader.Path")
+@patch("canvas_code_correction.flows.uploader.Path")
 @pytest.mark.local
 def test_upload_feedback_file_not_found(mock_path) -> None:
     """Test upload_feedback when file doesn't exist."""
@@ -108,7 +112,7 @@ def test_upload_feedback_with_duplicate_check() -> None:
     uploader = CanvasUploader(mock_submission)
 
     # Mock file operations and MD5 calculation
-    with patch("canvas_code_correction.uploader.Path") as mock_path:
+    with patch("canvas_code_correction.flows.uploader.Path") as mock_path:
         mock_path.exists.return_value = True
         mock_path.stat.return_value.st_size = 100
 
@@ -117,7 +121,7 @@ def test_upload_feedback_with_duplicate_check() -> None:
             patch.object(uploader, "_calculate_md5", return_value="test_hash"),
             patch.object(uploader, "_download_attachment"),
             patch("builtins.open", Mock()),
-            patch("canvas_code_correction.uploader.hashlib") as mock_hashlib,
+            patch("canvas_code_correction.flows.uploader.hashlib") as mock_hashlib,
         ):
             mock_md5 = Mock()
             mock_md5.hexdigest.return_value = "test_hash"  # Same hash = duplicate
@@ -403,7 +407,7 @@ def test_find_duplicate_in_comments_missing_url() -> None:
     mock_submission = Mock()
     uploader = CanvasUploader(mock_submission)
     config = UploadConfig()
-    comments = [{"attachments": [{"display_name": "file.zip"}]}]  # missing url
+    comments = cast("list[SubmissionCommentInfo]", [{"attachments": []}])
     result = uploader._find_duplicate_in_comments(comments, "hash", config)
     assert result is None
 
@@ -414,7 +418,10 @@ def test_check_attachment_duplicate_exception_verbose() -> None:
     mock_submission = Mock()
     uploader = CanvasUploader(mock_submission)
     config = UploadConfig(verbose=True)
-    attachment = {"url": "http://example.com/file.zip", "display_name": "file.zip"}
+    attachment = cast(
+        "AttachmentWithUrl",
+        {"url": "http://example.com/file.zip", "display_name": "file.zip"},
+    )
 
     with patch.object(uploader, "_download_attachment", side_effect=RuntimeError("Download error")):
         result = uploader._check_attachment_duplicate(attachment, "hash", config)
@@ -422,6 +429,31 @@ def test_check_attachment_duplicate_exception_verbose() -> None:
     assert result is not None
     assert result.success is False
     assert result.details["stage"] == "duplicate_check"
+
+
+@pytest.mark.local
+def test_check_attachment_duplicate_requests_exception_returns_upload_result() -> None:
+    """Test attachment download network errors stay in UploadResult form."""
+    mock_submission = Mock()
+    uploader = CanvasUploader(mock_submission)
+    config = UploadConfig(verbose=True)
+    attachment = cast(
+        "AttachmentWithUrl",
+        {"url": "http://example.com/file.zip", "display_name": "file.zip"},
+    )
+
+    with patch.object(
+        uploader,
+        "_download_attachment",
+        side_effect=requests.RequestException("network down"),
+    ):
+        result = uploader._check_attachment_duplicate(attachment, "hash", config)
+
+    assert result is not None
+    assert result.success is False
+    assert result.message == "Duplicate check failed for existing attachment: network down"
+    assert result.details["stage"] == "duplicate_check"
+    assert result.details["attachment"] == "file.zip"
 
 
 @pytest.mark.local
@@ -469,7 +501,10 @@ def test_download_attachment_writes_response_content(tmp_path: Path) -> None:
     response.__exit__ = Mock(return_value=None)
     response.raise_for_status = Mock()
 
-    with patch("canvas_code_correction.uploader.requests.get", return_value=response) as mock_get:
+    with patch(
+        "canvas_code_correction.flows.uploader.requests.get",
+        return_value=response,
+    ) as mock_get:
         uploader._download_attachment("http://example.com/file.zip", destination)
 
     assert destination.read_bytes() == b"helloworld"

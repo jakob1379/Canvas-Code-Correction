@@ -13,18 +13,18 @@ from canvas_code_correction.clients.canvas_resources import (
     CanvasResources,
     build_canvas_resources,
 )
-from canvas_code_correction.collector import CanvasMetadataValue, ResultCollector
-from canvas_code_correction.runner import (
+from canvas_code_correction.flows.collector import CanvasMetadataValue, ResultCollector
+from canvas_code_correction.flows.runner import (
     GraderConfig,
     GraderExecutor,
     create_default_grader_config,
 )
-from canvas_code_correction.uploader import (
+from canvas_code_correction.flows.uploader import (
     UploadConfig,
     UploadDetailValue,
     create_uploader_from_resources,
 )
-from canvas_code_correction.workspace import (
+from canvas_code_correction.flows.workspace import (
     WorkspaceConfig,
     WorkspacePaths,
     prepare_workspace,
@@ -194,13 +194,6 @@ def fetch_submission_metadata(
 
     Prefect will handle retries and logging around this task.
     """
-    return _fetch_submission_metadata(resources, payload)
-
-
-def _fetch_submission_metadata(
-    resources: CanvasResources,
-    payload: CorrectSubmissionPayload,
-) -> SubmissionMetadata:
     assignment = resources.course.get_assignment(payload.assignment_id)
     submission = assignment.get_submission(
         payload.submission_id,
@@ -216,6 +209,13 @@ def _fetch_submission_metadata(
         assignment=_canvas_object_to_dict(assignment),
         submission=_canvas_object_to_dict(submission),
     )
+
+
+def _fetch_submission_metadata(
+    resources: CanvasResources,
+    payload: CorrectSubmissionPayload,
+) -> SubmissionMetadata:
+    return fetch_submission_metadata.fn(resources, payload)
 
 
 def _canvas_object_to_dict(obj: object) -> dict[str, CanvasMetadataValue]:
@@ -270,14 +270,6 @@ def download_submission_files(
     destination: Path,
 ) -> list[Path]:
     """Download submission attachments into the provided destination."""
-    return _download_submission_files(resources, payload, destination)
-
-
-def _download_submission_files(
-    resources: CanvasResources,
-    payload: CorrectSubmissionPayload,
-    destination: Path,
-) -> list[Path]:
     destination.mkdir(parents=True, exist_ok=True)
 
     assignment = resources.course.get_assignment(payload.assignment_id)
@@ -299,6 +291,14 @@ def _download_submission_files(
         downloaded_files.append(local_path)
 
     return downloaded_files
+
+
+def _download_submission_files(
+    resources: CanvasResources,
+    payload: CorrectSubmissionPayload,
+    destination: Path,
+) -> list[Path]:
+    return download_submission_files.fn(resources, payload, destination)
 
 
 @task

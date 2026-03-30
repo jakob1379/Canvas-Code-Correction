@@ -50,3 +50,6 @@ class CourseConfigBlock(Block):
         default="10/minute",
         description="Rate limit for webhook requests (e.g., '10/minute', '100/hour')",
     )
+
+
+__all__ = ["CourseConfigBlock"]

@@ -5,6 +5,7 @@ from collections.abc import Iterator
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
+from prefect.exceptions import PrefectException
 from pydantic import HttpUrl, SecretStr
 
 from canvas_code_correction.config import (
@@ -108,9 +109,9 @@ def test_resolve_deployment_target_default_pool(mock_settings: Settings) -> None
     assert target.work_pool_name == "test-pool"
 
 
-@patch("canvas_code_correction.webhooks.deployments._get_webhook_correction_flow")
+@patch("canvas_code_correction.webhooks.deployments.webhook_flows.webhook_correction_flow")
 def test_ensure_deployment_success(mock_get_flow: MagicMock) -> None:
-    mock_flow = mock_get_flow.return_value
+    mock_flow = mock_get_flow
     """Test successful deployment creation."""
     mock_flow.name = "webhook-correction-flow"
     mock_flow.deploy.return_value = "deployment-id-123"
@@ -153,9 +154,9 @@ def test_ensure_deployment_success(mock_get_flow: MagicMock) -> None:
     )
 
 
-@patch("canvas_code_correction.webhooks.deployments._get_webhook_correction_flow")
+@patch("canvas_code_correction.webhooks.deployments.webhook_flows.webhook_correction_flow")
 def test_ensure_deployment_default_work_pool(mock_get_flow: MagicMock) -> None:
-    mock_flow = mock_get_flow.return_value
+    mock_flow = mock_get_flow
     """Test deployment creation with default work pool."""
     mock_flow.name = "webhook-correction-flow"
     mock_flow.deploy.return_value = "deployment-id-123"
@@ -199,12 +200,12 @@ def test_ensure_deployment_default_work_pool(mock_get_flow: MagicMock) -> None:
     )
 
 
-@patch("canvas_code_correction.webhooks.deployments._get_webhook_correction_flow")
+@patch("canvas_code_correction.webhooks.deployments.webhook_flows.webhook_correction_flow")
 def test_ensure_deployment_failure(mock_get_flow: MagicMock) -> None:
-    mock_flow = mock_get_flow.return_value
+    mock_flow = mock_get_flow
     """Test deployment creation failure (still returns name)."""
     mock_flow.name = "webhook-correction-flow"
-    mock_flow.deploy.side_effect = Exception("Deployment failed")
+    mock_flow.deploy.side_effect = PrefectException("Deployment failed")
 
     settings = Settings(
         canvas=CanvasSettings(
@@ -225,14 +226,36 @@ def test_ensure_deployment_failure(mock_get_flow: MagicMock) -> None:
         work_pool_name="test-pool",
         ensured=False,
         error="Deployment failed",
-        error_type="Exception",
+        error_type="PrefectException",
     )
     mock_flow.deploy.assert_called_once()
 
 
-@patch("canvas_code_correction.webhooks.deployments._get_webhook_correction_flow")
+@patch("canvas_code_correction.webhooks.deployments.webhook_flows.webhook_correction_flow")
+def test_ensure_deployment_unexpected_failure_bubbles(mock_get_flow: MagicMock) -> None:
+    mock_flow = mock_get_flow
+    mock_flow.name = "webhook-correction-flow"
+    mock_flow.deploy.side_effect = RuntimeError("unexpected deploy failure")
+
+    settings = Settings(
+        canvas=CanvasSettings(
+            api_url=HttpUrl("https://canvas.instructure.com"),
+            token=SecretStr("fake"),
+            course_id=1,
+        ),
+        assets=CourseAssetsSettings(bucket_block="test"),
+        grader=GraderSettings(work_pool_name="test-pool"),
+        workspace=WorkspaceSettings(),
+        webhook=WebhookSettings(),
+    )
+
+    with pytest.raises(RuntimeError, match="unexpected deploy failure"):
+        asyncio.run(ensure_deployment(settings, "test-course"))
+
+
+@patch("canvas_code_correction.webhooks.deployments.webhook_flows.webhook_correction_flow")
 def test_ensure_deployment_redeploys_when_existing(mock_get_flow: MagicMock) -> None:
-    mock_flow = mock_get_flow.return_value
+    mock_flow = mock_get_flow
     mock_flow.name = "webhook-correction-flow"
     mock_flow.deploy.return_value = "deployment-id-456"
 
@@ -266,9 +289,9 @@ def test_ensure_deployment_redeploys_when_existing(mock_get_flow: MagicMock) -> 
     async_client.__aenter__.return_value.read_deployment_by_name.assert_awaited_once()
 
 
-@patch("canvas_code_correction.webhooks.deployments._get_webhook_correction_flow")
+@patch("canvas_code_correction.webhooks.deployments.webhook_flows.webhook_correction_flow")
 def test_ensure_deployment_awaits_async_deploy(mock_get_flow: MagicMock) -> None:
-    mock_flow = mock_get_flow.return_value
+    mock_flow = mock_get_flow
     mock_flow.name = "webhook-correction-flow"
     mock_flow.deploy = AsyncMock(return_value="deployment-id-async")
 
@@ -292,15 +315,15 @@ def test_ensure_deployment_awaits_async_deploy(mock_get_flow: MagicMock) -> None
 
 
 @patch("canvas_code_correction.webhooks.deployments.run_deployment")
-@patch("canvas_code_correction.webhooks.deployments._get_webhook_correction_flow")
+@patch("canvas_code_correction.webhooks.deployments.webhook_flows.webhook_correction_flow")
 def test_trigger_deployment_success(
     mock_get_flow: MagicMock,
     mock_run_deployment: MagicMock,
     mock_settings: Settings,
 ) -> None:
     """Test successful deployment triggering."""
-    mock_get_flow.return_value.name = "webhook-correction-flow"
-    mock_get_flow.return_value.deploy.return_value = "deployment-id-123"
+    mock_get_flow.name = "webhook-correction-flow"
+    mock_get_flow.deploy.return_value = "deployment-id-123"
     mock_run = MagicMock()
     mock_run.id = "flow-run-456"
     mock_run_deployment.return_value = mock_run
@@ -319,7 +342,7 @@ def test_trigger_deployment_success(
         success=True,
         flow_run_id="flow-run-456",
     )
-    mock_get_flow.return_value.deploy.assert_called_once()
+    mock_get_flow.deploy.assert_called_once()
     settings_payload = _serialize_settings_for_flow(mock_settings)
     mock_run_deployment.assert_called_once_with(
         name="webhook-correction-flow/ccc-test-course-deployment",
@@ -340,16 +363,16 @@ def test_trigger_deployment_success(
 
 
 @patch("canvas_code_correction.webhooks.deployments.run_deployment")
-@patch("canvas_code_correction.webhooks.deployments._get_webhook_correction_flow")
+@patch("canvas_code_correction.webhooks.deployments.webhook_flows.webhook_correction_flow")
 def test_trigger_deployment_failure(
     mock_get_flow: MagicMock,
     mock_run_deployment: MagicMock,
     mock_settings: Settings,
 ) -> None:
     """Test deployment triggering failure."""
-    mock_get_flow.return_value.name = "webhook-correction-flow"
-    mock_get_flow.return_value.deploy.return_value = "deployment-id-123"
-    mock_run_deployment.side_effect = Exception("Run failed")
+    mock_get_flow.name = "webhook-correction-flow"
+    mock_get_flow.deploy.return_value = "deployment-id-123"
+    mock_run_deployment.side_effect = PrefectException("Run failed")
 
     result = asyncio.run(
         trigger_deployment(
@@ -365,21 +388,43 @@ def test_trigger_deployment_failure(
         success=False,
         error="Run failed",
         stage="trigger",
-        error_type="Exception",
+        error_type="PrefectException",
     )
-    mock_get_flow.return_value.deploy.assert_called_once()
+    mock_get_flow.deploy.assert_called_once()
     mock_run_deployment.assert_called_once()
 
 
 @patch("canvas_code_correction.webhooks.deployments.run_deployment")
-@patch("canvas_code_correction.webhooks.deployments._get_webhook_correction_flow")
+@patch("canvas_code_correction.webhooks.deployments.webhook_flows.webhook_correction_flow")
+def test_trigger_deployment_unexpected_failure_bubbles(
+    mock_get_flow: MagicMock,
+    mock_run_deployment: MagicMock,
+    mock_settings: Settings,
+) -> None:
+    mock_get_flow.name = "webhook-correction-flow"
+    mock_get_flow.deploy.return_value = "deployment-id-123"
+    mock_run_deployment.side_effect = RuntimeError("unexpected trigger failure")
+
+    with pytest.raises(RuntimeError, match="unexpected trigger failure"):
+        asyncio.run(
+            trigger_deployment(
+                settings=mock_settings,
+                course_block="test-course",
+                assignment_id=123,
+                submission_id=456,
+            ),
+        )
+
+
+@patch("canvas_code_correction.webhooks.deployments.run_deployment")
+@patch("canvas_code_correction.webhooks.deployments.webhook_flows.webhook_correction_flow")
 def test_trigger_deployment_with_custom_name(
     mock_get_flow: MagicMock,
     mock_run_deployment: MagicMock,
 ) -> None:
     """Test deployment triggering with custom deployment name."""
-    mock_get_flow.return_value.name = "webhook-correction-flow"
-    mock_get_flow.return_value.deploy.return_value = "deployment-id-123"
+    mock_get_flow.name = "webhook-correction-flow"
+    mock_get_flow.deploy.return_value = "deployment-id-123"
     mock_run = MagicMock()
     mock_run.id = "flow-run-456"
     mock_run_deployment.return_value = mock_run
@@ -411,7 +456,7 @@ def test_trigger_deployment_with_custom_name(
         flow_run_id="flow-run-456",
     )
     settings_payload = _serialize_settings_for_flow(settings)
-    mock_get_flow.return_value.deploy.assert_called_once_with(
+    mock_get_flow.deploy.assert_called_once_with(
         name="custom-deployment",
         work_pool_name="test-pool",
         parameters={
