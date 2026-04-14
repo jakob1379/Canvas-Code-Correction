@@ -77,21 +77,24 @@ class TestSetupCourseNonInteractive:
                 "test-token",
                 "--course-id",
                 "13122436",
-                "--assets-block",
-                "test-bucket",
-                "--slug",
-                "test-course",
             ],
         )
 
         assert result.exit_code == 0
-        assert "Course configuration saved as block: ccc-course-test-course" in result.output
+        assert "Course configuration saved as block: ccc-course-13122436-test-101" in result.output
         mock_canvas_class.assert_called_once_with(
             "https://canvas.instructure.com",
             "test-token",
         )
         mock_block_class.assert_called_once()
-        mock_block.save.assert_called_once_with("ccc-course-test-course", overwrite=True)
+        mock_block.save.assert_called_once_with(
+            "ccc-course-13122436-test-101",
+            overwrite=False,
+        )
+        call_kwargs = mock_block_class.call_args.kwargs
+        assert call_kwargs["asset_bucket_block"] == "ccc-assets-13122436-test-101"
+        assert call_kwargs["asset_path_prefix"] == "graders/13122436-test-101/"
+        assert call_kwargs["work_pool_name"] == "course-work-pool-13122436-test-101"
 
     @pytest.mark.local
     @patch("canvas_code_correction.cli.Canvas")
@@ -109,8 +112,6 @@ class TestSetupCourseNonInteractive:
                 "--no-interactive",
                 "--course-id",
                 "13122436",
-                "--assets-block",
-                "test-bucket",
             ],
         )
 
@@ -146,10 +147,6 @@ class TestSetupCourseNonInteractive:
                 "--token-stdin",
                 "--course-id",
                 "13122436",
-                "--assets-block",
-                "test-bucket",
-                "--slug",
-                "test-course",
             ],
             input="stdin-token\n",
         )
@@ -174,8 +171,6 @@ class TestSetupCourseNonInteractive:
                 "--token-stdin",
                 "--course-id",
                 "13122436",
-                "--assets-block",
-                "test-bucket",
             ],
             input="stdin-token\n",
         )
@@ -194,10 +189,6 @@ class TestSetupCourseNonInteractive:
                 "--token-stdin",
                 "--course-id",
                 "13122436",
-                "--assets-block",
-                "test-bucket",
-                "--slug",
-                "test-course",
             ],
         )
 
@@ -209,7 +200,7 @@ class TestSetupCourseNonInteractive:
             events.append("switch-tty")
 
         fake_course = SimpleNamespace(id=13122436, name="Test Course", course_code="TEST-101")
-        fake_setup_config = SimpleNamespace(block_name="ccc-course-test-course")
+        fake_setup_config = SimpleNamespace(block_name="ccc-course-13122436-test-101")
 
         with (
             patch.object(
@@ -260,8 +251,6 @@ class TestSetupCourseNonInteractive:
                 "--no-interactive",
                 "--token",
                 "test-token",
-                "--assets-block",
-                "test-bucket",
             ],
         )
 
@@ -270,17 +259,12 @@ class TestSetupCourseNonInteractive:
 
     @pytest.mark.local
     @patch("canvas_code_correction.cli.Canvas")
-    def test_setup_course_missing_assets_block_non_interactive(
+    def test_setup_course_legacy_override_flags_are_rejected(
         self,
         mock_canvas_class: MagicMock,
         cli_runner: CliRunner,
     ) -> None:
-        """Test setup-course fails when assets-block is missing in non-interactive mode."""
-        mock_canvas = MagicMock()
-        mock_canvas.get_current_user.return_value = MagicMock()
-        mock_canvas.get_course.return_value = MagicMock()
-        mock_canvas_class.return_value = mock_canvas
-
+        """Test setup-course rejects legacy manual naming overrides."""
         result = cli_runner.invoke(
             app,
             [
@@ -291,11 +275,14 @@ class TestSetupCourseNonInteractive:
                 "test-token",
                 "--course-id",
                 "13122436",
+                "--assets-block",
+                "test-bucket",
             ],
         )
 
-        assert result.exit_code == 1
-        assert "--assets-block is required in non-interactive mode" in result.output
+        assert result.exit_code == 2
+        assert "Unknown option(s): --assets-block, test-bucket" in result.output
+        mock_canvas_class.assert_not_called()
 
     @pytest.mark.local
     @patch("canvas_code_correction.cli.Canvas")
@@ -319,8 +306,6 @@ class TestSetupCourseNonInteractive:
                 "invalid-token",
                 "--course-id",
                 "13122436",
-                "--assets-block",
-                "test-bucket",
             ],
         )
 
@@ -350,8 +335,6 @@ class TestSetupCourseNonInteractive:
                 "test-token",
                 "--course-id",
                 "99999",
-                "--assets-block",
-                "test-bucket",
             ],
         )
 
@@ -387,10 +370,6 @@ class TestSetupCourseNonInteractive:
                 "test-token",
                 "--course-id",
                 "13122436",
-                "--assets-block",
-                "test-bucket",
-                "--slug",
-                "test-course",
                 "--test-map",
                 "59160606:/tests/test_assignment1.py",
                 "--test-map",
@@ -433,10 +412,6 @@ class TestSetupCourseNonInteractive:
                 "test-token",
                 "--course-id",
                 "13122436",
-                "--assets-block",
-                "test-bucket",
-                "--slug",
-                "test-course",
                 "--env",
                 "KEY1=value1",
                 "--env",
@@ -459,7 +434,7 @@ class TestSetupCourseNonInteractive:
         cli_runner: CliRunner,
         mock_canvas_course: MagicMock,
     ) -> None:
-        """Test setup-course with all optional arguments."""
+        """Test setup-course with the remaining optional arguments."""
         mock_canvas = MagicMock()
         mock_canvas.get_current_user.return_value = MagicMock()
         mock_canvas.get_course.return_value = mock_canvas_course
@@ -480,16 +455,8 @@ class TestSetupCourseNonInteractive:
                 "https://canvas.example.com",
                 "--course-id",
                 "13122436",
-                "--assets-block",
-                "test-bucket",
-                "--assets-prefix",
-                "graders/test/",
-                "--slug",
-                "test-course",
                 "--docker-image",
                 "custom/grader:latest",
-                "--work-pool",
-                "test-pool",
             ],
         )
 
@@ -500,9 +467,10 @@ class TestSetupCourseNonInteractive:
         )
         call_kwargs = mock_block_class.call_args.kwargs
         assert str(call_kwargs["canvas_api_url"]) == "https://canvas.example.com/"
-        assert call_kwargs["asset_path_prefix"] == "graders/test/"
+        assert call_kwargs["asset_bucket_block"] == "ccc-assets-13122436-test-101"
+        assert call_kwargs["asset_path_prefix"] == "graders/13122436-test-101/"
         assert call_kwargs["grader_image"] == "custom/grader:latest"
-        assert call_kwargs["work_pool_name"] == "test-pool"
+        assert call_kwargs["work_pool_name"] == "course-work-pool-13122436-test-101"
 
 
 class TestSetupCourseInteractive:
@@ -543,11 +511,7 @@ class TestSetupCourseInteractive:
         mock_prompt.side_effect = [
             "test-token",  # API token
             "",  # Canvas host (accept default)
-            "test-course",  # Course slug
-            "test-bucket",  # Assets block
-            "graders/test-course/",  # Assets prefix
             "",  # Docker image (empty)
-            "",  # Work pool (empty)
         ]
         mock_int_prompt.return_value = 1  # Select first course from list
         mock_confirm.side_effect = [
@@ -558,7 +522,7 @@ class TestSetupCourseInteractive:
         result = cli_runner.invoke(app, ["course", "setup"])
 
         assert result.exit_code == 0
-        assert "Course configuration saved as block: ccc-course-test-course" in result.output
+        assert "Course configuration saved as block: ccc-course-13122436-test-101" in result.output
         mock_block.save.assert_called_once()
         assert mock_prompt.call_args_list[1].args[0] == "Canvas host (domain or https:// URL)"
         assert mock_int_prompt.call_args_list[0].args[0] == "Select a course [1-1]"
@@ -652,15 +616,50 @@ class TestSetupCourseEdgeCases:
                 "test-token",
                 "--course-id",
                 "13122436",
-                "--assets-block",
-                "test-bucket",
-                "--slug",
-                "test-course",
             ],
         )
 
         assert result.exit_code == 1
         assert "Error saving course block" in result.output
+
+    @pytest.mark.local
+    @patch("canvas_code_correction.cli.Canvas")
+    @patch("canvas_code_correction.cli.CourseConfigBlock")
+    def test_setup_course_duplicate_generated_block_name_fails(
+        self,
+        mock_block_class: MagicMock,
+        mock_canvas_class: MagicMock,
+        cli_runner: CliRunner,
+        mock_canvas_course: MagicMock,
+    ) -> None:
+        """Test setup-course fails when the generated block name already exists."""
+        mock_canvas = MagicMock()
+        mock_canvas.get_current_user.return_value = MagicMock()
+        mock_canvas.get_course.return_value = mock_canvas_course
+        mock_canvas_class.return_value = mock_canvas
+
+        mock_block = MagicMock()
+        mock_block.save.side_effect = ValueError("already exists")
+        mock_block_class.return_value = mock_block
+
+        result = cli_runner.invoke(
+            app,
+            [
+                "course",
+                "setup",
+                "--no-interactive",
+                "--token",
+                "test-token",
+                "--course-id",
+                "13122436",
+            ],
+        )
+
+        assert result.exit_code == 1
+        assert (
+            "Course configuration block already exists: ccc-course-13122436-test-101"
+            in result.output
+        )
 
     @pytest.mark.local
     @patch("canvas_code_correction.cli.Canvas")
@@ -691,10 +690,6 @@ class TestSetupCourseEdgeCases:
                 "test-token",
                 "--course-id",
                 "13122436",
-                "--assets-block",
-                "test-bucket",
-                "--slug",
-                "test-course",
                 "--test-map",
                 "invalid-mapping-format",
             ],
@@ -733,10 +728,6 @@ class TestSetupCourseEdgeCases:
                 "test-token",
                 "--course-id",
                 "13122436",
-                "--assets-block",
-                "test-bucket",
-                "--slug",
-                "test-course",
                 "--env",
                 "INVALID_ENV_VAR",
             ],

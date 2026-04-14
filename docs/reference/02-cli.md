@@ -48,7 +48,7 @@ Available subcommands:
 
 ## `ccc course setup`
 
-Creates or updates a `ccc-course-<slug>` Prefect block.
+Creates a generated `ccc-course-<course-slug>` Prefect block.
 
 The repo also includes a ready-made local example grader at
 `examples/count-submitted-files/`.
@@ -66,10 +66,13 @@ The repo also includes a ready-made local example grader at
 | `--env`, `-e` | Extra grader env in `KEY=VALUE` form | repeatable |
 | `--interactive` | Force prompts | enabled |
 | `--no-interactive` | Disable prompts | disabled |
-| `--assets-block` | Assets block name | prompt in interactive mode |
-| `--slug` | Course slug | inferred or prompted |
-| `--assets-prefix` | Assets prefix inside the bucket | `graders/<slug>/` |
-| `--work-pool` | Prefect work pool name | `course-work-pool-<slug>` |
+
+Generated values:
+
+- block name: `ccc-course-<course-id>-<slugified-course-code>`
+- assets block: `ccc-assets-<course-id>-<slugified-course-code>`
+- assets prefix: `graders/<course-id>-<slugified-course-code>/`
+- work pool: `course-work-pool-<course-id>-<slugified-course-code>`
 
 ### Example
 
@@ -78,18 +81,14 @@ $ printf "%s" "$CANVAS_API_TOKEN" | ccc course setup --no-interactive \
   --token-stdin \
   --api-url https://canvas.example.edu \
   --course-id 12345 \
-  --slug cs101 \
-  --assets-block course-assets-cs101 \
-  --assets-prefix graders/cs101/ \
   --docker-image ghcr.io/example/cs101-grader:latest \
-  --work-pool course-work-pool-cs101 \
   --env PYTHONUNBUFFERED=1
 ```
 
 ### Common error
 
 ```bash
-$ ccc course setup --no-interactive --course-id 12345 --assets-block course-assets-cs101
+$ ccc course setup --no-interactive --course-id 12345
 ```
 
 Expected output:
