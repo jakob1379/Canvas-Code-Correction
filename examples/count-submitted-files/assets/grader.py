@@ -18,8 +18,8 @@ def submission_files(root: Path) -> list[str]:
 def main() -> None:
     """Count submitted files and write the standard CCC outputs."""
     submission_root = WORKSPACE_ROOT / "submission"
-    if not submission_root.exists():
-        msg = "submission directory missing"
+    if not submission_root.is_dir():
+        msg = "submission directory missing or not a directory"
         raise SystemExit(msg)
 
     files = submission_files(submission_root)
