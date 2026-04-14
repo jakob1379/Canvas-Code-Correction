@@ -91,7 +91,13 @@ repos:
     rev: 0.37.1
     hooks:
       - id: check-github-workflows  # Validate GitHub workflow files
-      - id: check-dependabot  # Validate Dependabot config
+      - id: check-jsonschema
+        name: Validate Dependabot Config (v2)
+        files: ^\.github/dependabot\.(yml|yaml)$
+        types: [yaml]
+        args:
+          - --schemafile
+          - https://json.schemastore.org/dependabot-2.0.json
       # Add other schema checks if needed (e.g., check-readthedocs)
 
   # Validate pyproject.toml structure
