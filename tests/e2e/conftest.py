@@ -7,7 +7,7 @@ import pytest
 import requests
 from botocore.client import Config
 from botocore.exceptions import ClientError, EndpointConnectionError
-from prefect.client import get_client
+from prefect.client.orchestration import get_client
 from requests.exceptions import RequestException
 
 
