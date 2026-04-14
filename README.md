@@ -325,11 +325,13 @@ Execute the full test suite and lint before opening a pull request:
 $ prek run
 $ pytest
 $ ruff check
+$ uv run poe ci:audit
 ```
 
 Test coverage reports are generated automatically (`--cov-report=term-missing`).
 Critical modules have 100% coverage, and integration tests verify real S3
-operations with RustFS mocks.
+operations with RustFS mocks. Dependency auditing now uses `uv audit` against
+`uv.lock`.
 
 #### Integration Tests with RustFS
 

@@ -44,7 +44,9 @@ jobs:
           enable-cache: true
           python-version: '3.13'
       - name: Install dependencies
-        run: uv sync --all-groups
+        run: uv sync --all-groups --locked
+      - name: Audit locked runtime dependencies
+        run: uv run poe ci:audit
       - name: Check formatting
         run: uv run ruff format --check .
       - name: Run lint checks
