@@ -352,6 +352,12 @@ without external dependencies.
 Comprehensive e2e tests require a running RustFS server and Prefect server:
 
 ```bash
+$ poe test-e2e
+```
+
+To start the services manually instead, run:
+
+```bash
 $ docker compose up -d rustfs postgres redis prefect-server prefect-services
 $ pytest -m e2e
 ```

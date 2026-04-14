@@ -81,6 +81,7 @@ fmt = {cmd = "ruff format", help = "Formats Python code using Ruff."}
 lint = {cmd = "ruff check --fix", help = "Lints and fixes Python code using Ruff."}
 check = {cmd = "pyrefly check", help = "Performs static type checking with Pyrefly."}
 test = {cmd = "pytest", help = "Runs project tests using pytest."}
+test-e2e = {sequence = ["_e2e_stack_up", "_test_e2e"], help = "Starts the local e2e services and runs the e2e pytest suite."}
 all = {sequence = ["fmt", "lint", "check", "test"], help = "Runs all development checks: format, lint, type check, and tests."}
 clean = {cmd = "uvx pyclean . --debris", help = "Clean up Python cache files and test artifacts using pyclean."}
 "ci:lint" = {cmd = "ruff check", help = "Lints code without applying fixes (for CI)."}
@@ -90,6 +91,8 @@ docker-publish = {sequence = ["_docker_build", "_docker_push"], help = "Build an
 serve-docs = {cmd = "zensical serve", help = "Serve documentation locally."}
 _docker_build.cmd = "docker build -t jakob1379/canvas-grader:latest . -f containers/grader/Dockerfile"
 _docker_push.cmd = "docker push jakob1379/canvas-grader:latest"
+_e2e_stack_up.cmd = "docker compose up -d rustfs postgres redis prefect-server prefect-services"
+_test_e2e.cmd = "pytest -m e2e"
 generate-cli-docs.shell = "uv run typer src/canvas_code_correction/cli.py utils docs --title \"CLI Reference\" --name ccc --output 'docs/reference/02-cli.md'"
 prefect.shell = 'prefect server start'
 rustfs-setup.shell = "uv run python scripts/setup_rustfs.py"
