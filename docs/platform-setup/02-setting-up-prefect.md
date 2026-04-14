@@ -1,174 +1,139 @@
-# Setting up Prefect
+# Setting Up Prefect
 
-!!! note "Audience" CCC platform operators **Prerequisites**: Course configured
-via `ccc course setup` (see [Configuring a Course](01-configuring-course.md))
+CCC stores course blocks in **Prefect**, creates webhook-oriented deployments
+through **`ccc system deploy create`**, and executes those deployments with
+**workers** attached to a work pool.
 
-**Prefect** orchestrates the correction workflows in CCC. After you configure a
-course, you need to create a **Prefect deployment** (the definition of how to
-run your flow) and start a **worker** (the process that executes flow runs).
-This guide walks you through both steps in **3 minutes**.
+## Try It Now
 
-!!! note "Try It Now (90 seconds)"
-
-    If you already have a course configured with slug `cs101`, run these two
-    commands to create a deployment and start a worker:
-
-    ```bash
-    $ prefect deployment build \
-      canvas_code_correction.flows.correct_submission:correct_submission_flow \
-      -n cs101-corrections \
-      -q course-work-pool-cs101 \
-      -a
-    ```
-
-    Expected output:
-
-    ```
-    Successfully created deployment 'cs101-corrections'!
-    Deployment applied to work pool 'course-work-pool-cs101'.
-    ```
-
-    Then start the worker:
-
-    ```bash
-    $ prefect worker start --pool course-work-pool-cs101
-    ```
-
-    You’ll see the worker connect to Prefect and wait for flow runs. Keep this
-    terminal open.
-
----
-
-## Prerequisites
-
-- A course configured with `ccc course setup` (if you haven’t, complete
-  [Configuring a Course](01-configuring-course.md) first)
-- The same Python environment where you installed CCC (`uv run` works)
-- Docker installed and running (the worker will launch grader containers)
-
-## Step 1: Create a Prefect deployment
-
-A **deployment** makes your correction flow triggerable via schedule, API, or
-UI. Use the Prefect CLI with your course’s **work pool name** (default
-`course-work-pool-<slug>`).
-
-### Command template
+For a course block named `ccc-course-cs101`, this is the shortest local setup:
 
 ```bash
-$ prefect deployment build \
-  canvas_code_correction.flows.correct_submission:correct_submission_flow \
-  -n <deployment-name> \
-  -q <work-pool-name> \
-  -a
+$ poe prefect
 ```
 
-Replace `<deployment-name>` with a unique identifier (e.g., `cs101-corrections`)
-and `<work-pool-name>` with the pool your worker will listen to (e.g.,
-`course-work-pool-cs101`).
-
-### Example with course slug `cs101`
+In a second terminal:
 
 ```bash
-$ prefect deployment build \
-  canvas_code_correction.flows.correct_submission:correct_submission_flow \
-  -n cs101-corrections \
-  -q course-work-pool-cs101 \
-  -a
+$ uv run prefect work-pool create --type process course-work-pool-cs101
+$ ccc system deploy create ccc-course-cs101
+$ uv run prefect worker start --pool course-work-pool-cs101
 ```
 
-**What each flag does:**
+Expected deployment output includes:
 
-| Flag | Purpose                                                                 |
-| ---- | ----------------------------------------------------------------------- |
-| `-n` | **Deployment name** – unique identifier (used when triggering runs)     |
-| `-q` | **Work pool** – must match the pool your worker subscribes to           |
-| `-a` | **Apply** – create the deployment in your Prefect workspace immediately |
-
-After a successful run you’ll see:
-
-```
-Successfully created deployment 'cs101-corrections'!
-Deployment applied to work pool 'course-work-pool-cs101'.
+```text
+Creating deployment for course block: ccc-course-cs101
+Deployment 'ccc-cs101-deployment' created/updated successfully
 ```
 
-The deployment is now visible in the Prefect UI under **Deployments**.
+## Step 1: Start the Prefect API
 
-## Step 2: Start a worker
-
-**Workers** are processes that pick up flow runs from a work pool and execute
-them. Start a worker for your course’s work pool in a separate terminal (or
-background process).
-
-### Command
+For local development, run:
 
 ```bash
-$ prefect worker start --pool course-work-pool-cs101
+$ poe prefect
 ```
 
-### Expected output
+This starts the Prefect UI and API at `http://localhost:4200`.
 
+If you use a remote Prefect environment, set `PREFECT_API_URL` and
+`PREFECT_API_KEY` accordingly before running CCC commands.
+
+## Step 2: Create the Work Pool
+
+The course block stores a `work_pool_name`. Create that pool before starting a
+worker.
+
+```bash
+$ uv run prefect work-pool create --type process course-work-pool-cs101
 ```
+
+You only need to do this once per pool name.
+
+## Step 3: Create the Deployment
+
+CCC owns the deployment shape for webhook-triggered corrections. Do not build
+it manually with `prefect deployment build`; use the CLI wrapper instead.
+
+```bash
+$ ccc system deploy create ccc-course-cs101
+```
+
+The default deployment name for that block is:
+
+```text
+webhook-correction-flow/ccc-cs101-deployment
+```
+
+If you set a custom deployment name in the course block, CCC will use that
+instead.
+
+## Step 4: Start a Worker
+
+Start a worker subscribed to the same pool as the course block:
+
+```bash
+$ uv run prefect worker start --pool course-work-pool-cs101
+```
+
+Expected output begins with:
+
+```text
 Starting worker for pool 'course-work-pool-cs101'...
-Worker 'eager-panda' started!
-Waiting for flow runs...
 ```
 
-The worker will stay alive and wait for flow runs. It must have:
+The worker host must have:
 
-- **Access to Docker** (to launch grader containers)
-- **The same environment variables** (Canvas token, etc.) that you configured in
-  the course block
-- **Network connectivity** to Prefect API (cloud or local server)
+- Docker access
+- Network access to the Prefect API
+- Any registry credentials needed to pull the grader image
 
-You can run workers on any machine: your laptop, a server, or a container
-orchestration platform. Multiple workers can join the same pool for load
-distribution.
+## Step 5: Verify the Stack
 
-## Step 3: Trigger a test run
-
-With a deployment created and a worker running, trigger a correction flow to
-verify everything works.
-
-### Option A: Prefect UI
-
-1. Open the Prefect UI (cloud or local).
-2. Navigate to **Deployments** and find your deployment (`cs101-corrections`).
-3. Click the **Run** button.
-
-### Option B: Prefect CLI
+Run the local health check:
 
 ```bash
-$ prefect deployment run cs101-corrections
+$ ccc system status
 ```
 
-Output:
+Expected output contains health lines for:
 
-```
-Flow run 'golden-sloth' created!
-```
+- `Prefect server`
+- `RustFS (S3)` when credentials are configured
 
-### Option C: CCC CLI (for a specific assignment)
+Then trigger a small manual run:
 
 ```bash
-$ ccc course run <assignment-id>
+$ ccc course run 98765 --course ccc-course-cs101 --submission-id 54321 --dry-run
 ```
 
-Replace `<assignment-id>` with the numeric Canvas assignment ID. This command
-creates a one‑off flow run for a single assignment, ideal for testing.
+That verifies the course block loads and the flow can execute without posting
+results.
 
-**Test with a single submission first** to ensure the worker can pull the grader
-image, fetch tests from S3, and submit scores back to Canvas.
+## Troubleshooting
 
-## Next steps
+### The deployment command fails
 
-Your Prefect deployment and worker are now ready. Next, you can:
+- Confirm `PREFECT_API_URL` points at a reachable Prefect API.
+- Confirm the course block exists with `ccc course list`.
 
-- **Schedule automatic corrections** – attach a cron schedule to the deployment
-  ([Scheduling corrections](03-scheduling-corrections.md))
-- **Monitor runs and logs** – use the Prefect UI to inspect flow runs
-  ([Monitoring results](04-monitoring-results.md))
-- **Scale workers** – add more workers to the same pool for higher throughput
+### The worker stays idle
 
-!!! tip
-    Keep the worker terminal open while testing. For production, run workers as systemd services or
-    containerized processes.
+- Confirm the worker pool name matches the course block.
+- Inspect the deployment in Prefect:
+
+  ```bash
+  $ uv run prefect deployment inspect webhook-correction-flow/ccc-cs101-deployment
+  ```
+
+### The worker cannot pull the grader image
+
+- Test Docker locally with `docker pull <image>`.
+- Add registry credentials to the worker environment if the image is private.
+
+## Next Steps
+
+- [Scheduling Corrections](03-scheduling-corrections.md)
+- [Monitoring Results](04-monitoring-results.md)
+- [Running Prefect Locally](06-prefect-agent.md)

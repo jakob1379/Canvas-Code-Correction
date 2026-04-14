@@ -30,9 +30,9 @@ by default.
 - **GraderExecutor** – Runs the instructor‑provided command inside Docker using
   a dedicated workspace and explicit resource limits.
 - **Grader Configuration Blocks** – Prefect configuration blocks store course‑specific
-  grader images, resource limits, per‑assignment commands, and environment
-  variables. Each course provisions a dedicated Prefect Docker work pool bound
-  to its grader image.
+  grader images, resource limits, commands, and environment variables. Course
+  blocks store the target work pool name; operators create and manage the
+  matching Prefect work pools and workers separately.
 - **ResultCollector** – Extracts `points.txt`, `comments.txt`, artefacts, and
   metadata produced by the grader and prepares zipped feedback for upload.
 - **CanvasUploader** – Posts comments and grades back to Canvas while skipping
