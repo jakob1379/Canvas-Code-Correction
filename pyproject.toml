@@ -77,11 +77,14 @@ version_provider = "pep621"
 
 [tool.poe.tasks]
 # Development workflow
+fmt = {cmd = "ruff format", help = "Formats Python code using Ruff."}
 lint = {cmd = "ruff check --fix", help = "Lints and fixes Python code using Ruff."}
+check = {cmd = "pyrefly check", help = "Performs static type checking with Pyrefly."}
 test = {cmd = "pytest", help = "Runs project tests using pytest."}
 all = {sequence = ["fmt", "lint", "check", "test"], help = "Runs all development checks: format, lint, type check, and tests."}
 clean = {cmd = "uvx pyclean . --debris", help = "Clean up Python cache files and test artifacts using pyclean."}
 "ci:lint" = {cmd = "ruff check", help = "Lints code without applying fixes (for CI)."}
+"ci:audit" = {cmd = "uv audit --locked --no-dev --no-extra docs --no-extra test --no-extra ci --preview-features audit", help = "Audits locked runtime dependencies with uv for CI."}
 # Project-specific tasks
 docker-publish = {sequence = ["_docker_build", "_docker_push"], help = "Build and push docker image for base runner"}
 serve-docs = {cmd = "zensical serve", help = "Serve documentation locally."}
