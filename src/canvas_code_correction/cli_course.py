@@ -68,10 +68,6 @@ class CourseSetupOptions:
     map_assignments: list[str]
     env_var: list[str]
     interactive: bool
-    assets_block: str | None
-    slug: str | None
-    assets_prefix: str | None
-    work_pool: str | None
 
 
 class CourseConfigBlockPayload(TypedDict):
@@ -417,10 +413,6 @@ def _parse_course_setup_options(args: list[str], *, console) -> CourseSetupOptio
     parser.add_argument("--interactive", dest="interactive", action="store_true")
     parser.add_argument("--no-interactive", dest="interactive", action="store_false")
     parser.set_defaults(interactive=True)
-    parser.add_argument("--assets-block", default=None)
-    parser.add_argument("--slug", default=None)
-    parser.add_argument("--assets-prefix", default=None)
-    parser.add_argument("--work-pool", default=None)
 
     parsed, unknown_args = parser.parse_known_args(args)
     if unknown_args:
@@ -436,10 +428,6 @@ def _parse_course_setup_options(args: list[str], *, console) -> CourseSetupOptio
         map_assignments=parsed.map_assignments or [],
         env_var=parsed.env or [],
         interactive=parsed.interactive,
-        assets_block=parsed.assets_block or None,
-        slug=parsed.slug or None,
-        assets_prefix=parsed.assets_prefix or None,
-        work_pool=parsed.work_pool or None,
     )
 
 
@@ -573,6 +561,26 @@ def _resolve_docker_image(docker_image: str, *, interactive: bool, console, Prom
     return Prompt.ask("Docker image for grading", default=docker_image)
 
 
+@dataclass(frozen=True)
+class GeneratedCourseNames:
+    slug: str
+    block_name: str
+    assets_block: str
+    assets_prefix: str
+    work_pool: str
+
+
+def _build_generated_course_names(selected_course_id: int, course: Course) -> GeneratedCourseNames:
+    course_slug = _suggest_course_slug(selected_course_id, course)
+    return GeneratedCourseNames(
+        slug=course_slug,
+        block_name=f"ccc-course-{course_slug}",
+        assets_block=f"ccc-assets-{course_slug}",
+        assets_prefix=f"graders/{course_slug}/",
+        work_pool=f"course-work-pool-{course_slug}",
+    )
+
+
 def _build_course_setup_config(
     selected_course_id: int,
     course: Course,
@@ -582,51 +590,7 @@ def _build_course_setup_config(
     Prompt,
     Confirm,
 ) -> CourseSetupConfig:
-    suggested_slug = _suggest_course_slug(selected_course_id, course)
-    slug_input = _prompt_optional_value(
-        options.slug,
-        "Course slug",
-        interactive=options.interactive,
-        default=suggested_slug,
-        Prompt=Prompt,
-    )
-    course_slug = slugify(slug_input or suggested_slug)
-    block_name = f"ccc-course-{course_slug}"
-
-    default_assets_block = f"ccc-assets-{course_slug}"
-    if options.assets_block:
-        assets_block = options.assets_block
-    else:
-        if not options.interactive:
-            console.print("[red]--assets-block is required in non-interactive mode[/red]")
-            raise typer.Exit(1)
-        prompted_assets_block = _prompt_optional_value(
-            None,
-            "Assets block (Prefect block storing S3 credentials)",
-            interactive=True,
-            default=default_assets_block,
-            Prompt=Prompt,
-        )
-        assets_block = prompted_assets_block or default_assets_block
-
-    assets_prefix_input = _prompt_optional_value(
-        options.assets_prefix,
-        "Assets prefix (S3 path prefix)",
-        interactive=options.interactive,
-        default=f"graders/{course_slug}/",
-        Prompt=Prompt,
-    )
-    assets_prefix = assets_prefix_input or f"graders/{course_slug}/"
-
-    work_pool_input = _prompt_optional_value(
-        options.work_pool,
-        "Work pool name",
-        interactive=options.interactive,
-        default=f"course-work-pool-{course_slug}",
-        Prompt=Prompt,
-    )
-    work_pool = work_pool_input or f"course-work-pool-{course_slug}"
-
+    generated_names = _build_generated_course_names(selected_course_id, course)
     resolved_docker_image = _resolve_docker_image(
         options.docker_image,
         interactive=options.interactive,
@@ -644,13 +608,13 @@ def _build_course_setup_config(
     grader_env = _build_grader_env(options.env_var, test_map_env, console=console)
 
     return CourseSetupConfig(
-        block_name=block_name,
+        block_name=generated_names.block_name,
         canvas_api_url=options.canvas_api_url or CANVAS_API_URL_DEFAULT,
         canvas_token=options.canvas_token or "",
         selected_course_id=selected_course_id,
-        assets_block=assets_block,
-        assets_prefix=assets_prefix,
-        work_pool=work_pool,
+        assets_block=generated_names.assets_block,
+        assets_prefix=generated_names.assets_prefix,
+        work_pool=generated_names.work_pool,
         docker_image=resolved_docker_image,
         test_map_count=len(test_map_env),
         grader_env=grader_env,
@@ -691,8 +655,11 @@ def _save_course_block(config: CourseSetupConfig, *, console, CourseConfigBlock)
         block = CourseConfigBlock(
             **cast("CourseConfigBlockPayload", _build_course_block_payload(config))
         )
-        block.save(config.block_name, overwrite=True)
-    except (RuntimeError, ValueError, TypeError) as exc:
+        block.save(config.block_name, overwrite=False)
+    except ValueError as exc:
+        console.print(f"[red]Course configuration block already exists: {config.block_name}[/red]")
+        raise typer.Exit(1) from exc
+    except (RuntimeError, TypeError) as exc:
         console.print(f"[red]Error saving course block: {exc}[/red]")
         raise typer.Exit(1) from exc
 
@@ -815,10 +782,6 @@ def course_setup_command(
             map_assignments=options.map_assignments,
             env_var=options.env_var,
             interactive=options.interactive,
-            assets_block=options.assets_block,
-            slug=options.slug,
-            assets_prefix=options.assets_prefix,
-            work_pool=options.work_pool,
         ),
         console=console,
         Prompt=Prompt,

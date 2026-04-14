@@ -40,9 +40,11 @@ If you prefer not to activate the virtual environment, prefix commands with
 
 ### 1. Configure a course
 
-Use `ccc course setup` to create a `ccc-course-<slug>` Prefect block that
-stores the Canvas connection, grader image, asset block, asset prefix, and work
-pool name.
+Use `ccc course setup` to create a generated `ccc-course-<course-slug>` Prefect
+block that stores the Canvas connection, grader image, asset block, asset
+prefix, and work pool name. The CLI derives the block name, assets block name,
+assets prefix, and work pool from the selected course and saves them directly
+into the block.
 
 For a ready-to-run local grader example, see
 `examples/count-submitted-files/` in the repo root.
@@ -52,11 +54,7 @@ $ printf "%s" "$CANVAS_API_TOKEN" | ccc course setup --no-interactive \
   --token-stdin \
   --api-url https://canvas.example.edu \
   --course-id 12345 \
-  --slug cs101 \
-  --assets-block course-assets-cs101 \
-  --assets-prefix graders/cs101/ \
-  --docker-image ghcr.io/example/cs101-grader:latest \
-  --work-pool course-work-pool-cs101
+  --docker-image ghcr.io/example/cs101-grader:latest
 ```
 
 Expected output includes:
@@ -64,7 +62,7 @@ Expected output includes:
 ```text
 ✓ Canvas access validated successfully
 ✓ Course ID 12345 validated
-✓ Course configuration saved as block: ccc-course-cs101
+✓ Course configuration saved as block: ccc-course-12345-cs101
 ```
 
 ### 2. Run a correction manually
@@ -72,13 +70,13 @@ Expected output includes:
 Use `ccc course run` for batch or single-submission runs.
 
 ```bash
-$ ccc course run 98765 --course ccc-course-cs101
+$ ccc course run 98765 --course ccc-course-12345-cs101
 ```
 
 Or limit the run to one submission:
 
 ```bash
-$ ccc course run 98765 --course ccc-course-cs101 --submission-id 54321 --dry-run
+$ ccc course run 98765 --course ccc-course-12345-cs101 --submission-id 54321 --dry-run
 ```
 
 Single-submission output includes a JSON summary with downloaded files,

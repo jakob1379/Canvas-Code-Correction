@@ -12,11 +12,7 @@ $ printf "%s" "$CANVAS_API_TOKEN" | ccc course setup --no-interactive \
   --token-stdin \
   --api-url https://canvas.example.edu \
   --course-id 12345 \
-  --slug cs101 \
-  --assets-block course-assets-cs101 \
-  --assets-prefix graders/cs101/ \
-  --docker-image ghcr.io/example/cs101-grader:latest \
-  --work-pool course-work-pool-cs101
+  --docker-image ghcr.io/example/cs101-grader:latest
 ```
 
 Verify it:
@@ -27,7 +23,7 @@ $ ccc course list
 
 ## Runtime Loading Path
 
-CCC turns a `ccc-course-<slug>` block into runtime settings with:
+CCC turns a `ccc-course-<course-slug>` block into runtime settings with:
 
 - `canvas_code_correction.bootstrap.load_course_block`
 - `canvas_code_correction.bootstrap.load_settings_from_course_block`
@@ -94,15 +90,15 @@ fields:
 
 `ccc course setup` populates these key fields:
 
-| CLI flag | Stored field |
+| Input source | Stored field |
 | --- | --- |
 | `--api-url` | `canvas_api_url` |
 | `--course-id` | `canvas_course_id` |
-| `--assets-block` | `asset_bucket_block` |
-| `--assets-prefix` | `asset_path_prefix` |
 | `--docker-image` | `grader_image` |
-| `--work-pool` | `work_pool_name` |
 | `--env` | `grader_env` |
+| generated course slug | `asset_bucket_block` |
+| generated course slug | `asset_path_prefix` |
+| generated course slug | `work_pool_name` |
 
 ## Environment Variables
 
@@ -150,7 +146,7 @@ is added.
 Missing token:
 
 ```bash
-$ ccc course setup --no-interactive --slug cs101 --assets-block course-assets-cs101
+$ ccc course setup --no-interactive
 ```
 
 Expected output:
@@ -162,7 +158,7 @@ Expected output:
 Invalid Canvas credentials:
 
 ```bash
-$ ccc course setup --no-interactive --token invalid --course-id 12345 --assets-block course-assets-cs101
+$ ccc course setup --no-interactive --token invalid --course-id 12345
 ```
 
 Expected output begins with:

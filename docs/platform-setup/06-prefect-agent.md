@@ -72,17 +72,13 @@ For local runs, create or update a course block with:
 $ printf "%s" "$CANVAS_API_TOKEN" | ccc course setup --no-interactive \
   --token-stdin \
   --course-id 12345 \
-  --slug cs101 \
-  --assets-block local-rustfs \
-  --assets-prefix graders/cs101/ \
-  --docker-image ghcr.io/example/cs101-grader:latest \
-  --work-pool canvas-corrections
+  --docker-image ghcr.io/example/cs101-grader:latest
 ```
 
 Then create the deployment:
 
 ```bash
-$ ccc system deploy create ccc-course-cs101
+$ ccc system deploy create ccc-course-12345-cs101
 ```
 
 ## Step 5: Trigger Work
@@ -90,7 +86,7 @@ $ ccc system deploy create ccc-course-cs101
 For quick validation, prefer the CCC CLI:
 
 ```bash
-$ ccc course run 98765 --course ccc-course-cs101 --submission-id 54321 --dry-run
+$ ccc course run 98765 --course ccc-course-12345-cs101 --submission-id 54321 --dry-run
 ```
 
 To inspect recent flow activity:

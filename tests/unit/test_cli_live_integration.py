@@ -108,8 +108,6 @@ def test_course_setup_non_interactive_missing_token(cli_runner: CliRunner) -> No
             "--no-interactive",
             "--course-id",
             "12345",
-            "--assets-block",
-            "test-bucket",
         ],
     )
 
@@ -158,15 +156,11 @@ def test_course_setup_live_canvas_validation(cli_runner: CliRunner) -> None:
                 api_url,
                 "--course-id",
                 course_id,
-                "--assets-block",
-                "test-assets",
-                "--slug",
-                "test-course-live",
             ],
         )
 
         # Should validate token and attempt to save
-        assert "Canvas API token validated successfully" in result.output
+        assert "Canvas access validated successfully" in result.output
         assert result.exit_code == 0
         mock_block.save.assert_called_once()
 
@@ -184,8 +178,6 @@ def test_course_setup_live_canvas_invalid_token(cli_runner: CliRunner) -> None:
             "invalid-token-12345",
             "--course-id",
             "13122436",
-            "--assets-block",
-            "test-bucket",
         ],
     )
 
@@ -221,10 +213,6 @@ def test_course_setup_live_canvas_invalid_course(cli_runner: CliRunner) -> None:
             api_url,
             "--course-id",
             "999999999",  # Invalid course ID
-            "--assets-block",
-            "test-bucket",
-            "--slug",
-            "invalid-course",
         ],
     )
 
@@ -280,11 +268,6 @@ def test_course_setup_live_full_workflow(cli_runner: CliRunner) -> None:
     if not is_prefect_server_available():
         pytest.skip("Prefect server not available")
 
-    # Use a unique slug to avoid conflicts
-    import uuid
-
-    test_slug = f"integration-test-{uuid.uuid4().hex[:8]}"
-
     result = cli_runner.invoke(
         app,
         [
@@ -297,12 +280,6 @@ def test_course_setup_live_full_workflow(cli_runner: CliRunner) -> None:
             api_url,
             "--course-id",
             course_id,
-            "--assets-block",
-            "test-assets",
-            "--assets-prefix",
-            f"graders/{test_slug}/",
-            "--slug",
-            test_slug,
             "--docker-image",
             "python:3.11-slim",
         ],
@@ -310,13 +287,18 @@ def test_course_setup_live_full_workflow(cli_runner: CliRunner) -> None:
 
     # Should complete successfully
     assert result.exit_code == 0, f"Command failed with output: {result.output}"
-    assert "Canvas API token validated successfully" in result.output
-    assert f"Course configuration saved as block: ccc-course-{test_slug}" in result.output
+    assert "Canvas access validated successfully" in result.output
+    assert f"ccc-course-{course_id}-" in result.output
+    saved_block_name = next(
+        line.split("Course configuration saved as block: ", 1)[1].strip()
+        for line in result.output.splitlines()
+        if "Course configuration saved as block:" in line
+    )
 
     # Verify we can list the new course
     list_result = cli_runner.invoke(app, ["course", "list"])
     assert list_result.exit_code == 0
-    assert f"ccc-course-{test_slug}" in list_result.output
+    assert saved_block_name in list_result.output
 
 
 @pytest.mark.integration
@@ -345,9 +327,6 @@ def test_course_run_dry_run_live(cli_runner: CliRunner) -> None:
     if not is_prefect_server_available():
         pytest.skip("Prefect server not available")
 
-    # First, ensure we have a course block configured
-    test_slug = f"run-test-{course_id}"
-
     setup_result = cli_runner.invoke(
         app,
         [
@@ -360,15 +339,17 @@ def test_course_run_dry_run_live(cli_runner: CliRunner) -> None:
             api_url,
             "--course-id",
             course_id,
-            "--assets-block",
-            "test-assets",
-            "--slug",
-            test_slug,
         ],
     )
 
     if setup_result.exit_code != 0:
         pytest.skip(f"Failed to setup course block: {setup_result.output}")
+
+    course_block_name = next(
+        line.split("Course configuration saved as block: ", 1)[1].strip()
+        for line in setup_result.output.splitlines()
+        if "Course configuration saved as block:" in line
+    )
 
     # Now try to run in dry-run mode
     run_result = cli_runner.invoke(
@@ -378,7 +359,7 @@ def test_course_run_dry_run_live(cli_runner: CliRunner) -> None:
             "run",
             assignment_id,
             "--course",
-            f"ccc-course-{test_slug}",
+            course_block_name,
             "--dry-run",
         ],
     )
