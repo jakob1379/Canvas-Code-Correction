@@ -6,6 +6,9 @@ Correction.
 
 ## Quick Start: A Minimal Grader That Works Immediately
 
+The same example is checked into the repo at
+`examples/count-submitted-files/` so you can run it directly.
+
 Copy the following Python script to a file named `grader.py`. This grader lists
 the submission files, awards one point, and writes feedback.
 

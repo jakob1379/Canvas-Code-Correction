@@ -50,6 +50,9 @@ Available subcommands:
 
 Creates or updates a `ccc-course-<slug>` Prefect block.
 
+The repo also includes a ready-made local example grader at
+`examples/count-submitted-files/`.
+
 ### Real flags
 
 | Flag | Description | Default |
