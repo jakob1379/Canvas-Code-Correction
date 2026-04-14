@@ -2,10 +2,10 @@
 
 ## Current Status
 
-The Canvas Code Correction project is undergoing a v2 rewrite from a legacy
-bash‑based system to a modern Prefect‑based architecture. **All planned
-milestones are now complete**: the core platform is fully functional and ready
-for production use.
+Canvas Code Correction has completed its v2 rewrite from a legacy bash-based
+system to a modern Prefect-based architecture. **All planned milestones are now
+complete** and the codebase has moved into ongoing maintenance and incremental
+improvement.
 
 You can:
 

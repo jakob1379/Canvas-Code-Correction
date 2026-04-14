@@ -27,7 +27,6 @@ source .venv/bin/activate
 ```bash
 poe fmt
 poe lint
-poe ci:fmt
 poe ci:lint
 poe check
 poe test
@@ -121,9 +120,6 @@ grades back to Canvas.
   `uv-secure`, workflow validation, and `validate-pyproject`.
 - License is MIT.
 
-> TODO: `.github/dependabot.yml` points at `/backend` and `/frontend`, which do
-> not match this repo layout.
-
 ## Agent Guardrails
 - Never edit secrets or generated state: `.env*`, `.venv/`, `.cache/`,
   `.pytest_cache/`, `.ruff_cache/`, `.scannerwork/`, `coverage.*`, `site/`,
@@ -136,8 +132,6 @@ grades back to Canvas.
 - Respect webhook rate limits; default is `10/minute`.
 - Only run integration/e2e flows against Canvas when explicit credentials are
   configured.
-
-> TODO: No repo-local approval policy was found.
 
 ## Extensibility Hooks
 - Per-course config lives in
