@@ -77,7 +77,7 @@ jobs:
         run: uv run zensical build --strict --clean
       - name: Create CNAME file for custom domain
         run: echo "ccc.jgalabs.dk" > site/CNAME
-      - uses: actions/upload-pages-artifact@v4
+      - uses: actions/upload-pages-artifact@v5
         with:
           path: site
       - uses: actions/deploy-pages@v5
