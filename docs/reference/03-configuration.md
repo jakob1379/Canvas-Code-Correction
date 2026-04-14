@@ -1,141 +1,178 @@
 # Configuration Reference
 
-CCC configuration is stored in Prefect blocks and read at runtime by CLI
-commands.
+CCC loads runtime configuration from **Prefect course blocks** and a small set
+of environment variables.
 
 ## Try It Now
 
-Create a course block with the minimum required settings:
+Create a course block:
 
 ```bash
-$ ccc course setup \
-  --slug cs101 \
-  --course-id 12345 \
-  --assets-block course-assets-cs101
-```
-
-Secure non-interactive variant:
-
-```bash
-$ printf "%s" "$CANVAS_API_TOKEN" | ccc course setup \
+$ printf "%s" "$CANVAS_API_TOKEN" | ccc course setup --no-interactive \
   --token-stdin \
-  --slug cs101 \
+  --api-url https://canvas.example.edu \
   --course-id 12345 \
-  --assets-block course-assets-cs101
+  --slug cs101 \
+  --assets-block course-assets-cs101 \
+  --assets-prefix graders/cs101/ \
+  --docker-image ghcr.io/example/cs101-grader:latest \
+  --work-pool course-work-pool-cs101
 ```
 
-Expected output:
-
-```bash
-Course configuration saved as block: ccc-course-cs101
-```
-
-Verify the block exists:
+Verify it:
 
 ```bash
 $ ccc course list
 ```
 
-## Configuration Model
+## Runtime Loading Path
 
-CCC loads settings from `ccc-course-<slug>` blocks using
-`Settings.from_course_block`.
+CCC turns a `ccc-course-<slug>` block into runtime settings with:
 
-The model is defined in `src/canvas_code_correction/config.py` and includes:
+- `canvas_code_correction.bootstrap.load_course_block`
+- `canvas_code_correction.bootstrap.load_settings_from_course_block`
 
-- **Canvas**: `api_url`, `token`, `course_id`
-- **Assets**: `bucket_block`, `path_prefix`
-- **Grader**: `docker_image`, `command`, `timeout_seconds`, `memory_mb`,
-  `upload_check_duplicates`, `upload_comments`, `upload_grades`,
-  `upload_verbose`, `work_pool_name`, `env`
-- **Workspace**: `root`
-- **Webhook**: `secret`, `deployment_name`, `enabled`, `require_jwt`,
-  `rate_limit`
+The runtime model itself lives in `src/canvas_code_correction/config.py`.
 
-## How You Configure It
+## Runtime Settings Model
 
-### Guided setup (recommended first run)
+### Canvas
 
-```bash
-$ ccc course setup
-```
+- `api_url`
+- `token`
+- `course_id`
 
-Use this when you want token validation, course discovery, and optional
-assignment-to-test mapping.
+### Assets
 
-### Direct setup (automation-friendly)
+- `bucket_block`
+- `path_prefix`
 
-```bash
-$ printf "%s" "$CANVAS_API_TOKEN" | ccc course setup \
-  --token-stdin \
-  --slug cs101 \
-  --course-id 12345 \
-  --assets-block course-assets-cs101 \
-  --s3-prefix graders/cs101/ \
-  --docker-image yourusername/canvas-grader:latest \
-  --work-pool course-work-pool-cs101 \
-  --env DEBUG=true
-```
+### Grader
+
+- `docker_image`
+- `work_pool_name`
+- `env`
+- `command`
+- `timeout_seconds`
+- `memory_mb`
+- `upload_check_duplicates`
+- `upload_comments`
+- `upload_grades`
+- `upload_verbose`
+
+### Workspace
+
+- `root`
+
+### Webhook
+
+- `secret`
+- `deployment_name`
+- `enabled`
+- `require_jwt`
+- `rate_limit`
+- `allow_canvas_api_fallback`
+
+## Persisted Course Block Fields
+
+The `CourseConfigBlock` in
+`src/canvas_code_correction/prefect_blocks/canvas.py` persists these important
+fields:
+
+- `canvas_api_url`
+- `canvas_token`
+- `canvas_course_id`
+- `asset_bucket_block`
+- `asset_path_prefix`
+- `grader_image`
+- `work_pool_name`
+- `grader_env`
+- webhook fields such as `deployment_name`, `webhook_enabled`, and
+  `webhook_rate_limit`
+
+## CLI-to-Block Mapping
+
+`ccc course setup` populates these key fields:
+
+| CLI flag | Stored field |
+| --- | --- |
+| `--api-url` | `canvas_api_url` |
+| `--course-id` | `canvas_course_id` |
+| `--assets-block` | `asset_bucket_block` |
+| `--assets-prefix` | `asset_path_prefix` |
+| `--docker-image` | `grader_image` |
+| `--work-pool` | `work_pool_name` |
+| `--env` | `grader_env` |
 
 ## Environment Variables
 
-CCC supports infrastructure and test environment variables.
+### Prefect
 
-### Core runtime
+| Variable | Purpose | Example |
+| --- | --- | --- |
+| `PREFECT_API_URL` | Prefect API endpoint | `http://localhost:4200/api` |
+| `PREFECT_API_KEY` | Prefect API key when required | `pnu_...` |
 
-| Variable             | Purpose                       | Example                     |
-| -------------------- | ----------------------------- | --------------------------- |
-| `PREFECT_API_URL`    | Prefect API endpoint          | `http://localhost:4200/api` |
-| `PREFECT_API_KEY`    | Prefect API key (if required) | `pnu_...`                   |
-| `CCC_WORKSPACE_ROOT` | Workspace root directory      | `/tmp/ccc/workspaces`       |
+### Canvas and tests
 
-### Canvas (mainly for tests/scripts)
+| Variable | Purpose | Example |
+| --- | --- | --- |
+| `CANVAS_API_URL` | Canvas base URL | `https://canvas.instructure.com` |
+| `CANVAS_API_TOKEN` | Canvas API token | `7~...` |
+| `CANVAS_COURSE_ID` | Test or local course ID | `12345` |
+| `CANVAS_TEST_ASSIGNMENT_ID` | Integration-test assignment ID | `59160606` |
 
-| Variable                    | Purpose                             | Example                          |
-| --------------------------- | ----------------------------------- | -------------------------------- |
-| `CANVAS_API_URL`            | Canvas API URL                      | `https://canvas.instructure.com` |
-| `CANVAS_API_TOKEN`          | Canvas API token                    | `7~...`                          |
-| `CANVAS_COURSE_ID`          | Course ID used in test commands     | `13122436`                       |
-| `CANVAS_TEST_ASSIGNMENT_ID` | Assignment ID for integration tests | `59160606`                       |
+### Workspace
 
-### RustFS / local S3-compatible storage
+| Variable | Purpose | Example |
+| --- | --- | --- |
+| `CCC_WORKSPACE_ROOT` | Override workspace root | `/tmp/ccc/workspaces` |
 
-| Variable             | Default                 | Purpose         |
-| -------------------- | ----------------------- | --------------- |
-| `RUSTFS_ENDPOINT`    | `http://localhost:9000` | RustFS endpoint |
-| `RUSTFS_ACCESS_KEY`  | `rustfsadmin`           | Access key      |
-| `RUSTFS_SECRET_KEY`  | `rustfsadmin`           | Secret key      |
-| `RUSTFS_BUCKET_NAME` | `test-assets`           | Bucket name     |
-| `RUSTFS_PREFIX`      | `dev`                   | Asset prefix    |
+### RustFS / S3-compatible storage
 
-Example shell setup:
+| Variable | Default | Purpose |
+| --- | --- | --- |
+| `RUSTFS_ENDPOINT` | `http://localhost:9000` | S3 endpoint |
+| `RUSTFS_ACCESS_KEY` | `rustfsadmin` | Access key |
+| `RUSTFS_SECRET_KEY` | `rustfsadmin` | Secret key |
+| `RUSTFS_BUCKET_NAME` | `test-assets` | Bucket name |
+| `RUSTFS_PREFIX` | `dev` | Prefix used by `poe rustfs-setup` |
 
-```bash
-$ export PREFECT_API_URL="http://localhost:4200/api"
-$ export CANVAS_API_URL="https://canvas.instructure.com"
-$ export CANVAS_API_TOKEN="your_token"
-$ export CANVAS_COURSE_ID="12345"
-```
+## Known Gap
+
+`allow_canvas_api_fallback` exists in the runtime `WebhookSettings` model, but
+it is **not** currently exposed by `ccc course setup` or persisted on the
+course block. Treat it as an internal runtime field unless that persistence path
+is added.
 
 ## Common Errors
 
-Missing required options during direct configuration:
+Missing token:
 
 ```bash
 $ ccc course setup --no-interactive --slug cs101 --assets-block course-assets-cs101
-Error: --token or --token-stdin is required in non-interactive mode
 ```
 
-Invalid Canvas token during setup:
+Expected output:
+
+```text
+--token or --token-stdin is required in non-interactive mode
+```
+
+Invalid Canvas credentials:
 
 ```bash
 $ ccc course setup --no-interactive --token invalid --course-id 12345 --assets-block course-assets-cs101
-Error: Failed to validate Canvas API token
+```
+
+Expected output begins with:
+
+```text
+Error: Failed to validate Canvas credentials
 ```
 
 ## Related Docs
 
 - [CLI Reference](02-cli.md)
 - [Configuring a Course](../platform-setup/01-configuring-course.md)
-- [Setting up Prefect](../platform-setup/02-setting-up-prefect.md)
 - [RustFS Storage](../platform-setup/07-rustfs-storage.md)

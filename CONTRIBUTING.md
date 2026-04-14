@@ -1,273 +1,209 @@
-# Contribute to Canvas Code Correction in 5 Minutes
+# Contributing
 
-Welcome to Canvas Code Correction (CCC). This guide walks you through the
-fastest way to make your first contribution—whether you’re fixing a bug, adding
-a feature, or improving documentation. Follow the steps below and you’ll have a
-pull request ready in minutes.
+This guide describes the current contributor workflow for **Canvas Code
+Correction (CCC)**. It is intentionally practical: install the dev environment,
+run the repo commands, make focused changes, and verify them before opening a
+pull request.
 
-## Quick Start: Your First Contribution
+## Try It Now
 
-### 1. Fork and Clone
-
-**Fork** the repository on GitHub, then **clone** your fork to your local
-machine:
+Set up the full development environment from the repository root:
 
 ```bash
-$ git clone https://github.com/YOUR_USERNAME/Canvas-Code-Correction.git
-$ cd Canvas-Code-Correction
+$ uv sync --all-groups
+$ source .venv/bin/activate
+$ poe all
 ```
 
-Replace `YOUR_USERNAME` with your GitHub username.
+If the environment is healthy, you will finish with passing format, lint, type,
+and unit-test checks.
 
-### 2. Install Dependencies
+## Development Setup
 
-CCC uses **uv** for dependency management. Install the project and its
-development tools with:
+### Prerequisites
+
+- **Python 3.13**
+- **uv**
+- **Docker** if you need integration or e2e coverage
+
+### Install the project
 
 ```bash
-$ uv sync
+$ uv sync --all-groups
+$ source .venv/bin/activate
 ```
 
-Expected output (truncated):
+If you do not want to activate the environment, use `uv run <command>` instead.
 
-```
-✔ Synced environment in 0.5s
-✔ Installed 42 packages
-✔ All dependencies are satisfied
-```
-
-### 3. Run the Tests
-
-Verify everything works before you make changes:
+### Verify the CLI
 
 ```bash
-$ pytest
+$ ccc --version
 ```
 
-You should see something like:
+Expected output:
 
-```
-========================== test session starts ==========================
-platform linux — Python 3.13.0, pytest‑8.3.4, pluggy‑1.5.0
-rootdir: /home/jsg/Documents/jsg/Canvas‑Code‑Correction
-collected 127 items
-
-tests/unit/test_core.py ...................................... [ 25%]
-tests/unit/test_parser.py ..................................... [ 50%]
-tests/unit/test_utils.py ...................................... [ 75%]
-tests/integration/test_integration.py ........................ [100%]
-
-=========================== 127 passed in 3.2s ==========================
+```text
+Canvas Code Correction 2.0.0a0
 ```
 
-If any test fails, check the [Troubleshooting](#troubleshooting) section.
+## Daily Workflow
 
-### 4. Make Your Changes
-
-Pick one of the common workflows below.
-
-#### Fixing a Bug
-
-1. **Find the bug** – check the issue tracker or run the failing test.
-2. **Edit the relevant file** – locate the function or module that needs fixing.
-3. **Write a test** (optional but recommended) – add a minimal test that
-   reproduces the bug, then verify your fix makes it pass.
-
-Example: fixing a typo in `src/ccc/core.py`:
-
-```python
-# Before
-def greet(user: str) -> str:
-    return f"Helo, {user}!"
-
-# After
-def greet(user: str) -> str:
-    return f"Hello, {user}!"
-```
-
-Run the tests again to ensure nothing broke:
+### Create a branch
 
 ```bash
-$ pytest tests/unit/test_core.py
+$ git switch -c <type>/<short-description>
 ```
 
-#### Adding a Feature
+Examples:
 
-1. **Create a new branch** for your feature:
+- `fix/webhook-auth-timeout`
+- `docs/update-course-setup-guide`
+- `feat/course-block-validation`
 
-   ```bash
-    $ git switch -c feat/your-feature-name main
-   ```
+### Run the standard checks
 
-2. **Implement the feature** in the appropriate module. Follow the
-   [code style guidelines](#code-style) below.
+Use the task aliases in `pyproject.toml`:
 
-3. **Add unit tests** for the new functionality. Place them in the corresponding
-   test file (e.g., `tests/unit/test_core.py`).
+```bash
+$ poe fmt
+$ poe lint
+$ poe check
+$ poe test
+```
 
-4. **Run the full test suite** to confirm everything passes:
+Or run the full local gate:
 
-   ```bash
-   $ pytest
-   ```
+```bash
+$ poe all
+```
 
-#### Improving Documentation
+### Test scopes
 
-1. **Find the documentation source** – most docs live in `docs/` and are written
-   in Markdown.
+Default `pytest` excludes integration and e2e markers. Run the larger suites
+explicitly when your changes touch those paths.
 
-2. **Edit the file** – correct typos, clarify explanations, or add missing
-   examples.
+Unit tests:
 
-3. **Preview your changes** locally with the docs server:
+```bash
+$ uv run pytest tests/unit -v --strict-markers
+```
 
-   ```bash
-   $ poe serve-docs
-   ```
+Integration tests:
 
-   Open `http://localhost:8000` in your browser to verify the updates.
+```bash
+$ uv run pytest tests/integration -v --strict-markers -m integration --no-cov
+```
 
-### 5. Submit a Pull Request
+End-to-end tests:
 
-1. **Commit your changes** with a clear, conventional commit message:
-
-   ```bash
-   $ git add .
-   $ git commit -m "fix(core): correct greeting typo"
-   ```
-
-2. **Push** to your fork:
-
-   ```bash
-   $ git push origin feat/your-feature-name
-   ```
-
-3. **Open a pull request** on GitHub against the `main` branch. Fill in the PR
-   template with a description of what you changed and why.
-
-4. **Wait for CI** – the automated checks (tests, linting, formatting) will run.
-   If they pass, a maintainer will review your PR. Address any feedback by
-   pushing additional commits to the same branch.
+```bash
+$ poe test-e2e
+```
 
 ## Code Style
 
-CCC follows **PEP 8** and uses automated tools to keep the code consistent.
+### Formatting and linting
 
-### Formatting with Black
-
-Run **Black** before committing to auto‑format your Python code:
+CCC uses **Ruff** for formatting and linting.
 
 ```bash
-$ black .
+$ ruff format
+$ ruff check --fix
 ```
 
-Example of Black‑compliant style:
-
-```python
-from typing import Optional
-
-def calculate_total(items: list[float], discount: Optional[float] = None) -> float:
-    """Return the total price after applying an optional discount."""
-    subtotal = sum(items)
-    if discount is not None:
-        subtotal -= subtotal * discount
-    return subtotal
-```
-
-### Linting with Ruff
-
-**Ruff** catches common mistakes and enforces style rules. Run it to see any
-issues:
+CI-friendly variants:
 
 ```bash
-$ ruff check .
+$ ruff check
+$ pyrefly check
 ```
 
-Fix any warnings or errors before submitting your PR.
+### Python requirements
 
-### Type Hints
+- Target **Python 3.13** only.
+- Use **type hints** throughout.
+- Keep public interfaces explicit and small.
+- Prefer updating the existing flow/CLI/service modules over adding parallel
+  abstractions.
 
-Use **type hints** for all function parameters and return values. They are
-treated as first‑class documentation.
+### Tests
 
-```python
-# Good
-def parse_config(path: str) -> dict[str, Any]:
-    ...
+- Put unit tests in `tests/unit/`.
+- Put integration tests in `tests/integration/`.
+- Put e2e tests in `tests/e2e/`.
+- Do not use `autouse=True` fixtures. `tests/AGENTS.md` repeats this rule.
 
-# Avoid (no types)
-def parse_config(path):
-    ...
-```
+## Documentation Changes
 
-### Docstrings
+If you change docs, use [.docs-style-checklist.md](.docs-style-checklist.md).
+At minimum, each affected page should:
 
-Write **docstrings** for public functions, classes, and modules. Use the
-triple‑quote Google style:
+- start with a clear goal or quick-start section
+- use the current command names and flags from the codebase
+- show expected output when it adds clarity
+- link to the adjacent docs that readers need next
 
-```python
-def encode_data(data: bytes, key: str) -> bytes:
-    """Encrypt the given data with the provided key.
-
-    Args:
-        data: Raw bytes to encrypt.
-        key: Secret encryption key.
-
-    Returns:
-        Encrypted bytes.
-
-    Raises:
-        ValueError: If the key length is invalid.
-    """
-    ...
-```
-
-## Testing
-
-### Unit Tests
-
-Place unit tests in `tests/unit/`. Each test file should mirror the module it
-tests (e.g., `test_core.py` for `core.py`). Use `pytest` fixtures and
-parameterization where helpful.
-
-Example test:
-
-```python
-def test_greet() -> None:
-    from ccc.core import greet
-    assert greet("world") == "Hello, world!"
-```
-
-### Integration Tests
-
-Integration tests live in `tests/integration/` and require Docker and RustFS.
-Run them separately with:
+Preview or rebuild docs with:
 
 ```bash
-$ pytest -m integration
+$ poe serve-docs
+$ uv run zensical build --strict --clean
 ```
 
-If you don’t have Docker installed, you can skip these tests; CI will run them
-for your PR.
+## Common Change Patterns
+
+### Bug fixes
+
+1. Reproduce the problem with a focused test or command.
+2. Patch the implementation.
+3. Add or update a regression test.
+4. Re-run the narrow test first, then `poe all`.
+
+### CLI changes
+
+If you change `src/canvas_code_correction/cli*.py`, update:
+
+- `README.md`
+- `docs/reference/02-cli.md`
+- any platform setup page that shows the changed command
+
+### Docs-only changes
+
+Run at least:
+
+```bash
+$ uv run zensical build --strict --clean
+```
+
+## Pull Requests
+
+Before you open a PR:
+
+1. Keep the branch focused.
+2. Use a conventional commit message, for example `docs(reference): align cli flags`.
+3. Summarize the user-visible change and any verification you ran.
+4. Note any checks you could not run.
+
+Typical commit flow:
+
+```bash
+$ git add <files>
+$ git commit -m "docs(reference): align course setup flags"
+$ git push origin <branch>
+```
 
 ## Troubleshooting
 
-| Problem                           | Solution                                                                                                                         |
-| --------------------------------- | -------------------------------------------------------------------------------------------------------------------------------- | ----- |
-| `uv sync` fails                   | Ensure you have **uv** installed (`curl -LsSf https://astral.sh/uv/install.sh                                                    | sh`). |
-| Tests pass locally but fail in CI | Run `ruff check .` and `black --check .` to catch lint/format issues.                                                            |
-| Integration tests require Docker  | Install Docker from [docker.com](https://docker.com). If you can’t run them, note in your PR that you skipped integration tests. |
-| `poe serve-docs` fails            | Make sure the `docs` extra is installed: `uv sync --extra docs`.                                                                 |
-| Git push rejected                 | Fetch upstream changes and rebase: `git fetch upstream main && git rebase upstream/main`.                                        |
+| Problem | What to check |
+| --- | --- |
+| `uv sync` fails | Confirm your Python toolchain supports 3.13 and that `uv` is installed correctly. |
+| `ccc` is not found | Activate `.venv` or prefix the command with `uv run`. |
+| Integration tests fail immediately | Ensure RustFS and any required Canvas credentials are configured. |
+| e2e tests fail before running assertions | Start the docker-compose stack through `poe test-e2e` or bring the services up manually. |
+| Docs build fails | Fix the broken link, malformed Markdown, or bad admonition syntax and rerun `uv run zensical build --strict --clean`. |
 
-## Code of Conduct
+## Need Help
 
-Be respectful and inclusive. This project follows the
-[Contributor Covenant](https://www.contributor-covenant.org/). Instances of
-abusive, harassing, or otherwise unacceptable behavior may be reported to the
-project maintainers.
-
----
-
-**Need help?** Open an issue on GitHub or join the discussion in the project’s
-community channels.
+Open an issue or draft PR with the failing command, the exact output, and the
+files you were changing.
