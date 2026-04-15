@@ -44,6 +44,9 @@ Use `ccc course setup` to create a `ccc-course-<slug>` Prefect block that
 stores the Canvas connection, grader image, asset block, asset prefix, and work
 pool name.
 
+For a ready-to-run local grader example, see
+`examples/count-submitted-files/` in the repo root.
+
 ```bash
 $ printf "%s" "$CANVAS_API_TOKEN" | ccc course setup --no-interactive \
   --token-stdin \
