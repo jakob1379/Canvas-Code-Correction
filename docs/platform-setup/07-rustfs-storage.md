@@ -58,11 +58,7 @@ your grader assets live:
 $ printf "%s" "$CANVAS_API_TOKEN" | ccc course setup --no-interactive \
   --token-stdin \
   --course-id 12345 \
-  --slug cs101 \
-  --assets-block local-rustfs \
-  --assets-prefix graders/cs101/ \
-  --docker-image ghcr.io/example/cs101-grader:latest \
-  --work-pool course-work-pool-cs101
+  --docker-image ghcr.io/example/cs101-grader:latest
 ```
 
 CCC will download grader assets from that block and prefix into
