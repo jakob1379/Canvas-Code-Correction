@@ -49,6 +49,7 @@ class TestCLICommandStructure:
         assert "webhook" in result.output
         assert "deploy" in result.output
         assert "status" in result.output
+        assert "list" in result.output
 
     def test_webhook_help_shows_serve(self, cli_runner: CliRunner) -> None:
         """Test that webhook subcommand shows serve."""
@@ -102,6 +103,20 @@ class TestCLINoDevStackRequired:
         assert "Platform Status" in result.output
         assert "Prefect server" in result.output
         assert "RustFS (S3)" in result.output
+        assert "ccc system --help" in result.output
+        assert "ccc course list" in result.output
+
+    @pytest.mark.local
+    def test_system_list_alias_shows_courses(self, cli_runner: CliRunner) -> None:
+        """Test compatibility alias for listing saved courses."""
+        with patch("canvas_code_correction.cli.find_course_block_names") as mock_find_course_blocks:
+            mock_find_course_blocks.return_value = []
+
+            result = cli_runner.invoke(app, ["system", "list"])
+
+            assert result.exit_code == 0
+            assert "`ccc system list` is deprecated" in result.output
+            assert "No course configuration blocks found" in result.output
 
 
 class TestCLILegacyCommandMapping:

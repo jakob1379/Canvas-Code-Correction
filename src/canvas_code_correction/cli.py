@@ -159,6 +159,20 @@ def system_status() -> None:
     )
 
 
+@system_app.command("list")
+def system_list() -> None:
+    """List saved course blocks.
+
+    Deprecated compatibility alias for `ccc course list`.
+    """
+    console.print("[yellow]`ccc system list` is deprecated; use `ccc course list`.[/yellow]")
+    cli_course_impl.course_list_command(
+        console=console,
+        find_course_block_names=find_course_block_names,
+        load_course_block=load_course_block,
+    )
+
+
 system_app.add_typer(webhook_app, name="webhook")
 system_app.add_typer(deploy_app, name="deploy")
 app.add_typer(course_app, name="course")
