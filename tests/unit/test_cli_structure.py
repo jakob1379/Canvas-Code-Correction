@@ -102,6 +102,15 @@ class TestCLINoDevStackRequired:
         assert "Platform Status" in result.output
         assert "Prefect server" in result.output
         assert "RustFS (S3)" in result.output
+        assert "ccc system --help" in result.output
+
+    @pytest.mark.local
+    def test_system_list_command_removed(self, cli_runner: CliRunner) -> None:
+        """Test system list is not an available command."""
+        result = cli_runner.invoke(app, ["system", "list"])
+
+        assert result.exit_code != 0
+        assert "No such command 'list'" in result.output
 
 
 class TestCLILegacyCommandMapping:

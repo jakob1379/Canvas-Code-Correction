@@ -118,4 +118,4 @@ def system_status_command(
         else:
             console.print("[green]✓ RustFS (S3): Running[/green]")
 
-    console.print("\n[dim]Use 'ccc course list' to see saved courses[/dim]")
+    console.print("\n[dim]Use 'ccc system --help' to see platform commands[/dim]")
