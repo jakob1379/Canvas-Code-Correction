@@ -1,11 +1,11 @@
 [build-system]
-requires = ["uv_build>=0.11.7,<0.12.0"]
+requires = ["uv_build>=0.11.8,<0.12.0"]
 build-backend = "uv_build"
 
 [dependency-groups]
 dev = [
   "canvas-code-correction[ci,docs,test]",
-  "ipython>=9.12.0",
+  "ipython>=9.13.0",
   "poethepoet>=0.42.1",
   "commitizen>=4.13.9"
 ]
@@ -27,19 +27,19 @@ classifiers = [
   "Operating System :: POSIX :: Linux"
 ]
 dependencies = [
-  "prefect[docker]>=3.6.27",
+  "prefect[docker]>=3.6.28",
   "prefect-aws>=0.7.6",
   "docker>=7.1.0",
   "pydantic>=2.13.3",
-  "typer>=0.24.1",
+  "typer>=0.25.0",
   "canvasapi>=3.6.0",
   "boto3>=1.42.70",
-  "fastapi>=0.136.0",
-  "uvicorn[standard]>=0.44.0",
+  "fastapi>=0.136.1",
+  "uvicorn[standard]>=0.46.0",
   "PyJWT>=2.12.0",
   "limits>=5.8.0",
   "requests>=2.33.0",
-  "rich>=14.3.3",
+  "rich>=15.0.0",
   "python-slugify>=8.0.4"
 ]
 
@@ -48,7 +48,7 @@ docs = [
   "httpx>=0.28.1",
   "mkdocs-mermaid2-plugin>=1.2.3",
   "mkdocs-glightbox>=0.5.2",
-  "zensical>=0.0.33"
+  "zensical>=0.0.37"
 ]
 test = [
   "pytest>=9.0.3",
@@ -57,10 +57,10 @@ test = [
   "pytest-cov>=7.1.0"
 ]
 ci = [
-  "prek>=0.3.8",
-  "pyrefly>=0.61.1",
-  "ruff>=0.15.11",
-  "skylos>=4.1.3",
+  "prek>=0.3.11",
+  "pyrefly>=0.62.0",
+  "ruff>=0.15.12",
+  "skylos>=4.7.0",
   "smokeshow>=0.5.0"
 ]
 
