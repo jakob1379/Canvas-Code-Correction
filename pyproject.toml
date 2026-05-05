@@ -6,8 +6,8 @@ build-backend = "uv_build"
 dev = [
   "canvas-code-correction[ci,docs,test]",
   "ipython>=9.13.0",
-  "poethepoet>=0.42.1",
-  "commitizen>=4.13.9"
+  "poethepoet>=0.45.0",
+  "commitizen>=4.15.0"
 ]
 
 [project]
@@ -27,11 +27,11 @@ classifiers = [
   "Operating System :: POSIX :: Linux"
 ]
 dependencies = [
-  "prefect[docker]>=3.6.28",
+  "prefect[docker]>=3.6.29",
   "prefect-aws>=0.7.6",
   "docker>=7.1.0",
   "pydantic>=2.13.3",
-  "typer>=0.25.0",
+  "typer>=0.25.1",
   "canvasapi>=3.6.0",
   "boto3>=1.42.70",
   "fastapi>=0.136.1",
@@ -48,7 +48,7 @@ docs = [
   "httpx>=0.28.1",
   "mkdocs-mermaid2-plugin>=1.2.3",
   "mkdocs-glightbox>=0.5.2",
-  "zensical>=0.0.37"
+  "zensical>=0.0.40"
 ]
 test = [
   "pytest>=9.0.3",
@@ -58,9 +58,9 @@ test = [
 ]
 ci = [
   "prek>=0.3.11",
-  "pyrefly>=0.62.0",
+  "pyrefly>=0.63.1",
   "ruff>=0.15.12",
-  "skylos>=4.7.0",
+  "skylos>=4.10.0",
   "smokeshow>=0.5.0"
 ]
 
