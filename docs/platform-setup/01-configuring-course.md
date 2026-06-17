@@ -73,7 +73,7 @@ Generated values:
 
 ## What CCC Saves
 
-The resulting `ccc-course-<course-slug>` block contains:
+The resulting `ccc-course-<canvas-course-id>-<slugified-course-code>` block contains:
 
 - **Canvas** URL, token, and course ID
 - **Assets** block name and prefix

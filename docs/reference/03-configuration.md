@@ -23,7 +23,7 @@ $ ccc course list
 
 ## Runtime Loading Path
 
-CCC turns a `ccc-course-<course-slug>` block into runtime settings with:
+CCC turns a `ccc-course-<canvas-course-id>-<slugified-course-code>` block into runtime settings with:
 
 - `canvas_code_correction.bootstrap.load_course_block`
 - `canvas_code_correction.bootstrap.load_settings_from_course_block`

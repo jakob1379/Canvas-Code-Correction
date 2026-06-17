@@ -290,10 +290,14 @@ def test_course_setup_live_full_workflow(cli_runner: CliRunner) -> None:
     assert "Canvas access validated successfully" in result.output
     assert f"ccc-course-{course_id}-" in result.output
     saved_block_name = next(
-        line.split("Course configuration saved as block: ", 1)[1].strip()
-        for line in result.output.splitlines()
-        if "Course configuration saved as block:" in line
+        (
+            line.split("Course configuration saved as block: ", 1)[1].strip()
+            for line in result.output.splitlines()
+            if "Course configuration saved as block:" in line
+        ),
+        None,
     )
+    assert saved_block_name is not None, "Could not find saved block name in output"
 
     # Verify we can list the new course
     list_result = cli_runner.invoke(app, ["course", "list"])
@@ -346,10 +350,14 @@ def test_course_run_dry_run_live(cli_runner: CliRunner) -> None:
         pytest.skip(f"Failed to setup course block: {setup_result.output}")
 
     course_block_name = next(
-        line.split("Course configuration saved as block: ", 1)[1].strip()
-        for line in setup_result.output.splitlines()
-        if "Course configuration saved as block:" in line
+        (
+            line.split("Course configuration saved as block: ", 1)[1].strip()
+            for line in setup_result.output.splitlines()
+            if "Course configuration saved as block:" in line
+        ),
+        None,
     )
+    assert course_block_name is not None, "Could not find saved block name in setup output"
 
     # Now try to run in dry-run mode
     run_result = cli_runner.invoke(

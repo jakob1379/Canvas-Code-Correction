@@ -40,7 +40,7 @@ If you prefer not to activate the virtual environment, prefix commands with
 
 ### 1. Configure a course
 
-Use `ccc course setup` to create a generated `ccc-course-<course-slug>` Prefect
+Use `ccc course setup` to create a generated `ccc-course-<canvas-course-id>-<slugified-course-code>` Prefect
 block that stores the Canvas connection, grader image, asset block, asset
 prefix, and work pool name. The CLI derives the block name, assets block name,
 assets prefix, and work pool from the selected course and saves them directly
