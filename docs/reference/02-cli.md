@@ -48,7 +48,7 @@ Available subcommands:
 
 ## `ccc course setup`
 
-Creates a generated `ccc-course-<course-slug>` Prefect block.
+Creates a generated `ccc-course-<canvas-course-id>-<slugified-course-code>` Prefect block.
 
 The repo also includes a ready-made local example grader at
 `examples/count-submitted-files/`.
