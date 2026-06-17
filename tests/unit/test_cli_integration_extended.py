@@ -72,21 +72,18 @@ def test_course_setup_live_basic(cli_runner: CliRunner, canvas_credentials: dict
                 "course",
                 "setup",
                 "--no-interactive",
-                "--slug",
-                "test-setup-basic",
                 "--token",
                 canvas_credentials["token"],
                 "--course-id",
                 canvas_credentials["course_id"],
-                "--assets-block",
-                "test-assets",
                 "--api-url",
                 canvas_credentials["api_url"],
             ],
         )
 
         assert result.exit_code == 0
-        assert "Course configuration saved as block: ccc-course-test-setup-basic" in result.output
+        saved_block_name = mock_block.save.call_args.args[0]
+        assert f"Course configuration saved as block: {saved_block_name}" in result.output
         mock_block.save.assert_called_once()
 
 
@@ -95,7 +92,7 @@ def test_course_setup_live_with_all_options(
     cli_runner: CliRunner,
     canvas_credentials: dict[str, str],
 ) -> None:
-    """Test course setup with all optional parameters."""
+    """Test course setup with all supported optional parameters."""
     with patch("canvas_code_correction.cli.CourseConfigBlock") as mock_block_class:
         mock_block = MagicMock()
         mock_block_class.return_value = mock_block
@@ -106,22 +103,14 @@ def test_course_setup_live_with_all_options(
                 "course",
                 "setup",
                 "--no-interactive",
-                "--slug",
-                "test-setup-full",
                 "--token",
                 canvas_credentials["token"],
                 "--course-id",
                 canvas_credentials["course_id"],
-                "--assets-block",
-                "test-assets",
                 "--api-url",
                 canvas_credentials["api_url"],
-                "--assets-prefix",
-                "graders/test/",
                 "--docker-image",
                 "python:3.11-slim",
-                "--work-pool",
-                "test-pool",
                 "--env",
                 "KEY1=value1",
                 "--env",
@@ -130,7 +119,8 @@ def test_course_setup_live_with_all_options(
         )
 
         assert result.exit_code == 0
-        assert "Course configuration saved as block: ccc-course-test-setup-full" in result.output
+        saved_block_name = mock_block.save.call_args.args[0]
+        assert f"Course configuration saved as block: {saved_block_name}" in result.output
 
         call_kwargs = mock_block_class.call_args.kwargs
         assert call_kwargs["grader_env"] == {"KEY1": "value1", "KEY2": "value2"}
@@ -145,8 +135,6 @@ def test_course_setup_live_missing_required(cli_runner: CliRunner) -> None:
             "course",
             "setup",
             "--no-interactive",
-            "--slug",
-            "test-missing",
             "--token",
             "some-token",
         ],
@@ -186,10 +174,6 @@ def test_course_setup_live_with_test_mappings(
                 canvas_credentials["api_url"],
                 "--course-id",
                 canvas_credentials["course_id"],
-                "--assets-block",
-                "test-assets",
-                "--slug",
-                "test-with-mappings",
                 "--test-map",
                 f"{canvas_credentials['assignment_id']}:/tests/test_assignment.py",
                 "--env",
@@ -198,7 +182,7 @@ def test_course_setup_live_with_test_mappings(
         )
 
         assert result.exit_code == 0
-        assert "Canvas API token validated successfully" in result.output
+        assert "Canvas access validated successfully" in result.output
 
         # Verify test mappings were stored
         call_kwargs = mock_block_class.call_args.kwargs
@@ -233,10 +217,6 @@ def test_course_setup_live_multiple_test_mappings(
                 canvas_credentials["api_url"],
                 "--course-id",
                 canvas_credentials["course_id"],
-                "--assets-block",
-                "test-assets",
-                "--slug",
-                "test-multi-mappings",
                 "--test-map",
                 f"{canvas_credentials['assignment_id']}:/tests/test1.py",
                 "--test-map",
@@ -271,8 +251,6 @@ def test_course_setup_live_malformed_token(cli_runner: CliRunner) -> None:
             "not-a-valid-token-format",
             "--course-id",
             "13122436",
-            "--assets-block",
-            "test-assets",
         ],
     )
 
@@ -293,8 +271,6 @@ def test_course_setup_live_empty_token(cli_runner: CliRunner) -> None:
             "",
             "--course-id",
             "13122436",
-            "--assets-block",
-            "test-assets",
         ],
     )
 
@@ -365,72 +341,30 @@ def test_cli_help_all_commands(cli_runner: CliRunner) -> None:
 
 
 @pytest.mark.integration
-def test_course_setup_live_special_chars_in_slug(
+def test_course_setup_live_legacy_override_flags_are_rejected(
     cli_runner: CliRunner,
     canvas_credentials: dict[str, str],
 ) -> None:
-    """Test course setup handles special characters in slug."""
-    with patch("canvas_code_correction.cli.CourseConfigBlock") as mock_block_class:
-        mock_block = MagicMock()
-        mock_block_class.return_value = mock_block
+    """Test course setup rejects removed manual naming flags."""
+    result = cli_runner.invoke(
+        app,
+        [
+            "course",
+            "setup",
+            "--no-interactive",
+            "--token",
+            canvas_credentials["token"],
+            "--api-url",
+            canvas_credentials["api_url"],
+            "--course-id",
+            canvas_credentials["course_id"],
+            "--slug",
+            "manual-override",
+        ],
+    )
 
-        # Use slug with hyphens and numbers
-        result = cli_runner.invoke(
-            app,
-            [
-                "course",
-                "setup",
-                "--no-interactive",
-                "--token",
-                canvas_credentials["token"],
-                "--api-url",
-                canvas_credentials["api_url"],
-                "--course-id",
-                canvas_credentials["course_id"],
-                "--assets-block",
-                "test-assets",
-                "--slug",
-                "cs-101-fall-2024",
-            ],
-        )
-
-        assert result.exit_code == 0
-        assert "ccc-course-cs-101-fall-2024" in result.output
-
-
-@pytest.mark.integration
-def test_course_setup_live_long_slug(
-    cli_runner: CliRunner,
-    canvas_credentials: dict[str, str],
-) -> None:
-    """Test course setup handles long slugs."""
-    with patch("canvas_code_correction.cli.CourseConfigBlock") as mock_block_class:
-        mock_block = MagicMock()
-        mock_block_class.return_value = mock_block
-
-        long_slug = "a" * 50  # 50 character slug
-
-        result = cli_runner.invoke(
-            app,
-            [
-                "course",
-                "setup",
-                "--no-interactive",
-                "--token",
-                canvas_credentials["token"],
-                "--api-url",
-                canvas_credentials["api_url"],
-                "--course-id",
-                canvas_credentials["course_id"],
-                "--assets-block",
-                "test-assets",
-                "--slug",
-                long_slug,
-            ],
-        )
-
-        assert result.exit_code == 0
-        assert f"ccc-course-{long_slug}" in result.output
+    assert result.exit_code == 2
+    assert "Unknown option(s): --slug, manual-override" in result.output
 
 
 @pytest.mark.integration
@@ -455,10 +389,6 @@ def test_course_setup_live_invalid_env_var_format(
                 canvas_credentials["api_url"],
                 "--course-id",
                 canvas_credentials["course_id"],
-                "--assets-block",
-                "test-assets",
-                "--slug",
-                "test-invalid-env",
                 "--env",
                 "INVALID_ENV_VAR",  # Missing equals sign
             ],

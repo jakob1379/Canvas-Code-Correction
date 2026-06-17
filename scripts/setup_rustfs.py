@@ -252,7 +252,6 @@ def main() -> int:
     print("\nNext steps:")
     print("1. Run integration tests: uv run pytest -m integration")
     print("2. Configure a course: uv run ccc course setup")
-    print(f"   --assets-block local-rustfs --s3-prefix {prefix}")
     print("3. Run correction flow: uv run ccc course run <assignment-id> --course <block>")
 
     return 0
