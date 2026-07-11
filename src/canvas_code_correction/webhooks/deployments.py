@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+import os
 from dataclasses import dataclass
 from inspect import isawaitable
 from typing import TYPE_CHECKING, Protocol, cast
@@ -28,6 +29,16 @@ logger = logging.getLogger(__name__)
 
 WEBHOOK_FLOW_NAME = "webhook-correction-flow"
 _EXPECTED_DEPLOYMENT_ERRORS = (PrefectException, OSError)
+
+
+def _webhook_dry_run() -> bool:
+    """Return whether webhook-triggered flows must suppress Canvas writes."""
+    return os.getenv("CCC_WEBHOOK_DRY_RUN", "false").strip().lower() in {
+        "1",
+        "true",
+        "yes",
+        "on",
+    }
 
 
 def _serialize_settings_for_flow(settings: Settings) -> dict[str, object]:
@@ -136,7 +147,7 @@ async def ensure_deployment(
                     "settings": _serialize_settings_for_flow(settings),
                 },
                 "download_dir": None,  # Let flow create temp dir
-                "dry_run": False,
+                "dry_run": _webhook_dry_run(),
             },
             tags=["canvas-webhook", f"course:{course_block}"],
             print_next_steps=False,
@@ -211,7 +222,7 @@ async def trigger_deployment(
                     "submission_id": submission_id,
                 },
                 "download_dir": None,  # Let flow create temp dir
-                "dry_run": False,
+                "dry_run": _webhook_dry_run(),
             },
             timeout=0,  # No timeout
         )
