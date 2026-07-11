@@ -66,7 +66,8 @@ def test_dev_init_rejects_unacknowledged_live_writes() -> None:
         "CANVAS_COURSE_ID": "123",
         "CANVAS_TEST_ASSIGNMENT_ID": "456",
         "CCC_COURSE_SLUG": "cs101",
-        "CCC_WORKSPACE_ROOT": "/tmp/ccc/workspaces",
+        # Test-only path; production deployment is outside this Compose configuration.
+        "CCC_WORKSPACE_ROOT": "/tmp/ccc/workspaces",  # NOSONAR
         "CCC_WEBHOOK_PUBLIC_URL": "https://ccc-dev.example.com",
         "CCC_WEBHOOK_DRY_RUN": "false",
         "CLOUDFLARE_TUNNEL_TOKEN": "secret",
@@ -89,8 +90,9 @@ def test_dev_stack_uses_internal_endpoints_and_safe_tunnel_token() -> None:
 
     for service_name in ("dev-init", "prefect-worker", "webhook-listener"):
         environment = services[service_name]["environment"]
-        assert environment["PREFECT_API_URL"] == "http://prefect-server:4200/api"
-        assert environment["RUSTFS_ENDPOINT"] == "http://rustfs:9000"
+        # These endpoints stay on the private Compose network; TLS terminates externally.
+        assert environment["PREFECT_API_URL"] == "http://prefect-server:4200/api"  # NOSONAR
+        assert environment["RUSTFS_ENDPOINT"] == "http://rustfs:9000"  # NOSONAR
 
     tunnel = services["cloudflared"]
     assert "CLOUDFLARE_TUNNEL_TOKEN" in tunnel["environment"]["TUNNEL_TOKEN"]
