@@ -20,11 +20,25 @@ from canvas_code_correction.webhooks.deployments import (
     DeploymentEnsureResult,
     TriggerDeploymentResult,
     _serialize_settings_for_flow,
+    _webhook_dry_run,
     ensure_deployment,
     get_deployment_name,
     resolve_deployment_target,
     trigger_deployment,
 )
+
+
+@pytest.mark.parametrize("value", ["1", "true", "TRUE", "yes", "on"])
+def test_webhook_dry_run_accepts_explicit_true_values(monkeypatch, value: str) -> None:
+    monkeypatch.setenv("CCC_WEBHOOK_DRY_RUN", value)
+
+    assert _webhook_dry_run() is True
+
+
+def test_webhook_dry_run_defaults_to_false(monkeypatch) -> None:
+    monkeypatch.delenv("CCC_WEBHOOK_DRY_RUN", raising=False)
+
+    assert _webhook_dry_run() is False
 
 
 @pytest.fixture
