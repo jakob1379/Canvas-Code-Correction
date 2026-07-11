@@ -148,6 +148,12 @@ PREFECT_API_URL=http://localhost:4200/api
 For local RustFS testing, uncomment the `RUSTFS_*` entries in `.env.example` or
 use `.env.dev`.
 
+For a complete local stack that accepts real Canvas Live Events through a
+stable HTTPS address, use the named Cloudflare Tunnel workflow in
+[Testing Canvas Live Events Locally](docs/platform-setup/08-local-live-events.md).
+The stack reads `.env.dev`, verifies Canvas signed payloads, and keeps Canvas
+writes in dry-run mode by default.
+
 ## Development Commands
 
 The repo standard commands live in `pyproject.toml`:
@@ -167,6 +173,25 @@ $ poe prefect
 $ poe s3
 $ poe rustfs-setup
 $ uv run zensical build --strict --clean
+```
+
+Local Live Events stack:
+
+```bash
+$ poe dev-stack-config
+$ poe dev-stack-up
+$ poe dev-stack-status
+$ poe dev-stack-logs
+$ poe dev-stack-smoke
+$ poe dev-stack-down
+```
+
+These aliases use the `dev-webhook` Docker Compose profile directly. The
+Compose file is local-development infrastructure; production deployment is
+managed separately. To start the same profile without Poe:
+
+```bash
+$ docker compose --env-file .env.dev --profile dev-webhook up --build --wait -d
 ```
 
 Integration and e2e commands:
