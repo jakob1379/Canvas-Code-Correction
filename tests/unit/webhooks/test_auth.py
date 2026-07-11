@@ -3,7 +3,7 @@
 import json
 from collections.abc import Mapping
 from typing import cast
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 import jwt.exceptions
 import requests
@@ -14,18 +14,104 @@ from canvas_code_correction.config import (
     CourseAssetsSettings,
     GraderSettings,
     Settings,
+    WebhookAuthMode,
     WebhookSettings,
     WorkspaceSettings,
 )
 from canvas_code_correction.webhooks.auth import (
     WebhookSignatureHeaders,
     WebhookVerificationResult,
+    clear_jwk_cache,
     validate_canvas_signature,
     validate_hmac_signature,
     validate_jwt_token,
     verify_canvas_webhook,
     verify_via_canvas_api,
 )
+from tests.webhooks_shared import create_canvas_webhook_payload
+
+
+def _signed_jwt_settings() -> Settings:
+    return Settings(
+        canvas=CanvasSettings(
+            api_url=HttpUrl("https://canvas.instructure.com"),
+            token=SecretStr("fake"),
+            course_id=1,
+        ),
+        assets=CourseAssetsSettings(bucket_block="test"),
+        grader=GraderSettings(),
+        workspace=WorkspaceSettings(),
+        webhook=WebhookSettings(auth_mode=WebhookAuthMode.CANVAS_SIGNED_JWT),
+    )
+
+
+def test_validate_canvas_signed_jwt_body() -> None:
+    """A verified signed body exposes its decoded Canvas event payload."""
+    settings = _signed_jwt_settings()
+    response = MagicMock()
+    response.json.return_value = {
+        "keys": [{"kid": "current", "kty": "RSA", "alg": "RS256", "n": "x", "e": "AQAB"}],
+    }
+    key = MagicMock()
+    key.key = object()
+    clear_jwk_cache()
+    with (
+        patch("canvas_code_correction.webhooks.auth.requests.get", return_value=response),
+        patch(
+            "canvas_code_correction.webhooks.auth.jwt.get_unverified_header",
+            return_value={"kid": "current", "alg": "RS256"},
+        ),
+        patch("canvas_code_correction.webhooks.auth.jwt.PyJWK.from_dict", return_value=key),
+        patch(
+            "canvas_code_correction.webhooks.auth.jwt.decode",
+            return_value=create_canvas_webhook_payload(),
+        ),
+    ):
+        result = validate_canvas_signature(settings, b"signed.jwt.body", WebhookSignatureHeaders())
+
+    assert result.success is True
+    assert result.mode == "canvas-signed-jwt"
+    assert result.payload is not None
+    assert result.payload.metadata.event_name == "submission_created"
+
+
+def test_validate_canvas_signed_jwt_refresh_failure_returns_bad_gateway() -> None:
+    """An unavailable JWK endpoint is retryable when no cached key exists."""
+    clear_jwk_cache()
+    with (
+        patch(
+            "canvas_code_correction.webhooks.auth.jwt.get_unverified_header",
+            return_value={"kid": "new", "alg": "RS256"},
+        ),
+        patch(
+            "canvas_code_correction.webhooks.auth.requests.get",
+            side_effect=requests.Timeout,
+        ),
+    ):
+        result = validate_canvas_signature(
+            _signed_jwt_settings(),
+            b"signed.jwt.body",
+            WebhookSignatureHeaders(),
+        )
+
+    assert result.status_code == 502
+    assert result.success is False
+
+
+def test_validate_canvas_signed_jwt_rejects_symmetric_algorithm() -> None:
+    """Signed Canvas events never accept attacker-selected symmetric algorithms."""
+    with patch(
+        "canvas_code_correction.webhooks.auth.jwt.get_unverified_header",
+        return_value={"kid": "current", "alg": "HS256"},
+    ):
+        result = validate_canvas_signature(
+            _signed_jwt_settings(),
+            b"signed.jwt.body",
+            WebhookSignatureHeaders(),
+        )
+
+    assert result.status_code == 401
+    assert result.success is False
 
 
 def test_validate_jwt_token_valid() -> None:

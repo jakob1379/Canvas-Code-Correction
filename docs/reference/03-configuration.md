@@ -69,9 +69,17 @@ The runtime model itself lives in `src/canvas_code_correction/config.py`.
 - `secret`
 - `deployment_name`
 - `enabled`
+- `auth_mode`
+- `canvas_jwks_url`
+- `canvas_jwks_cache_seconds`
 - `require_jwt`
 - `rate_limit`
 - `allow_canvas_api_fallback`
+
+New course blocks use `canvas-signed-jwt`, which verifies the compact Canvas
+Live Events request body using Canvas-managed JWKs. `require_jwt` and the local
+webhook secret describe legacy bearer-JWT/HMAC clients; they are not the Canvas
+Live Events **Sign Payload** mechanism.
 
 ## Persisted Course Block Fields
 
@@ -87,8 +95,8 @@ fields:
 - `grader_image`
 - `work_pool_name`
 - `grader_env`
-- webhook fields such as `deployment_name`, `webhook_enabled`, and
-  `webhook_rate_limit`
+- webhook fields such as `deployment_name`, `webhook_enabled`,
+  `webhook_auth_mode`, `webhook_canvas_jwks_url`, and `webhook_rate_limit`
 
 ## CLI-to-Block Mapping
 
@@ -103,6 +111,9 @@ fields:
 | `--docker-image` | `grader_image` |
 | `--work-pool` | `work_pool_name` |
 | `--env` | `grader_env` |
+| `--webhook-auth` | `webhook_auth_mode` |
+| `--webhook-jwks-url` | `webhook_canvas_jwks_url` |
+| `--webhook-rate-limit` | `webhook_rate_limit` |
 
 ## Environment Variables
 
@@ -137,13 +148,6 @@ fields:
 | `RUSTFS_SECRET_KEY` | `rustfsadmin` | Secret key |
 | `RUSTFS_BUCKET_NAME` | `test-assets` | Bucket name |
 | `RUSTFS_PREFIX` | `dev` | Prefix used by `poe rustfs-setup` |
-
-## Known Gap
-
-`allow_canvas_api_fallback` exists in the runtime `WebhookSettings` model, but
-it is **not** currently exposed by `ccc course setup` or persisted on the
-course block. Treat it as an internal runtime field unless that persistence path
-is added.
 
 ## Common Errors
 

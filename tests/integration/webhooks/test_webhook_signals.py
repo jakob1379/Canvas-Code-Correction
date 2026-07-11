@@ -158,9 +158,9 @@ def test_webhook_unsupported_event_type(
     finally:
         webhook_server.app.dependency_overrides.pop(webhook_server.get_webhook_runner, None)
 
-    assert response.status_code == 422
+    assert response.status_code == 200
     data = response.json()
-    assert "Unsupported event type" in data["detail"]
+    assert data["message"] == "Ignored unsupported event: assignment_created"
     mock_runner.assert_not_awaited()
 
 
@@ -309,13 +309,11 @@ def test_webhook_deployment_failure(
 
 
 @pytest.mark.integration
-@patch("canvas_code_correction.webhooks.server.get_rate_limiter")
 @patch("canvas_code_correction.webhooks.server.load_settings_from_course_block")
 @patch("canvas_code_correction.webhooks.server.verify_canvas_webhook")
 def test_webhook_custom_deployment_name(
     mock_verify: AsyncMock,
     mock_resolve_settings: Mock,
-    mock_get_rate_limiter: Mock,
     client: TestClient,
     mock_settings: Settings,
 ) -> None:
@@ -330,7 +328,7 @@ def test_webhook_custom_deployment_name(
     )
     mock_limiter = Mock()
     mock_limiter.hit.return_value = True
-    mock_get_rate_limiter.return_value = mock_limiter
+    webhook_server.app.dependency_overrides[webhook_server.get_rate_limiter] = lambda: mock_limiter
     mock_runner = AsyncMock()
     mock_runner.return_value = TriggerDeploymentResult(
         deployment_name="webhook-correction-flow/custom-deployment-name",
@@ -349,6 +347,7 @@ def test_webhook_custom_deployment_name(
         )
     finally:
         webhook_server.app.dependency_overrides.pop(webhook_server.get_webhook_runner, None)
+        webhook_server.app.dependency_overrides.pop(webhook_server.get_rate_limiter, None)
 
     assert response.status_code == 202
     data = response.json()
