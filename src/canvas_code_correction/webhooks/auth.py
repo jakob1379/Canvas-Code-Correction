@@ -212,7 +212,9 @@ def _canvas_signed_jwt_verification_result(  # noqa: PLR0911
     )
     try:
         token = payload_body.decode("ascii").strip()
-        header = jwt.get_unverified_header(token)
+        # Reading the header only selects an allow-listed algorithm and JWK; jwt.decode below
+        # verifies the signature before claims are accepted.
+        header = jwt.get_unverified_header(token)  # NOSONAR
         kid = header.get("kid")
         algorithm = header.get("alg")
         if not isinstance(kid, str) or not kid:
