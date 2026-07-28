@@ -17,7 +17,7 @@ In a second terminal:
 ```bash
 $ uv run prefect work-pool create --type process course-work-pool-cs101
 $ ccc system deploy create ccc-course-cs101
-$ uv run prefect worker start --pool course-work-pool-cs101
+$ ccc system worker start --course ccc-course-cs101
 ```
 
 Expected deployment output includes:
@@ -74,13 +74,14 @@ instead.
 Start a worker subscribed to the same pool as the course block:
 
 ```bash
-$ uv run prefect worker start --pool course-work-pool-cs101
+$ ccc system worker start --course ccc-course-cs101
 ```
 
 Expected output begins with:
 
 ```text
-Starting worker for pool 'course-work-pool-cs101'...
+Mirrored RUSTFS_* credentials into AWS_* for the worker
+Starting Prefect worker for pool: course-work-pool-cs101
 ```
 
 The worker host must have:
@@ -121,6 +122,8 @@ results.
 ### The worker stays idle
 
 - Confirm the worker pool name matches the course block.
+- Confirm you started the worker with `ccc system worker start --course ...` for
+  the same course block.
 - Inspect the deployment in Prefect:
 
   ```bash

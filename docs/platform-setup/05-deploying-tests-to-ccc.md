@@ -71,9 +71,14 @@ graders/cs101/
   fixtures/
 ```
 
-For local development, `poe rustfs-setup` creates the `local-rustfs` block and
-verifies the test bucket. You still need to place your real grader assets under
-the prefix you plan to use.
+For local development, `poe rustfs-setup` verifies the RustFS backend. If you
+run `ccc course setup` with `--work-package assignment_id:path`, CCC will create
+the generated course bucket and assets block for you, then upload each package's
+`grader/` or `assets/` directory to `assignments/<assignment id>` in that bucket.
+
+Only that asset directory is uploaded, so a `Dockerfile`, `.git/`, or a local
+scratch directory sitting next to it never reaches the bucket. A work-package
+root without a `grader/` or `assets/` directory is rejected.
 
 ## Step 3: Configure the Course Block
 
@@ -89,6 +94,11 @@ $ printf "%s" "$CANVAS_API_TOKEN" | ccc course setup --no-interactive \
 
 The CLI generates the assets block, assets prefix, and work pool from the
 Canvas course and saves them with the course block.
+
+If you also pass `--work-package`, the setup flow uploads the mapped work
+packages and persists assignment-specific asset prefixes so runtime downloads
+the correct package for each assignment. Uploads are additive first and pruned
+afterwards, so a failed upload never empties an assignment's live assets.
 
 ## Step 4: Create the Deployment and Start a Worker
 
@@ -120,6 +130,9 @@ grades.
 
 - Confirm the assets prefix really contains `main.sh`.
 - Confirm the course block uses the same prefix you uploaded to.
+- If you used `--work-package`, confirm the package root contains either
+  `grader/main.sh` or `assets/main.sh`. A root-level `main.sh` on its own is not
+  a valid work package.
 
 ### The worker cannot pull the image
 

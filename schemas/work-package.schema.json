@@ -1,0 +1,153 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/jakob1379/Canvas-Code-Correction/main/schemas/work-package.schema.json",
+  "title": "CCC Work Package",
+  "description": "Metadata for a Canvas Code Correction work package.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version"],
+  "properties": {
+    "schema_version": {
+      "type": "integer",
+      "const": 1,
+      "description": "Manifest schema version."
+    },
+    "name": {
+      "type": "string",
+      "pattern": "^[a-z0-9]+(?:[-_][a-z0-9]+)*$",
+      "description": "Stable machine-readable work-package name."
+    },
+    "display_name": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Human-readable work-package name."
+    },
+    "version": {
+      "type": "string",
+      "pattern": "^(0|[1-9]\\d*)(\\.(0|[1-9]\\d*)){0,2}([-.][0-9A-Za-z.-]+)?$",
+      "description": "Work-package version, typically semantic versioning."
+    },
+    "description": {
+      "type": "string",
+      "description": "Short description of what the work package grades."
+    },
+    "assignment_ids": {
+      "type": "array",
+      "description": "Canvas assignment IDs currently mapped to this work package.",
+      "items": {
+        "type": "integer",
+        "minimum": 1
+      },
+      "uniqueItems": true
+    },
+    "docker": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Metadata about the grader image build or runtime image.",
+      "properties": {
+        "image": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Published grader image reference."
+        },
+        "dockerfile": {
+          "type": "string",
+          "default": "Dockerfile",
+          "description": "Relative path to the Dockerfile."
+        },
+        "context": {
+          "type": "string",
+          "default": ".",
+          "description": "Relative Docker build context."
+        },
+        "build_args": {
+          "type": "object",
+          "description": "Optional Docker build arguments.",
+          "additionalProperties": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "assets": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Metadata describing the uploaded grader asset directory.",
+      "properties": {
+        "source_directory": {
+          "type": "string",
+          "enum": ["grader", "assets"],
+          "description": "Directory in the work package that is mounted as /workspace/assets."
+        },
+        "entrypoint": {
+          "type": "string",
+          "default": "main.sh",
+          "description": "Entry-point file relative to source_directory."
+        }
+      }
+    },
+    "authors": {
+      "type": "array",
+      "description": "People responsible for the work package.",
+      "items": {
+        "$ref": "#/$defs/person"
+      }
+    },
+    "labels": {
+      "type": "object",
+      "description": "Flat labels for search and filtering.",
+      "additionalProperties": {
+        "type": "string"
+      }
+    }
+  },
+  "patternProperties": {
+    "^x-": {
+      "description": "Extension field reserved for local or future metadata."
+    }
+  },
+  "$defs": {
+    "person": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "email": {
+          "type": "string",
+          "format": "email"
+        },
+        "url": {
+          "type": "string",
+          "format": "uri"
+        }
+      }
+    }
+  },
+  "examples": [
+    {
+      "schema_version": 1,
+      "name": "count-submitted-files",
+      "display_name": "Count Submitted Files",
+      "version": "1.0.0",
+      "description": "Counts submitted files and writes CCC grading outputs.",
+      "assignment_ids": [59160606],
+      "docker": {
+        "image": "jakob1379/canvas-grader:latest",
+        "dockerfile": "Dockerfile",
+        "context": "."
+      },
+      "assets": {
+        "source_directory": "assets",
+        "entrypoint": "main.sh"
+      },
+      "authors": [
+        {
+          "name": "Canvas Code Correction"
+        }
+      ]
+    }
+  ]
+}

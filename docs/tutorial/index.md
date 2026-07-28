@@ -48,10 +48,19 @@ my‑work‑package/
 ├── grader/
 │   ├── main.py               # Entry point for the grader
 │   └── tests/                # Your grader test scripts
-└── work‑package.yaml         # Metadata (name, version, etc.)
+└── work‑package.yaml         # Metadata (name, version, assignments, etc.)
 ```
 
 You will create each piece in the following pages.
+
+The repository ships a JSON Schema for `work-package.yaml` at
+`schemas/work-package.schema.json`. In this repo, `.vscode/settings.json`
+associates that schema with every `work-package.yaml`, and YAML language server
+clients can also use a file header such as:
+
+```yaml
+# yaml-language-server: $schema=../../schemas/work-package.schema.json
+```
 
 ## Let us Get Started!
 

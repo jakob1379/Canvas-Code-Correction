@@ -1,0 +1,4 @@
+# Local-only RustFS credentials for the docker-compose dev stack in .env.dev.
+# These address a throwaway bucket on localhost:9000, not a real S3 account.
+.env.dev:generic-api-key:33
+.env.dev:generic-api-key:34

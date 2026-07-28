@@ -1,7 +1,11 @@
 """Boundary helpers for loading runtime configuration from external systems."""
 
+from http import HTTPStatus
 from pathlib import Path
-from typing import TYPE_CHECKING, cast
+from typing import cast
+
+from prefect.client.orchestration import get_client
+from prefect.exceptions import PrefectHTTPStatusError
 
 from canvas_code_correction.config import (
     CanvasSettings,
@@ -14,8 +18,7 @@ from canvas_code_correction.config import (
 )
 from canvas_code_correction.prefect_blocks.canvas import CourseConfigBlock
 
-if TYPE_CHECKING:
-    from collections.abc import Callable
+BLOCK_DOCUMENT_PAGE_SIZE = 200
 
 
 class CourseBlockLoadError(RuntimeError):
@@ -44,12 +47,33 @@ def load_course_block(block_name: str) -> CourseConfigBlock:
 
 
 def find_course_block_names() -> list[str]:
-    """Return available course block names."""
-    find_method = getattr(CourseConfigBlock, "find", None)
-    if find_method is None:
-        return []
-    find_blocks = cast("Callable[[], list[object]]", find_method)
-    return [str(name) for name in find_blocks()]
+    """Return every available course block name.
+
+    Returns an empty list when the block type has never been registered, which is
+    the state of a fresh install before the first `ccc course setup`.
+    """
+    block_type_slug = CourseConfigBlock.get_block_type_slug()
+    names: list[str] = []
+    offset = 0
+    with get_client(sync_client=True) as client:
+        while True:
+            try:
+                page = client.read_block_documents_by_type(
+                    block_type_slug=block_type_slug,
+                    include_secrets=False,
+                    offset=offset,
+                    limit=BLOCK_DOCUMENT_PAGE_SIZE,
+                )
+            except PrefectHTTPStatusError as exc:
+                if exc.response.status_code != HTTPStatus.NOT_FOUND:
+                    raise
+                return []
+
+            # Anonymous block documents have no name and are not selectable courses.
+            names.extend(str(doc.name) for doc in page if doc.name)
+            offset += len(page)
+            if len(page) < BLOCK_DOCUMENT_PAGE_SIZE:
+                return sorted(names)
 
 
 def load_settings_from_course_block(block_name: str) -> Settings:
@@ -69,6 +93,8 @@ def load_settings_from_course_block(block_name: str) -> Settings:
         assets=CourseAssetsSettings(
             bucket_block=block.asset_bucket_block,
             path_prefix=block.asset_path_prefix,
+            assignment_path_prefixes=dict(block.assignment_asset_prefixes),
+            storage_auth_mode=block.storage_auth_mode,
         ),
         grader=GraderSettings(
             docker_image=block.grader_image,

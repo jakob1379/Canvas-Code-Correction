@@ -1,5 +1,7 @@
 """Prefect block definitions for course configuration."""
 
+from typing import Literal
+
 from prefect.blocks.core import Block
 from pydantic import Field, HttpUrl, SecretStr
 
@@ -15,6 +17,10 @@ class CourseConfigBlock(Block):
 
     asset_bucket_block: str
     asset_path_prefix: str = ""
+    assignment_asset_prefixes: dict[int, str] = Field(default_factory=dict)
+    storage_auth_mode: Literal["embedded_block_credentials", "shared_environment"] = (
+        "embedded_block_credentials"
+    )
 
     workspace_root: str | None = None
 

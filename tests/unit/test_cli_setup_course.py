@@ -1,10 +1,13 @@
 """Integration tests for the setup-course CLI command."""
 
+from collections.abc import Iterator
 from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import MagicMock, patch
 
 import pytest
+import typer
+import yaml
 from typer.testing import CliRunner
 
 from canvas_code_correction import cli_course
@@ -43,8 +46,17 @@ def mock_canvas_assignments():
     return [assignment1, assignment2]
 
 
+@pytest.fixture
+def mock_provision_assets() -> Iterator[MagicMock]:
+    """Patch secure course asset provisioning for CLI tests."""
+    with patch("canvas_code_correction.cli_course._provision_course_assets") as mock:
+        yield mock
+
+
 class TestSetupCourseNonInteractive:
     """Tests for setup-course command in non-interactive mode."""
+
+    pytestmark = pytest.mark.usefixtures("mock_provision_assets")
 
     @pytest.mark.local
     @patch("canvas_code_correction.cli.Canvas")
@@ -66,6 +78,7 @@ class TestSetupCourseNonInteractive:
         # Setup block mock
         mock_block = MagicMock()
         mock_block_class.return_value = mock_block
+        mock_block_class.load.side_effect = ValueError("block not found")
 
         result = cli_runner.invoke(
             app,
@@ -94,6 +107,7 @@ class TestSetupCourseNonInteractive:
         call_kwargs = mock_block_class.call_args.kwargs
         assert call_kwargs["asset_bucket_block"] == "ccc-assets-13122436-test-101"
         assert call_kwargs["asset_path_prefix"] == "graders/13122436-test-101/"
+        assert call_kwargs["storage_auth_mode"] == "shared_environment"
         assert call_kwargs["work_pool_name"] == "course-work-pool-13122436-test-101"
 
     @pytest.mark.local
@@ -137,6 +151,7 @@ class TestSetupCourseNonInteractive:
 
         mock_block = MagicMock()
         mock_block_class.return_value = mock_block
+        mock_block_class.load.side_effect = ValueError("block not found")
 
         result = cli_runner.invoke(
             app,
@@ -184,13 +199,6 @@ class TestSetupCourseNonInteractive:
     ) -> None:
         """Interactive token-stdin mode must consume the pipe before TTY prompts begin."""
         events: list[str] = []
-        ctx = SimpleNamespace(
-            args=[
-                "--token-stdin",
-                "--course-id",
-                "13122436",
-            ],
-        )
 
         def fake_resolve_canvas_token(*_args: object, **_kwargs: object) -> str:
             events.append("resolve-token")
@@ -200,7 +208,10 @@ class TestSetupCourseNonInteractive:
             events.append("switch-tty")
 
         fake_course = SimpleNamespace(id=13122436, name="Test Course", course_code="TEST-101")
-        fake_setup_config = SimpleNamespace(block_name="ccc-course-13122436-test-101")
+        fake_setup_config = SimpleNamespace(
+            block_name="ccc-course-13122436-test-101",
+            work_package_plans=(),
+        )
 
         with (
             patch.object(
@@ -217,16 +228,32 @@ class TestSetupCourseNonInteractive:
             patch.object(cli_course, "_build_course_setup_config", return_value=fake_setup_config),
             patch.object(cli_course, "_print_course_setup_summary"),
             patch.object(cli_course, "_save_course_block"),
+            patch.object(cli_course, "_ensure_course_block_absent"),
+            patch.object(cli_course, "_sync_work_package_manifests"),
+            patch.object(cli_course, "_provision_course_assets"),
+            patch.object(
+                cli_course,
+                "_switch_stdin_to_tty_for_prompts",
+                side_effect=fake_switch_stdin,
+            ),
         ):
             cli_course.course_setup_command(
-                ctx,
+                cli_course.CourseSetupOptions(
+                    token_stdin=True,
+                    canvas_api_url=None,
+                    canvas_token=None,
+                    course_id=13122436,
+                    docker_image="jakob1379/canvas-grader:latest",
+                    work_packages=[],
+                    env_var=[],
+                    interactive=True,
+                ),
                 console=MagicMock(),
                 Canvas=MagicMock(),
                 CourseConfigBlock=MagicMock(),
                 Prompt=MagicMock(),
                 IntPrompt=MagicMock(),
                 Confirm=MagicMock(),
-                _switch_stdin_to_tty_for_prompts=fake_switch_stdin,
             )
 
         assert events[:2] == ["resolve-token", "switch-tty"]
@@ -281,7 +308,7 @@ class TestSetupCourseNonInteractive:
         )
 
         assert result.exit_code == 2
-        assert "Unknown option(s): --assets-block, test-bucket" in result.output
+        assert "No such option" in result.output
         mock_canvas_class.assert_not_called()
 
     @pytest.mark.local
@@ -344,14 +371,15 @@ class TestSetupCourseNonInteractive:
     @pytest.mark.local
     @patch("canvas_code_correction.cli.Canvas")
     @patch("canvas_code_correction.cli.CourseConfigBlock")
-    def test_setup_course_with_test_mappings(
+    def test_setup_course_with_work_packages(
         self,
         mock_block_class: MagicMock,
         mock_canvas_class: MagicMock,
         cli_runner: CliRunner,
         mock_canvas_course: MagicMock,
+        tmp_path: Path,
     ) -> None:
-        """Test setup-course with test mappings provided."""
+        """Test setup-course with work-package mappings provided."""
         mock_canvas = MagicMock()
         mock_canvas.get_current_user.return_value = MagicMock()
         mock_canvas.get_course.return_value = mock_canvas_course
@@ -359,29 +387,45 @@ class TestSetupCourseNonInteractive:
 
         mock_block = MagicMock()
         mock_block_class.return_value = mock_block
+        mock_block_class.load.side_effect = ValueError("block not found")
+        work_package_1 = tmp_path / "work-package-1"
+        (work_package_1 / "assets").mkdir(parents=True)
+        (work_package_1 / "assets" / "main.sh").write_text("#!/bin/sh\n")
+        work_package_2 = tmp_path / "work-package-2"
+        (work_package_2 / "grader").mkdir(parents=True)
+        (work_package_2 / "grader" / "main.sh").write_text("#!/bin/sh\n")
 
-        result = cli_runner.invoke(
-            app,
-            [
-                "course",
-                "setup",
-                "--no-interactive",
-                "--token",
-                "test-token",
-                "--course-id",
-                "13122436",
-                "--test-map",
-                "59160606:/tests/test_assignment1.py",
-                "--test-map",
-                "59160607:/tests/test_assignment2.py",
-            ],
-        )
+        with patch("canvas_code_correction.cli_course._provision_course_assets") as mock_provision:
+            result = cli_runner.invoke(
+                app,
+                [
+                    "course",
+                    "setup",
+                    "--no-interactive",
+                    "--token",
+                    "test-token",
+                    "--course-id",
+                    "13122436",
+                    "--work-package",
+                    f"59160606:{work_package_1}",
+                    "--work-package",
+                    f"59160607:{work_package_2}",
+                ],
+            )
 
         assert result.exit_code == 0
-        # Verify test mappings were passed to block
+        mock_provision.assert_called_once()
+        # Verify work-package mappings were passed to block
         call_kwargs = mock_block_class.call_args.kwargs
-        assert call_kwargs["grader_env"]["CCC_TEST_MAP_59160606"] == "/tests/test_assignment1.py"
-        assert call_kwargs["grader_env"]["CCC_TEST_MAP_59160607"] == "/tests/test_assignment2.py"
+        assert call_kwargs["grader_env"] == {}
+        assert call_kwargs["assignment_asset_prefixes"] == {
+            59160606: "assignments/59160606",
+            59160607: "assignments/59160607",
+        }
+        manifest_1 = yaml.safe_load((work_package_1 / "work-package.yaml").read_text())
+        manifest_2 = yaml.safe_load((work_package_2 / "work-package.yaml").read_text())
+        assert manifest_1["assignment_ids"] == [59160606]
+        assert manifest_2["assignment_ids"] == [59160607]
 
     @pytest.mark.local
     @patch("canvas_code_correction.cli.Canvas")
@@ -401,6 +445,7 @@ class TestSetupCourseNonInteractive:
 
         mock_block = MagicMock()
         mock_block_class.return_value = mock_block
+        mock_block_class.load.side_effect = ValueError("block not found")
 
         result = cli_runner.invoke(
             app,
@@ -442,6 +487,7 @@ class TestSetupCourseNonInteractive:
 
         mock_block = MagicMock()
         mock_block_class.return_value = mock_block
+        mock_block_class.load.side_effect = ValueError("block not found")
 
         result = cli_runner.invoke(
             app,
@@ -476,6 +522,8 @@ class TestSetupCourseNonInteractive:
 class TestSetupCourseInteractive:
     """Tests for setup-course command in interactive mode."""
 
+    pytestmark = pytest.mark.usefixtures("mock_provision_assets")
+
     @pytest.mark.local
     @patch("canvas_code_correction.cli.Canvas")
     @patch("canvas_code_correction.cli.CourseConfigBlock")
@@ -506,6 +554,7 @@ class TestSetupCourseInteractive:
         # Setup block mock
         mock_block = MagicMock()
         mock_block_class.return_value = mock_block
+        mock_block_class.load.side_effect = ValueError("block not found")
 
         # Setup prompts
         mock_prompt.side_effect = [
@@ -515,7 +564,7 @@ class TestSetupCourseInteractive:
         ]
         mock_int_prompt.return_value = 1  # Select first course from list
         mock_confirm.side_effect = [
-            False,  # Don't map tests
+            False,  # Don't map work packages
             True,  # Save configuration
         ]
 
@@ -551,40 +600,209 @@ class TestSetupCourseInteractive:
         assert result.exit_code == 1
         assert "Failed to validate Canvas credentials" in result.output
 
+    @pytest.mark.local
+    def test_request_work_package_mappings_prompt_mentions_empty_enter(
+        self,
+        mock_canvas_course: MagicMock,
+        mock_canvas_assignments: list,
+    ) -> None:
+        """Test work-package prompt tells the user how to finish input."""
+        mock_canvas_course.get_assignments.return_value = mock_canvas_assignments
+        mock_canvas_course.get_assignment.return_value = MagicMock()
 
-@pytest.mark.integration
-@pytest.mark.skipif(
-    not Path(".env.dev").exists(),
-    reason="No .env.dev file found for live testing",
-)
-class TestSetupCourseLive:
-    """Live integration tests against real Canvas API.
+        confirm = MagicMock()
+        confirm.ask.return_value = True
 
-    These tests require a valid .env.dev file with Canvas credentials.
-    They will make actual API calls to Canvas.
-    """
+        prompt = MagicMock()
+        prompt.ask.side_effect = [
+            "/path/to/work-package",  # invalid format first
+            "59160606:/path/to/work-package",
+            "",
+        ]
 
-    def test_setup_course_live_non_interactive(self) -> None:
-        """Test setup-course against live Canvas API in non-interactive mode.
+        cli_course._request_work_package_mappings(
+            mock_canvas_course,
+            console=MagicMock(),
+            Confirm=confirm,
+            Prompt=prompt,
+        )
 
-        This test uses credentials from .env.dev file.
-        """
-        import os
+        assert prompt.ask.call_args_list[0].args[0] == (
+            "Work-package mapping (press Enter on empty input to finish)"
+        )
 
-        # Load credentials from .env.dev
-        token = os.getenv("CANVAS_API_TOKEN")
-        course_id = os.getenv("CANVAS_COURSE_ID")
-        if not token or not course_id:
-            pytest.skip("Canvas credentials not available in environment")
+    @pytest.mark.local
+    def test_sync_work_package_manifests_leaves_matching_manifest_untouched(
+        self,
+        tmp_path: Path,
+    ) -> None:
+        """A manifest that already lists the assignment is not rewritten."""
+        root = tmp_path / "my-work-package"
+        (root / "assets").mkdir(parents=True)
+        manifest_path = root / "work-package.yaml"
+        original = yaml.safe_dump(
+            {"schema_version": 1, "assignment_ids": [59160606]},
+            sort_keys=False,
+        )
+        manifest_path.write_text(original)
 
-        # This test would run against live Canvas API
-        # For safety, we just verify the command structure works
-        # Actual live testing should be done manually
-        pytest.skip("Live Canvas API testing requires manual verification")
+        plans = cli_course._build_work_package_plans(
+            {59160606: root},
+            console=MagicMock(),
+        )
+        cli_course._sync_work_package_manifests(plans, console=MagicMock())
+
+        assert manifest_path.read_text() == original
+
+    @pytest.mark.local
+    def test_sync_work_package_manifests_merges_new_assignments(self, tmp_path: Path) -> None:
+        """A second assignment mapped to the same package is added to its manifest."""
+        root = tmp_path / "my-work-package"
+        (root / "assets").mkdir(parents=True)
+        manifest_path = root / "work-package.yaml"
+        manifest_path.write_text(
+            yaml.safe_dump({"schema_version": 1, "assignment_ids": [59160606]}, sort_keys=False),
+        )
+
+        plans = cli_course._build_work_package_plans(
+            {59160606: root, 59160607: root},
+            console=MagicMock(),
+        )
+        cli_course._sync_work_package_manifests(plans, console=MagicMock())
+
+        assert yaml.safe_load(manifest_path.read_text())["assignment_ids"] == [
+            59160606,
+            59160607,
+        ]
+
+    @pytest.mark.local
+    def test_sync_work_package_manifests_preserves_unknown_metadata(
+        self,
+        tmp_path: Path,
+    ) -> None:
+        """Keys CCC does not understand survive the rewrite."""
+        root = tmp_path / "my-work-package"
+        (root / "grader").mkdir(parents=True)
+        manifest_path = root / "work-package.yaml"
+        manifest_path.write_text(
+            yaml.safe_dump(
+                {
+                    "schema_version": 1,
+                    "name": "my-work-package",
+                    "version": "1.0.0",
+                    "assignment_ids": [59160606],
+                    "assets": {"source_directory": "grader", "entrypoint": "main.sh"},
+                },
+                sort_keys=False,
+            ),
+        )
+
+        plans = cli_course._build_work_package_plans(
+            {59160606: root, 59160607: root},
+            console=MagicMock(),
+        )
+        cli_course._sync_work_package_manifests(plans, console=MagicMock())
+        manifest = yaml.safe_load(manifest_path.read_text())
+
+        assert manifest["name"] == "my-work-package"
+        assert manifest["version"] == "1.0.0"
+        assert manifest["assets"]["source_directory"] == "grader"
+        assert manifest["assignment_ids"] == [59160606, 59160607]
+
+    @pytest.mark.local
+    def test_sync_work_package_manifests_creates_missing_manifest(self, tmp_path: Path) -> None:
+        root = tmp_path / "my-work-package"
+        (root / "assets").mkdir(parents=True)
+
+        plans = cli_course._build_work_package_plans({59160606: root}, console=MagicMock())
+        cli_course._sync_work_package_manifests(plans, console=MagicMock())
+
+        manifest = yaml.safe_load((root / "work-package.yaml").read_text())
+        assert manifest == {"schema_version": 1, "assignment_ids": [59160606]}
+
+    @pytest.mark.local
+    def test_build_work_package_plans_supports_assets_and_grader(self, tmp_path: Path) -> None:
+        """Either directory name works, and each package gets its own bucket prefix."""
+        assets_root = tmp_path / "assets-package"
+        (assets_root / "assets").mkdir(parents=True)
+        grader_root = tmp_path / "grader-package"
+        (grader_root / "grader").mkdir(parents=True)
+
+        plans = cli_course._build_work_package_plans(
+            {59160606: assets_root, 59160607: grader_root},
+            console=MagicMock(),
+        )
+
+        assert [plan.prefix for plan in plans] == [
+            "assignments/59160606",
+            "assignments/59160607",
+        ]
+        assert [plan.asset_source_dir for plan in plans] == [
+            assets_root / "assets",
+            grader_root / "grader",
+        ]
+
+    @pytest.mark.local
+    def test_build_work_package_plans_rejects_package_without_asset_dir(
+        self,
+        tmp_path: Path,
+    ) -> None:
+        """A root with no grader/ or assets/ is refused rather than uploaded wholesale."""
+        root = tmp_path / "loose-package"
+        root.mkdir()
+        (root / "main.sh").write_text("#!/bin/sh\n")
+
+        with pytest.raises(typer.Exit) as exc_info:
+            cli_course._build_work_package_plans({59160606: root}, console=MagicMock())
+
+        assert exc_info.value.exit_code == 1
+
+    @pytest.mark.local
+    def test_upload_work_package_prunes_only_after_a_successful_upload(
+        self,
+        tmp_path: Path,
+    ) -> None:
+        """Stale objects are removed after the upload, never before it."""
+        root = tmp_path / "package"
+        (root / "assets").mkdir(parents=True)
+        (root / "assets" / "main.sh").write_text("#!/bin/sh\n")
+        (root / "assets" / "lib" / "helper.py").parent.mkdir()
+        (root / "assets" / "lib" / "helper.py").write_text("x = 1\n")
+
+        plan = cli_course._build_work_package_plans({59160606: root}, console=MagicMock())[0]
+        storage = cli_course.RustfsStorageConfig(
+            endpoint_url="http://localhost:9000",
+            aws_access_key_id="KEY",
+            aws_secret_access_key="SECRET",  # noqa: S106
+            region_name="us-east-1",
+        )
+        calls: list[str] = []
+
+        def fake_upload(*_args: object, **_kwargs: object) -> int:
+            calls.append("upload")
+            return 2
+
+        def fake_delete(*_args: object, keep: set[str], **_kwargs: object) -> int:
+            calls.append("prune")
+            assert keep == {
+                "assignments/59160606/main.sh",
+                "assignments/59160606/lib/helper.py",
+            }
+            return 0
+
+        with (
+            patch.object(cli_course, "upload_directory_with_credentials", fake_upload),
+            patch.object(cli_course, "delete_stale_objects", fake_delete),
+        ):
+            cli_course._upload_work_package(storage, "bucket", plan, console=MagicMock())
+
+        assert calls == ["upload", "prune"]
 
 
 class TestSetupCourseEdgeCases:
     """Edge case tests for setup-course command."""
+
+    pytestmark = pytest.mark.usefixtures("mock_provision_assets")
 
     @pytest.mark.local
     @patch("canvas_code_correction.cli.Canvas")
@@ -605,6 +823,7 @@ class TestSetupCourseEdgeCases:
         mock_block = MagicMock()
         mock_block.save.side_effect = RuntimeError("Save failed")
         mock_block_class.return_value = mock_block
+        mock_block_class.load.side_effect = ValueError("block not found")
 
         result = cli_runner.invoke(
             app,
@@ -664,14 +883,14 @@ class TestSetupCourseEdgeCases:
     @pytest.mark.local
     @patch("canvas_code_correction.cli.Canvas")
     @patch("canvas_code_correction.cli.CourseConfigBlock")
-    def test_setup_course_invalid_test_mapping_format(
+    def test_setup_course_invalid_work_package_mapping_format(
         self,
         mock_block_class: MagicMock,
         mock_canvas_class: MagicMock,
         cli_runner: CliRunner,
         mock_canvas_course: MagicMock,
     ) -> None:
-        """Test setup-course with invalid test mapping format."""
+        """Test setup-course with invalid work-package mapping format."""
         mock_canvas = MagicMock()
         mock_canvas.get_current_user.return_value = MagicMock()
         mock_canvas.get_course.return_value = mock_canvas_course
@@ -679,6 +898,7 @@ class TestSetupCourseEdgeCases:
 
         mock_block = MagicMock()
         mock_block_class.return_value = mock_block
+        mock_block_class.load.side_effect = ValueError("block not found")
 
         result = cli_runner.invoke(
             app,
@@ -690,14 +910,53 @@ class TestSetupCourseEdgeCases:
                 "test-token",
                 "--course-id",
                 "13122436",
-                "--test-map",
+                "--work-package",
                 "invalid-mapping-format",
             ],
         )
 
         assert result.exit_code == 0
         # Should skip invalid mapping but still succeed
-        assert "Skipping invalid test mapping" in result.output
+        assert "Skipping invalid work-package mapping" in result.output
+
+    @pytest.mark.local
+    @patch("canvas_code_correction.cli.Canvas")
+    @patch("canvas_code_correction.cli.CourseConfigBlock")
+    def test_setup_course_rejects_empty_work_package_mapping_path(
+        self,
+        mock_block_class: MagicMock,
+        mock_canvas_class: MagicMock,
+        cli_runner: CliRunner,
+        mock_canvas_course: MagicMock,
+    ) -> None:
+        """Test setup-course skips work-package mappings with an empty path."""
+        mock_canvas = MagicMock()
+        mock_canvas.get_current_user.return_value = MagicMock()
+        mock_canvas.get_course.return_value = mock_canvas_course
+        mock_canvas_class.return_value = mock_canvas
+
+        mock_block = MagicMock()
+        mock_block_class.return_value = mock_block
+        mock_block_class.load.side_effect = ValueError("block not found")
+
+        result = cli_runner.invoke(
+            app,
+            [
+                "course",
+                "setup",
+                "--no-interactive",
+                "--token",
+                "test-token",
+                "--course-id",
+                "13122436",
+                "--work-package",
+                "59160606:",
+            ],
+        )
+
+        assert result.exit_code == 0
+        assert "Skipping invalid work-package mapping: 59160606:" in result.output
+        assert mock_block_class.call_args.kwargs["assignment_asset_prefixes"] == {}
 
     @pytest.mark.local
     @patch("canvas_code_correction.cli.Canvas")
@@ -717,6 +976,7 @@ class TestSetupCourseEdgeCases:
 
         mock_block = MagicMock()
         mock_block_class.return_value = mock_block
+        mock_block_class.load.side_effect = ValueError("block not found")
 
         result = cli_runner.invoke(
             app,

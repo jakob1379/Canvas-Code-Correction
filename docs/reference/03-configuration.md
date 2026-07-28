@@ -42,6 +42,14 @@ The runtime model itself lives in `src/canvas_code_correction/config.py`.
 
 - `bucket_block`
 - `path_prefix`
+- `assignment_path_prefixes`
+- `storage_auth_mode`
+
+`storage_auth_mode` is `shared_environment` for courses created by
+`ccc course setup`, meaning the runtime reads its S3 credentials from the
+ambient `RUSTFS_*` environment. Course blocks created before this setting
+existed default to `embedded_block_credentials` and keep using the credentials
+stored on their assets block.
 
 ### Grader
 
@@ -80,6 +88,8 @@ fields:
 - `canvas_course_id`
 - `asset_bucket_block`
 - `asset_path_prefix`
+- `assignment_asset_prefixes`
+- `storage_auth_mode`
 - `grader_image`
 - `work_pool_name`
 - `grader_env`
@@ -98,7 +108,14 @@ fields:
 | `--env` | `grader_env` |
 | generated course slug | `asset_bucket_block` |
 | generated course slug | `asset_path_prefix` |
+| generated shared-environment setup | `storage_auth_mode=shared_environment` |
 | generated course slug | `work_pool_name` |
+| `--work-package` | `assignment_asset_prefixes` |
+
+Each `--work-package assignment_id:path` mapping uploads that package's
+`grader/` or `assets/` directory to `assignments/<assignment id>` in the course
+bucket, and records the prefix in `assignment_asset_prefixes`. Assignments
+without a mapping fall back to `asset_path_prefix`.
 
 ## Environment Variables
 
@@ -129,10 +146,13 @@ fields:
 | Variable | Default | Purpose |
 | --- | --- | --- |
 | `RUSTFS_ENDPOINT` | `http://localhost:9000` | S3 endpoint |
-| `RUSTFS_ACCESS_KEY` | `rustfsadmin` | Access key |
-| `RUSTFS_SECRET_KEY` | `rustfsadmin` | Secret key |
+| `RUSTFS_ACCESS_KEY` | `rustfsadmin` | Shared S3 access key |
+| `RUSTFS_SECRET_KEY` | `rustfsadmin` | Shared S3 secret key |
 | `RUSTFS_BUCKET_NAME` | `test-assets` | Bucket name |
 | `RUSTFS_PREFIX` | `dev` | Prefix used by `poe rustfs-setup` |
+
+For shared-environment course setup, CCC uses `RUSTFS_ACCESS_KEY` and
+`RUSTFS_SECRET_KEY` for both setup-time uploads and runtime downloads.
 
 ## Known Gap
 

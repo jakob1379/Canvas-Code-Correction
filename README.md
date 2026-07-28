@@ -42,9 +42,12 @@ If you prefer not to activate the virtual environment, prefix commands with
 
 Use `ccc course setup` to create a generated `ccc-course-<canvas-course-id>-<slugified-course-code>` Prefect
 block that stores the Canvas connection, grader image, asset block, asset
-prefix, and work pool name. The CLI derives the block name, assets block name,
-assets prefix, and work pool from the selected course and saves them directly
-into the block.
+prefix, per-course storage auth mode, and work pool name. The CLI derives the
+block name, assets block name, assets prefix, and work pool from the selected
+course and saves them directly into the block. It uses the RustFS S3
+credentials present in `RUSTFS_ACCESS_KEY` and `RUSTFS_SECRET_KEY` to create
+the generated bucket, save the Prefect `S3Bucket` block, and upload work
+packages.
 
 For a ready-to-run local grader example, see
 `examples/count-submitted-files/` in the repo root.
@@ -114,7 +117,7 @@ Deployment 'ccc-cs101-deployment' created/updated successfully
 The worker must listen on the same work pool stored in the course block:
 
 ```bash
-$ uv run prefect worker start --pool course-work-pool-cs101
+$ ccc system worker start --course ccc-course-cs101
 ```
 
 ## Installation
@@ -179,6 +182,10 @@ To start the services manually instead, run:
 $ docker compose up --wait -d rustfs postgres redis prefect-server prefect-services
 $ pytest -m e2e
 ```
+
+The Compose-based Prefect API is exposed to other containers, so the server must
+bind to `0.0.0.0`. Host-side tools should still use
+`PREFECT_API_URL=http://localhost:4200/api`.
 
 ## Project Layout
 

@@ -2,6 +2,7 @@
 
 import tempfile
 from pathlib import Path
+from typing import Literal
 
 from pydantic import BaseModel, Field, HttpUrl, SecretStr
 
@@ -23,6 +24,10 @@ class CourseAssetsSettings(BaseModel):
 
     bucket_block: str
     path_prefix: str = ""
+    assignment_path_prefixes: dict[int, str] = Field(default_factory=dict)
+    storage_auth_mode: Literal["embedded_block_credentials", "shared_environment"] = (
+        "embedded_block_credentials"
+    )
 
 
 class GraderSettings(BaseModel):
@@ -31,7 +36,10 @@ class GraderSettings(BaseModel):
     docker_image: str | None = None
     work_pool_name: str | None = None
     env: dict[str, str] = Field(default_factory=dict)
-    command: list[str] = Field(default_factory=lambda: ["sh", "/workspace/assets/main.sh"])
+    command: list[str] = Field(
+        default_factory=lambda: ["sh", "/workspace/assets/main.sh"],
+        min_length=1,
+    )
     timeout_seconds: int = 300
     memory_mb: int | None = 512
     upload_check_duplicates: bool = True

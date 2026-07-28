@@ -36,7 +36,17 @@ The CLI generates the course block name, assets block name, assets prefix, and
 work pool from the selected course and persists those generated values
 automatically.
 
-If you still need the assets block, start with
+`ccc course setup` provisions the course bucket and uploads work packages using
+the shared RustFS S3 credentials in `RUSTFS_ACCESS_KEY` and
+`RUSTFS_SECRET_KEY`.
+setup time to:
+
+- create the generated course bucket
+- save the generated Prefect `S3Bucket` block
+- upload work packages into assignment-specific prefixes
+- verify RustFS access using the shared environment credentials
+
+If you still need the storage backend itself, start with
 [RustFS Storage](07-rustfs-storage.md) for local development or your production
 S3-compatible setup.
 
@@ -62,6 +72,7 @@ $ printf "%s" "$CANVAS_API_TOKEN" | ccc course setup --no-interactive \
 | `--api-url`, `-u` | Canvas base URL. |
 | `--course-id`, `-c` | Canvas course to bind to the block. |
 | `--docker-image`, `-d` | Grader image used for corrections. |
+| `--work-package` | Map an assignment ID to a local work-package root and upload it during setup. |
 | `--env`, `-e` | Extra grader environment variables, repeatable. |
 
 Generated values:
@@ -76,7 +87,7 @@ Generated values:
 The resulting `ccc-course-<canvas-course-id>-<slugified-course-code>` block contains:
 
 - **Canvas** URL, token, and course ID
-- **Assets** block name and prefix
+- **Assets** block name, prefix, and storage auth mode
 - **Grader** image, work pool, and extra environment variables
 - **Webhook** defaults such as deployment name and rate limit
 
@@ -92,7 +103,7 @@ $ ccc course list
 ```
 
 Expected result: a table that includes the block name, Canvas course ID, grader
-image, and assets block.
+image, assets block, storage auth mode, and any legacy assets secret block.
 
 ## Common Errors
 

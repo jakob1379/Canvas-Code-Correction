@@ -41,6 +41,30 @@ class TestCLICommandStructure:
         assert "list" in result.output
         assert "configure" not in result.output
 
+    def test_course_setup_help_shows_supported_options(self, cli_runner: CliRunner) -> None:
+        """Test that setup help includes the actual supported flags."""
+        result = cli_runner.invoke(app, ["course", "setup", "--help"])
+
+        assert result.exit_code == 0
+        assert "--token-stdin" in result.output
+        assert "--token" in result.output
+        assert "--api-url" in result.output
+        assert "--course-id" in result.output
+        assert "--docker-image" in result.output
+        assert "--map-assignments" in result.output
+        assert "--env" in result.output
+        assert "--no-interactive" in result.output
+
+    def test_course_run_help_shows_supported_options(self, cli_runner: CliRunner) -> None:
+        """Test that run help includes the actual supported flags."""
+        result = cli_runner.invoke(app, ["course", "run", "--help"])
+
+        assert result.exit_code == 0
+        assert "--submission-id" in result.output
+        assert "--course" in result.output
+        assert "--download-dir" in result.output
+        assert "--dry-run" in result.output
+
     def test_system_help_shows_subcommands(self, cli_runner: CliRunner) -> None:
         """Test that system group shows all subcommands."""
         result = cli_runner.invoke(app, ["system", "--help"])
@@ -48,6 +72,7 @@ class TestCLICommandStructure:
         assert result.exit_code == 0
         assert "webhook" in result.output
         assert "deploy" in result.output
+        assert "worker" in result.output
         assert "status" in result.output
 
     def test_webhook_help_shows_serve(self, cli_runner: CliRunner) -> None:
@@ -63,6 +88,13 @@ class TestCLICommandStructure:
 
         assert result.exit_code == 0
         assert "create" in result.output
+
+    def test_worker_help_shows_start(self, cli_runner: CliRunner) -> None:
+        """Test that worker subcommand shows start."""
+        result = cli_runner.invoke(app, ["system", "worker", "--help"])
+
+        assert result.exit_code == 0
+        assert "start" in result.output
 
     def test_version_flag_works(self, cli_runner: CliRunner) -> None:
         """Test that --version flag works."""
