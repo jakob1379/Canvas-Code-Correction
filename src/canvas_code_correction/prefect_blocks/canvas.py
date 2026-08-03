@@ -3,6 +3,8 @@
 from prefect.blocks.core import Block
 from pydantic import Field, HttpUrl, SecretStr
 
+from canvas_code_correction.config import CANVAS_LIVE_EVENTS_JWKS_URL, WebhookAuthMode
+
 
 class CourseConfigBlock(Block):
     """Prefect block encapsulating per-course configuration."""
@@ -50,6 +52,16 @@ class CourseConfigBlock(Block):
         default="10/minute",
         description="Rate limit for webhook requests (e.g., '10/minute', '100/hour')",
     )
+    webhook_auth_mode: WebhookAuthMode | None = Field(
+        default=None,
+        description="Explicit webhook authentication mode",
+    )
+    webhook_canvas_jwks_url: HttpUrl = Field(
+        default=CANVAS_LIVE_EVENTS_JWKS_URL,
+        validate_default=True,
+    )
+    webhook_canvas_jwks_cache_seconds: int = Field(default=3600, gt=0)
+    webhook_allow_canvas_api_fallback: bool = False
 
 
 __all__ = ["CourseConfigBlock"]

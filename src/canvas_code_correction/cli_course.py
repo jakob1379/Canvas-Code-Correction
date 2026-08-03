@@ -18,6 +18,11 @@ from rich.prompt import Confirm, IntPrompt, Prompt
 from rich.table import Table
 from slugify import slugify
 
+from canvas_code_correction.config import (
+    CANVAS_LIVE_EVENTS_JWKS_URL,
+    WebhookAuthMode,
+)
+
 if TYPE_CHECKING:
     from canvasapi.course import Course
 
@@ -48,6 +53,10 @@ class CourseSetupConfig:
     docker_image: str
     test_map_count: int
     grader_env: dict[str, str]
+    webhook_auth_mode: WebhookAuthMode
+    webhook_canvas_jwks_url: str
+    webhook_rate_limit: str
+    webhook_enabled: bool
 
 
 @dataclass(frozen=True)
@@ -72,6 +81,10 @@ class CourseSetupOptions:
     slug: str | None
     assets_prefix: str | None
     work_pool: str | None
+    webhook_auth_mode: WebhookAuthMode
+    webhook_canvas_jwks_url: str
+    webhook_rate_limit: str
+    webhook_enabled: bool
 
 
 class CourseConfigBlockPayload(TypedDict):
@@ -83,6 +96,10 @@ class CourseConfigBlockPayload(TypedDict):
     grader_image: str
     work_pool_name: str
     grader_env: dict[str, str]
+    webhook_auth_mode: WebhookAuthMode
+    webhook_canvas_jwks_url: HttpUrl
+    webhook_rate_limit: str
+    webhook_enabled: bool
 
 
 def _run_cli_step[T](console, step: str, action: Callable[[], T]) -> T:
@@ -421,6 +438,17 @@ def _parse_course_setup_options(args: list[str], *, console) -> CourseSetupOptio
     parser.add_argument("--slug", default=None)
     parser.add_argument("--assets-prefix", default=None)
     parser.add_argument("--work-pool", default=None)
+    parser.add_argument(
+        "--webhook-auth",
+        choices=[mode.value for mode in WebhookAuthMode],
+        default=WebhookAuthMode.CANVAS_SIGNED_JWT.value,
+    )
+    parser.add_argument(
+        "--webhook-jwks-url",
+        default=CANVAS_LIVE_EVENTS_JWKS_URL,
+    )
+    parser.add_argument("--webhook-rate-limit", default="10/minute")
+    parser.add_argument("--webhook-disabled", action="store_true")
 
     parsed, unknown_args = parser.parse_known_args(args)
     if unknown_args:
@@ -440,6 +468,10 @@ def _parse_course_setup_options(args: list[str], *, console) -> CourseSetupOptio
         slug=parsed.slug or None,
         assets_prefix=parsed.assets_prefix or None,
         work_pool=parsed.work_pool or None,
+        webhook_auth_mode=WebhookAuthMode(parsed.webhook_auth),
+        webhook_canvas_jwks_url=parsed.webhook_jwks_url,
+        webhook_rate_limit=parsed.webhook_rate_limit,
+        webhook_enabled=not parsed.webhook_disabled,
     )
 
 
@@ -654,6 +686,10 @@ def _build_course_setup_config(
         docker_image=resolved_docker_image,
         test_map_count=len(test_map_env),
         grader_env=grader_env,
+        webhook_auth_mode=options.webhook_auth_mode,
+        webhook_canvas_jwks_url=options.webhook_canvas_jwks_url,
+        webhook_rate_limit=options.webhook_rate_limit,
+        webhook_enabled=options.webhook_enabled,
     )
 
 
@@ -670,6 +706,8 @@ def _print_course_setup_summary(config: CourseSetupConfig, *, console) -> None:
     summary_table.add_row("Work Pool", config.work_pool)
     summary_table.add_row("Docker Image", config.docker_image)
     summary_table.add_row("Test Mappings", str(config.test_map_count))
+    summary_table.add_row("Webhook Auth", config.webhook_auth_mode.value)
+    summary_table.add_row("Webhook Enabled", str(config.webhook_enabled))
     console.print(summary_table)
 
 
@@ -683,6 +721,10 @@ def _build_course_block_payload(config: CourseSetupConfig) -> CourseConfigBlockP
         "grader_image": config.docker_image,
         "work_pool_name": config.work_pool,
         "grader_env": config.grader_env,
+        "webhook_auth_mode": config.webhook_auth_mode,
+        "webhook_canvas_jwks_url": HttpUrl(config.webhook_canvas_jwks_url),
+        "webhook_rate_limit": config.webhook_rate_limit,
+        "webhook_enabled": config.webhook_enabled,
     }
 
 
@@ -819,6 +861,10 @@ def course_setup_command(
             slug=options.slug,
             assets_prefix=options.assets_prefix,
             work_pool=options.work_pool,
+            webhook_auth_mode=options.webhook_auth_mode,
+            webhook_canvas_jwks_url=options.webhook_canvas_jwks_url,
+            webhook_rate_limit=options.webhook_rate_limit,
+            webhook_enabled=options.webhook_enabled,
         ),
         console=console,
         Prompt=Prompt,

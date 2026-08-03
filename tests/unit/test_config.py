@@ -9,8 +9,10 @@ from pydantic import HttpUrl, SecretStr
 
 from canvas_code_correction.bootstrap import load_settings_from_course_block
 from canvas_code_correction.config import (
+    CANVAS_LIVE_EVENTS_JWKS_URL,
     CanvasSettings,
     Settings,
+    WebhookAuthMode,
     WebhookSettings,
     WorkspaceSettings,
 )
@@ -124,3 +126,30 @@ def test_webhook_settings_default() -> None:
     assert settings.enabled is True
     assert settings.require_jwt is False
     assert settings.rate_limit == "10/minute"
+    assert settings.auth_mode is None
+    assert str(settings.canvas_jwks_url).rstrip("/") == CANVAS_LIVE_EVENTS_JWKS_URL
+
+
+def test_webhook_settings_resolves_legacy_and_explicit_modes() -> None:
+    """Explicit authentication takes precedence while old fields remain supported."""
+    assert (
+        WebhookSettings(require_jwt=True).effective_auth_mode() is WebhookAuthMode.LEGACY_BEARER_JWT
+    )
+    assert WebhookSettings(secret=SecretStr("secret")).effective_auth_mode() is WebhookAuthMode.HMAC
+    assert (
+        WebhookSettings(allow_canvas_api_fallback=True).effective_auth_mode()
+        is WebhookAuthMode.CANVAS_API
+    )
+    assert (
+        WebhookSettings(
+            auth_mode=WebhookAuthMode.CANVAS_SIGNED_JWT,
+            require_jwt=True,
+        ).effective_auth_mode()
+        is WebhookAuthMode.CANVAS_SIGNED_JWT
+    )
+
+
+def test_webhook_settings_rejects_non_positive_jwk_cache_ttl() -> None:
+    """Signing keys must have a positive cache lifetime."""
+    with pytest.raises(ValueError, match="greater than 0"):
+        WebhookSettings(canvas_jwks_cache_seconds=0)
