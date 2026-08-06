@@ -1,5 +1,6 @@
 """Helpers for constructing reusable Canvas API resources."""
 
+import contextlib
 from dataclasses import dataclass
 
 from canvasapi import Canvas
@@ -55,11 +56,8 @@ def resolve_submission_for_assignment(
     back to scanning the assignment's submissions when it does not match.
     """
     kwargs = {"include": include} if include else {}
-    try:
+    with contextlib.suppress(ResourceDoesNotExist):
         submission = assignment.get_submission(submission_id, **kwargs)
-    except ResourceDoesNotExist:
-        submission = None
-    else:
         if submission.id == submission_id:
             return submission
 
@@ -67,8 +65,6 @@ def resolve_submission_for_assignment(
         if candidate.id == submission_id:
             return assignment.get_submission(candidate.user_id, **kwargs)
 
-    if submission is not None:
-        return submission
     msg = f"no submission with id {submission_id} on assignment {assignment.id}"
     raise ResourceDoesNotExist(msg)
 

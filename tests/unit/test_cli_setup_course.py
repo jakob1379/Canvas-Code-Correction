@@ -8,10 +8,27 @@ from unittest.mock import MagicMock, patch
 import pytest
 import typer
 import yaml
+from prefect.exceptions import ObjectNotFound
 from typer.testing import CliRunner
 
 from canvas_code_correction import cli_course
 from canvas_code_correction.cli import app
+from canvas_code_correction.prefect_blocks.canvas import CourseConfigBlock
+
+
+@pytest.fixture(autouse=True)
+def course_block_absent() -> Iterator[MagicMock]:
+    """Default every test to "block does not exist yet", without touching a real Prefect API.
+
+    `_ensure_course_block_absent` queries the block document directly, so without
+    this these unit tests would hit whatever `PREFECT_API_URL` happens to point at.
+    """
+    with patch.object(cli_course, "get_client") as mock_get_client:
+        client = mock_get_client.return_value.__enter__.return_value
+        client.read_block_document_by_name.side_effect = ObjectNotFound(
+            http_exc=Exception("not found"),
+        )
+        yield mock_get_client
 
 
 @pytest.fixture
@@ -78,7 +95,6 @@ class TestSetupCourseNonInteractive:
         # Setup block mock
         mock_block = MagicMock()
         mock_block_class.return_value = mock_block
-        mock_block_class.load.side_effect = ValueError("block not found")
 
         result = cli_runner.invoke(
             app,
@@ -151,7 +167,6 @@ class TestSetupCourseNonInteractive:
 
         mock_block = MagicMock()
         mock_block_class.return_value = mock_block
-        mock_block_class.load.side_effect = ValueError("block not found")
 
         result = cli_runner.invoke(
             app,
@@ -387,7 +402,6 @@ class TestSetupCourseNonInteractive:
 
         mock_block = MagicMock()
         mock_block_class.return_value = mock_block
-        mock_block_class.load.side_effect = ValueError("block not found")
         work_package_1 = tmp_path / "work-package-1"
         (work_package_1 / "assets").mkdir(parents=True)
         (work_package_1 / "assets" / "main.sh").write_text("#!/bin/sh\n")
@@ -445,7 +459,6 @@ class TestSetupCourseNonInteractive:
 
         mock_block = MagicMock()
         mock_block_class.return_value = mock_block
-        mock_block_class.load.side_effect = ValueError("block not found")
 
         result = cli_runner.invoke(
             app,
@@ -487,7 +500,6 @@ class TestSetupCourseNonInteractive:
 
         mock_block = MagicMock()
         mock_block_class.return_value = mock_block
-        mock_block_class.load.side_effect = ValueError("block not found")
 
         result = cli_runner.invoke(
             app,
@@ -554,7 +566,6 @@ class TestSetupCourseInteractive:
         # Setup block mock
         mock_block = MagicMock()
         mock_block_class.return_value = mock_block
-        mock_block_class.load.side_effect = ValueError("block not found")
 
         # Setup prompts
         mock_prompt.side_effect = [
@@ -674,6 +685,63 @@ class TestSetupCourseInteractive:
             59160606,
             59160607,
         ]
+
+    @pytest.mark.local
+    @pytest.mark.parametrize("trailing_newline", [True, False])
+    def test_sync_work_package_manifests_preserves_schema_pragma(
+        self,
+        tmp_path: Path,
+        trailing_newline: bool,
+    ) -> None:
+        """A rewrite keeps the `---` marker and the editor schema pragma intact."""
+        root = tmp_path / "my-work-package"
+        (root / "assets").mkdir(parents=True)
+        manifest_path = root / "work-package.yaml"
+        header = "---\n# yaml-language-server: $schema=../../schemas/work-package.schema.json"
+        # trailing_newline=False is a header-only manifest with no final newline: the
+        # header would otherwise fuse with the dump and swallow the first key.
+        body = "\nschema_version: 1\nassignment_ids: [59160606]\n"
+        manifest_path.write_text(header + body if trailing_newline else header)
+
+        plans = cli_course._build_work_package_plans({59160607: root}, console=MagicMock())
+        cli_course._sync_work_package_manifests(plans, console=MagicMock())
+
+        rewritten = manifest_path.read_text()
+        assert rewritten.startswith(header + "\n")
+        # The pragma must not fuse with the dumped body and swallow the first key.
+        assert yaml.safe_load(rewritten)["schema_version"] == 1
+        assert 59160607 in yaml.safe_load(rewritten)["assignment_ids"]
+
+    @pytest.mark.local
+    def test_ensure_course_block_absent_propagates_non_missing_errors(self) -> None:
+        """A Prefect outage must not read as "absent" and let setup mutate S3 first."""
+        with patch.object(cli_course, "get_client") as mock_get_client:
+            client = mock_get_client.return_value.__enter__.return_value
+            client.read_block_document_by_name.side_effect = ValueError("No Prefect API URL")
+
+            with pytest.raises(ValueError, match="No Prefect API URL"):
+                cli_course._ensure_course_block_absent(
+                    "ccc-course-1-test",
+                    console=MagicMock(),
+                    CourseConfigBlock=MagicMock(),
+                )
+
+    @pytest.mark.local
+    def test_ensure_course_block_absent_queries_real_slug_without_secrets(
+        self,
+        course_block_absent: MagicMock,
+    ) -> None:
+        """The existence check targets the real block type and must not pull secrets."""
+        cli_course._ensure_course_block_absent(
+            "ccc-course-1-test",
+            console=MagicMock(),
+            CourseConfigBlock=CourseConfigBlock,
+        )
+
+        client = course_block_absent.return_value.__enter__.return_value
+        kwargs = client.read_block_document_by_name.call_args.kwargs
+        assert kwargs["block_type_slug"] == "ccc-course-config"
+        assert kwargs["include_secrets"] is False
 
     @pytest.mark.local
     def test_sync_work_package_manifests_preserves_unknown_metadata(
@@ -823,7 +891,6 @@ class TestSetupCourseEdgeCases:
         mock_block = MagicMock()
         mock_block.save.side_effect = RuntimeError("Save failed")
         mock_block_class.return_value = mock_block
-        mock_block_class.load.side_effect = ValueError("block not found")
 
         result = cli_runner.invoke(
             app,
@@ -850,6 +917,8 @@ class TestSetupCourseEdgeCases:
         mock_canvas_class: MagicMock,
         cli_runner: CliRunner,
         mock_canvas_course: MagicMock,
+        course_block_absent: MagicMock,
+        mock_provision_assets: MagicMock,
     ) -> None:
         """Test setup-course fails when the generated block name already exists."""
         mock_canvas = MagicMock()
@@ -857,9 +926,9 @@ class TestSetupCourseEdgeCases:
         mock_canvas.get_course.return_value = mock_canvas_course
         mock_canvas_class.return_value = mock_canvas
 
-        mock_block = MagicMock()
-        mock_block.save.side_effect = ValueError("already exists")
-        mock_block_class.return_value = mock_block
+        # The block document resolves, so the course block already exists.
+        client = course_block_absent.return_value.__enter__.return_value
+        client.read_block_document_by_name.side_effect = None
 
         result = cli_runner.invoke(
             app,
@@ -879,6 +948,9 @@ class TestSetupCourseEdgeCases:
             "Course configuration block already exists: ccc-course-13122436-test-101"
             in result.output
         )
+        # The point of the pre-flight check: it fails before mutating S3 or manifests.
+        mock_provision_assets.assert_not_called()
+        mock_block_class.return_value.save.assert_not_called()
 
     @pytest.mark.local
     @patch("canvas_code_correction.cli.Canvas")
@@ -898,7 +970,6 @@ class TestSetupCourseEdgeCases:
 
         mock_block = MagicMock()
         mock_block_class.return_value = mock_block
-        mock_block_class.load.side_effect = ValueError("block not found")
 
         result = cli_runner.invoke(
             app,
@@ -937,7 +1008,6 @@ class TestSetupCourseEdgeCases:
 
         mock_block = MagicMock()
         mock_block_class.return_value = mock_block
-        mock_block_class.load.side_effect = ValueError("block not found")
 
         result = cli_runner.invoke(
             app,
@@ -976,7 +1046,6 @@ class TestSetupCourseEdgeCases:
 
         mock_block = MagicMock()
         mock_block_class.return_value = mock_block
-        mock_block_class.load.side_effect = ValueError("block not found")
 
         result = cli_runner.invoke(
             app,

@@ -88,6 +88,20 @@ def test_settings_from_course_block(monkeypatch):
 
 
 @pytest.mark.local
+def test_resolve_submission_rejects_wrong_student_on_id_collision() -> None:
+    """A user id colliding with the requested submission id must never grade that student."""
+    assignment = Mock()
+    assignment.id = 12
+    wrong_student = Mock()
+    wrong_student.id = 999  # Canvas keyed this endpoint by user id, not submission id
+    assignment.get_submission.return_value = wrong_student
+    assignment.get_submissions.return_value = []
+
+    with pytest.raises(ResourceDoesNotExist, match="no submission with id 456"):
+        canvas_resources.resolve_submission_for_assignment(assignment, 456)
+
+
+@pytest.mark.local
 def test_get_assignment_submission_falls_back_from_submission_id_to_user_id() -> None:
     assignment = Mock()
     submission = Mock()

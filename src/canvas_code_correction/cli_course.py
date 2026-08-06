@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import io
+import itertools
 import json
 import os
 import sys
@@ -13,6 +14,8 @@ import requests
 import typer
 import yaml
 from canvasapi.exceptions import CanvasException
+from prefect.client.orchestration import get_client
+from prefect.exceptions import ObjectNotFound
 from prefect_aws.s3 import S3Bucket
 from pydantic import BaseModel, ConfigDict, Field, HttpUrl, SecretStr, ValidationError
 from rich.panel import Panel
@@ -396,6 +399,19 @@ def _load_work_package_manifest(manifest_path: Path, *, console) -> WorkPackageM
         raise typer.Exit(1) from exc
 
 
+def _manifest_header(manifest_path: Path) -> str:
+    """Return the leading ``---``/comment lines so a rewrite keeps the schema pragma."""
+    if not manifest_path.exists():
+        return ""
+    lines = manifest_path.read_text(encoding="utf-8").splitlines()
+    # Re-adding the newline per line also covers a header-only file saved without one,
+    # which would otherwise fuse with the dumped body and swallow its first key.
+    return "".join(
+        f"{line}\n"
+        for line in itertools.takewhile(lambda line: line.lstrip().startswith(("---", "#")), lines)
+    )
+
+
 def _sync_work_package_manifests(plans: tuple[WorkPackagePlan, ...], *, console) -> None:
     """Record each mapped assignment ID in its work package's manifest."""
     assignment_ids_by_root: dict[Path, set[int]] = {}
@@ -412,7 +428,9 @@ def _sync_work_package_manifests(plans: tuple[WorkPackagePlan, ...], *, console)
         manifest.assignment_ids = merged_ids
         try:
             manifest_path.write_text(
-                yaml.safe_dump(manifest.model_dump(), sort_keys=False), encoding="utf-8"
+                _manifest_header(manifest_path)
+                + yaml.safe_dump(manifest.model_dump(), sort_keys=False),
+                encoding="utf-8",
             )
         except OSError as exc:
             console.print(f"[red]Failed to write {manifest_path}: {exc}[/red]")
@@ -519,7 +537,7 @@ def _request_work_package_mappings(course: Course, *, console, Confirm, Prompt) 
     console.print(f"Format: [dim]{WORK_PACKAGE_MAPPING_FORMAT}[/dim]")
     console.print(
         "[dim]Use the root directory of the work package, the folder that contains "
-        "`Dockerfile` and `grader/` "
+        "`grader/` or `assets/` "
         f"(for example `{WORK_PACKAGE_MAPPING_EXAMPLE}`).[/dim]"
     )
     console.print(
@@ -786,15 +804,27 @@ def _build_course_block_payload(config: CourseSetupConfig) -> CourseConfigBlockP
 
 
 def _ensure_course_block_absent(block_name: str, *, console, CourseConfigBlock) -> None:
-    """Fail before any S3 or manifest mutation if the course block already exists."""
-    try:
-        CourseConfigBlock.load(block_name)
-    except Exception:  # noqa: BLE001 - any load failure means the block is unusable/absent
-        return
+    """Fail before any S3 or manifest mutation if the course block already exists.
+
+    Queries the block document directly rather than going through ``Block.load``:
+    only a genuine miss raises ``ObjectNotFound``, so a missing API URL, an auth
+    failure, or a schema-drifted block propagates instead of reading as "absent"
+    and letting setup mutate S3 and the user's manifests first.
+    """
+    with get_client(sync_client=True) as client:
+        try:
+            client.read_block_document_by_name(
+                name=block_name,
+                block_type_slug=CourseConfigBlock.get_block_type_slug(),
+                include_secrets=False,  # an existence check has no business fetching the token
+            )
+        except ObjectNotFound:
+            return
 
     console.print(f"[red]Course configuration block already exists: {block_name}[/red]")
     console.print(
-        f"[dim]Delete it first with: prefect block delete course-config-block/{block_name}[/dim]"
+        f"[dim]Delete it first with: prefect block delete "
+        f"{CourseConfigBlock.get_block_type_slug()}/{block_name}[/dim]"
     )
     raise typer.Exit(1)
 
@@ -925,8 +955,12 @@ def course_setup_command(
         console.print("[yellow]Configuration cancelled[/yellow]")
         raise typer.Exit(0)
 
-    _ensure_course_block_absent(
-        setup_config.block_name, console=console, CourseConfigBlock=CourseConfigBlock
+    _run_cli_step(
+        console,
+        "Error checking for an existing course block",
+        lambda: _ensure_course_block_absent(
+            setup_config.block_name, console=console, CourseConfigBlock=CourseConfigBlock
+        ),
     )
     _sync_work_package_manifests(setup_config.work_package_plans, console=console)
     _provision_course_assets(setup_config, console=console)

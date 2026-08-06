@@ -135,9 +135,7 @@
       "description": "Counts submitted files and writes CCC grading outputs.",
       "assignment_ids": [59160606],
       "docker": {
-        "image": "jakob1379/canvas-grader:latest",
-        "dockerfile": "Dockerfile",
-        "context": "."
+        "image": "jakob1379/canvas-grader:latest"
       },
       "assets": {
         "source_directory": "assets",

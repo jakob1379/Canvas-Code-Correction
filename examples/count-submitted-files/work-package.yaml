@@ -8,8 +8,6 @@ description: Counts submitted files and writes CCC grading outputs.
 assignment_ids: [59160606]
 docker:
   image: jakob1379/canvas-grader:latest
-  dockerfile: Dockerfile
-  context: .
 assets:
   source_directory: assets
   entrypoint: main.sh

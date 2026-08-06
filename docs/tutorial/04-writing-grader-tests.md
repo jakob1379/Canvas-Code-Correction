@@ -273,8 +273,8 @@ You now have a grader script that works locally. To deploy it:
 2. **Optionally create a Dockerfile** if you need extra dependencies beyond the
    base `jakob1379/canvas‑grader` image.
 3. If your platform operator uses `ccc course setup --work-package`, give them the
-   root directory of the work package, the folder containing `Dockerfile`
-   and `grader/`, for example
+   root directory of the work package, the folder containing `grader/`
+   or `assets/`, for example
    `59160606:/path/to/my-work-package`.
    If `work-package.yaml` already exists, CCC will use it. If it does not,
    `ccc course setup` can create or update it from the assignment-to-work-package
