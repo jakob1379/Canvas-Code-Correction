@@ -129,7 +129,7 @@ $ ccc course list
 ```
 
 Expected output is a table containing block name, Canvas course ID, grader
-image, assets block, storage auth mode, and any legacy assets secret block.
+image, assets block, and storage auth mode.
 
 ## `ccc system webhook serve`
 

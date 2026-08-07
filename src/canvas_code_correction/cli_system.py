@@ -5,7 +5,7 @@ import os
 import shutil
 from dataclasses import dataclass
 from http import HTTPStatus
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import boto3
 import requests
@@ -13,6 +13,9 @@ import typer
 from botocore.exceptions import BotoCoreError, EndpointConnectionError
 
 from canvas_code_correction.storage import seed_ambient_storage_env
+
+if TYPE_CHECKING:
+    from rich.console import Console
 
 
 DEFAULT_PREFECT_HEALTH_URL = "http://localhost:4200/api/health"
@@ -29,7 +32,7 @@ class SystemStatusConfig:
     rustfs_endpoint_default: str = DEFAULT_RUSTFS_ENDPOINT
 
 
-def _run_cli_step(console, step: str, action):
+def _run_cli_step(console: Console, step: str, action):
     try:
         return action()
     except typer.Exit:
@@ -40,7 +43,7 @@ def _run_cli_step(console, step: str, action):
 
 
 def webhook_serve_command(
-    *, console, host: str, port: int, uvicorn_run, webhook_fastapi_app
+    *, console: Console, host: str, port: int, uvicorn_run, webhook_fastapi_app
 ) -> None:
     console.print(f"[blue]Starting webhook server on {host}:{port}[/blue]")
     uvicorn_run(webhook_fastapi_app, host=host, port=port)
@@ -48,7 +51,7 @@ def webhook_serve_command(
 
 def deploy_create_command(
     *,
-    console,
+    console: Console,
     course_block: str,
     load_settings_from_course_block,
     ensure_deployment,
@@ -80,7 +83,7 @@ def deploy_create_command(
 
 def system_status_command(
     *,
-    console,
+    console: Console,
     config: SystemStatusConfig,
 ) -> None:
     console.print("[bold blue]Platform Status[/bold blue]")
@@ -127,7 +130,7 @@ def system_status_command(
 
 def worker_start_command(
     *,
-    console,
+    console: Console,
     course_block: str,
     load_settings_from_course_block,
 ) -> None:

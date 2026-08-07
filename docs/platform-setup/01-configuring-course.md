@@ -38,8 +38,7 @@ automatically.
 
 `ccc course setup` provisions the course bucket and uploads work packages using
 the shared RustFS S3 credentials in `RUSTFS_ACCESS_KEY` and
-`RUSTFS_SECRET_KEY`.
-setup time to:
+`RUSTFS_SECRET_KEY`. Those credentials are used at setup time to:
 
 - create the generated course bucket
 - save the generated Prefect `S3Bucket` block
@@ -102,8 +101,8 @@ List the configured courses:
 $ ccc course list
 ```
 
-Expected result: a table that includes the block name, Canvas course ID, grader
-image, assets block, storage auth mode, and any legacy assets secret block.
+Expected result: a table with the block name, Canvas course ID, grader image,
+assets block, and storage auth mode.
 
 ## Common Errors
 

@@ -8,6 +8,7 @@ from canvas_code_correction.storage.rustfs_provisioning import (
     RustfsStorageConfig,
     build_bucket_name,
     delete_stale_objects,
+    is_aws_endpoint,
     upload_directory_with_credentials,
 )
 
@@ -17,6 +18,22 @@ STORAGE = RustfsStorageConfig(
     aws_access_key_id="SHAREDKEY",
     aws_secret_access_key="SHAREDSECRET",  # noqa: S106
 )
+
+
+@pytest.mark.parametrize(
+    ("endpoint", "expected"),
+    [
+        ("https://s3.amazonaws.com", True),
+        ("https://s3.eu-west-1.amazonaws.com", True),
+        ("https://AMAZONAWS.COM", True),
+        # Look-alike hosts and paths must not be treated as AWS.
+        ("http://amazonaws.com.example.internal", False),
+        ("http://evil.net/amazonaws.com", False),
+        ("http://localhost:9000", False),
+    ],
+)
+def test_is_aws_endpoint_matches_host_not_substring(endpoint: str, expected: bool) -> None:
+    assert is_aws_endpoint(endpoint) is expected
 
 
 def test_build_bucket_name_truncates_long_values() -> None:

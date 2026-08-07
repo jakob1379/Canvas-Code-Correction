@@ -36,19 +36,19 @@ In this linear tutorial you will:
    for deployment
 
 Each step builds on the previous one. We will move from simplest example to
-production‑ready work package.
+production-ready work package.
 
 ## A Minimal Work Package
 
 Here is the directory structure of a complete work package:
 
 ```bash
-my‑work‑package/
+my-work-package/
 ├── Dockerfile                 # Builds the grader Docker image
 ├── grader/
 │   ├── main.py               # Entry point for the grader
 │   └── tests/                # Your grader test scripts
-└── work‑package.yaml         # Metadata (name, version, assignments, etc.)
+└── work-package.yaml         # Metadata (name, version, assignments, etc.)
 ```
 
 You will create each piece in the following pages.

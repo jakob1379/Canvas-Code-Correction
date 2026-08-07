@@ -512,7 +512,7 @@ def test_list_courses_success_with_blocks(
     mock_block2.canvas_course_id = 102
     mock_block2.grader_image = None
     mock_block2.asset_bucket_block = "bucket2"
-    mock_block2.storage_auth_mode = "worker_environment"
+    mock_block2.storage_auth_mode = "shared_environment"
     mock_block2.asset_credentials_secret_block = "ccc-assets-creds-cs102"
 
     mock_load_course_block.side_effect = [mock_block1, mock_block2]

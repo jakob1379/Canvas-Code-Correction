@@ -2,7 +2,7 @@
 
 from http import HTTPStatus
 from pathlib import Path
-from typing import cast
+from typing import Final, cast
 
 from prefect.client.orchestration import get_client
 from prefect.exceptions import PrefectHTTPStatusError
@@ -18,7 +18,7 @@ from canvas_code_correction.config import (
 )
 from canvas_code_correction.prefect_blocks.canvas import CourseConfigBlock
 
-BLOCK_DOCUMENT_PAGE_SIZE = 200
+BLOCK_DOCUMENT_PAGE_SIZE: Final[int] = 200
 
 
 class CourseBlockLoadError(RuntimeError):

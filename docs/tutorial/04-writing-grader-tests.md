@@ -271,7 +271,7 @@ You now have a grader script that works locally. To deploy it:
 1. **Package your script** (and any supporting files) in a directory, e.g.,
    `grader/`.
 2. **Optionally create a Dockerfile** if you need extra dependencies beyond the
-   base `jakob1379/canvas‑grader` image.
+   base `jakob1379/canvas-grader` image.
 3. If your platform operator uses `ccc course setup --work-package`, give them the
    root directory of the work package, the folder containing `grader/`
    or `assets/`, for example

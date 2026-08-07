@@ -15,10 +15,6 @@
             docker
           ];
 
-          LD_LIBRARY_PATH = "${pkgs.lib.makeLibraryPath [
-          ]}:$LD_LIBRARY_PATH";
-
-
           shellHook = ''
                export DOCKER_BUILDKIT=1
                export COMPOSE_DOCKER_CLI_BUILD=1

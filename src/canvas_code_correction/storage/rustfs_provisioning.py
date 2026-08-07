@@ -6,6 +6,7 @@ import hashlib
 import os
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, cast
+from urllib.parse import urlparse
 
 from botocore.exceptions import ClientError, EndpointConnectionError
 from prefect_aws import AwsClientParameters, AwsCredentials
@@ -87,9 +88,20 @@ def seed_ambient_storage_env(environ: MutableMapping[str, str]) -> dict[str, str
     return applied
 
 
+def is_aws_endpoint(endpoint_url: str) -> bool:
+    """Return whether the endpoint's *host* is AWS S3.
+
+    A substring test also matches hosts like ``amazonaws.com.example.internal``
+    or any URL with the string in its path, which would send AWS-only parameters
+    to a third-party endpoint.
+    """
+    host = (urlparse(endpoint_url).hostname or "").lower()
+    return host == "amazonaws.com" or host.endswith(".amazonaws.com")
+
+
 def _bucket_owner_kwargs(endpoint_url: str) -> dict[str, str]:
     bucket_owner = os.getenv("AWS_BUCKET_OWNER")
-    if bucket_owner and "amazonaws.com" in endpoint_url:
+    if bucket_owner and is_aws_endpoint(endpoint_url):
         return {"ExpectedBucketOwner": bucket_owner}
     return {}
 
@@ -112,7 +124,7 @@ def create_course_bucket(storage: RustfsStorageConfig, bucket_name: str) -> None
         return
 
     create_kwargs: dict[str, object] = {"Bucket": bucket_name, **owner_kwargs}
-    if "amazonaws.com" in storage.endpoint_url and storage.region_name != DEFAULT_AWS_REGION:
+    if is_aws_endpoint(storage.endpoint_url) and storage.region_name != DEFAULT_AWS_REGION:
         create_kwargs["CreateBucketConfiguration"] = {
             "LocationConstraint": storage.region_name,
         }
@@ -137,6 +149,9 @@ def verify_course_runtime_access(
         list_kwargs["Prefix"] = expected_prefix.strip("/") + "/"
     try:
         client.list_objects_v2(**list_kwargs)
+    except EndpointConnectionError as exc:
+        msg = f"could not reach S3 endpoint {storage.endpoint_url}: {exc}"
+        raise RustfsProvisioningError(msg) from exc
     except ClientError as exc:
         msg = f"shared RustFS credential could not access bucket {bucket_name}: {exc}"
         raise RustfsProvisioningError(msg) from exc

@@ -92,12 +92,14 @@ class GraderExecutor:
         start_time = time.monotonic()
         entrypoint, *command = config.command
         user = config.user or _default_container_user()
+        # Course-supplied env comes first: the reserved CCC_* paths are the contract
+        # the grader and the uploader agree on, so they must not be overridable.
         environment = {
+            **config.environment,
             "CCC_WORKSPACE_DIR": "/workspace",
             "CCC_RESULTS_FILE": "/workspace/submission/results.json",
             "CCC_POINTS_FILE": "/workspace/submission/points.txt",
             "CCC_COMMENTS_FILE": "/workspace/submission/comments.txt",
-            **config.environment,
         }
 
         docker_mounts = [
