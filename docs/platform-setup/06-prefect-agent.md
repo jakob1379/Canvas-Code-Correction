@@ -17,8 +17,8 @@ $ poe prefect
 Terminal 2:
 
 ```bash
-$ uv run prefect work-pool create --type process canvas-corrections
-$ uv run prefect worker start --pool canvas-corrections
+$ uv run prefect work-pool create --type process course-work-pool-12345-cs101
+$ ccc system worker start --course ccc-course-12345-cs101
 ```
 
 If you want RustFS too, add:
@@ -47,22 +47,38 @@ The UI and API are available at `http://localhost:4200`.
 ## Step 2: Create a Local Work Pool
 
 ```bash
-$ uv run prefect work-pool create --type process canvas-corrections
+$ uv run prefect work-pool create --type process course-work-pool-12345-cs101
 ```
 
-You can use any pool name, but your worker and deployment must match it.
+The pool name must match the one in the course block: `ccc course setup`
+generates `course-work-pool-<course-id>-<slugified-course-code>`, and
+`ccc system worker start` starts a worker for exactly that pool.
+With CCC's shared-environment storage mode, the recommended pattern is still
+one generated work pool per course.
 
 ## Step 3: Start the Worker
 
 ```bash
-$ uv run prefect worker start --pool canvas-corrections
+$ ccc system worker start --course ccc-course-12345-cs101
 ```
 
 Expected output begins with:
 
 ```text
-Starting worker for pool 'canvas-corrections'...
+Starting Prefect worker for pool: course-work-pool-12345-cs101
 ```
+
+For a `shared_environment` course that has `RUSTFS_*` credentials in the
+environment, this line appears first:
+
+```text
+Mirrored RUSTFS_* credentials into AWS_* for the worker
+```
+
+The mirroring line only appears when `RUSTFS_ACCESS_KEY` and
+`RUSTFS_SECRET_KEY` are set in the worker's environment. If they are not, CCC
+leaves the AWS credential chain alone so an IAM role or `~/.aws` profile keeps
+working.
 
 ## Step 4: Use a Course Block That Targets the Same Pool
 
@@ -72,17 +88,13 @@ For local runs, create or update a course block with:
 $ printf "%s" "$CANVAS_API_TOKEN" | ccc course setup --no-interactive \
   --token-stdin \
   --course-id 12345 \
-  --slug cs101 \
-  --assets-block local-rustfs \
-  --assets-prefix graders/cs101/ \
-  --docker-image ghcr.io/example/cs101-grader:latest \
-  --work-pool canvas-corrections
+  --docker-image ghcr.io/example/cs101-grader:latest
 ```
 
 Then create the deployment:
 
 ```bash
-$ ccc system deploy create ccc-course-cs101
+$ ccc system deploy create ccc-course-12345-cs101
 ```
 
 ## Step 5: Trigger Work
@@ -90,7 +102,7 @@ $ ccc system deploy create ccc-course-cs101
 For quick validation, prefer the CCC CLI:
 
 ```bash
-$ ccc course run 98765 --course ccc-course-cs101 --submission-id 54321 --dry-run
+$ ccc course run 98765 --course ccc-course-12345-cs101 --submission-id 54321 --dry-run
 ```
 
 To inspect recent flow activity:
@@ -106,9 +118,15 @@ $ uv run prefect flow-run ls --limit 5
 - Confirm `PREFECT_API_URL=http://localhost:4200/api`
 - Re-run `ccc system status`
 
+### The Docker worker cannot reach the Prefect API
+
+- Start the server with `prefect server start --host 0.0.0.0` when the API runs in a container.
+- Inside Docker Compose, point workers at `http://prefect-server:4200/api`, not `localhost`.
+
 ### The worker is running but nothing executes
 
 - Confirm the course block and worker use the same pool name
+- Confirm you started the worker through `ccc system worker start --course ...`
 - Inspect the deployment:
 
   ```bash

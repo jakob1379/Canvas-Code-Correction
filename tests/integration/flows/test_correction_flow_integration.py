@@ -3,10 +3,11 @@ from __future__ import annotations
 import zipfile
 from pathlib import Path
 from types import SimpleNamespace
+from typing import Any, cast
 from unittest.mock import patch
 
 import pytest
-from pydantic import SecretStr
+from pydantic import HttpUrl, SecretStr
 
 from canvas_code_correction.clients.canvas_resources import CanvasResources
 from canvas_code_correction.config import (
@@ -92,7 +93,7 @@ class FakeBucket:
 def _make_settings(tmp_path: Path) -> Settings:
     return Settings(
         canvas=CanvasSettings(
-            api_url="https://canvas.test",
+            api_url=HttpUrl("https://canvas.test"),
             token=SecretStr("token"),
             course_id=1,
         ),
@@ -108,8 +109,8 @@ def test_correct_submission_flow_runs_offline_contract(tmp_path: Path) -> None:
     submission = FakeSubmission()
     assignment = FakeAssignment(submission)
     resources = CanvasResources(
-        canvas=FakeCanvas({101: FakeCanvasFile("submission.py", b'print("hello")\n')}),
-        course=FakeCourse(assignment),
+        canvas=cast("Any", FakeCanvas({101: FakeCanvasFile("submission.py", b'print("hello")\n')})),
+        course=cast("Any", FakeCourse(assignment)),
         settings=settings,
     )
     payload = CorrectSubmissionPayload(assignment_id=123, submission_id=456)

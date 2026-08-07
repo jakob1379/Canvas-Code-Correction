@@ -41,13 +41,12 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD?You need to set a `POSTGRES_PASSWORD`
         in the env}
       PREFECT_API_DATABASE_CONNECTION_URL: postgresql+asyncpg://prefect:${POSTGRES_PASSWORD}@postgres:5432/prefect
-      PREFECT_SERVER_API_HOST: 0.0.0.0
       PREFECT_MESSAGING_BROKER: prefect_redis.messaging
       PREFECT_MESSAGING_CACHE: prefect_redis.messaging
       PREFECT_REDIS_MESSAGING_HOST: redis
       PREFECT_REDIS_MESSAGING_PORT: 6379
       PREFECT_REDIS_MESSAGING_DB: 0
-    command: prefect server start --no-services
+    command: prefect server start --host 0.0.0.0 --no-services
     ports: [4200:4200]
     healthcheck:
       test:
@@ -71,6 +70,7 @@ services:
       PREFECT_API_DATABASE_CONNECTION_URL: postgresql+asyncpg://prefect:${POSTGRES_PASSWORD}@postgres:5432/prefect
       PREFECT_MESSAGING_BROKER: prefect_redis.messaging
       PREFECT_MESSAGING_CACHE: prefect_redis.messaging
+      PREFECT_SERVER_API_HOST: 0.0.0.0
       PREFECT_REDIS_MESSAGING_HOST: redis
       PREFECT_REDIS_MESSAGING_PORT: 6379
       PREFECT_REDIS_MESSAGING_DB: 0
@@ -92,7 +92,7 @@ services:
       PREFECT_API_URL: http://prefect-server:4200/api
     volumes: [.:/opt/canvas-code-correction]
     working_dir: /opt/canvas-code-correction
-    command: sh -c "pip install -e . && ccc webhook serve --host 0.0.0.0 --port 8080"
+    command: sh -c "pip install -e . && ccc system webhook serve --host 0.0.0.0 --port 8080"
     ports: [8080:8080]
   rustfs:
     image: rustfs/rustfs:latest

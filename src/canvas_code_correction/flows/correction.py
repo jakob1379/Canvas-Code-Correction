@@ -12,6 +12,7 @@ from prefect import flow, task
 from canvas_code_correction.clients.canvas_resources import (
     CanvasResources,
     build_canvas_resources,
+    get_assignment_submission,
 )
 from canvas_code_correction.config import Settings
 from canvas_code_correction.flows.collector import CanvasMetadataValue, ResultCollector
@@ -162,6 +163,7 @@ def _resolve_grader_config(
         command=list(settings.grader.command),
         timeout_seconds=settings.grader.timeout_seconds,
         memory_mb=settings.grader.memory_mb,
+        environment=dict(settings.grader.env),
     )
 
 
@@ -183,6 +185,11 @@ def _resolve_upload_config(
     )
 
 
+def _resolve_assignment_asset_prefix(settings: Settings, assignment_id: int) -> str:
+    assignment_path_prefixes = settings.assets.assignment_path_prefixes
+    return assignment_path_prefixes.get(assignment_id, settings.assets.path_prefix)
+
+
 @task
 def fetch_submission_metadata(
     resources: CanvasResources,
@@ -192,8 +199,9 @@ def fetch_submission_metadata(
 
     Prefect will handle retries and logging around this task.
     """
-    assignment = resources.course.get_assignment(payload.assignment_id)
-    submission = assignment.get_submission(
+    assignment, submission = get_assignment_submission(
+        resources.course,
+        payload.assignment_id,
         payload.submission_id,
         include=[
             "submission_comments",
@@ -270,8 +278,11 @@ def download_submission_files(
     """Download submission attachments into the provided destination."""
     destination.mkdir(parents=True, exist_ok=True)
 
-    assignment = resources.course.get_assignment(payload.assignment_id)
-    submission = assignment.get_submission(payload.submission_id)
+    _, submission = get_assignment_submission(
+        resources.course,
+        payload.assignment_id,
+        payload.submission_id,
+    )
 
     attachments = getattr(submission, "attachments", None) or []
     downloaded_files: list[Path] = []
@@ -309,7 +320,10 @@ def prepare_workspace_task(
     config = WorkspaceConfig(
         workspace_root=resources.settings.workspace.root,
         bucket_block=resources.settings.assets.bucket_block,
-        path_prefix=resources.settings.assets.path_prefix,
+        path_prefix=_resolve_assignment_asset_prefix(
+            resources.settings,
+            payload.assignment_id,
+        ),
         assignment_id=payload.assignment_id,
         submission_id=payload.submission_id,
     )

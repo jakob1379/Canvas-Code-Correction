@@ -103,7 +103,11 @@ def test_execute_with_mocks(mock_docker) -> None:
     ]
 
     # Execute
-    result = executor.execute(config, mounts)
+    with patch(
+        "canvas_code_correction.flows.runner._default_container_user",
+        return_value="1000:100",
+    ):
+        result = executor.execute(config, mounts)
 
     # Verify Docker calls
     mock_client.images.get.assert_called_once_with("test/image:latest")
@@ -111,10 +115,18 @@ def test_execute_with_mocks(mock_docker) -> None:
     call_kwargs = mock_client.containers.run.call_args.kwargs
 
     assert call_kwargs["image"] == "test/image:latest"
-    assert call_kwargs["command"] == ["sh", "test.sh"]
+    assert call_kwargs["entrypoint"] == "sh"
+    assert call_kwargs["command"] == ["test.sh"]
     assert call_kwargs["working_dir"] == "/workspace/submission"
     assert call_kwargs["network_disabled"] is True
     assert call_kwargs["detach"] is True
+    assert call_kwargs["user"] == "1000:100"
+    assert call_kwargs["environment"] == {
+        "CCC_WORKSPACE_DIR": "/workspace",
+        "CCC_RESULTS_FILE": "/workspace/submission/results.json",
+        "CCC_POINTS_FILE": "/workspace/submission/points.txt",
+        "CCC_COMMENTS_FILE": "/workspace/submission/comments.txt",
+    }
 
     # Verify resource constraints
     assert call_kwargs["read_only"] is True
@@ -297,6 +309,16 @@ def test_execute_in_workspace(mock_mount, mock_docker) -> None:
         shutil.rmtree(submission_dir)
     if assets_dir.exists():
         shutil.rmtree(assets_dir)
+
+
+@pytest.mark.local
+def test_default_container_user_uses_host_uid_gid(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr("canvas_code_correction.flows.runner.os.getuid", lambda: 1000)
+    monkeypatch.setattr("canvas_code_correction.flows.runner.os.getgid", lambda: 100)
+
+    from canvas_code_correction.flows.runner import _default_container_user
+
+    assert _default_container_user() == "1000:100"
 
 
 @patch("canvas_code_correction.flows.runner.docker")

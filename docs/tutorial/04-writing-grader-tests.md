@@ -271,9 +271,45 @@ You now have a grader script that works locally. To deploy it:
 1. **Package your script** (and any supporting files) in a directory, e.g.,
    `grader/`.
 2. **Optionally create a Dockerfile** if you need extra dependencies beyond the
-   base `jakob1379/canvas‑grader` image.
-3. **Give the package to your CCC platform operator** – they will upload it to
+   base `jakob1379/canvas-grader` image.
+3. If your platform operator uses `ccc course setup --work-package`, give them the
+   root directory of the work package, the folder containing `grader/`
+   or `assets/`, for example
+   `59160606:/path/to/my-work-package`.
+   If `work-package.yaml` already exists, CCC will use it. If it does not,
+   `ccc course setup` can create or update it from the assignment-to-work-package
+   mappings you provide before the configuration is saved.
+4. **Give the package to your CCC platform operator** – they will upload it to
    S3 and configure your course.
+
+### Suggested `work-package.yaml`
+
+The repository includes `schemas/work-package.schema.json` so YAML language
+servers can offer completions and validation for `work-package.yaml`.
+
+```yaml
+# yaml-language-server: $schema=../../schemas/work-package.schema.json
+schema_version: 1
+name: my-work-package
+display_name: My Work Package
+version: 1.0.0
+description: Grades the CS101 assignment suite.
+assignment_ids:
+  - 59160606
+docker:
+  image: ghcr.io/example/cs101-grader:latest
+  dockerfile: Dockerfile
+  context: .
+assets:
+  source_directory: grader
+  entrypoint: grader.py
+authors:
+  - name: Course Staff
+```
+
+Today CCC setup/runtime only requires the on-disk package layout plus
+`assignment_ids`, but the full schema is useful for editor support and richer
+package metadata.
 
 For more advanced topics, see the
 [Authoring Grader Tests](../reference/06-authoring-grader-tests.md) reference.

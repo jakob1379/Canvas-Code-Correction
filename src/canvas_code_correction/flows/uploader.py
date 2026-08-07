@@ -12,7 +12,10 @@ from typing import TYPE_CHECKING, NotRequired, Required, TypedDict, cast
 import requests
 from canvasapi.exceptions import CanvasException
 
+from canvas_code_correction.clients.canvas_resources import get_assignment_submission
+
 if TYPE_CHECKING:
+    from canvasapi.assignment import Assignment
     from canvasapi.submission import Submission
 
     from canvas_code_correction.clients.canvas_resources import CanvasResources
@@ -79,9 +82,10 @@ class UploadConfig:
 class CanvasUploader:
     """Handles idempotent upload of feedback and grades to Canvas."""
 
-    def __init__(self, submission: Submission) -> None:
-        """Initialize uploader with Canvas submission object."""
+    def __init__(self, submission: Submission, assignment: Assignment | None = None) -> None:
+        """Initialize uploader with a Canvas submission and its parent assignment."""
         self.submission = submission
+        self.assignment = assignment
 
     def _check_feedback_duplicate(
         self,
@@ -110,7 +114,7 @@ class CanvasUploader:
 
     def _refresh_submission_and_get_comments(self) -> list[SubmissionCommentInfo]:
         """Refresh submission then return normalized submission comments."""
-        self.submission = self.submission.refresh()
+        self._reload_submission()
         raw_comments = getattr(self.submission, "submission_comments", []) or []
         comments: list[SubmissionCommentInfo] = []
         for comment in raw_comments:
@@ -120,6 +124,17 @@ class CanvasUploader:
                 {"attachments": self._normalize_comment_attachments(comment.get("attachments"))},
             )
         return comments
+
+    def _reload_submission(self) -> None:
+        """Re-fetch the submission so freshly posted comments are visible."""
+        if self.assignment is None:
+            msg = "Uploader was built without an assignment, cannot reload the submission"
+            raise AttributeError(msg)
+
+        self.submission = self.assignment.get_submission(
+            self.submission.user_id,
+            include=["submission_comments"],
+        )
 
     def _normalize_comment_attachments(
         self,
@@ -405,6 +420,9 @@ def create_uploader_from_resources(
     submission_id: int,
 ) -> CanvasUploader:
     """Create an uploader from CanvasResources."""
-    assignment = resources.course.get_assignment(assignment_id)
-    submission = assignment.get_submission(submission_id)
-    return CanvasUploader(submission)
+    assignment, submission = get_assignment_submission(
+        resources.course,
+        assignment_id,
+        submission_id,
+    )
+    return CanvasUploader(submission, assignment)

@@ -1,6 +1,7 @@
 """Docker-based grader executor with resource limits and security hardening."""
 
 import contextlib
+import os
 import subprocess  # nosec B404 # nosonar
 import time
 from dataclasses import dataclass
@@ -43,7 +44,10 @@ class GraderConfig(BaseModel):
     """Configuration for a grading run."""
 
     docker_image: str
-    command: list[str] = Field(default_factory=lambda: ["sh", "/workspace/assets/main.sh"])
+    command: list[str] = Field(
+        default_factory=lambda: ["sh", "/workspace/assets/main.sh"],
+        min_length=1,
+    )
     working_directory: Path = Path("/workspace/submission")
     environment: dict[str, str] = Field(default_factory=dict)
     user: str | None = None
@@ -86,6 +90,17 @@ class GraderExecutor:
     ) -> ExecutionResult:
         """Run the grader command inside a container with the specified mounts."""
         start_time = time.monotonic()
+        entrypoint, *command = config.command
+        user = config.user or _default_container_user()
+        # Course-supplied env comes first: the reserved CCC_* paths are the contract
+        # the grader and the uploader agree on, so they must not be overridable.
+        environment = {
+            **config.environment,
+            "CCC_WORKSPACE_DIR": "/workspace",
+            "CCC_RESULTS_FILE": "/workspace/submission/results.json",
+            "CCC_POINTS_FILE": "/workspace/submission/points.txt",
+            "CCC_COMMENTS_FILE": "/workspace/submission/comments.txt",
+        }
 
         docker_mounts = [
             Mount(
@@ -118,10 +133,11 @@ class GraderExecutor:
                 "Container",
                 self.client.containers.run(
                     image=config.docker_image,
-                    command=config.command,
+                    command=command,
+                    entrypoint=entrypoint,
                     working_dir=str(config.working_directory),
-                    environment=config.environment,
-                    user=config.user,
+                    environment=environment,
+                    user=user,
                     mounts=docker_mounts,
                     **run_kwargs,
                     detach=True,
@@ -202,11 +218,25 @@ class GraderExecutor:
         return self.execute(config, mounts)
 
 
+def _default_container_user() -> str | None:
+    """Return a host UID:GID override so bind-mounted outputs stay host-owned.
+
+    Returns ``None`` when the host process is root, so grader containers keep the
+    image's own unprivileged ``USER`` instead of running student code as uid 0.
+    """
+    getuid = getattr(os, "getuid", None)
+    getgid = getattr(os, "getgid", None)
+    if getuid is None or getgid is None or getuid() == 0:
+        return None
+    return f"{getuid()}:{getgid()}"
+
+
 def create_default_grader_config(
     docker_image: str,
     command: list[str] | None = None,
     timeout_seconds: int = 300,
     memory_mb: int | None = 512,
+    environment: dict[str, str] | None = None,
 ) -> GraderConfig:
     """Create a standard grader configuration with safe defaults."""
     if command is None:
@@ -215,6 +245,7 @@ def create_default_grader_config(
     return GraderConfig(
         docker_image=docker_image,
         command=command,
+        environment=environment or {},
         resource_limits=ResourceLimits(
             timeout_seconds=timeout_seconds,
             memory_mb=memory_mb,
