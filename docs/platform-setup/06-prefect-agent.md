@@ -17,7 +17,7 @@ $ poe prefect
 Terminal 2:
 
 ```bash
-$ uv run prefect work-pool create --type process canvas-corrections
+$ uv run prefect work-pool create --type process course-work-pool-12345-cs101
 $ ccc system worker start --course ccc-course-12345-cs101
 ```
 
@@ -47,10 +47,12 @@ The UI and API are available at `http://localhost:4200`.
 ## Step 2: Create a Local Work Pool
 
 ```bash
-$ uv run prefect work-pool create --type process canvas-corrections
+$ uv run prefect work-pool create --type process course-work-pool-12345-cs101
 ```
 
-You can use any pool name, but your worker and deployment must match it.
+The pool name must match the one in the course block: `ccc course setup`
+generates `course-work-pool-<course-id>-<slugified-course-code>`, and
+`ccc system worker start` starts a worker for exactly that pool.
 With CCC's shared-environment storage mode, the recommended pattern is still
 one generated work pool per course.
 

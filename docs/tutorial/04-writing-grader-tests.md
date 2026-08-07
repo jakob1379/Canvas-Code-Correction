@@ -302,7 +302,7 @@ docker:
   context: .
 assets:
   source_directory: grader
-  entrypoint: main.sh
+  entrypoint: grader.py
 authors:
   - name: Course Staff
 ```

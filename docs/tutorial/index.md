@@ -54,9 +54,8 @@ my-work-package/
 You will create each piece in the following pages.
 
 The repository ships a JSON Schema for `work-package.yaml` at
-`schemas/work-package.schema.json`. In this repo, `.vscode/settings.json`
-associates that schema with every `work-package.yaml`, and YAML language server
-clients can also use a file header such as:
+`schemas/work-package.schema.json`. Point your editor at it, either through
+your own YAML schema settings or with a file header such as:
 
 ```yaml
 # yaml-language-server: $schema=../../schemas/work-package.schema.json

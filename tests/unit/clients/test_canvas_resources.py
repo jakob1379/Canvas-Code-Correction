@@ -102,6 +102,28 @@ def test_resolve_submission_rejects_wrong_student_on_id_collision() -> None:
 
 
 @pytest.mark.local
+def test_resolve_submission_rescans_when_direct_lookup_returns_another_student() -> None:
+    """A mismatched id (not a 404) must still be re-resolved via the owning user id."""
+    assignment = Mock()
+    assignment.id = 12
+    wrong_student = Mock()
+    wrong_student.id = 999  # Canvas treated 456 as a *user* id and returned their submission
+    correct = Mock()
+    correct.id = 456
+    assignment.get_submission.side_effect = [wrong_student, correct]
+    summary = Mock()
+    summary.id = 456
+    summary.user_id = 789
+    assignment.get_submissions.return_value = [summary]
+
+    resolved = canvas_resources.resolve_submission_for_assignment(assignment, 456)
+
+    assert resolved is correct
+    # The retry must key off the owning user id found by the scan, not the raw 456.
+    assert assignment.get_submission.call_args_list[-1].args[0] == 789
+
+
+@pytest.mark.local
 def test_get_assignment_submission_falls_back_from_submission_id_to_user_id() -> None:
     assignment = Mock()
     submission = Mock()
