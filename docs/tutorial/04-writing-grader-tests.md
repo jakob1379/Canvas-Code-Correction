@@ -48,6 +48,7 @@ RESULTS_PATH = Path(os.getenv("CCC_RESULTS_FILE", WORKSPACE_ROOT / "results.json
 POINTS_PATH = Path(os.getenv("CCC_POINTS_FILE", WORKSPACE_ROOT / "points.txt"))
 COMMENTS_PATH = Path(os.getenv("CCC_COMMENTS_FILE", WORKSPACE_ROOT / "comments.txt"))
 
+
 def main() -> None:
     submission_root = WORKSPACE_ROOT / "submission"
 
@@ -78,6 +79,7 @@ def main() -> None:
     COMMENTS_PATH.write_text("\n".join(comment_lines) + "\n")
 
     print("✅ Grader finished successfully")
+
 
 if __name__ == "__main__":
     main()
@@ -181,6 +183,7 @@ common patterns.
 ```python
 import subprocess
 
+
 def run_pytest(submission_root: Path) -> tuple[int, str]:
     """Run pytest and return (exit_code, stdout)."""
     # Install dependencies if needed (use a requirements.txt in your grader image)
@@ -198,6 +201,7 @@ def run_pytest(submission_root: Path) -> tuple[int, str]:
 
 ```python
 REQUIRED_FILES = {"main.py", "README.md"}
+
 
 def check_required_files(submission_root: Path) -> list[str]:
     missing = []
