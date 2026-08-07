@@ -6,7 +6,7 @@ through **`ccc system deploy create`**, and executes those deployments with
 
 ## Try It Now
 
-For a course block named `ccc-course-cs101`, this is the shortest local setup:
+For a course block named `ccc-course-12345-cs101`, this is the shortest local setup:
 
 ```bash
 $ poe prefect
@@ -15,15 +15,15 @@ $ poe prefect
 In a second terminal:
 
 ```bash
-$ uv run prefect work-pool create --type process course-work-pool-cs101
-$ ccc system deploy create ccc-course-cs101
-$ ccc system worker start --course ccc-course-cs101
+$ uv run prefect work-pool create --type process course-work-pool-12345-cs101
+$ ccc system deploy create ccc-course-12345-cs101
+$ ccc system worker start --course ccc-course-12345-cs101
 ```
 
 Expected deployment output includes:
 
 ```text
-Creating deployment for course block: ccc-course-cs101
+Creating deployment for course block: ccc-course-12345-cs101
 Deployment 'ccc-cs101-deployment' created/updated successfully
 ```
 
@@ -46,7 +46,7 @@ The course block stores a `work_pool_name`. Create that pool before starting a
 worker.
 
 ```bash
-$ uv run prefect work-pool create --type process course-work-pool-cs101
+$ uv run prefect work-pool create --type process course-work-pool-12345-cs101
 ```
 
 You only need to do this once per pool name.
@@ -57,7 +57,7 @@ CCC owns the deployment shape for webhook-triggered corrections. Do not build
 it manually with `prefect deployment build`; use the CLI wrapper instead.
 
 ```bash
-$ ccc system deploy create ccc-course-cs101
+$ ccc system deploy create ccc-course-12345-cs101
 ```
 
 The default deployment name for that block is:
@@ -74,14 +74,20 @@ instead.
 Start a worker subscribed to the same pool as the course block:
 
 ```bash
-$ ccc system worker start --course ccc-course-cs101
+$ ccc system worker start --course ccc-course-12345-cs101
 ```
 
 Expected output begins with:
 
 ```text
+Starting Prefect worker for pool: course-work-pool-12345-cs101
+```
+
+For a `shared_environment` course that has `RUSTFS_*` credentials in the
+environment, this line appears first:
+
+```text
 Mirrored RUSTFS_* credentials into AWS_* for the worker
-Starting Prefect worker for pool: course-work-pool-cs101
 ```
 
 The worker host must have:
@@ -106,7 +112,7 @@ Expected output contains health lines for:
 Then trigger a small manual run:
 
 ```bash
-$ ccc course run 98765 --course ccc-course-cs101 --submission-id 54321 --dry-run
+$ ccc course run 98765 --course ccc-course-12345-cs101 --submission-id 54321 --dry-run
 ```
 
 That verifies the course block loads and the flow can execute without posting

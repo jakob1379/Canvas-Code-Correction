@@ -102,13 +102,13 @@ Starting webhook server on 0.0.0.0:8080
 CCC creates the webhook-oriented deployment for you:
 
 ```bash
-$ ccc system deploy create ccc-course-cs101
+$ ccc system deploy create ccc-course-12345-cs101
 ```
 
 Expected output includes:
 
 ```text
-Creating deployment for course block: ccc-course-cs101
+Creating deployment for course block: ccc-course-12345-cs101
 Deployment 'ccc-cs101-deployment' created/updated successfully
 ```
 
@@ -117,7 +117,7 @@ Deployment 'ccc-cs101-deployment' created/updated successfully
 The worker must listen on the same work pool stored in the course block:
 
 ```bash
-$ ccc system worker start --course ccc-course-cs101
+$ ccc system worker start --course ccc-course-12345-cs101
 ```
 
 ## Installation

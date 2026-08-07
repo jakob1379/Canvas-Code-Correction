@@ -15,7 +15,11 @@ from botocore.exceptions import BotoCoreError, EndpointConnectionError
 from canvas_code_correction.storage import seed_ambient_storage_env
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
     from rich.console import Console
+
+    from canvas_code_correction.config import Settings
 
 
 DEFAULT_PREFECT_HEALTH_URL = "http://localhost:4200/api/health"
@@ -132,7 +136,7 @@ def worker_start_command(
     *,
     console: Console,
     course_block: str,
-    load_settings_from_course_block,
+    load_settings_from_course_block: Callable[[str], Settings],
 ) -> None:
     """Start a Prefect worker on the course's work pool."""
     settings = _run_cli_step(
@@ -158,8 +162,12 @@ def worker_start_command(
     console.print(
         f"[blue]Starting Prefect worker for pool: {settings.grader.work_pool_name}[/blue]"
     )
-    os.execve(  # noqa: S606 # nosec B606 - replacing this process with the worker is the point
-        prefect_executable,
-        [prefect_executable, "worker", "start", "--pool", settings.grader.work_pool_name],
-        os.environ.copy(),
-    )
+    try:
+        os.execve(  # noqa: S606 # nosec B606 - replacing this process with the worker is the point
+            prefect_executable,
+            [prefect_executable, "worker", "start", "--pool", settings.grader.work_pool_name],
+            os.environ.copy(),
+        )
+    except OSError as exc:  # non-executable or inaccessible binary
+        console.print(f"[red]Could not start the Prefect worker: {exc}[/red]")
+        raise typer.Exit(1) from exc

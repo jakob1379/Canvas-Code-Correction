@@ -28,13 +28,13 @@ Use this when you want the normal production flow.
 2. Create the Prefect deployment:
 
    ```bash
-   $ ccc system deploy create ccc-course-cs101
+   $ ccc system deploy create ccc-course-12345-cs101
    ```
 
 3. Start a worker for the course work pool:
 
    ```bash
-   $ uv run prefect worker start --pool course-work-pool-cs101
+   $ uv run prefect worker start --pool course-work-pool-12345-cs101
    ```
 
 4. Configure Canvas to send submission events to the webhook server.
@@ -44,13 +44,13 @@ Use this when you want the normal production flow.
 Use this when you need to rerun an assignment or a single submission.
 
 ```bash
-$ ccc course run 98765 --course ccc-course-cs101
+$ ccc course run 98765 --course ccc-course-12345-cs101
 ```
 
 Or:
 
 ```bash
-$ ccc course run 98765 --course ccc-course-cs101 --submission-id 54321 --dry-run
+$ ccc course run 98765 --course ccc-course-12345-cs101 --submission-id 54321 --dry-run
 ```
 
 ### 3. Custom scheduled jobs

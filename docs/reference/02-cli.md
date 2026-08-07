@@ -111,13 +111,13 @@ Runs corrections for one assignment or one submission.
 Batch run:
 
 ```bash
-$ ccc course run 98765 --course ccc-course-cs101
+$ ccc course run 98765 --course ccc-course-12345-cs101
 ```
 
 Single submission:
 
 ```bash
-$ ccc course run 98765 --course ccc-course-cs101 --submission-id 54321 --dry-run
+$ ccc course run 98765 --course ccc-course-12345-cs101 --submission-id 54321 --dry-run
 ```
 
 ## `ccc course list`
@@ -150,13 +150,13 @@ Starting webhook server on 127.0.0.1:8080
 Creates or updates the built-in webhook deployment for a course block.
 
 ```bash
-$ ccc system deploy create ccc-course-cs101
+$ ccc system deploy create ccc-course-12345-cs101
 ```
 
 Expected output includes:
 
 ```text
-Creating deployment for course block: ccc-course-cs101
+Creating deployment for course block: ccc-course-12345-cs101
 Deployment 'ccc-cs101-deployment' created/updated successfully
 ```
 
@@ -181,14 +181,20 @@ credentials in the environment into the `AWS_*` names boto3 reads; if none are
 set it changes nothing, leaving IAM roles and `~/.aws` profiles intact.
 
 ```bash
-$ ccc system worker start --course ccc-course-cs101
+$ ccc system worker start --course ccc-course-12345-cs101
 ```
 
 Expected output begins with:
 
 ```text
+Starting Prefect worker for pool: course-work-pool-12345-cs101
+```
+
+For a `shared_environment` course that has `RUSTFS_*` credentials in the
+environment, this line appears first:
+
+```text
 Mirrored RUSTFS_* credentials into AWS_* for the worker
-Starting Prefect worker for pool: course-work-pool-cs101
 ```
 
 ## Global Option

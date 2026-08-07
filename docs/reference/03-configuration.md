@@ -106,10 +106,10 @@ fields:
 | `--course-id` | `canvas_course_id` |
 | `--docker-image` | `grader_image` |
 | `--env` | `grader_env` |
-| generated course slug | `asset_bucket_block` |
-| generated course slug | `asset_path_prefix` |
+| generated course ID and slugified course code | `asset_bucket_block` |
+| generated course ID and slugified course code | `asset_path_prefix` |
 | generated shared-environment setup | `storage_auth_mode=shared_environment` |
-| generated course slug | `work_pool_name` |
+| generated course ID and slugified course code | `work_pool_name` |
 | `--work-package` | `assignment_asset_prefixes` |
 
 Each `--work-package assignment_id:path` mapping uploads that package's

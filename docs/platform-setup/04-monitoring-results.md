@@ -64,7 +64,7 @@ parameters in Prefect.
 ### Inspect the work pool
 
 ```bash
-$ uv run prefect work-pool inspect course-work-pool-cs101
+$ uv run prefect work-pool inspect course-work-pool-12345-cs101
 ```
 
 Use this when runs stay pending and you need to confirm the pool exists and is
@@ -92,7 +92,7 @@ CCC typically uploads:
 - Start or restart a worker:
 
   ```bash
-  $ uv run prefect worker start --pool course-work-pool-cs101
+  $ uv run prefect worker start --pool course-work-pool-12345-cs101
   ```
 
 - Confirm the course block and worker use the same pool name.

@@ -499,7 +499,7 @@ def test_list_courses_success_with_blocks(
     cli_runner: CliRunner,
 ) -> None:
     """Test list_courses command when blocks exist."""
-    mock_find_course_blocks.return_value = ["ccc-course-cs101", "ccc-course-cs102"]
+    mock_find_course_blocks.return_value = ["ccc-course-101-cs101", "ccc-course-102-cs102"]
 
     # Mock load for each block
     mock_block1 = MagicMock()
@@ -521,8 +521,10 @@ def test_list_courses_success_with_blocks(
 
     assert result.exit_code == 0
     assert "Configured Courses" in result.output
-    assert "cs101" in result.output
-    assert "cs102" in result.output
+    # Assert the full generated names: a bare "cs101" would also match the
+    # pre-generated "ccc-course-cs101" form this branch replaced.
+    assert "ccc-course-101-cs101" in result.output
+    assert "ccc-course-102-cs102" in result.output
     mock_find_course_blocks.assert_called_once()
     assert mock_load_course_block.call_count == 2
 
@@ -568,7 +570,7 @@ def test_list_courses_load_raises_exception(
     cli_runner: CliRunner,
 ) -> None:
     """Test list_courses when load raises exception for a block."""
-    mock_find_course_blocks.return_value = ["ccc-course-cs101", "ccc-course-cs102"]
+    mock_find_course_blocks.return_value = ["ccc-course-101-cs101", "ccc-course-102-cs102"]
     mock_load_course_block.side_effect = RuntimeError("Load failed")
 
     result = cli_runner.invoke(app, ["course", "list"])

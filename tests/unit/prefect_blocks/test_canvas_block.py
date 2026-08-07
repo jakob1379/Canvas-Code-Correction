@@ -2,11 +2,24 @@ import uuid
 from typing import cast
 
 import pytest
-from pydantic import HttpUrl, SecretStr
+from pydantic import HttpUrl, SecretStr, ValidationError
 
 from canvas_code_correction.prefect_blocks import CourseConfigBlock
 
 pytestmark = pytest.mark.usefixtures("prefect_testing_environment")
+
+
+@pytest.mark.local
+def test_course_config_block_rejects_empty_grader_command() -> None:
+    """An empty command must fail at save time, not when the block is later loaded."""
+    with pytest.raises(ValidationError):
+        CourseConfigBlock(
+            canvas_api_url=HttpUrl("https://canvas.example.com"),
+            canvas_token=SecretStr("token-value"),
+            canvas_course_id=123,
+            asset_bucket_block="course-assets-block",
+            grader_command=[],
+        )
 
 
 @pytest.mark.local

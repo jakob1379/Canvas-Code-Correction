@@ -104,7 +104,7 @@ afterwards, so a failed upload never empties an assignment's live assets.
 
 ```bash
 $ ccc system deploy create ccc-course-12345-cs101
-$ uv run prefect worker start --pool course-work-pool-cs101
+$ uv run prefect worker start --pool course-work-pool-12345-cs101
 ```
 
 The worker host must be able to:

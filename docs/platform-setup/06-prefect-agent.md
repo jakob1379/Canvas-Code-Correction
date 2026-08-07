@@ -63,8 +63,14 @@ $ ccc system worker start --course ccc-course-12345-cs101
 Expected output begins with:
 
 ```text
-Mirrored RUSTFS_* credentials into AWS_* for the worker
 Starting Prefect worker for pool: course-work-pool-12345-cs101
+```
+
+For a `shared_environment` course that has `RUSTFS_*` credentials in the
+environment, this line appears first:
+
+```text
+Mirrored RUSTFS_* credentials into AWS_* for the worker
 ```
 
 The mirroring line only appears when `RUSTFS_ACCESS_KEY` and

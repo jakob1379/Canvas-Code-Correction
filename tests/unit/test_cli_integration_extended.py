@@ -209,10 +209,8 @@ def test_course_setup_live_with_work_package_mappings(
         env = call_kwargs.get("grader_env", {})
         assert env.get("DEBUG") == "true"
         assert call_kwargs["assignment_asset_prefixes"] == {
-            canvas_credentials["assignment_id"]: (
-                f"graders/{canvas_credentials['course_id']}-"
-                "ccc/assignments/"
-                f"{canvas_credentials['assignment_id']}/assets"
+            int(canvas_credentials["assignment_id"]): (
+                f"assignments/{canvas_credentials['assignment_id']}"
             ),
         }
 

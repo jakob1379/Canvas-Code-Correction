@@ -27,7 +27,12 @@ class CourseConfigBlock(Block):
     grader_image: str | None = None
     work_pool_name: str | None = None
     grader_env: dict[str, str] = Field(default_factory=dict)
-    grader_command: list[str] = Field(default_factory=lambda: ["sh", "/workspace/assets/main.sh"])
+    # Mirrors GraderSettings.command: an empty command would only fail later, when
+    # the block is loaded and the runner unpacks `entrypoint, *command`.
+    grader_command: list[str] = Field(
+        default_factory=lambda: ["sh", "/workspace/assets/main.sh"],
+        min_length=1,
+    )
     grader_timeout_seconds: int = 300
     grader_memory_mb: int | None = 512
     grader_upload_check_duplicates: bool = True
