@@ -5,10 +5,12 @@ from types import SimpleNamespace
 from unittest.mock import MagicMock, patch
 
 import pytest
+from pydantic import HttpUrl
 from typer.testing import CliRunner
 
 from canvas_code_correction import cli_course
 from canvas_code_correction.cli import app
+from canvas_code_correction.config import WebhookAuthMode
 
 
 @pytest.fixture
@@ -156,6 +158,93 @@ class TestSetupCourseNonInteractive:
 
         assert result.exit_code == 0
         mock_canvas_class.assert_called_once_with("https://canvas.instructure.com", "stdin-token")
+
+    @pytest.mark.local
+    @patch("canvas_code_correction.cli.Canvas")
+    @patch("canvas_code_correction.cli.CourseConfigBlock")
+    def test_setup_course_persists_canvas_signed_webhook_defaults(
+        self,
+        mock_block_class: MagicMock,
+        mock_canvas_class: MagicMock,
+        cli_runner: CliRunner,
+        mock_canvas_course: MagicMock,
+    ) -> None:
+        mock_canvas = MagicMock()
+        mock_canvas.get_current_user.return_value = MagicMock()
+        mock_canvas.get_course.return_value = mock_canvas_course
+        mock_canvas_class.return_value = mock_canvas
+        mock_block_class.return_value = MagicMock()
+
+        result = cli_runner.invoke(
+            app,
+            [
+                "course",
+                "setup",
+                "--no-interactive",
+                "--token",
+                "test-token",
+                "--course-id",
+                "13122436",
+                "--assets-block",
+                "test-bucket",
+                "--slug",
+                "test-course",
+            ],
+        )
+
+        assert result.exit_code == 0
+        block_kwargs = mock_block_class.call_args.kwargs
+        assert block_kwargs["webhook_auth_mode"] is WebhookAuthMode.CANVAS_SIGNED_JWT
+        assert isinstance(block_kwargs["webhook_canvas_jwks_url"], HttpUrl)
+        assert block_kwargs["webhook_enabled"] is True
+        assert block_kwargs["webhook_rate_limit"] == "10/minute"
+
+    @pytest.mark.local
+    @patch("canvas_code_correction.cli.Canvas")
+    @patch("canvas_code_correction.cli.CourseConfigBlock")
+    def test_setup_course_accepts_webhook_overrides(
+        self,
+        mock_block_class: MagicMock,
+        mock_canvas_class: MagicMock,
+        cli_runner: CliRunner,
+        mock_canvas_course: MagicMock,
+    ) -> None:
+        mock_canvas = MagicMock()
+        mock_canvas.get_current_user.return_value = MagicMock()
+        mock_canvas.get_course.return_value = mock_canvas_course
+        mock_canvas_class.return_value = mock_canvas
+        mock_block_class.return_value = MagicMock()
+
+        result = cli_runner.invoke(
+            app,
+            [
+                "course",
+                "setup",
+                "--no-interactive",
+                "--token",
+                "test-token",
+                "--course-id",
+                "13122436",
+                "--assets-block",
+                "test-bucket",
+                "--slug",
+                "test-course",
+                "--webhook-auth",
+                "hmac",
+                "--webhook-jwks-url",
+                "https://canvas.example.test/jwks",
+                "--webhook-rate-limit",
+                "2/minute",
+                "--webhook-disabled",
+            ],
+        )
+
+        assert result.exit_code == 0
+        block_kwargs = mock_block_class.call_args.kwargs
+        assert block_kwargs["webhook_auth_mode"] is WebhookAuthMode.HMAC
+        assert str(block_kwargs["webhook_canvas_jwks_url"]) == "https://canvas.example.test/jwks"
+        assert block_kwargs["webhook_enabled"] is False
+        assert block_kwargs["webhook_rate_limit"] == "2/minute"
 
     @pytest.mark.local
     def test_setup_course_token_and_token_stdin_mutually_exclusive(

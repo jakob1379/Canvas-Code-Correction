@@ -103,8 +103,8 @@ sequenceDiagram
 
 1. **Webhook trigger** – Canvas sends a `submission_created` or
    `submission_updated` payload to the FastAPI webhook server.
-2. **Validation** – The server rate limits the request, verifies the Canvas
-   signature, and validates the JSON payload.
+2. **Validation** – The server rate limits the request, verifies the signed JWT
+   body against Canvas's rotating JWK set, and then validates its event claims.
 3. **Deployment launch** – The webhook handler ensures the course deployment
    exists and starts `webhook_correction_flow` through Prefect.
 4. **Flow handoff** – `webhook_correction_flow` loads course settings and calls

@@ -8,6 +8,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 
 from canvas_code_correction.bootstrap import CourseBlockLoadError
+from canvas_code_correction.config import WebhookAuthMode
 from canvas_code_correction.webhooks import server as webhook_server
 from canvas_code_correction.webhooks.auth import WebhookVerificationResult
 from canvas_code_correction.webhooks.deployments import TriggerDeploymentResult
@@ -86,6 +87,48 @@ def test_handle_canvas_webhook_success(
         payload_arg = call_args.args[3]
     assert isinstance(payload_arg, CanvasWebhookPayload)
     assert payload_arg.get_event_type() == "submission_created"
+    mock_runner.assert_awaited_once_with(mock_settings, "test-course", 123, 456)
+
+
+@patch("canvas_code_correction.webhooks.server.load_settings_from_course_block")
+def test_handle_canvas_signed_jwt_body_before_json_parsing(
+    mock_resolve_settings: AsyncMock,
+    client: TestClient,
+    mock_settings: Settings,
+) -> None:
+    """Signed Live Events are verified and decoded before JSON parsing."""
+    mock_settings.webhook.auth_mode = WebhookAuthMode.CANVAS_SIGNED_JWT
+    mock_resolve_settings.return_value = mock_settings
+    canvas_payload = CanvasWebhookPayload.model_validate(create_canvas_webhook_payload())
+    mock_runner = AsyncMock(
+        return_value=TriggerDeploymentResult(
+            deployment_name="test-deployment",
+            success=True,
+            flow_run_id="signed-flow-run",
+        ),
+    )
+    webhook_server.app.dependency_overrides[webhook_server.get_webhook_runner] = lambda: mock_runner
+    try:
+        with patch(
+            "canvas_code_correction.webhooks.server.verify_canvas_webhook",
+            return_value=WebhookVerificationResult(
+                success=True,
+                message="verified",
+                status_code=200,
+                mode="canvas-signed-jwt",
+                payload=canvas_payload,
+            ),
+        ) as mock_verify:
+            response = client.post(
+                "/webhooks/canvas/test-course",
+                content=b"compact.jwt.body",
+            )
+    finally:
+        webhook_server.app.dependency_overrides.pop(webhook_server.get_webhook_runner, None)
+
+    assert response.status_code == 202
+    mock_verify.assert_called_once()
+    assert mock_verify.call_args.args[1] == b"compact.jwt.body"
     mock_runner.assert_awaited_once_with(mock_settings, "test-course", 123, 456)
 
 

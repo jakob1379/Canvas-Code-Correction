@@ -17,7 +17,7 @@ from pydantic import ValidationError
 
 import canvas_code_correction.webhooks.handler as webhook_handler
 from canvas_code_correction.bootstrap import CourseBlockLoadError, load_settings_from_course_block
-from canvas_code_correction.config import Settings  # noqa: TC001
+from canvas_code_correction.config import Settings, WebhookAuthMode
 from canvas_code_correction.webhooks.auth import verify_canvas_webhook
 from canvas_code_correction.webhooks.deployments import trigger_deployment
 from canvas_code_correction.webhooks.models import CanvasWebhookPayload
@@ -217,6 +217,20 @@ async def validate_webhook(
 
     # Read raw body for signature verification
     body = await request.body()
+
+    if settings.webhook.effective_auth_mode() is WebhookAuthMode.CANVAS_SIGNED_JWT:
+        verification = verify_canvas_webhook(settings, body, dict(request.headers))
+        if not verification.success:
+            raise HTTPException(
+                status_code=verification.status_code,
+                detail=verification.message,
+            )
+        if verification.payload is None:  # Defensive: successful signed verification must decode.
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+                detail="Invalid Canvas signed webhook payload",
+            )
+        return verification.payload
 
     # Parse and validate JSON payload once
     try:
