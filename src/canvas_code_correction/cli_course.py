@@ -1,30 +1,47 @@
 from __future__ import annotations
 
-import argparse
 import io
+import itertools
 import json
+import os
 import sys
 import tempfile
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from pathlib import Path
-from typing import TYPE_CHECKING, Annotated, Callable, TypedDict, cast
+from typing import TYPE_CHECKING, Callable, TypedDict
 
 import requests
 import typer
+import yaml
 from canvasapi.exceptions import CanvasException
-from pydantic import HttpUrl, SecretStr
+from prefect.client.orchestration import get_client
+from prefect.exceptions import ObjectNotFound
+from prefect_aws.s3 import S3Bucket
+from pydantic import BaseModel, ConfigDict, Field, HttpUrl, SecretStr, ValidationError
 from rich.panel import Panel
 from rich.prompt import Confirm, IntPrompt, Prompt
 from rich.table import Table
 from slugify import slugify
 
-if TYPE_CHECKING:
-    from canvasapi.course import Course
+from canvas_code_correction.storage import (
+    RustfsProvisioningError,
+    RustfsStorageConfig,
+    build_bucket_name,
+    build_credentials,
+    create_course_bucket,
+    delete_stale_objects,
+    seed_ambient_storage_env,
+    upload_directory_with_credentials,
+    verify_course_runtime_access,
+)
 
+if TYPE_CHECKING:
     from canvasapi import Canvas
+    from canvasapi.course import Course
 
     from canvas_code_correction.config import Settings
     from canvas_code_correction.flows.correction import FlowArtifacts
+    from rich.console import Console
 
 
 ASCII_CONTROL_MAX = 32
@@ -34,6 +51,31 @@ COURSE_BLOCK_LOAD_EXCEPTIONS = (RuntimeError, ValueError, TypeError, KeyError, A
 SUGGESTED_SLUG_EXCEPTIONS = (CanvasException, requests.RequestException, TypeError, AttributeError)
 CANVAS_API_URL_DEFAULT = "https://canvas.instructure.com"
 CANVAS_URL_SCHEME = "https://"
+WORK_PACKAGE_MAPPING_FORMAT = "<assignment id>:<path to work package root>"
+WORK_PACKAGE_MAPPING_EXAMPLE = "59160606:/path/to/my-work-package"
+WORK_PACKAGE_MANIFEST_FILENAME = "work-package.yaml"
+WORK_PACKAGE_ASSET_DIR_CANDIDATES = ("grader", "assets")
+DEFAULT_RUSTFS_ENDPOINT = "http://localhost:9000"
+DEFAULT_RUSTFS_ACCESS_KEY = "rustfsadmin"
+DEFAULT_RUSTFS_SECRET_KEY = "rustfsadmin"  # noqa: S105 # nosec B105
+DEFAULT_AWS_REGION = "us-east-1"
+
+
+class WorkPackageManifest(BaseModel):
+    """The part of `work-package.yaml` that CCC reads; other keys pass through."""
+
+    model_config = ConfigDict(extra="allow")
+
+    schema_version: int = 1
+    assignment_ids: list[int] = Field(default_factory=list)
+
+
+@dataclass(frozen=True)
+class WorkPackagePlan:
+    assignment_id: int
+    root: Path
+    asset_source_dir: Path
+    prefix: str
 
 
 @dataclass(frozen=True)
@@ -46,7 +88,7 @@ class CourseSetupConfig:
     assets_prefix: str
     work_pool: str
     docker_image: str
-    test_map_count: int
+    work_package_plans: tuple[WorkPackagePlan, ...]
     grader_env: dict[str, str]
 
 
@@ -65,13 +107,9 @@ class CourseSetupOptions:
     canvas_token: str | None
     course_id: int
     docker_image: str
-    map_assignments: list[str]
+    work_packages: list[str]
     env_var: list[str]
     interactive: bool
-    assets_block: str | None
-    slug: str | None
-    assets_prefix: str | None
-    work_pool: str | None
 
 
 class CourseConfigBlockPayload(TypedDict):
@@ -80,12 +118,14 @@ class CourseConfigBlockPayload(TypedDict):
     canvas_course_id: int
     asset_bucket_block: str
     asset_path_prefix: str
+    assignment_asset_prefixes: dict[int, str]
+    storage_auth_mode: str
     grader_image: str
     work_pool_name: str
     grader_env: dict[str, str]
 
 
-def _run_cli_step[T](console, step: str, action: Callable[[], T]) -> T:
+def _run_cli_step[T](console: Console, step: str, action: Callable[[], T]) -> T:
     try:
         return action()
     except typer.Exit:
@@ -99,7 +139,7 @@ def _has_control_chars(value: str) -> bool:
     return any(ord(char) < ASCII_CONTROL_MAX or ord(char) == ASCII_DELETE for char in value)
 
 
-def _switch_stdin_to_tty_for_prompts(console) -> None:
+def _switch_stdin_to_tty_for_prompts(console: Console) -> None:
     if sys.stdin.isatty():
         return
 
@@ -115,7 +155,7 @@ def _switch_stdin_to_tty_for_prompts(console) -> None:
         raise typer.Exit(1) from exc
 
 
-def _resolve_canvas_api_url(canvas_api_url: str | None, console) -> str:
+def _resolve_canvas_api_url(canvas_api_url: str | None, console: Console) -> str:
     normalized_url = (canvas_api_url or CANVAS_API_URL_DEFAULT).strip()
     if not normalized_url:
         console.print("[red]Error: Canvas API URL cannot be empty[/red]")
@@ -147,7 +187,7 @@ def _resolve_canvas_token(
     *,
     token_stdin: bool,
     interactive: bool,
-    console,
+    console: Console,
     Prompt,
 ) -> str:
     if token_stdin:
@@ -213,7 +253,7 @@ def _build_canvas_client(canvas_api_url: str, canvas_credential: str, *, Canvas)
 
 
 def _print_canvas_validation_failure(
-    canvas_api_url: str, *, show_common_hints: bool, console
+    canvas_api_url: str, *, show_common_hints: bool, console: Console
 ) -> None:
     console.print("[red]Error: Failed to validate Canvas credentials[/red]")
     if not show_common_hints:
@@ -226,7 +266,7 @@ def _print_canvas_validation_failure(
     console.print(f"[dim]Attempted URL: {canvas_api_url}[/dim]")
 
 
-def _fetch_canvas_courses(canvas: Canvas, *, console) -> list[Course]:
+def _fetch_canvas_courses(canvas: Canvas, *, console: Console) -> list[Course]:
     try:
         return list(canvas.get_courses())
     except (CanvasException, requests.RequestException) as exc:
@@ -234,7 +274,9 @@ def _fetch_canvas_courses(canvas: Canvas, *, console) -> list[Course]:
         raise typer.Exit(1) from exc
 
 
-def _resolve_provided_course(canvas: Canvas, course_id: int, *, console) -> tuple[int, Course]:
+def _resolve_provided_course(
+    canvas: Canvas, course_id: int, *, console: Console
+) -> tuple[int, Course]:
     try:
         course = canvas.get_course(course_id)
     except (CanvasException, requests.RequestException, Exception) as exc:
@@ -245,7 +287,7 @@ def _resolve_provided_course(canvas: Canvas, course_id: int, *, console) -> tupl
         return course_id, course
 
 
-def _prompt_course_selection(courses: list[Course], *, console) -> list[Course]:
+def _prompt_course_selection(courses: list[Course], *, console: Console) -> list[Course]:
     console.print("\n[bold]Fetching available courses from Canvas...[/bold]")
     if not courses:
         console.print("[yellow]No courses found for this user[/yellow]")
@@ -262,7 +304,7 @@ def _prompt_course_selection(courses: list[Course], *, console) -> list[Course]:
 
 
 def _resolve_interactive_course_selection(
-    canvas: Canvas, *, console, IntPrompt
+    canvas: Canvas, *, console: Console, IntPrompt
 ) -> tuple[int, Course]:
     courses = _prompt_course_selection(
         _fetch_canvas_courses(canvas, console=console), console=console
@@ -284,7 +326,12 @@ def _resolve_interactive_course_selection(
 
 
 def _resolve_course_selection(
-    canvas: Canvas, provided_course_id: int | None, *, interactive: bool, console, IntPrompt
+    canvas: Canvas,
+    provided_course_id: int | None,
+    *,
+    interactive: bool,
+    console: Console,
+    IntPrompt,
 ) -> tuple[int, Course]:
     if provided_course_id is not None:
         return _resolve_provided_course(canvas, provided_course_id, console=console)
@@ -296,33 +343,188 @@ def _resolve_course_selection(
     return _resolve_interactive_course_selection(canvas, console=console, IntPrompt=IntPrompt)
 
 
-def _parse_test_mappings(mappings: list[str], *, console) -> dict[str, str]:
-    test_map_env: dict[str, str] = {}
-    for mapping in mappings:
-        if ":" not in mapping:
-            console.print(f"[yellow]Skipping invalid test mapping: {mapping}[/yellow]")
+def _parse_work_package_mapping(mapping: str, *, console: Console) -> tuple[int, Path] | None:
+    """Parse an ``<assignment id>:<path>`` mapping, reporting why it was skipped."""
+    assignment_id_str, separator, raw_root = mapping.partition(":")
+    root = raw_root.strip()
+    if not separator or not root or not assignment_id_str.strip().isdigit():
+        console.print(
+            f"[yellow]Skipping invalid work-package mapping: {mapping}. "
+            f"Use {WORK_PACKAGE_MAPPING_FORMAT}, for example {WORK_PACKAGE_MAPPING_EXAMPLE}[/yellow]"
+        )
+        return None
+    return int(assignment_id_str), Path(root)
+
+
+def _parse_work_package_mappings(mappings: list[str], *, console: Console) -> dict[int, Path]:
+    parsed = (_parse_work_package_mapping(mapping, console=console) for mapping in mappings)
+    return dict(mapping for mapping in parsed if mapping is not None)
+
+
+def _resolve_work_package_root(root: Path, *, console: Console) -> Path:
+    resolved = root.expanduser().resolve()
+    if not resolved.is_dir():
+        console.print(f"[red]Work-package root is not a directory: {resolved}[/red]")
+        raise typer.Exit(1)
+    return resolved
+
+
+def _resolve_work_package_asset_source_dir(root: Path, *, console: Console) -> Path:
+    for candidate_name in WORK_PACKAGE_ASSET_DIR_CANDIDATES:
+        candidate = root / candidate_name
+        if candidate.is_dir():
+            return candidate
+
+    candidate_list = " or ".join(f"`{name}/`" for name in WORK_PACKAGE_ASSET_DIR_CANDIDATES)
+    console.print(f"[red]Work-package root {root} must contain {candidate_list}[/red]")
+    raise typer.Exit(1)
+
+
+def _build_work_package_plans(
+    mappings: dict[int, Path], *, console: Console
+) -> tuple[WorkPackagePlan, ...]:
+    plans: list[WorkPackagePlan] = []
+    for assignment_id, raw_root in sorted(mappings.items()):
+        root = _resolve_work_package_root(raw_root, console=console)
+        plans.append(
+            WorkPackagePlan(
+                assignment_id=assignment_id,
+                root=root,
+                asset_source_dir=_resolve_work_package_asset_source_dir(root, console=console),
+                prefix=f"assignments/{assignment_id}",
+            )
+        )
+    return tuple(plans)
+
+
+def _load_work_package_manifest(manifest_path: Path, *, console: Console) -> WorkPackageManifest:
+    if not manifest_path.exists():
+        return WorkPackageManifest()
+
+    try:
+        raw_data = yaml.safe_load(manifest_path.read_text(encoding="utf-8"))
+        return WorkPackageManifest.model_validate(raw_data or {})
+    except (OSError, yaml.YAMLError, ValidationError) as exc:
+        console.print(f"[red]Invalid work-package manifest {manifest_path}: {exc}[/red]")
+        raise typer.Exit(1) from exc
+
+
+def _manifest_header(manifest_path: Path) -> str:
+    """Return the leading ``---``/comment lines so a rewrite keeps the schema pragma."""
+    if not manifest_path.exists():
+        return ""
+    lines = manifest_path.read_text(encoding="utf-8").splitlines()
+    # Re-adding the newline per line also covers a header-only file saved without one,
+    # which would otherwise fuse with the dumped body and swallow its first key.
+    return "".join(
+        f"{line}\n"
+        for line in itertools.takewhile(lambda line: line.lstrip().startswith(("---", "#")), lines)
+    )
+
+
+def _sync_work_package_manifests(plans: tuple[WorkPackagePlan, ...], *, console: Console) -> None:
+    """Record each mapped assignment ID in its work package's manifest."""
+    assignment_ids_by_root: dict[Path, set[int]] = {}
+    for plan in plans:
+        assignment_ids_by_root.setdefault(plan.root, set()).add(plan.assignment_id)
+
+    for root, assignment_ids in sorted(assignment_ids_by_root.items()):
+        manifest_path = root / WORK_PACKAGE_MANIFEST_FILENAME
+        manifest = _load_work_package_manifest(manifest_path, console=console)
+        merged_ids = sorted(set(manifest.assignment_ids) | assignment_ids)
+        if manifest_path.exists() and merged_ids == manifest.assignment_ids:
             continue
+
+        manifest.assignment_ids = merged_ids
         try:
-            assignment_id_str, test_path = mapping.split(":", 1)
-            assignment_id = int(assignment_id_str)
-            test_map_env[f"CCC_TEST_MAP_{assignment_id}"] = test_path
-        except ValueError:
-            console.print(f"[yellow]Skipping invalid assignment ID in: {mapping}[/yellow]")
-    return test_map_env
+            manifest_path.write_text(
+                _manifest_header(manifest_path)
+                + yaml.safe_dump(manifest.model_dump(), sort_keys=False),
+                encoding="utf-8",
+            )
+        except OSError as exc:
+            console.print(f"[red]Failed to write {manifest_path}: {exc}[/red]")
+            raise typer.Exit(1) from exc
+        console.print(f"[green]✓ Recorded assignments {merged_ids} in {manifest_path}[/green]")
 
 
-def _request_test_mappings(course: Course, *, console, Confirm, Prompt) -> dict[str, str]:
-    test_map_env: dict[str, str] = {}
+def _build_storage_config() -> RustfsStorageConfig:
+    return RustfsStorageConfig(
+        endpoint_url=os.getenv("RUSTFS_ENDPOINT", DEFAULT_RUSTFS_ENDPOINT),
+        aws_access_key_id=os.getenv("RUSTFS_ACCESS_KEY", DEFAULT_RUSTFS_ACCESS_KEY),
+        aws_secret_access_key=os.getenv("RUSTFS_SECRET_KEY", DEFAULT_RUSTFS_SECRET_KEY),
+        region_name=os.getenv("AWS_REGION", os.getenv("AWS_DEFAULT_REGION", DEFAULT_AWS_REGION)),
+    )
+
+
+def _save_course_assets_block(
+    block_name: str, bucket_name: str, storage: RustfsStorageConfig, *, console: Console
+) -> None:
+    block = S3Bucket(bucket_name=bucket_name, credentials=build_credentials(storage))
+    try:
+        block.save(block_name, overwrite=True)
+    except (RuntimeError, TypeError, ValueError) as exc:
+        console.print(f"[red]Failed to save assets block {block_name}: {exc}[/red]")
+        raise typer.Exit(1) from exc
+
+    console.print(f"[green]✓ Saved assets block: {block_name}[/green]")
+
+
+def _upload_work_package(
+    storage: RustfsStorageConfig, bucket_name: str, plan: WorkPackagePlan, *, console: Console
+) -> None:
+    """Upload a work package's assets, then prune objects the upload replaced."""
+    source = plan.asset_source_dir
+    uploaded_count = upload_directory_with_credentials(
+        storage, bucket_name=bucket_name, local_path=source, to_path=plan.prefix
+    )
+    fresh_keys = {
+        f"{plan.prefix}/{path.relative_to(source).as_posix()}"
+        for path in source.rglob("*")
+        if path.is_file()
+    }
+    pruned_count = delete_stale_objects(storage, bucket_name, plan.prefix, keep=fresh_keys)
+
+    console.print(
+        f"[green]✓ Uploaded {uploaded_count} asset(s) for assignment {plan.assignment_id} "
+        f"to s3://{bucket_name}/{plan.prefix}[/green]"
+    )
+    if pruned_count:
+        console.print(f"[dim]  removed {pruned_count} stale object(s)[/dim]")
+
+
+def _provision_course_assets(config: CourseSetupConfig, *, console: Console) -> None:
+    storage = _build_storage_config()
+    bucket_name = build_bucket_name(config.assets_block)
+
+    try:
+        create_course_bucket(storage, bucket_name)
+        console.print(f"[green]✓ Using assets bucket: {bucket_name}[/green]")
+        _save_course_assets_block(config.assets_block, bucket_name, storage, console=console)
+        for plan in config.work_package_plans:
+            _upload_work_package(storage, bucket_name, plan, console=console)
+        verify_course_runtime_access(storage, bucket_name)
+    except RustfsProvisioningError as exc:
+        console.print(f"[red]{exc}[/red]")
+        raise typer.Exit(1) from exc
+
+    console.print(f"[green]✓ Verified RustFS credential access to s3://{bucket_name}[/green]")
+
+
+def _request_work_package_mappings(
+    course: Course, *, console: Console, Confirm, Prompt
+) -> dict[int, Path]:
+    mappings: dict[int, Path] = {}
     console.print("\n[bold]Fetching assignments from course...[/bold]")
     try:
         assignments = list(course.get_assignments())
     except (CanvasException, requests.RequestException) as exc:
         console.print(f"[yellow]Warning: Could not fetch assignments: {exc}[/yellow]")
-        return test_map_env
+        return mappings
 
     if not assignments:
         console.print("[yellow]No assignments found in this course[/yellow]")
-        return test_map_env
+        return mappings
 
     table = Table(title=f"Assignments in {course.name}")
     table.add_column("ID", style="cyan", justify="right")
@@ -338,109 +540,62 @@ def _request_test_mappings(course: Course, *, console, Confirm, Prompt) -> dict[
 
     console.print(table)
 
-    if not Confirm.ask("\nWould you like to map local test files to assignments?", default=True):
-        return test_map_env
+    if not Confirm.ask("\nWould you like to map local work packages to assignments?", default=True):
+        return mappings
 
-    console.print("\n[yellow]Enter test mappings (press Enter with no input to finish):[/yellow]")
-    console.print("Format: [dim]assignment_id:/path/to/test.py[/dim]")
+    console.print(
+        "\n[yellow]Enter work package mappings (press Enter with no input to finish):[/yellow]"
+    )
+    console.print(f"Format: [dim]{WORK_PACKAGE_MAPPING_FORMAT}[/dim]")
+    console.print(
+        "[dim]Use the root directory of the work package, the folder that contains "
+        "`grader/` or `assets/` "
+        f"(for example `{WORK_PACKAGE_MAPPING_EXAMPLE}`).[/dim]"
+    )
+    console.print(
+        "[dim]Mapped assignment IDs are recorded in the package's "
+        f"`{WORK_PACKAGE_MANIFEST_FILENAME}` before the final save.[/dim]"
+    )
 
     while True:
-        mapping = Prompt.ask("Test mapping", default="")
+        mapping = Prompt.ask(
+            "Work-package mapping (press Enter on empty input to finish)",
+            default="",
+            show_default=False,
+        )
         if not mapping:
             break
 
-        if ":" not in mapping:
-            console.print("[yellow]Invalid format. Use: assignment_id:/path/to/test.py[/yellow]")
+        parsed_mapping = _parse_work_package_mapping(mapping, console=console)
+        if parsed_mapping is None:
             continue
 
-        assignment_id_str, test_path = mapping.split(":", 1)
-        try:
-            assignment_id = int(assignment_id_str)
-        except ValueError:
-            console.print("[yellow]Invalid assignment ID (must be a number)[/yellow]")
-            continue
-
+        assignment_id, root = parsed_mapping
         try:
             course.get_assignment(assignment_id)
-        except CanvasException as exc:
+        except (CanvasException, requests.RequestException) as exc:
             console.print(f"[yellow]Warning: Could not validate assignment: {exc}[/yellow]")
-            test_map_env[f"CCC_TEST_MAP_{assignment_id_str}"] = test_path
-            continue
+        else:
+            console.print(f"[green]✓ Mapped assignment {assignment_id} → {root}[/green]")
+        mappings[assignment_id] = root
 
-        test_map_env[f"CCC_TEST_MAP_{assignment_id}"] = test_path
-        console.print(f"[green]✓ Mapped assignment {assignment_id} → {test_path}[/green]")
-
-    return test_map_env
+    return mappings
 
 
-def _collect_test_mappings(
-    course: Course, test_mappings: list[str] | None, *, interactive: bool, console, Confirm, Prompt
-) -> dict[str, str]:
-    if test_mappings:
-        return _parse_test_mappings(test_mappings, console=console)
+def _collect_work_package_mappings(
+    course: Course,
+    work_packages: list[str] | None,
+    *,
+    interactive: bool,
+    console: Console,
+    Confirm,
+    Prompt,
+) -> dict[int, Path]:
+    if work_packages:
+        return _parse_work_package_mappings(work_packages, console=console)
     if not interactive:
         return {}
-    return _request_test_mappings(course, console=console, Confirm=Confirm, Prompt=Prompt)
-
-
-def _parse_course_run_options(args: list[str], *, console) -> CourseRunOptions:
-    parser = argparse.ArgumentParser(add_help=False)
-    parser.add_argument("--submission-id", type=int, default=None)
-    parser.add_argument("--course", "-c", default="default-course")
-    parser.add_argument("--download-dir", type=Path, default=None)
-    parser.add_argument("--dry-run", action="store_true")
-
-    parsed, unknown_args = parser.parse_known_args(args)
-    if unknown_args:
-        console.print(f"[red]Unknown option(s): {', '.join(unknown_args)}[/red]")
-        raise typer.Exit(2)
-
-    return CourseRunOptions(
-        submission_id=parsed.submission_id,
-        course_block=parsed.course,
-        download_dir=parsed.download_dir,
-        dry_run=parsed.dry_run,
-    )
-
-
-def _parse_course_setup_options(args: list[str], *, console) -> CourseSetupOptions:
-    parser = argparse.ArgumentParser(add_help=False)
-    parser.add_argument("--token-stdin", action="store_true")
-    parser.add_argument("--token", default=None)
-    parser.add_argument("--api-url", "-u", default=None)
-    parser.add_argument("--course-id", "-c", type=int, default=0)
-    parser.add_argument("--docker-image", "-d", default="jakob1379/canvas-grader:latest")
-    parser.add_argument(
-        "--map-assignments", "--test-map", dest="map_assignments", action="append", default=None
-    )
-    parser.add_argument("--env", "-e", action="append", default=None)
-    parser.add_argument("--interactive", dest="interactive", action="store_true")
-    parser.add_argument("--no-interactive", dest="interactive", action="store_false")
-    parser.set_defaults(interactive=True)
-    parser.add_argument("--assets-block", default=None)
-    parser.add_argument("--slug", default=None)
-    parser.add_argument("--assets-prefix", default=None)
-    parser.add_argument("--work-pool", default=None)
-
-    parsed, unknown_args = parser.parse_known_args(args)
-    if unknown_args:
-        console.print(f"[red]Unknown option(s): {', '.join(unknown_args)}[/red]")
-        raise typer.Exit(2)
-
-    return CourseSetupOptions(
-        token_stdin=parsed.token_stdin,
-        canvas_api_url=parsed.api_url,
-        canvas_token=parsed.token,
-        course_id=parsed.course_id,
-        docker_image=parsed.docker_image,
-        map_assignments=parsed.map_assignments or [],
-        env_var=parsed.env or [],
-        interactive=parsed.interactive,
-        assets_block=parsed.assets_block or None,
-        slug=parsed.slug or None,
-        assets_prefix=parsed.assets_prefix or None,
-        work_pool=parsed.work_pool or None,
-    )
+    return _request_work_package_mappings(course, console=console, Confirm=Confirm, Prompt=Prompt)
 
 
 def _prompt_optional_value(
@@ -459,9 +614,7 @@ def _prompt_optional_value(
     return response
 
 
-def _build_grader_env(
-    env_var: list[str] | None, test_map_env: dict[str, str], *, console
-) -> dict[str, str]:
+def _build_grader_env(env_var: list[str] | None, *, console: Console) -> dict[str, str]:
     grader_env: dict[str, str] = {}
     if env_var:
         for env_str in env_var:
@@ -470,11 +623,18 @@ def _build_grader_env(
                 grader_env[key.strip()] = value.strip()
             else:
                 console.print(f"[yellow]Skipping invalid env var: {env_str}[/yellow]")
-    grader_env.update(test_map_env)
     return grader_env
 
 
-def _resolve_course_run_download_dir(download_dir: Path | None, *, console) -> Path:
+def _apply_course_runtime_storage_env(settings: Settings, *, console: Console) -> None:
+    """Mirror ambient RUSTFS_* credentials into AWS_* for shared-environment courses."""
+    if settings.assets.storage_auth_mode != "shared_environment":
+        return
+    if seed_ambient_storage_env(os.environ):
+        console.print("[blue]Mirrored RUSTFS_* credentials into AWS_* for this run[/blue]")
+
+
+def _resolve_course_run_download_dir(download_dir: Path | None, *, console: Console) -> Path:
     if download_dir is not None:
         return download_dir
     resolved = Path(tempfile.mkdtemp(prefix="ccc-download-"))
@@ -482,7 +642,7 @@ def _resolve_course_run_download_dir(download_dir: Path | None, *, console) -> P
     return resolved
 
 
-def _print_flow_result(result: FlowArtifacts, *, console) -> None:
+def _print_flow_result(result: FlowArtifacts, *, console: Console) -> None:
     console.print("[green]Correction flow completed successfully![/green]")
     console.print(
         json.dumps(
@@ -503,7 +663,7 @@ def _run_single_submission(
     *,
     download_dir: Path,
     dry_run: bool,
-    console,
+    console: Console,
     correct_submission_flow,
 ) -> FlowArtifacts:
     if dry_run:
@@ -523,7 +683,7 @@ def _run_assignment_batch(
     *,
     download_dir: Path,
     dry_run: bool,
-    console,
+    console: Console,
     build_canvas_resources,
     correct_submission_flow,
     CorrectSubmissionPayload,
@@ -567,7 +727,7 @@ def _suggest_course_slug(selected_course_id: int, course: Course) -> str:
         return f"{selected_course_id}-course"
 
 
-def _resolve_docker_image(docker_image: str, *, interactive: bool, console, Prompt) -> str:
+def _resolve_docker_image(docker_image: str, *, interactive: bool, console: Console, Prompt) -> str:
     if not interactive:
         return docker_image
     return Prompt.ask("Docker image for grading", default=docker_image)
@@ -578,86 +738,40 @@ def _build_course_setup_config(
     course: Course,
     options: CourseSetupOptions,
     *,
-    console,
+    console: Console,
     Prompt,
     Confirm,
 ) -> CourseSetupConfig:
-    suggested_slug = _suggest_course_slug(selected_course_id, course)
-    slug_input = _prompt_optional_value(
-        options.slug,
-        "Course slug",
-        interactive=options.interactive,
-        default=suggested_slug,
-        Prompt=Prompt,
-    )
-    course_slug = slugify(slug_input or suggested_slug)
-    block_name = f"ccc-course-{course_slug}"
-
-    default_assets_block = f"ccc-assets-{course_slug}"
-    if options.assets_block:
-        assets_block = options.assets_block
-    else:
-        if not options.interactive:
-            console.print("[red]--assets-block is required in non-interactive mode[/red]")
-            raise typer.Exit(1)
-        prompted_assets_block = _prompt_optional_value(
-            None,
-            "Assets block (Prefect block storing S3 credentials)",
-            interactive=True,
-            default=default_assets_block,
-            Prompt=Prompt,
-        )
-        assets_block = prompted_assets_block or default_assets_block
-
-    assets_prefix_input = _prompt_optional_value(
-        options.assets_prefix,
-        "Assets prefix (S3 path prefix)",
-        interactive=options.interactive,
-        default=f"graders/{course_slug}/",
-        Prompt=Prompt,
-    )
-    assets_prefix = assets_prefix_input or f"graders/{course_slug}/"
-
-    work_pool_input = _prompt_optional_value(
-        options.work_pool,
-        "Work pool name",
-        interactive=options.interactive,
-        default=f"course-work-pool-{course_slug}",
-        Prompt=Prompt,
-    )
-    work_pool = work_pool_input or f"course-work-pool-{course_slug}"
-
-    resolved_docker_image = _resolve_docker_image(
-        options.docker_image,
-        interactive=options.interactive,
-        console=console,
-        Prompt=Prompt,
-    )
-    test_map_env = _collect_test_mappings(
+    course_slug = _suggest_course_slug(selected_course_id, course)
+    mappings = _collect_work_package_mappings(
         course,
-        options.map_assignments,
+        options.work_packages,
         interactive=options.interactive,
         console=console,
         Confirm=Confirm,
         Prompt=Prompt,
     )
-    grader_env = _build_grader_env(options.env_var, test_map_env, console=console)
 
     return CourseSetupConfig(
-        block_name=block_name,
+        block_name=f"ccc-course-{course_slug}",
         canvas_api_url=options.canvas_api_url or CANVAS_API_URL_DEFAULT,
         canvas_token=options.canvas_token or "",
         selected_course_id=selected_course_id,
-        assets_block=assets_block,
-        assets_prefix=assets_prefix,
-        work_pool=work_pool,
-        docker_image=resolved_docker_image,
-        test_map_count=len(test_map_env),
-        grader_env=grader_env,
+        assets_block=f"ccc-assets-{course_slug}",
+        assets_prefix=f"graders/{course_slug}/",
+        work_pool=f"course-work-pool-{course_slug}",
+        docker_image=_resolve_docker_image(
+            options.docker_image,
+            interactive=options.interactive,
+            console=console,
+            Prompt=Prompt,
+        ),
+        work_package_plans=_build_work_package_plans(mappings, console=console),
+        grader_env=_build_grader_env(options.env_var, console=console),
     )
 
 
-def _print_course_setup_summary(config: CourseSetupConfig, *, console) -> None:
+def _print_course_setup_summary(config: CourseSetupConfig, *, console: Console) -> None:
     console.print("\n[bold]Configuration Summary:[/bold]")
     summary_table = Table(show_header=False)
     summary_table.add_column("Setting", style="cyan")
@@ -669,8 +783,19 @@ def _print_course_setup_summary(config: CourseSetupConfig, *, console) -> None:
     summary_table.add_row("Assets Prefix", config.assets_prefix)
     summary_table.add_row("Work Pool", config.work_pool)
     summary_table.add_row("Docker Image", config.docker_image)
-    summary_table.add_row("Test Mappings", str(config.test_map_count))
+    summary_table.add_row("Work Packages", str(len(config.work_package_plans)))
     console.print(summary_table)
+
+    if not config.work_package_plans:
+        return
+
+    upload_table = Table(title="Work-package uploads")
+    upload_table.add_column("Assignment", style="cyan")
+    upload_table.add_column("Source", style="green")
+    upload_table.add_column("Asset Prefix", style="yellow")
+    for plan in config.work_package_plans:
+        upload_table.add_row(str(plan.assignment_id), str(plan.asset_source_dir), plan.prefix)
+    console.print(upload_table)
 
 
 def _build_course_block_payload(config: CourseSetupConfig) -> CourseConfigBlockPayload:
@@ -680,19 +805,47 @@ def _build_course_block_payload(config: CourseSetupConfig) -> CourseConfigBlockP
         "canvas_course_id": config.selected_course_id,
         "asset_bucket_block": config.assets_block,
         "asset_path_prefix": config.assets_prefix,
+        "assignment_asset_prefixes": {
+            plan.assignment_id: plan.prefix for plan in config.work_package_plans
+        },
+        "storage_auth_mode": "shared_environment",
         "grader_image": config.docker_image,
         "work_pool_name": config.work_pool,
         "grader_env": config.grader_env,
     }
 
 
-def _save_course_block(config: CourseSetupConfig, *, console, CourseConfigBlock) -> None:
+def _ensure_course_block_absent(block_name: str, *, console: Console, CourseConfigBlock) -> None:
+    """Fail before any S3 or manifest mutation if the course block already exists.
+
+    Queries the block document directly rather than going through ``Block.load``:
+    only a genuine miss raises ``ObjectNotFound``, so a missing API URL, an auth
+    failure, or a schema-drifted block propagates instead of reading as "absent"
+    and letting setup mutate S3 and the user's manifests first.
+    """
+    with get_client(sync_client=True) as client:
+        try:
+            client.read_block_document_by_name(
+                name=block_name,
+                block_type_slug=CourseConfigBlock.get_block_type_slug(),
+                include_secrets=False,  # an existence check has no business fetching the token
+            )
+        except ObjectNotFound:
+            return
+
+    console.print(f"[red]Course configuration block already exists: {block_name}[/red]")
+    console.print(
+        f"[dim]Delete it first with: prefect block delete "
+        f"{CourseConfigBlock.get_block_type_slug()}/{block_name}[/dim]"
+    )
+    raise typer.Exit(1)
+
+
+def _save_course_block(config: CourseSetupConfig, *, console: Console, CourseConfigBlock) -> None:
     try:
-        block = CourseConfigBlock(
-            **cast("CourseConfigBlockPayload", _build_course_block_payload(config))
-        )
-        block.save(config.block_name, overwrite=True)
-    except (RuntimeError, ValueError, TypeError) as exc:
+        block = CourseConfigBlock(**_build_course_block_payload(config))
+        block.save(config.block_name, overwrite=False)
+    except (RuntimeError, TypeError, ValueError) as exc:
         console.print(f"[red]Error saving course block: {exc}[/red]")
         raise typer.Exit(1) from exc
 
@@ -703,22 +856,21 @@ def _save_course_block(config: CourseSetupConfig, *, console, CourseConfigBlock)
 
 
 def course_run_command(
-    ctx: typer.Context,
     assignment_id: int,
+    options: CourseRunOptions,
     *,
-    console,
+    console: Console,
     load_settings_from_course_block,
     build_canvas_resources,
     correct_submission_flow,
     CorrectSubmissionPayload,
-    _run_cli_step=_run_cli_step,
 ) -> None:
-    options = _parse_course_run_options(ctx.args, console=console)
     settings = _run_cli_step(
         console,
         "Error loading course block",
         lambda: load_settings_from_course_block(options.course_block),
     )
+    _apply_course_runtime_storage_env(settings, console=console)
     resolved_download_dir = _resolve_course_run_download_dir(options.download_dir, console=console)
 
     if options.submission_id is not None:
@@ -753,18 +905,16 @@ def course_run_command(
 
 
 def course_setup_command(
-    ctx: typer.Context,
+    options: CourseSetupOptions,
     *,
-    console,
+    console: Console,
     Canvas,
     CourseConfigBlock,
     Prompt,
     IntPrompt,
     Confirm,
-    _switch_stdin_to_tty_for_prompts=_switch_stdin_to_tty_for_prompts,
 ) -> None:
     console.print(Panel.fit("[bold blue]Canvas Code Correction - Course Setup[/bold blue]"))
-    options = _parse_course_setup_options(ctx.args, console=console)
 
     canvas_credential = _resolve_canvas_token(
         options.canvas_token,
@@ -806,20 +956,7 @@ def course_setup_command(
     setup_config = _build_course_setup_config(
         selected_course_id,
         course,
-        CourseSetupOptions(
-            token_stdin=options.token_stdin,
-            canvas_api_url=canvas_api_url,
-            canvas_token=canvas_credential,
-            course_id=options.course_id,
-            docker_image=options.docker_image,
-            map_assignments=options.map_assignments,
-            env_var=options.env_var,
-            interactive=options.interactive,
-            assets_block=options.assets_block,
-            slug=options.slug,
-            assets_prefix=options.assets_prefix,
-            work_pool=options.work_pool,
-        ),
+        replace(options, canvas_api_url=canvas_api_url, canvas_token=canvas_credential),
         console=console,
         Prompt=Prompt,
         Confirm=Confirm,
@@ -830,11 +967,20 @@ def course_setup_command(
         console.print("[yellow]Configuration cancelled[/yellow]")
         raise typer.Exit(0)
 
+    _run_cli_step(
+        console,
+        "Error checking for an existing course block",
+        lambda: _ensure_course_block_absent(
+            setup_config.block_name, console=console, CourseConfigBlock=CourseConfigBlock
+        ),
+    )
+    _sync_work_package_manifests(setup_config.work_package_plans, console=console)
+    _provision_course_assets(setup_config, console=console)
     _save_course_block(config=setup_config, console=console, CourseConfigBlock=CourseConfigBlock)
 
 
 def course_list_command(
-    *, console, _run_cli_step=_run_cli_step, find_course_block_names, load_course_block
+    *, console: Console, _run_cli_step=_run_cli_step, find_course_block_names, load_course_block
 ) -> None:
     blocks = _run_cli_step(console, "Error listing courses", find_course_block_names)
     if not blocks:
@@ -842,10 +988,11 @@ def course_list_command(
         return
 
     table = Table(title="Configured Courses")
-    table.add_column("Block Name", style="cyan")
+    table.add_column("Block Name", style="cyan", no_wrap=True)
     table.add_column("Canvas Course ID", style="green")
     table.add_column("Docker Image", style="yellow")
-    table.add_column("Assets Block", style="blue")
+    table.add_column("Assets Block", style="blue", no_wrap=True)
+    table.add_column("Storage Auth", style="magenta")
 
     for block_slug in blocks:
         try:
@@ -855,8 +1002,9 @@ def course_list_command(
                 str(block.canvas_course_id),
                 block.grader_image or "Not set",
                 block.asset_bucket_block,
+                block.storage_auth_mode,
             )
         except COURSE_BLOCK_LOAD_EXCEPTIONS as exc:
-            table.add_row(block_slug, f"Error: {exc}", "", "")
+            table.add_row(block_slug, f"Error: {exc}", "", "", "")
 
     console.print(table)

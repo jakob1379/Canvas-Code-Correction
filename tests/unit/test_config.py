@@ -26,6 +26,8 @@ def mock_course_block() -> MagicMock:
     mock.canvas_course_id = 123
     mock.asset_bucket_block = "test-bucket"
     mock.asset_path_prefix = "prefix"
+    mock.assignment_asset_prefixes = {"123": "prefix/assignments/123/assets"}
+    mock.storage_auth_mode = "embedded_block_credentials"
     mock.workspace_root = None
     mock.grader_image = "test/image:latest"
     mock.work_pool_name = "test-pool"
@@ -55,6 +57,8 @@ def test_load_settings_from_course_block(mock_course_block: MagicMock) -> None:
         assert settings.canvas.course_id == 123
         assert settings.assets.bucket_block == "test-bucket"
         assert settings.assets.path_prefix == "prefix"
+        assert settings.assets.assignment_path_prefixes == {123: "prefix/assignments/123/assets"}
+        assert settings.assets.storage_auth_mode == "embedded_block_credentials"
         assert settings.grader.docker_image == "test/image:latest"
         assert settings.grader.work_pool_name == "test-pool"
         assert settings.grader.env == {}

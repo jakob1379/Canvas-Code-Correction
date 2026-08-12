@@ -2,7 +2,7 @@ import os
 from pathlib import Path
 
 import pytest
-from pydantic import SecretStr
+from pydantic import HttpUrl, SecretStr
 
 from canvas_code_correction.clients import canvas_resources
 from canvas_code_correction.config import (
@@ -36,7 +36,7 @@ def test_download_submission_files_live(tmp_path: Path) -> None:
 
     settings = Settings(
         canvas=CanvasSettings(
-            api_url=api_url,
+            api_url=HttpUrl(api_url),
             token=SecretStr(token),
             course_id=course_id,
         ),

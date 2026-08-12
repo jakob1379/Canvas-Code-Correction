@@ -4,12 +4,25 @@ These tests verify the CLI command structure works correctly without requiring
 the full dev stack (RustFS, Prefect server, Canvas API).
 """
 
+import re
 from unittest.mock import MagicMock, patch
 
 import pytest
 from typer.testing import CliRunner
 
 from canvas_code_correction.cli import app
+
+ANSI_ESCAPE = re.compile(r"\x1b\[[0-9;]*m")
+
+
+def plain(output: str) -> str:
+    """Strip SGR escapes so flag names match literally.
+
+    Typer renders help through Rich, which splits `--token-stdin` into
+    `--token` + `-stdin` around colour codes whenever it decides the output is
+    a terminal. That decision differs between a local run and CI.
+    """
+    return ANSI_ESCAPE.sub("", output)
 
 
 @pytest.fixture
@@ -26,50 +39,82 @@ class TestCLICommandStructure:
         result = cli_runner.invoke(app, ["--help"])
 
         assert result.exit_code == 0
-        assert "course" in result.output
-        assert "system" in result.output
-        assert "📚 Course Administration" in result.output
-        assert "🔧 Platform Administration" in result.output
+        assert "course" in plain(result.output)
+        assert "system" in plain(result.output)
+        assert "📚 Course Administration" in plain(result.output)
+        assert "🔧 Platform Administration" in plain(result.output)
 
     def test_course_help_shows_subcommands(self, cli_runner: CliRunner) -> None:
         """Test that course group shows setup, run, and list."""
         result = cli_runner.invoke(app, ["course", "--help"])
 
         assert result.exit_code == 0
-        assert "setup" in result.output
-        assert "run" in result.output
-        assert "list" in result.output
-        assert "configure" not in result.output
+        assert "setup" in plain(result.output)
+        assert "run" in plain(result.output)
+        assert "list" in plain(result.output)
+        assert "configure" not in plain(result.output)
+
+    def test_course_setup_help_shows_supported_options(self, cli_runner: CliRunner) -> None:
+        """Test that setup help includes the actual supported flags."""
+        result = cli_runner.invoke(app, ["course", "setup", "--help"])
+
+        assert result.exit_code == 0
+        assert "--token-stdin" in plain(result.output)
+        assert "--token" in plain(result.output)
+        assert "--api-url" in plain(result.output)
+        assert "--course-id" in plain(result.output)
+        assert "--docker-image" in plain(result.output)
+        assert "--map-assignments" in plain(result.output)
+        assert "--env" in plain(result.output)
+        assert "--no-interactive" in plain(result.output)
+
+    def test_course_run_help_shows_supported_options(self, cli_runner: CliRunner) -> None:
+        """Test that run help includes the actual supported flags."""
+        result = cli_runner.invoke(app, ["course", "run", "--help"])
+
+        assert result.exit_code == 0
+        assert "--submission-id" in plain(result.output)
+        assert "--course" in plain(result.output)
+        assert "--download-dir" in plain(result.output)
+        assert "--dry-run" in plain(result.output)
 
     def test_system_help_shows_subcommands(self, cli_runner: CliRunner) -> None:
         """Test that system group shows all subcommands."""
         result = cli_runner.invoke(app, ["system", "--help"])
 
         assert result.exit_code == 0
-        assert "webhook" in result.output
-        assert "deploy" in result.output
-        assert "status" in result.output
+        assert "webhook" in plain(result.output)
+        assert "deploy" in plain(result.output)
+        assert "worker" in plain(result.output)
+        assert "status" in plain(result.output)
 
     def test_webhook_help_shows_serve(self, cli_runner: CliRunner) -> None:
         """Test that webhook subcommand shows serve."""
         result = cli_runner.invoke(app, ["system", "webhook", "--help"])
 
         assert result.exit_code == 0
-        assert "serve" in result.output
+        assert "serve" in plain(result.output)
 
     def test_deploy_help_shows_create(self, cli_runner: CliRunner) -> None:
         """Test that deploy subcommand shows create."""
         result = cli_runner.invoke(app, ["system", "deploy", "--help"])
 
         assert result.exit_code == 0
-        assert "create" in result.output
+        assert "create" in plain(result.output)
+
+    def test_worker_help_shows_start(self, cli_runner: CliRunner) -> None:
+        """Test that worker subcommand shows start."""
+        result = cli_runner.invoke(app, ["system", "worker", "--help"])
+
+        assert result.exit_code == 0
+        assert "start" in plain(result.output)
 
     def test_version_flag_works(self, cli_runner: CliRunner) -> None:
         """Test that --version flag works."""
         result = cli_runner.invoke(app, ["--version"])
 
         assert result.exit_code == 0
-        assert "Canvas Code Correction" in result.output
+        assert "Canvas Code Correction" in plain(result.output)
 
 
 class TestCLINoDevStackRequired:
@@ -87,7 +132,7 @@ class TestCLINoDevStackRequired:
             result = cli_runner.invoke(app, ["course", "list"])
 
             assert result.exit_code == 0
-            assert "No course configuration blocks found" in result.output
+            assert "No course configuration blocks found" in plain(result.output)
 
     @pytest.mark.local
     def test_system_status_shows_checks(self, cli_runner: CliRunner) -> None:
@@ -99,10 +144,10 @@ class TestCLINoDevStackRequired:
         result = cli_runner.invoke(app, ["system", "status"])
 
         assert result.exit_code == 0
-        assert "Platform Status" in result.output
-        assert "Prefect server" in result.output
-        assert "RustFS (S3)" in result.output
-        assert "ccc system --help" in result.output
+        assert "Platform Status" in plain(result.output)
+        assert "Prefect server" in plain(result.output)
+        assert "RustFS (S3)" in plain(result.output)
+        assert "ccc system --help" in plain(result.output)
 
     @pytest.mark.local
     def test_system_list_command_removed(self, cli_runner: CliRunner) -> None:
@@ -110,7 +155,7 @@ class TestCLINoDevStackRequired:
         result = cli_runner.invoke(app, ["system", "list"])
 
         assert result.exit_code != 0
-        assert "No such command 'list'" in result.output
+        assert "No such command 'list'" in plain(result.output)
 
 
 class TestCLILegacyCommandMapping:

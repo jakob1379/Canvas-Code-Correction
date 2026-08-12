@@ -1,4 +1,5 @@
 from pathlib import Path
+from types import SimpleNamespace
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -20,6 +21,8 @@ def _make_block() -> MagicMock:
     block.canvas_course_id = 123
     block.asset_bucket_block = "test-bucket"
     block.asset_path_prefix = "prefix"
+    block.assignment_asset_prefixes = {"123": "prefix/assignments/123/assets"}
+    block.storage_auth_mode = "embedded_block_credentials"
     block.workspace_root = None
     block.grader_image = "grader:latest"
     block.work_pool_name = "test-pool"
@@ -57,6 +60,8 @@ def test_load_settings_from_course_block_maps_block_fields() -> None:
     assert settings.canvas.token.get_secret_value() == "secret-token"
     assert settings.assets.bucket_block == "test-bucket"
     assert settings.assets.path_prefix == "prefix"
+    assert settings.assets.assignment_path_prefixes == {123: "prefix/assignments/123/assets"}
+    assert settings.assets.storage_auth_mode == "embedded_block_credentials"
     assert settings.grader.docker_image == "grader:latest"
     assert settings.grader.work_pool_name == "test-pool"
     assert settings.grader.env == {"ENV": "value"}
@@ -84,6 +89,16 @@ def test_load_settings_from_course_block_expands_workspace_root() -> None:
     assert settings.webhook.secret.get_secret_value() == "webhook-secret"
 
 
+def test_load_settings_from_course_block_supports_shared_environment() -> None:
+    block = _make_block()
+    block.storage_auth_mode = "shared_environment"
+
+    with patch.object(CourseConfigBlock, "load", return_value=block):
+        settings = load_settings_from_course_block("test-course")
+
+    assert settings.assets.storage_auth_mode == "shared_environment"
+
+
 def test_load_settings_from_course_block_round_trips_webhook_rate_limit() -> None:
     block = _make_block()
     block.webhook_rate_limit = "42/hour"
@@ -108,7 +123,22 @@ def test_load_course_block_surface_error() -> None:
 
 
 def test_find_course_block_names_returns_strings() -> None:
-    names = ["course-one", Path("course-two")]
+    block_documents = [
+        SimpleNamespace(name="course-two"),
+        SimpleNamespace(name="course-one"),
+        SimpleNamespace(name=None),
+    ]
+    client = MagicMock()
+    client.read_block_documents_by_type.return_value = block_documents
+    client_context = MagicMock()
+    client_context.__enter__.return_value = client
+    client_context.__exit__.return_value = None
 
-    with patch.object(CourseConfigBlock, "find", return_value=names, create=True):
+    with patch("canvas_code_correction.bootstrap.get_client", return_value=client_context):
         assert find_course_block_names() == ["course-one", "course-two"]
+        client.read_block_documents_by_type.assert_called_once_with(
+            block_type_slug=CourseConfigBlock.get_block_type_slug(),
+            include_secrets=False,
+            offset=0,
+            limit=200,
+        )

@@ -15,6 +15,7 @@ def docker_available() -> bool:
     """Check if Docker is available and running."""
     try:
         import docker
+        import docker.errors
     except ImportError:
         return False
 

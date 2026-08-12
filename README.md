@@ -40,9 +40,14 @@ If you prefer not to activate the virtual environment, prefix commands with
 
 ### 1. Configure a course
 
-Use `ccc course setup` to create a `ccc-course-<slug>` Prefect block that
-stores the Canvas connection, grader image, asset block, asset prefix, and work
-pool name.
+Use `ccc course setup` to create a generated `ccc-course-<canvas-course-id>-<slugified-course-code>` Prefect
+block that stores the Canvas connection, grader image, asset block, asset
+prefix, per-course storage auth mode, and work pool name. The CLI derives the
+block name, assets block name, assets prefix, and work pool from the selected
+course and saves them directly into the block. It uses the RustFS S3
+credentials present in `RUSTFS_ACCESS_KEY` and `RUSTFS_SECRET_KEY` to create
+the generated bucket, save the Prefect `S3Bucket` block, and upload work
+packages.
 
 For a ready-to-run local grader example, see
 `examples/count-submitted-files/` in the repo root.
@@ -52,11 +57,7 @@ $ printf "%s" "$CANVAS_API_TOKEN" | ccc course setup --no-interactive \
   --token-stdin \
   --api-url https://canvas.example.edu \
   --course-id 12345 \
-  --slug cs101 \
-  --assets-block course-assets-cs101 \
-  --assets-prefix graders/cs101/ \
-  --docker-image ghcr.io/example/cs101-grader:latest \
-  --work-pool course-work-pool-cs101
+  --docker-image ghcr.io/example/cs101-grader:latest
 ```
 
 Expected output includes:
@@ -64,7 +65,7 @@ Expected output includes:
 ```text
 ✓ Canvas access validated successfully
 ✓ Course ID 12345 validated
-✓ Course configuration saved as block: ccc-course-cs101
+✓ Course configuration saved as block: ccc-course-12345-cs101
 ```
 
 ### 2. Run a correction manually
@@ -72,13 +73,13 @@ Expected output includes:
 Use `ccc course run` for batch or single-submission runs.
 
 ```bash
-$ ccc course run 98765 --course ccc-course-cs101
+$ ccc course run 98765 --course ccc-course-12345-cs101
 ```
 
 Or limit the run to one submission:
 
 ```bash
-$ ccc course run 98765 --course ccc-course-cs101 --submission-id 54321 --dry-run
+$ ccc course run 98765 --course ccc-course-12345-cs101 --submission-id 54321 --dry-run
 ```
 
 Single-submission output includes a JSON summary with downloaded files,
@@ -101,13 +102,13 @@ Starting webhook server on 0.0.0.0:8080
 CCC creates the webhook-oriented deployment for you:
 
 ```bash
-$ ccc system deploy create ccc-course-cs101
+$ ccc system deploy create ccc-course-12345-cs101
 ```
 
 Expected output includes:
 
 ```text
-Creating deployment for course block: ccc-course-cs101
+Creating deployment for course block: ccc-course-12345-cs101
 Deployment 'ccc-cs101-deployment' created/updated successfully
 ```
 
@@ -116,7 +117,7 @@ Deployment 'ccc-cs101-deployment' created/updated successfully
 The worker must listen on the same work pool stored in the course block:
 
 ```bash
-$ uv run prefect worker start --pool course-work-pool-cs101
+$ ccc system worker start --course ccc-course-12345-cs101
 ```
 
 ## Installation
@@ -181,6 +182,10 @@ To start the services manually instead, run:
 $ docker compose up --wait -d rustfs postgres redis prefect-server prefect-services
 $ pytest -m e2e
 ```
+
+The Compose-based Prefect API is exposed to other containers, so the server must
+bind to `0.0.0.0`. Host-side tools should still use
+`PREFECT_API_URL=http://localhost:4200/api`.
 
 ## Project Layout
 

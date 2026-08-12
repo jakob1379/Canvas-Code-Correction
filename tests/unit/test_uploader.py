@@ -97,7 +97,9 @@ def test_upload_feedback_with_duplicate_check() -> None:
     """Test upload_feedback with duplicate checking."""
     # Create a mock submission with existing comments
     mock_submission = Mock()
-    mock_submission.refresh = Mock(return_value=mock_submission)
+    mock_submission.user_id = 789
+    mock_assignment = Mock()
+    mock_assignment.get_submission.return_value = mock_submission
     mock_submission.submission_comments = [
         {
             "attachments": [
@@ -109,7 +111,7 @@ def test_upload_feedback_with_duplicate_check() -> None:
         },
     ]
 
-    uploader = CanvasUploader(mock_submission)
+    uploader = CanvasUploader(mock_submission, mock_assignment)
 
     # Mock file operations and MD5 calculation
     with patch("canvas_code_correction.flows.uploader.Path") as mock_path:
@@ -142,8 +144,10 @@ def test_upload_feedback_duplicate_check_failure_is_explicit(tmp_path: Path) -> 
     test_file.write_bytes(b"zip-data")
 
     mock_submission = Mock()
-    mock_submission.refresh.side_effect = RuntimeError("Canvas unavailable")
-    uploader = CanvasUploader(mock_submission)
+    mock_submission.user_id = 789
+    mock_assignment = Mock()
+    mock_assignment.get_submission.side_effect = RuntimeError("Canvas unavailable")
+    uploader = CanvasUploader(mock_submission, mock_assignment)
 
     result = uploader.upload_feedback(test_file, UploadConfig(check_duplicates=True))
 
@@ -151,6 +155,55 @@ def test_upload_feedback_duplicate_check_failure_is_explicit(tmp_path: Path) -> 
     assert result.details["stage"] == "duplicate_check"
     assert "Duplicate check failed" in result.message
     assert not mock_submission.upload_comment.called
+
+
+@pytest.mark.local
+def test_refresh_submission_and_get_comments_refetches_via_assignment() -> None:
+    """Comments are read from a freshly fetched submission, keyed by user id."""
+    stale_submission = Mock(user_id=789, submission_comments=[])
+    fresh_submission = Mock(
+        user_id=789,
+        submission_comments=[
+            {
+                "attachments": [
+                    {
+                        "url": "https://example.com/feedback.zip",
+                        "display_name": "feedback.zip",
+                    },
+                ],
+            },
+        ],
+    )
+    mock_assignment = Mock()
+    mock_assignment.get_submission.return_value = fresh_submission
+    uploader = CanvasUploader(stale_submission, mock_assignment)
+
+    comments = uploader._refresh_submission_and_get_comments()
+
+    mock_assignment.get_submission.assert_called_once_with(
+        789,
+        include=["submission_comments"],
+    )
+    assert uploader.submission is fresh_submission
+    assert comments == [
+        {
+            "attachments": [
+                {
+                    "url": "https://example.com/feedback.zip",
+                    "display_name": "feedback.zip",
+                },
+            ],
+        },
+    ]
+
+
+@pytest.mark.local
+def test_refresh_submission_without_assignment_is_explicit() -> None:
+    """An uploader built without an assignment cannot reload, and says so."""
+    uploader = CanvasUploader(Mock(user_id=789))
+
+    with pytest.raises(AttributeError, match="without an assignment"):
+        uploader._refresh_submission_and_get_comments()
 
 
 @pytest.mark.local
@@ -354,6 +407,7 @@ def test_create_uploader_from_resources() -> None:
     mock_assignment = Mock()
     mock_submission = Mock()
 
+    mock_submission.id = 456
     mock_resources.course = mock_course
     mock_course.get_assignment.return_value = mock_assignment
     mock_assignment.get_submission.return_value = mock_submission
@@ -363,6 +417,7 @@ def test_create_uploader_from_resources() -> None:
     mock_course.get_assignment.assert_called_once_with(123)
     mock_assignment.get_submission.assert_called_once_with(456)
     assert uploader.submission is mock_submission
+    assert uploader.assignment is mock_assignment
 
 
 @pytest.mark.local
