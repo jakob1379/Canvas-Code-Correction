@@ -61,7 +61,7 @@ ci = [
   "prek>=0.4.13",
   "pyrefly>=1.2.0",
   "ruff>=0.16.3",
-  "skylos>=4.33.2",
+  "skylos>=4.47.2",
   "smokeshow>=0.5.0"
 ]
 

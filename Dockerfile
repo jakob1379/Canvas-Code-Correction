@@ -9,7 +9,7 @@ COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
 
 COPY pyproject.toml uv.lock README.md ./
 COPY src ./src
-RUN uv sync --no-managed-python --frozen
+RUN uv sync --no-managed-python --frozen --no-build
 
 FROM python:${PYTHON_VERSION} AS runner
 
@@ -28,7 +28,7 @@ RUN addgroup --system --gid ${APP_GID} app && \
       app
 
 COPY --from=base /app/.venv ./.venv
-COPY . /app
+COPY src ./src
 
 RUN chown -R ${APP_UID}:${APP_GID} /app
 
