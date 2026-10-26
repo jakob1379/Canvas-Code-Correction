@@ -3223,7 +3223,7 @@ wheels = [
 
 [[package]]
 name = "skylos"
-version = "4.50.1"
+version = "5.0.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "ca9" },
@@ -3246,15 +3246,15 @@ dependencies = [
     { name = "tree-sitter-rust" },
     { name = "tree-sitter-typescript" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/d1/47/4692bf0b6892e420dd5ceeaab6ee666c6c43b6667aa2d5b25aa43b79e56b/skylos-4.50.1.tar.gz", hash = "sha256:482c837a43c26aa9b264127b0b03e9c537f976ec21cc6329edc5f46b39a240be", size = 4482753, upload-time = "2026-10-15T10:18:16.201Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/19/2d/08e671bba59ff06f7aac50434d456af115be09fd380f16cacdbde960796c/skylos-5.0.0.tar.gz", hash = "sha256:f45846cb8c50590d1666c1871a2a7f9ecf6ea41cb94e12b0408391a914d10f94", size = 5357382, upload-time = "2026-10-23T04:30:29.229Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/b0/21/3c8c1cb8bb0e365158d9249db7f6c19c549ca59335b5e14969d51ba4c3fb/skylos-4.50.1-py3-none-any.whl", hash = "sha256:f644f5a6cf108f7f855a957eca4904e1e5a39f5c4fd7e2e97b1f52a4aefeb21c", size = 3076005, upload-time = "2026-10-15T10:18:00.977Z" },
-    { url = "https://files.pythonhosted.org/packages/0a/b7/2c306ec1aab435c13bf5326eddeffbe95a667cb91aa9ddecea5ca570553f/skylos-4.50.1-py3-none-macosx_10_15_x86_64.whl", hash = "sha256:4d54663a577b19e4e154e77de9a278d6521a479db0112e1eed04eee891050ae0", size = 5091099, upload-time = "2026-10-15T10:18:03.347Z" },
-    { url = "https://files.pythonhosted.org/packages/55/8a/f4fb2c8636a21ab1aae6269e5ee2d82449be669e2572e7c5f807a2efd6d2/skylos-4.50.1-py3-none-macosx_11_0_arm64.whl", hash = "sha256:c0db20cadb5c566adddadbe7dffddf51508b7c053edacf680a5f612f9b22de57", size = 4960033, upload-time = "2026-10-15T10:18:05.36Z" },
-    { url = "https://files.pythonhosted.org/packages/02/7a/6d926b4db58397e83755c68cd132d5456a03f0250dbd47cdf975568a5a96/skylos-4.50.1-py3-none-manylinux_2_17_aarch64.manylinux2014_aarch64.musllinux_1_1_aarch64.whl", hash = "sha256:94b9c9b786ab46baf01e3752a62c2bbbabc90472bd53042f3eed9c191e3126e5", size = 4903797, upload-time = "2026-10-15T10:18:07.451Z" },
-    { url = "https://files.pythonhosted.org/packages/1f/04/42d7b5cc880ed68319c8967dfd685ff5c86addf57ddcfeaa59abcd884033/skylos-4.50.1-py3-none-manylinux_2_17_x86_64.manylinux2014_x86_64.musllinux_1_1_x86_64.whl", hash = "sha256:d7ab30485327ac6213b0da0c6e2deb5d9bd889a303de88e51dbe5c1b5494dce4", size = 5072298, upload-time = "2026-10-15T10:18:09.604Z" },
-    { url = "https://files.pythonhosted.org/packages/ba/84/c15ffe52ab155f010fe3cea5cdf134ad3e6f744fd0cff4948369d72f33d0/skylos-4.50.1-py3-none-win_amd64.whl", hash = "sha256:465ee45a7ddd050dc489d13cc9e27307b8756819c65f575fd76f90986920a119", size = 5137334, upload-time = "2026-10-15T10:18:11.755Z" },
-    { url = "https://files.pythonhosted.org/packages/a2/1e/22d5d5819ba12e74bf0932d9157f8528102c3529df271acf7c550b2adc31/skylos-4.50.1-py3-none-win_arm64.whl", hash = "sha256:1e3e18254adb7458e651e766f9557838b151950666275ffa29c75aacb3ddbb7e", size = 4941548, upload-time = "2026-10-15T10:18:14.334Z" },
+    { url = "https://files.pythonhosted.org/packages/4d/4d/19c072859a3e427b8bc15372495687d92b740eee03a47ce05820076ef8f2/skylos-5.0.0-py3-none-any.whl", hash = "sha256:3119271327beb068faedd61d87067ef12e6c258b7e3fdec2a7f806ed7206769b", size = 3676633, upload-time = "2026-10-23T04:30:15.583Z" },
+    { url = "https://files.pythonhosted.org/packages/2d/17/67811c6e38e7eaab198bb91effcc39b6560660eea3be423d9cb18b4051ad/skylos-5.0.0-py3-none-macosx_10_15_x86_64.whl", hash = "sha256:714ee43ef085c263241fd5d0c8eb1a2fc742361bc45a164763cd3559dc08c9db", size = 5691723, upload-time = "2026-10-23T04:30:17.567Z" },
+    { url = "https://files.pythonhosted.org/packages/ec/b1/63ccbf3ea43a74e7d8929a65fe2a49923306bb6d5083930655ba3826a478/skylos-5.0.0-py3-none-macosx_11_0_arm64.whl", hash = "sha256:eb8a9f5ab5380ca7764c1e9ab788728e61b2d0041eb953cfe55ef6b3cd5f4a62", size = 5560656, upload-time = "2026-10-23T04:30:19.753Z" },
+    { url = "https://files.pythonhosted.org/packages/1a/ac/472124e04d612559725b195fa25633f3db9a10330b0645f03ce2a6496ee4/skylos-5.0.0-py3-none-manylinux_2_17_aarch64.manylinux2014_aarch64.musllinux_1_1_aarch64.whl", hash = "sha256:a2e8d34dd4743dd20768895bb5af5e92002cdef479bef51af5d26bb587610587", size = 5504426, upload-time = "2026-10-23T04:30:21.577Z" },
+    { url = "https://files.pythonhosted.org/packages/87/97/a2cbcf4c926f5d11b599903661c792e1383ff29fbd604cc3f7caf4c98c35/skylos-5.0.0-py3-none-manylinux_2_17_x86_64.manylinux2014_x86_64.musllinux_1_1_x86_64.whl", hash = "sha256:c0bc772abc9b714750f8fae7bc71d5a6b4a642370189c70dd203d3b4c5a4f50b", size = 5672925, upload-time = "2026-10-23T04:30:23.708Z" },
+    { url = "https://files.pythonhosted.org/packages/11/cd/7a5cc734dddc4ed56f59e1e76d9681a14198a09cc14c5df3f6b4c4033468/skylos-5.0.0-py3-none-win_amd64.whl", hash = "sha256:4218b9ab8c77b91d15dc5eb21cc03e77789b5e0a3efe325099e5d1ca94e2a6e7", size = 5737958, upload-time = "2026-10-23T04:30:25.664Z" },
+    { url = "https://files.pythonhosted.org/packages/3c/5b/7cca8ab840577c405cf347282059896941861706a8c7c243599bd747abf5/skylos-5.0.0-py3-none-win_arm64.whl", hash = "sha256:dfcd4db402d32d23095c9da01383cc078e9f28fca423563c17223194a936f3ea", size = 5542176, upload-time = "2026-10-23T04:30:27.435Z" },
 ]
 
 [[package]]
