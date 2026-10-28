@@ -37,7 +37,9 @@ Use this when you want the normal production flow.
    $ uv run prefect worker start --pool course-work-pool-cs101
    ```
 
-4. Configure Canvas to send submission events to the webhook server.
+4. Configure Canvas to send signed submission events to the webhook server.
+   For local testing through a public HTTPS tunnel, follow
+   [Testing Canvas Live Events Locally](08-local-live-events.md).
 
 ### 2. Manual backfills
 
@@ -86,6 +88,11 @@ For the standard automatic path, confirm:
 - the Prefect deployment exists
 - a worker is online for the course work pool
 - the course block points at the correct work pool and assets
+- Canvas Live Events has **Sign Payload** enabled
+
+Canvas Live Events signs the JWT request body with Canvas-managed rotating
+keys. It does not use CCC's legacy shared HMAC or bearer-JWT secret. CCC verifies
+the body against the configured Canvas JWK set before validating the event.
 
 ## Next Steps
 
