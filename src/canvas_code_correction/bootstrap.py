@@ -115,16 +115,8 @@ def load_settings_from_course_block(block_name: str) -> Settings:
             enabled=block.webhook_enabled,
             require_jwt=block.webhook_require_jwt,
             rate_limit=block.webhook_rate_limit,
-            auth_mode=getattr(block, "webhook_auth_mode", None),
-            canvas_jwks_url=getattr(
-                block,
-                "webhook_canvas_jwks_url",
-                "https://8axpcl50e4.execute-api.us-east-1.amazonaws.com/main/jwks",
-            ),
-            allow_canvas_api_fallback=getattr(
-                block,
-                "webhook_allow_canvas_api_fallback",
-                False,
-            ),
+            auth_mode=block.webhook_auth_mode,
+            canvas_jwks_url=block.webhook_canvas_jwks_url,
+            allow_canvas_api_fallback=block.webhook_allow_canvas_api_fallback,
         ),
     )
