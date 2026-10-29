@@ -2,6 +2,7 @@
 
 import json
 from collections.abc import Mapping
+from datetime import UTC, datetime, timedelta
 from typing import cast
 from unittest.mock import MagicMock, patch
 
@@ -46,9 +47,16 @@ def _signed_jwt_settings() -> Settings:
     )
 
 
-def _course_claims(context_id: str | None, *, context_type: str = "Course") -> dict:
+def _course_claims(
+    context_id: str | None,
+    *,
+    context_type: str = "Course",
+    event_time: datetime | None = None,
+) -> dict:
     claims = create_canvas_webhook_payload()
     claims["metadata"].update(context_type=context_type, context_id=context_id)
+    if event_time is not None:
+        claims["metadata"]["event_time"] = event_time.isoformat()
     return claims
 
 
@@ -125,6 +133,36 @@ def test_validate_canvas_signed_jwt_binds_event_to_course(
     assert result.success is accepted
     if not accepted:
         assert result.status_code == 403
+
+
+@pytest.mark.parametrize("offset", [timedelta(hours=-2), timedelta(hours=2)])
+def test_validate_canvas_signed_jwt_rejects_events_outside_time_window(offset: timedelta) -> None:
+    """A captured signed body cannot be replayed indefinitely."""
+    response = MagicMock()
+    response.json.return_value = {
+        "keys": [{"kid": "current", "kty": "RSA", "alg": "RS256", "n": "x", "e": "AQAB"}],
+    }
+    clear_jwk_cache()
+    with (
+        patch("canvas_code_correction.webhooks.auth.requests.get", return_value=response),
+        patch(
+            "canvas_code_correction.webhooks.auth.jwt.get_unverified_header",
+            return_value={"kid": "current", "alg": "RS256"},
+        ),
+        patch("canvas_code_correction.webhooks.auth.jwt.PyJWK.from_dict", return_value=MagicMock()),
+        patch(
+            "canvas_code_correction.webhooks.auth.jwt.decode",
+            return_value=_course_claims("1", event_time=datetime.now(UTC) + offset),
+        ),
+    ):
+        result = validate_canvas_signature(
+            _signed_jwt_settings(),
+            b"signed.jwt.body",
+            WebhookSignatureHeaders(),
+        )
+
+    assert result.success is False
+    assert result.status_code == 401
 
 
 def test_validate_canvas_signed_jwt_refresh_failure_returns_bad_gateway() -> None:

@@ -5,6 +5,7 @@ from __future__ import annotations
 import hashlib
 import hmac
 from dataclasses import dataclass
+from datetime import UTC, datetime, timedelta
 from http import HTTPStatus
 from time import monotonic
 from typing import TYPE_CHECKING, Any
@@ -30,6 +31,7 @@ from canvas_code_correction.webhooks.models import (
 
 _ASYMMETRIC_JWT_ALGORITHMS = frozenset({"RS256", "RS384", "RS512", "ES256", "ES384", "ES512"})
 _CANVAS_SHARD_ID_FACTOR = 10**13
+_MAX_EVENT_CLOCK_DIFFERENCE = timedelta(hours=1)
 
 
 @dataclass
@@ -93,6 +95,12 @@ def _is_for_course(metadata: CanvasWebhookMetadata, course_id: int) -> bool:
         return False
     # Live Events may carry global IDs: shard_id * 10**13 + local course id.
     return course_id in {int(context_id), int(context_id) % _CANVAS_SHARD_ID_FACTOR}
+
+
+def _is_fresh(event_time: datetime) -> bool:
+    if event_time.tzinfo is None:
+        event_time = event_time.replace(tzinfo=UTC)
+    return abs(datetime.now(UTC) - event_time) <= _MAX_EVENT_CLOCK_DIFFERENCE
 
 
 def _is_json_parse_error(error: ValidationError) -> bool:
@@ -241,12 +249,7 @@ def _canvas_signed_jwt_verification_result(  # noqa: PLR0911
         if jwk_data.get("alg") not in {None, algorithm}:
             return invalid_result
         key = jwt.PyJWK.from_dict(jwk_data, algorithm=algorithm).key
-        claims = jwt.decode(
-            token,
-            key,
-            algorithms=[algorithm],
-            options={"verify_exp": False},
-        )
+        claims = jwt.decode(token, key, algorithms=[algorithm])
         payload = CanvasWebhookPayload.model_validate(claims)
     except _JwkSetUnavailableError:
         return WebhookVerificationResult(
@@ -262,6 +265,13 @@ def _canvas_signed_jwt_verification_result(  # noqa: PLR0911
             success=False,
             message="Canvas signed event is not for this course",
             status_code=HTTPStatus.FORBIDDEN.value,
+            mode=WebhookAuthMode.CANVAS_SIGNED_JWT.value,
+        )
+    if not _is_fresh(payload.metadata.event_time):
+        return WebhookVerificationResult(
+            success=False,
+            message="Canvas signed event is outside the accepted event_time window",
+            status_code=HTTPStatus.UNAUTHORIZED.value,
             mode=WebhookAuthMode.CANVAS_SIGNED_JWT.value,
         )
     return WebhookVerificationResult(
