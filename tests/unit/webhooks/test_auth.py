@@ -1,14 +1,18 @@
 """Unit tests for webhook authentication."""
 
 import json
-from collections.abc import Mapping
+from collections.abc import Iterator, Mapping
+from contextlib import contextmanager
 from datetime import UTC, datetime, timedelta
 from typing import cast
 from unittest.mock import MagicMock, patch
 
+import jwt
+import jwt.algorithms
 import jwt.exceptions
 import pytest
 import requests
+from cryptography.hazmat.primitives.asymmetric import rsa
 from pydantic import HttpUrl, SecretStr
 
 from canvas_code_correction.config import (
@@ -47,8 +51,12 @@ def _signed_jwt_settings() -> Settings:
     )
 
 
+_SIGNING_KEY = rsa.generate_private_key(public_exponent=65537, key_size=2048)
+_OTHER_KEY = rsa.generate_private_key(public_exponent=65537, key_size=2048)
+
+
 def _course_claims(
-    context_id: str | None,
+    context_id: str | None = "1",
     *,
     context_type: str = "Course",
     event_time: datetime | None = None,
@@ -60,34 +68,55 @@ def _course_claims(
     return claims
 
 
-def test_validate_canvas_signed_jwt_body() -> None:
-    """A verified signed body exposes its decoded Canvas event payload."""
-    settings = _signed_jwt_settings()
+def _sign(claims: dict, key: rsa.RSAPrivateKey = _SIGNING_KEY) -> bytes:
+    return jwt.encode(claims, key, algorithm="RS256", headers={"kid": "current"}).encode()
+
+
+@contextmanager
+def _serve_jwks() -> Iterator[MagicMock]:
+    jwk = jwt.algorithms.RSAAlgorithm.to_jwk(_SIGNING_KEY.public_key(), as_dict=True)
     response = MagicMock()
-    response.json.return_value = {
-        "keys": [{"kid": "current", "kty": "RSA", "alg": "RS256", "n": "x", "e": "AQAB"}],
-    }
-    key = MagicMock()
-    key.key = object()
+    response.json.return_value = {"keys": [{**jwk, "kid": "current", "alg": "RS256"}]}
     clear_jwk_cache()
-    with (
-        patch("canvas_code_correction.webhooks.auth.requests.get", return_value=response),
-        patch(
-            "canvas_code_correction.webhooks.auth.jwt.get_unverified_header",
-            return_value={"kid": "current", "alg": "RS256"},
-        ),
-        patch("canvas_code_correction.webhooks.auth.jwt.PyJWK.from_dict", return_value=key),
-        patch(
-            "canvas_code_correction.webhooks.auth.jwt.decode",
-            return_value=_course_claims("1"),
-        ),
-    ):
-        result = validate_canvas_signature(settings, b"signed.jwt.body", WebhookSignatureHeaders())
+    with patch(
+        "canvas_code_correction.webhooks.auth.requests.get",
+        return_value=response,
+    ) as mock_get:
+        yield mock_get
+
+
+def _verify_signed(body: bytes) -> WebhookVerificationResult:
+    return validate_canvas_signature(_signed_jwt_settings(), body, WebhookSignatureHeaders())
+
+
+def test_validate_canvas_signed_jwt_body() -> None:
+    """A body signed by the Canvas key exposes its decoded event payload."""
+    with _serve_jwks():
+        result = _verify_signed(_sign(_course_claims()))
 
     assert result.success is True
     assert result.mode == "canvas-signed-jwt"
     assert result.payload is not None
     assert result.payload.metadata.event_name == "submission_created"
+
+
+def test_validate_canvas_signed_jwt_rejects_body_signed_by_another_key() -> None:
+    """A body signed by any key other than the published Canvas key is rejected."""
+    with _serve_jwks():
+        result = _verify_signed(_sign(_course_claims(), key=_OTHER_KEY))
+
+    assert result.success is False
+    assert result.status_code == 401
+
+
+def test_validate_canvas_signed_jwt_rejects_expired_token() -> None:
+    """An exp claim in the past is enforced."""
+    claims = {**_course_claims(), "exp": int((datetime.now(UTC) - timedelta(hours=1)).timestamp())}
+    with _serve_jwks():
+        result = _verify_signed(_sign(claims))
+
+    assert result.success is False
+    assert result.status_code == 401
 
 
 @pytest.mark.parametrize(
@@ -107,28 +136,8 @@ def test_validate_canvas_signed_jwt_binds_event_to_course(
     accepted: bool,
 ) -> None:
     """A valid signature only authorizes events whose context is the configured course."""
-    response = MagicMock()
-    response.json.return_value = {
-        "keys": [{"kid": "current", "kty": "RSA", "alg": "RS256", "n": "x", "e": "AQAB"}],
-    }
-    clear_jwk_cache()
-    with (
-        patch("canvas_code_correction.webhooks.auth.requests.get", return_value=response),
-        patch(
-            "canvas_code_correction.webhooks.auth.jwt.get_unverified_header",
-            return_value={"kid": "current", "alg": "RS256"},
-        ),
-        patch("canvas_code_correction.webhooks.auth.jwt.PyJWK.from_dict", return_value=MagicMock()),
-        patch(
-            "canvas_code_correction.webhooks.auth.jwt.decode",
-            return_value=_course_claims(context_id, context_type=context_type),
-        ),
-    ):
-        result = validate_canvas_signature(
-            _signed_jwt_settings(),
-            b"signed.jwt.body",
-            WebhookSignatureHeaders(),
-        )
+    with _serve_jwks():
+        result = _verify_signed(_sign(_course_claims(context_id, context_type=context_type)))
 
     assert result.success is accepted
     if not accepted:
@@ -138,28 +147,8 @@ def test_validate_canvas_signed_jwt_binds_event_to_course(
 @pytest.mark.parametrize("offset", [timedelta(hours=-2), timedelta(hours=2)])
 def test_validate_canvas_signed_jwt_rejects_events_outside_time_window(offset: timedelta) -> None:
     """A captured signed body cannot be replayed indefinitely."""
-    response = MagicMock()
-    response.json.return_value = {
-        "keys": [{"kid": "current", "kty": "RSA", "alg": "RS256", "n": "x", "e": "AQAB"}],
-    }
-    clear_jwk_cache()
-    with (
-        patch("canvas_code_correction.webhooks.auth.requests.get", return_value=response),
-        patch(
-            "canvas_code_correction.webhooks.auth.jwt.get_unverified_header",
-            return_value={"kid": "current", "alg": "RS256"},
-        ),
-        patch("canvas_code_correction.webhooks.auth.jwt.PyJWK.from_dict", return_value=MagicMock()),
-        patch(
-            "canvas_code_correction.webhooks.auth.jwt.decode",
-            return_value=_course_claims("1", event_time=datetime.now(UTC) + offset),
-        ),
-    ):
-        result = validate_canvas_signature(
-            _signed_jwt_settings(),
-            b"signed.jwt.body",
-            WebhookSignatureHeaders(),
-        )
+    with _serve_jwks():
+        result = _verify_signed(_sign(_course_claims(event_time=datetime.now(UTC) + offset)))
 
     assert result.success is False
     assert result.status_code == 401
@@ -168,21 +157,11 @@ def test_validate_canvas_signed_jwt_rejects_events_outside_time_window(offset: t
 def test_validate_canvas_signed_jwt_refresh_failure_returns_bad_gateway() -> None:
     """An unavailable JWK endpoint is retryable when no cached key exists."""
     clear_jwk_cache()
-    with (
-        patch(
-            "canvas_code_correction.webhooks.auth.jwt.get_unverified_header",
-            return_value={"kid": "new", "alg": "RS256"},
-        ),
-        patch(
-            "canvas_code_correction.webhooks.auth.requests.get",
-            side_effect=requests.Timeout,
-        ),
+    with patch(
+        "canvas_code_correction.webhooks.auth.requests.get",
+        side_effect=requests.Timeout,
     ):
-        result = validate_canvas_signature(
-            _signed_jwt_settings(),
-            b"signed.jwt.body",
-            WebhookSignatureHeaders(),
-        )
+        result = _verify_signed(_sign(_course_claims()))
 
     assert result.status_code == 502
     assert result.success is False
@@ -190,15 +169,14 @@ def test_validate_canvas_signed_jwt_refresh_failure_returns_bad_gateway() -> Non
 
 def test_validate_canvas_signed_jwt_rejects_symmetric_algorithm() -> None:
     """Signed Canvas events never accept attacker-selected symmetric algorithms."""
-    with patch(
-        "canvas_code_correction.webhooks.auth.jwt.get_unverified_header",
-        return_value={"kid": "current", "alg": "HS256"},
-    ):
-        result = validate_canvas_signature(
-            _signed_jwt_settings(),
-            b"signed.jwt.body",
-            WebhookSignatureHeaders(),
-        )
+    body = jwt.encode(
+        _course_claims(),
+        "shared-secret-at-least-32-bytes-long",
+        algorithm="HS256",
+        headers={"kid": "current"},
+    ).encode()
+    with _serve_jwks():
+        result = _verify_signed(body)
 
     assert result.status_code == 401
     assert result.success is False
