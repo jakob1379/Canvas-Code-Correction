@@ -75,25 +75,147 @@ services:
       PREFECT_REDIS_MESSAGING_PORT: 6379
       PREFECT_REDIS_MESSAGING_DB: 0
     command: prefect server services start
+  dev-init:
+    build: .
+    profiles: [dev-webhook]
+    depends_on:
+      prefect-server:
+        condition: service_healthy
+      rustfs:
+        condition: service_started
+    environment:
+      PREFECT_API_URL: http://prefect-server:4200/api
+      RUSTFS_ENDPOINT: http://rustfs:9000
+    env_file: [.env.dev]
+    entrypoint: [/bin/sh, -euc]
+    command:
+      - |
+        : "$${CANVAS_API_URL:?Set CANVAS_API_URL in .env.dev}"
+        : "$${CANVAS_API_TOKEN:?Set CANVAS_API_TOKEN in .env.dev}"
+        : "$${CANVAS_COURSE_ID:?Set CANVAS_COURSE_ID in .env.dev}"
+        : "$${CANVAS_TEST_ASSIGNMENT_ID:?Set CANVAS_TEST_ASSIGNMENT_ID in .env.dev}"
+        : "$${CCC_COURSE_SLUG:?Set CCC_COURSE_SLUG in .env.dev}"
+        : "$${CCC_WORKSPACE_ROOT:?Set CCC_WORKSPACE_ROOT in .env.dev}"
+        : "$${CCC_WEBHOOK_PUBLIC_URL:?Set CCC_WEBHOOK_PUBLIC_URL in .env.dev}"
+        : "$${CCC_WEBHOOK_DRY_RUN:?Set CCC_WEBHOOK_DRY_RUN in .env.dev}"
+        : "$${CLOUDFLARE_TUNNEL_TOKEN:?Set CLOUDFLARE_TUNNEL_TOKEN in .env.dev}"
+        public_host="$${CCC_WEBHOOK_PUBLIC_URL#https://}"
+        case "$$CCC_WEBHOOK_PUBLIC_URL:$$public_host" in
+          https://*:""|https://*:*/*)
+            echo "CCC_WEBHOOK_PUBLIC_URL must be an HTTPS origin without a path" >&2
+            exit 1
+            ;;
+          https://*:*) ;;
+          *)
+            echo "CCC_WEBHOOK_PUBLIC_URL must be an HTTPS origin without a path" >&2
+            exit 1
+            ;;
+        esac
+        case "$$CCC_WORKSPACE_ROOT" in
+          /*) ;;
+          *)
+            echo "CCC_WORKSPACE_ROOT must be an absolute path" >&2
+            exit 1
+            ;;
+        esac
+        case "$$CCC_WEBHOOK_DRY_RUN" in
+          true) ;;
+          false)
+            if [ "$${CCC_ALLOW_LIVE_CANVAS_WRITES:-false}" != true ]; then
+              echo "Live Canvas writes require CCC_ALLOW_LIVE_CANVAS_WRITES=true" >&2
+              exit 1
+            fi
+            ;;
+          *)
+            echo "CCC_WEBHOOK_DRY_RUN must be true or false" >&2
+            exit 1
+            ;;
+        esac
+        attempt=0
+        until python scripts/setup_rustfs.py; do
+          attempt=$$((attempt + 1))
+          if [ "$$attempt" -ge 12 ]; then
+            echo "RustFS setup did not become ready within 60 seconds" >&2
+            exit 1
+          fi
+          sleep 5
+        done
+        pool="$${CCC_WORK_POOL_NAME:-local-pool}"
+        slug="$$CCC_COURSE_SLUG"
+        prefix="$${RUSTFS_PREFIX:-dev}"
+        jwks_url="$${CANVAS_LIVE_EVENTS_JWKS_URL:-https://8axpcl50e4.execute-api.us-east-1.amazonaws.com/main/jwks}"
+        prefect work-pool create --type process --overwrite "$$pool"
+        printf %s "$$CANVAS_API_TOKEN" | ccc course setup \
+          --token-stdin \
+          --api-url "$$CANVAS_API_URL" \
+          --course-id "$$CANVAS_COURSE_ID" \
+          --no-interactive \
+          --assets-block local-rustfs \
+          --slug "$$slug" \
+          --assets-prefix "$$prefix" \
+          --work-pool "$$pool" \
+          --webhook-auth canvas-signed-jwt \
+          --webhook-jwks-url "$$jwks_url"
+        ccc system deploy create "ccc-course-$$slug"
+        echo "Development webhook resources are ready."
+        echo "Prefect UI: http://127.0.0.1:4200"
+        echo "Canvas callback: $${CCC_WEBHOOK_PUBLIC_URL%/}/webhooks/canvas/ccc-course-$$slug"
+        echo "Canvas writes: $$CCC_WEBHOOK_DRY_RUN"
   prefect-worker:
-    image: prefecthq/prefect:3-latest
+    build: .
+    profiles: [dev-webhook]
+    # Docker socket access grants host-level privileges; this stack is for trusted local use.
+    user: root
     depends_on:
-      prefect-server:
-        condition: service_healthy
+      dev-init:
+        condition: service_completed_successfully
     environment:
       PREFECT_API_URL: http://prefect-server:4200/api
-    command: prefect worker start --pool local-pool
+      RUSTFS_ENDPOINT: http://rustfs:9000
+    env_file: [.env.dev]
+    entrypoint: []
+    command: prefect worker start --pool ${CCC_WORK_POOL_NAME:-local-pool} --type
+      process
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ${CCC_WORKSPACE_ROOT:-/tmp/ccc/workspaces}:${CCC_WORKSPACE_ROOT:-/tmp/ccc/workspaces}
+    restart: unless-stopped
   webhook-listener:
-    image: prefecthq/prefect:3-latest
+    build: .
+    profiles: [dev-webhook]
     depends_on:
-      prefect-server:
-        condition: service_healthy
+      dev-init:
+        condition: service_completed_successfully
     environment:
       PREFECT_API_URL: http://prefect-server:4200/api
-    volumes: [.:/opt/canvas-code-correction]
-    working_dir: /opt/canvas-code-correction
-    command: sh -c "pip install -e . && ccc webhook serve --host 0.0.0.0 --port 8080"
+      RUSTFS_ENDPOINT: http://rustfs:9000
+    env_file: [.env.dev]
+    entrypoint: []
+    command: ccc system webhook serve --host 0.0.0.0 --port 8080
     ports: [8080:8080]
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - import urllib.request; urllib.request.urlopen('http://127.0.0.1:8080/health',
+          timeout=5)
+      interval: 5s
+      timeout: 5s
+      retries: 12
+      start_period: 10s
+    restart: unless-stopped
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    profiles: [dev-webhook]
+    depends_on:
+      webhook-listener:
+        condition: service_healthy
+    environment:
+      TUNNEL_TOKEN: ${CLOUDFLARE_TUNNEL_TOKEN?Set CLOUDFLARE_TUNNEL_TOKEN in .env.dev}
+    command: tunnel --no-autoupdate --metrics 0.0.0.0:2000 run
+    expose: [2000]
+    restart: unless-stopped
   rustfs:
     image: rustfs/rustfs:latest
     ports: [9000:9000, 9001:9001]

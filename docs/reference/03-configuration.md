@@ -139,6 +139,17 @@ fields:
 | --- | --- | --- |
 | `CCC_WORKSPACE_ROOT` | Override workspace root | `/tmp/ccc/workspaces` |
 
+### Local Live Events stack
+
+| Variable | Purpose |
+| --- | --- |
+| `CLOUDFLARE_TUNNEL_TOKEN` | Secret token for a remotely managed named tunnel |
+| `CCC_WEBHOOK_PUBLIC_URL` | Stable public HTTPS origin, without a trailing slash |
+| `CCC_COURSE_SLUG` | Slug used to select `ccc-course-<slug>` |
+| `CANVAS_LIVE_EVENTS_JWKS_URL` | Optional Canvas signing-key endpoint override |
+| `CCC_WEBHOOK_DRY_RUN` | Keep Canvas writes disabled; defaults to `true` |
+| `CCC_WORK_POOL_NAME` | Prefect worker pool; defaults to `local-pool` |
+
 ### RustFS / S3-compatible storage
 
 | Variable | Default | Purpose |
@@ -148,6 +159,9 @@ fields:
 | `RUSTFS_SECRET_KEY` | `rustfsadmin` | Secret key |
 | `RUSTFS_BUCKET_NAME` | `test-assets` | Bucket name |
 | `RUSTFS_PREFIX` | `dev` | Prefix used by `poe rustfs-setup` |
+
+See [Testing Canvas Live Events Locally](../platform-setup/08-local-live-events.md)
+for the complete `.env.dev`, tunnel, Canvas Data Services, and dry-run workflow.
 
 ## Common Errors
 
