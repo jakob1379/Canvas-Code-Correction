@@ -156,6 +156,12 @@ def test_webhook_settings_resolves_legacy_and_explicit_modes() -> None:
     )
 
 
+def test_webhook_settings_rejects_cleartext_jwks_url() -> None:
+    """Signing keys are never fetched over plain HTTP."""
+    with pytest.raises(ValueError, match="URL scheme should be 'https'"):
+        WebhookSettings(canvas_jwks_url="http://canvas.example.test/jwks")
+
+
 def test_webhook_settings_canvas_api_mode_requires_fallback_opt_in() -> None:
     """Selecting canvas-api cannot bypass the allow_canvas_api_fallback safety flag."""
     assert WebhookSettings(auth_mode=WebhookAuthMode.CANVAS_API).effective_auth_mode() is None

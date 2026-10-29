@@ -5,7 +5,7 @@ from typing import Literal
 from prefect.blocks.core import Block
 from pydantic import Field, HttpUrl, SecretStr
 
-from canvas_code_correction.config import CANVAS_LIVE_EVENTS_JWKS_URL, WebhookAuthMode
+from canvas_code_correction.config import CANVAS_LIVE_EVENTS_JWKS_URL, HttpsUrl, WebhookAuthMode
 
 
 class CourseConfigBlock(Block):
@@ -67,7 +67,7 @@ class CourseConfigBlock(Block):
         default=None,
         description="Explicit webhook authentication mode",
     )
-    webhook_canvas_jwks_url: HttpUrl = Field(
+    webhook_canvas_jwks_url: HttpsUrl = Field(
         default=CANVAS_LIVE_EVENTS_JWKS_URL,
         validate_default=True,
     )

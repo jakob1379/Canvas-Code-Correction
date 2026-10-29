@@ -3,11 +3,13 @@
 import tempfile
 from enum import StrEnum
 from pathlib import Path
-from typing import Literal
+from typing import Annotated, Literal
 
-from pydantic import BaseModel, Field, HttpUrl, SecretStr
+from pydantic import BaseModel, Field, HttpUrl, SecretStr, UrlConstraints
 
 CANVAS_LIVE_EVENTS_JWKS_URL = "https://8axpcl50e4.execute-api.us-east-1.amazonaws.com/main/jwks"
+
+HttpsUrl = Annotated[HttpUrl, UrlConstraints(allowed_schemes=["https"])]
 
 
 class WebhookAuthMode(StrEnum):
@@ -110,7 +112,7 @@ class WebhookSettings(BaseModel):
         default=None,
         description="Explicit authentication mode; omitted preserves legacy configuration",
     )
-    canvas_jwks_url: HttpUrl = Field(default=CANVAS_LIVE_EVENTS_JWKS_URL, validate_default=True)
+    canvas_jwks_url: HttpsUrl = Field(default=CANVAS_LIVE_EVENTS_JWKS_URL, validate_default=True)
 
     def effective_auth_mode(self) -> WebhookAuthMode | None:
         """Resolve explicit mode or the equivalent legacy configuration."""
