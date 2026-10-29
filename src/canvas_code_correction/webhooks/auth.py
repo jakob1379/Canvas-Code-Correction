@@ -20,6 +20,7 @@ if TYPE_CHECKING:
     from pydantic import SecretStr
 
     from canvas_code_correction.config import Settings
+    from canvas_code_correction.webhooks.models import CanvasWebhookMetadata
 
 from canvas_code_correction.config import WebhookAuthMode
 from canvas_code_correction.webhooks.models import (
@@ -28,6 +29,7 @@ from canvas_code_correction.webhooks.models import (
 )
 
 _ASYMMETRIC_JWT_ALGORITHMS = frozenset({"RS256", "RS384", "RS512", "ES256", "ES384", "ES512"})
+_CANVAS_SHARD_ID_FACTOR = 10**13
 
 
 @dataclass
@@ -83,6 +85,14 @@ def _matching_jwk(
         raise _JwkSetUnavailableError(msg) from exc
     _jwk_cache[url] = _CachedJwkSet(keys=keys, expires_at=now + cache_seconds)
     return next((key for key in keys if key.get("kid") == kid), None)
+
+
+def _is_for_course(metadata: CanvasWebhookMetadata, course_id: int) -> bool:
+    context_id = metadata.context_id
+    if metadata.context_type != "Course" or context_id is None or not context_id.isdigit():
+        return False
+    # Live Events may carry global IDs: shard_id * 10**13 + local course id.
+    return course_id in {int(context_id), int(context_id) % _CANVAS_SHARD_ID_FACTOR}
 
 
 def _is_json_parse_error(error: ValidationError) -> bool:
@@ -247,6 +257,13 @@ def _canvas_signed_jwt_verification_result(  # noqa: PLR0911
         )
     except (UnicodeDecodeError, PyJWTError, ValidationError):
         return invalid_result
+    if not _is_for_course(payload.metadata, settings.canvas.course_id):
+        return WebhookVerificationResult(
+            success=False,
+            message="Canvas signed event is not for this course",
+            status_code=HTTPStatus.FORBIDDEN.value,
+            mode=WebhookAuthMode.CANVAS_SIGNED_JWT.value,
+        )
     return WebhookVerificationResult(
         success=True,
         message="Canvas signed JWT verification succeeded",

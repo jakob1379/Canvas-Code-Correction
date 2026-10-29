@@ -6,6 +6,7 @@ from typing import cast
 from unittest.mock import MagicMock, patch
 
 import jwt.exceptions
+import pytest
 import requests
 from pydantic import HttpUrl, SecretStr
 
@@ -45,6 +46,12 @@ def _signed_jwt_settings() -> Settings:
     )
 
 
+def _course_claims(context_id: str | None, *, context_type: str = "Course") -> dict:
+    claims = create_canvas_webhook_payload()
+    claims["metadata"].update(context_type=context_type, context_id=context_id)
+    return claims
+
+
 def test_validate_canvas_signed_jwt_body() -> None:
     """A verified signed body exposes its decoded Canvas event payload."""
     settings = _signed_jwt_settings()
@@ -64,7 +71,7 @@ def test_validate_canvas_signed_jwt_body() -> None:
         patch("canvas_code_correction.webhooks.auth.jwt.PyJWK.from_dict", return_value=key),
         patch(
             "canvas_code_correction.webhooks.auth.jwt.decode",
-            return_value=create_canvas_webhook_payload(),
+            return_value=_course_claims("1"),
         ),
     ):
         result = validate_canvas_signature(settings, b"signed.jwt.body", WebhookSignatureHeaders())
@@ -73,6 +80,51 @@ def test_validate_canvas_signed_jwt_body() -> None:
     assert result.mode == "canvas-signed-jwt"
     assert result.payload is not None
     assert result.payload.metadata.event_name == "submission_created"
+
+
+@pytest.mark.parametrize(
+    ("context_type", "context_id", "accepted"),
+    [
+        ("Course", "1", True),
+        ("Course", "21070000000000001", True),
+        ("Course", "2", False),
+        ("Course", None, False),
+        ("Account", "1", False),
+    ],
+)
+def test_validate_canvas_signed_jwt_binds_event_to_course(
+    context_type: str,
+    context_id: str | None,
+    *,
+    accepted: bool,
+) -> None:
+    """A valid signature only authorizes events whose context is the configured course."""
+    response = MagicMock()
+    response.json.return_value = {
+        "keys": [{"kid": "current", "kty": "RSA", "alg": "RS256", "n": "x", "e": "AQAB"}],
+    }
+    clear_jwk_cache()
+    with (
+        patch("canvas_code_correction.webhooks.auth.requests.get", return_value=response),
+        patch(
+            "canvas_code_correction.webhooks.auth.jwt.get_unverified_header",
+            return_value={"kid": "current", "alg": "RS256"},
+        ),
+        patch("canvas_code_correction.webhooks.auth.jwt.PyJWK.from_dict", return_value=MagicMock()),
+        patch(
+            "canvas_code_correction.webhooks.auth.jwt.decode",
+            return_value=_course_claims(context_id, context_type=context_type),
+        ),
+    ):
+        result = validate_canvas_signature(
+            _signed_jwt_settings(),
+            b"signed.jwt.body",
+            WebhookSignatureHeaders(),
+        )
+
+    assert result.success is accepted
+    if not accepted:
+        assert result.status_code == 403
 
 
 def test_validate_canvas_signed_jwt_refresh_failure_returns_bad_gateway() -> None:
