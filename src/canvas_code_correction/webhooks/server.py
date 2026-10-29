@@ -9,6 +9,7 @@ from time import monotonic
 from typing import TYPE_CHECKING, Annotated
 
 from fastapi import Depends, FastAPI, HTTPException, Request, status
+from fastapi.concurrency import run_in_threadpool
 from fastapi.responses import JSONResponse
 from limits import parse
 from limits.storage import MemoryStorage
@@ -219,16 +220,16 @@ async def validate_webhook(
     body = await request.body()
 
     if settings.webhook.effective_auth_mode() is WebhookAuthMode.CANVAS_SIGNED_JWT:
-        verification = verify_canvas_webhook(settings, body, dict(request.headers))
-        if not verification.success:
+        verification = await run_in_threadpool(
+            verify_canvas_webhook,
+            settings,
+            body,
+            dict(request.headers),
+        )
+        if not verification.success or verification.payload is None:
             raise HTTPException(
                 status_code=verification.status_code,
                 detail=verification.message,
-            )
-        if verification.payload is None:  # Defensive: successful signed verification must decode.
-            raise HTTPException(
-                status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
-                detail="Invalid Canvas signed webhook payload",
             )
         return verification.payload
 
@@ -248,7 +249,8 @@ async def validate_webhook(
         ) from exc
 
     # Verify webhook signature using parsed payload
-    verification = verify_canvas_webhook(
+    verification = await run_in_threadpool(
+        verify_canvas_webhook,
         settings,
         body,
         dict(request.headers),

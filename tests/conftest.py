@@ -17,3 +17,10 @@ pytest_plugins = ["tests.webhooks_shared"]
 def prefect_testing_environment() -> Generator[None]:
     with prefect_test_harness():
         yield
+
+
+@pytest.fixture(autouse=True)
+def fresh_jwk_clients() -> None:
+    from canvas_code_correction.webhooks.auth import clear_jwk_cache
+
+    clear_jwk_cache()

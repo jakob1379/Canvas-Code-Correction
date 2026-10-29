@@ -75,7 +75,6 @@ stored on their assets block.
 - `enabled`
 - `auth_mode`
 - `canvas_jwks_url`
-- `canvas_jwks_cache_seconds`
 - `require_jwt`
 - `rate_limit`
 - `allow_canvas_api_fallback`

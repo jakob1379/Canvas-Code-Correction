@@ -71,7 +71,6 @@ class CourseConfigBlock(Block):
         default=CANVAS_LIVE_EVENTS_JWKS_URL,
         validate_default=True,
     )
-    webhook_canvas_jwks_cache_seconds: int = Field(default=3600, gt=0)
     webhook_allow_canvas_api_fallback: bool = False
 
 

@@ -121,11 +121,6 @@ def load_settings_from_course_block(block_name: str) -> Settings:
                 "webhook_canvas_jwks_url",
                 "https://8axpcl50e4.execute-api.us-east-1.amazonaws.com/main/jwks",
             ),
-            canvas_jwks_cache_seconds=getattr(
-                block,
-                "webhook_canvas_jwks_cache_seconds",
-                3600,
-            ),
             allow_canvas_api_fallback=getattr(
                 block,
                 "webhook_allow_canvas_api_fallback",

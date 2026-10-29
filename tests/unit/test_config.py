@@ -151,9 +151,3 @@ def test_webhook_settings_resolves_legacy_and_explicit_modes() -> None:
         ).effective_auth_mode()
         is WebhookAuthMode.CANVAS_SIGNED_JWT
     )
-
-
-def test_webhook_settings_rejects_non_positive_jwk_cache_ttl() -> None:
-    """Signing keys must have a positive cache lifetime."""
-    with pytest.raises(ValueError, match="greater than 0"):
-        WebhookSettings(canvas_jwks_cache_seconds=0)

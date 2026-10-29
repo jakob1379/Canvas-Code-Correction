@@ -1,5 +1,6 @@
 """Unit tests for webhook authentication."""
 
+import io
 import json
 from collections.abc import Iterator, Mapping
 from contextlib import contextmanager
@@ -27,7 +28,6 @@ from canvas_code_correction.config import (
 from canvas_code_correction.webhooks.auth import (
     WebhookSignatureHeaders,
     WebhookVerificationResult,
-    clear_jwk_cache,
     validate_canvas_signature,
     validate_hmac_signature,
     validate_jwt_token,
@@ -72,17 +72,18 @@ def _sign(claims: dict, key: rsa.RSAPrivateKey = _SIGNING_KEY) -> bytes:
     return jwt.encode(claims, key, algorithm="RS256", headers={"kid": "current"}).encode()
 
 
-@contextmanager
-def _serve_jwks() -> Iterator[MagicMock]:
+def _jwks(alg: str = "RS256") -> dict:
     jwk = jwt.algorithms.RSAAlgorithm.to_jwk(_SIGNING_KEY.public_key(), as_dict=True)
-    response = MagicMock()
-    response.json.return_value = {"keys": [{**jwk, "kid": "current", "alg": "RS256"}]}
-    clear_jwk_cache()
-    with patch(
-        "canvas_code_correction.webhooks.auth.requests.get",
-        return_value=response,
-    ) as mock_get:
-        yield mock_get
+    return {"keys": [{**jwk, "kid": "current", "alg": alg}]}
+
+
+@contextmanager
+def _serve_jwks(jwks: dict | None = None) -> Iterator[MagicMock]:
+    document = json.dumps(jwks or _jwks()).encode()
+    with patch("jwt.jwks_client.urllib.request.build_opener") as build_opener:
+        opener = build_opener.return_value
+        opener.open.side_effect = lambda *_args, **_kwargs: io.BytesIO(document)
+        yield opener.open
 
 
 def _verify_signed(body: bytes) -> WebhookVerificationResult:
@@ -154,13 +155,34 @@ def test_validate_canvas_signed_jwt_rejects_events_outside_time_window(offset: t
     assert result.status_code == 401
 
 
+def test_validate_canvas_signed_jwt_rejects_jwk_published_for_another_algorithm() -> None:
+    """The JWK's own alg must match the token's, closing key confusion via a relabelled key."""
+    with _serve_jwks(_jwks(alg="RS512")):
+        result = _verify_signed(_sign(_course_claims()))
+
+    assert result.success is False
+    assert result.status_code == 401
+
+
+def test_validate_canvas_signed_jwt_does_not_refetch_for_each_unknown_kid() -> None:
+    """Unknown key IDs cannot force an upstream JWKS fetch per request."""
+    unknown_kid = jwt.encode(
+        _course_claims(),
+        _SIGNING_KEY,
+        algorithm="RS256",
+        headers={"kid": "unknown"},
+    ).encode()
+    with _serve_jwks() as fetch:
+        results = [_verify_signed(unknown_kid) for _ in range(5)]
+
+    assert all(result.status_code == 401 for result in results)
+    assert fetch.call_count == 1
+
+
 def test_validate_canvas_signed_jwt_refresh_failure_returns_bad_gateway() -> None:
     """An unavailable JWK endpoint is retryable when no cached key exists."""
-    clear_jwk_cache()
-    with patch(
-        "canvas_code_correction.webhooks.auth.requests.get",
-        side_effect=requests.Timeout,
-    ):
+    with _serve_jwks() as fetch:
+        fetch.side_effect = TimeoutError
         result = _verify_signed(_sign(_course_claims()))
 
     assert result.status_code == 502

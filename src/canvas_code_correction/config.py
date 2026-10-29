@@ -111,7 +111,6 @@ class WebhookSettings(BaseModel):
         description="Explicit authentication mode; omitted preserves legacy configuration",
     )
     canvas_jwks_url: HttpUrl = Field(default=CANVAS_LIVE_EVENTS_JWKS_URL, validate_default=True)
-    canvas_jwks_cache_seconds: int = Field(default=3600, gt=0)
 
     def effective_auth_mode(self) -> WebhookAuthMode | None:
         """Resolve explicit mode or the equivalent legacy configuration."""

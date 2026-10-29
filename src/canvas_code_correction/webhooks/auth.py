@@ -6,13 +6,13 @@ import hashlib
 import hmac
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
+from functools import cache
 from http import HTTPStatus
-from time import monotonic
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 import jwt
 import requests
-from jwt.exceptions import InvalidTokenError, PyJWTError
+from jwt.exceptions import InvalidTokenError, PyJWKClientConnectionError, PyJWTError
 from pydantic import ValidationError
 
 if TYPE_CHECKING:
@@ -29,64 +29,19 @@ from canvas_code_correction.webhooks.models import (
     UnsupportedSubmissionEventError,
 )
 
-_ASYMMETRIC_JWT_ALGORITHMS = frozenset({"RS256", "RS384", "RS512", "ES256", "ES384", "ES512"})
+_CANVAS_SIGNING_ALGORITHM = "RS256"
 _CANVAS_SHARD_ID_FACTOR = 10**13
 _MAX_EVENT_CLOCK_DIFFERENCE = timedelta(hours=1)
 
 
-@dataclass
-class _CachedJwkSet:
-    keys: list[dict[str, Any]]
-    expires_at: float
-
-
-_jwk_cache: dict[str, _CachedJwkSet] = {}
-
-
-class _JwkSetUnavailableError(RuntimeError):
-    """Raised when no usable Canvas signing key set can be obtained."""
+@cache
+def _jwk_client(url: str) -> jwt.PyJWKClient:
+    return jwt.PyJWKClient(url, lifespan=3600, timeout=10)
 
 
 def clear_jwk_cache() -> None:
-    """Clear the process-local JWK cache, primarily for tests."""
-    _jwk_cache.clear()
-
-
-def _fetch_jwks(url: str) -> list[dict[str, Any]]:
-    response = requests.get(url, timeout=10)
-    response.raise_for_status()
-    document = response.json()
-    keys = document.get("keys") if isinstance(document, dict) else None
-    if not isinstance(keys, list):
-        msg = "Canvas JWK endpoint returned an invalid key set"
-        raise TypeError(msg)
-    return [key for key in keys if isinstance(key, dict)]
-
-
-def _matching_jwk(
-    url: str,
-    kid: str,
-    cache_seconds: int,
-) -> dict[str, Any] | None:
-    cached = _jwk_cache.get(url)
-    now = monotonic()
-    if cached is not None and cached.expires_at > now:
-        match = next((key for key in cached.keys if key.get("kid") == kid), None)
-        if match is not None:
-            return match
-
-    old_match = None
-    if cached is not None:
-        old_match = next((key for key in cached.keys if key.get("kid") == kid), None)
-    try:
-        keys = _fetch_jwks(url)
-    except (requests.RequestException, TypeError, ValueError) as exc:
-        if old_match is not None:
-            return old_match
-        msg = "Canvas signing keys are unavailable"
-        raise _JwkSetUnavailableError(msg) from exc
-    _jwk_cache[url] = _CachedJwkSet(keys=keys, expires_at=now + cache_seconds)
-    return next((key for key in keys if key.get("kid") == kid), None)
+    """Drop the process-local Canvas JWK clients and their caches, primarily for tests."""
+    _jwk_client.cache_clear()
 
 
 def _is_for_course(metadata: CanvasWebhookMetadata, course_id: int) -> bool:
@@ -230,28 +185,19 @@ def _canvas_signed_jwt_verification_result(  # noqa: PLR0911
     )
     try:
         token = payload_body.decode("ascii").strip()
-        # Reading the header only selects an allow-listed algorithm and JWK; jwt.decode below
+        # Reading the header only rejects other algorithms early; jwt.decode below
         # verifies the signature before claims are accepted.
         header = jwt.get_unverified_header(token)  # NOSONAR
-        kid = header.get("kid")
-        algorithm = header.get("alg")
-        if not isinstance(kid, str) or not kid:
+        if header.get("alg") != _CANVAS_SIGNING_ALGORITHM or not header.get("kid"):
             return invalid_result
-        if not isinstance(algorithm, str) or algorithm not in _ASYMMETRIC_JWT_ALGORITHMS:
+        jwks = _jwk_client(str(settings.webhook.canvas_jwks_url))
+        signing_key = jwks.get_signing_key(header["kid"])
+        # The JWK's own algorithm must match too, or a mislabelled key enables key confusion.
+        if signing_key.algorithm_name != _CANVAS_SIGNING_ALGORITHM:
             return invalid_result
-        jwk_data = _matching_jwk(
-            str(settings.webhook.canvas_jwks_url),
-            kid,
-            settings.webhook.canvas_jwks_cache_seconds,
-        )
-        if jwk_data is None:
-            return invalid_result
-        if jwk_data.get("alg") not in {None, algorithm}:
-            return invalid_result
-        key = jwt.PyJWK.from_dict(jwk_data, algorithm=algorithm).key
-        claims = jwt.decode(token, key, algorithms=[algorithm])
+        claims = jwt.decode(token, signing_key.key, algorithms=[_CANVAS_SIGNING_ALGORITHM])
         payload = CanvasWebhookPayload.model_validate(claims)
-    except _JwkSetUnavailableError:
+    except PyJWKClientConnectionError:
         return WebhookVerificationResult(
             success=False,
             message="Canvas signing keys are temporarily unavailable",

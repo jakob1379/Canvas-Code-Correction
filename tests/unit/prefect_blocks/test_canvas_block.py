@@ -46,7 +46,6 @@ def test_course_config_block_round_trip() -> None:
         grader_upload_grades=True,
         grader_upload_verbose=True,
         webhook_auth_mode=WebhookAuthMode.CANVAS_SIGNED_JWT,
-        webhook_canvas_jwks_cache_seconds=1800,
     )
 
     block.save(block_name, overwrite=True)
@@ -73,6 +72,5 @@ def test_course_config_block_round_trip() -> None:
         assert loaded.grader_upload_grades is True
         assert loaded.grader_upload_verbose is True
         assert loaded.webhook_auth_mode is WebhookAuthMode.CANVAS_SIGNED_JWT
-        assert loaded.webhook_canvas_jwks_cache_seconds == 1800
     finally:
         CourseConfigBlock.delete(block_name)
