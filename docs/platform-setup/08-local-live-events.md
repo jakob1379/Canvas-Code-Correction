@@ -140,7 +140,9 @@ In the Canvas account that owns the development course:
    ```
 
 Canvas sends a compact signed JWT as the request body. CCC verifies that body
-against Canvas's rotating JWK set before it reads the event claims. A local
+against Canvas's rotating JWK set before it reads the event claims. It then
+requires the event's course context to match the block's course and its
+`event_time` to be within one hour of the listener's clock. A local
 HMAC secret or bearer token is not the signing mechanism for Canvas Live
 Events; those authentication modes remain only for compatibility and synthetic
 clients.
@@ -171,6 +173,10 @@ a transient JWK-fetch or Prefect handoff failure.
 - **Canvas gets 401:** confirm **Sign Payload** is enabled and the configured
   JWK endpoint matches the Canvas environment. Do not add the API token as a
   webhook bearer token.
+- **Canvas gets 403:** the signed event belongs to a different course than the
+  block in the callback URL.
+- **Canvas gets 422:** the signature is valid but the event is not a
+  submission event CCC can process.
 - **Canvas gets 502:** JWK retrieval or another authentication dependency is
   unavailable. Restore connectivity and let Canvas retry.
 - **No Prefect run appears:** verify the deployment exists, the course slug in

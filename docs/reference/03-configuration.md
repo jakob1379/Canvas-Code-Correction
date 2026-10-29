@@ -79,6 +79,12 @@ stored on their assets block.
 - `rate_limit`
 - `allow_canvas_api_fallback`
 
+`canvas-api` authentication only checks that the submission exists in Canvas,
+so it takes effect only when `allow_canvas_api_fallback` is also true.
+`ccc course setup --webhook-auth canvas-api` sets both. The secret-based
+`hmac` and `legacy-bearer-jwt` modes remain for existing blocks; setup does not
+offer them because it cannot store a webhook secret.
+
 New course blocks use `canvas-signed-jwt`, which verifies the compact Canvas
 Live Events request body using Canvas-managed JWKs. `require_jwt` and the local
 webhook secret describe legacy bearer-JWT/HMAC clients; they are not the Canvas
@@ -116,6 +122,8 @@ fields:
 | `--webhook-auth` | `webhook_auth_mode` |
 | `--webhook-jwks-url` | `webhook_canvas_jwks_url` |
 | `--webhook-rate-limit` | `webhook_rate_limit` |
+| `--webhook-disabled` | `webhook_enabled=false` |
+| `--webhook-auth canvas-api` | `webhook_allow_canvas_api_fallback=true` |
 | generated course ID and slugified course code | `asset_bucket_block` |
 | generated course ID and slugified course code | `asset_path_prefix` |
 | generated shared-environment setup | `storage_auth_mode=shared_environment` |

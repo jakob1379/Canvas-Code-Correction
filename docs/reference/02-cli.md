@@ -60,6 +60,10 @@ The repo also includes a ready-made local example grader at
 | `--env`, `-e` | Extra grader env in `KEY=VALUE` form | repeatable |
 | `--interactive` | Force prompts | enabled |
 | `--no-interactive` | Disable prompts | disabled |
+| `--webhook-auth` | Webhook authentication: `canvas-signed-jwt` verifies signed Canvas Live Events; `canvas-api` checks submissions through the Canvas API and also opts in to that fallback | `canvas-signed-jwt` |
+| `--webhook-jwks-url` | HTTPS URL of the Canvas Live Events signing keys | official Canvas endpoint |
+| `--webhook-rate-limit` | Per-course webhook rate limit | `10/minute` |
+| `--webhook-disabled` | Save the course with webhook processing disabled | disabled |
 
 Generated values:
 
