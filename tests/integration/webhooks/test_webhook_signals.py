@@ -158,9 +158,9 @@ def test_webhook_unsupported_event_type(
     finally:
         webhook_server.app.dependency_overrides.pop(webhook_server.get_webhook_runner, None)
 
-    assert response.status_code == 200
+    assert response.status_code == 422
     data = response.json()
-    assert data["message"] == "Ignored unsupported event: assignment_created"
+    assert "Unsupported event type" in data["detail"]
     mock_runner.assert_not_awaited()
 
 
