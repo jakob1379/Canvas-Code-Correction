@@ -23,6 +23,7 @@ from rich.prompt import Confirm, IntPrompt, Prompt
 from rich.table import Table
 from slugify import slugify
 
+from canvas_code_correction.config import WebhookAuthMode
 from canvas_code_correction.storage import (
     RustfsProvisioningError,
     RustfsStorageConfig,
@@ -36,7 +37,6 @@ from canvas_code_correction.storage import (
 )
 
 if TYPE_CHECKING:
-    from canvas_code_correction.config import WebhookAuthMode
     from canvasapi import Canvas
     from canvasapi.course import Course
 
@@ -136,6 +136,7 @@ class CourseConfigBlockPayload(TypedDict):
     webhook_canvas_jwks_url: HttpUrl
     webhook_rate_limit: str
     webhook_enabled: bool
+    webhook_allow_canvas_api_fallback: bool
 
 
 def _run_cli_step[T](console: Console, step: str, action: Callable[[], T]) -> T:
@@ -835,6 +836,7 @@ def _build_course_block_payload(config: CourseSetupConfig) -> CourseConfigBlockP
         "webhook_canvas_jwks_url": HttpUrl(config.webhook_canvas_jwks_url),
         "webhook_rate_limit": config.webhook_rate_limit,
         "webhook_enabled": config.webhook_enabled,
+        "webhook_allow_canvas_api_fallback": config.webhook_auth_mode is WebhookAuthMode.CANVAS_API,
     }
 
 

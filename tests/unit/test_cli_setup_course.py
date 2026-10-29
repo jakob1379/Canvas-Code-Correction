@@ -221,6 +221,35 @@ class TestSetupCourseNonInteractive:
         assert isinstance(block_kwargs["webhook_canvas_jwks_url"], HttpUrl)
         assert block_kwargs["webhook_enabled"] is True
         assert block_kwargs["webhook_rate_limit"] == "10/minute"
+        assert block_kwargs["webhook_allow_canvas_api_fallback"] is False
+
+    @pytest.mark.local
+    @pytest.mark.parametrize("mode", ["hmac", "legacy-bearer-jwt"])
+    @patch("canvas_code_correction.cli.Canvas")
+    def test_setup_course_rejects_webhook_modes_it_cannot_configure(
+        self,
+        mock_canvas_class: MagicMock,
+        mode: str,
+        cli_runner: CliRunner,
+    ) -> None:
+        """Setup cannot persist a webhook secret, so secret-based modes are not offered."""
+        result = cli_runner.invoke(
+            app,
+            [
+                "course",
+                "setup",
+                "--no-interactive",
+                "--token",
+                "test-token",
+                "--course-id",
+                "13122436",
+                "--webhook-auth",
+                mode,
+            ],
+        )
+
+        assert result.exit_code == 2
+        mock_canvas_class.assert_not_called()
 
     @pytest.mark.local
     @patch("canvas_code_correction.cli.Canvas")
@@ -249,7 +278,7 @@ class TestSetupCourseNonInteractive:
                 "--course-id",
                 "13122436",
                 "--webhook-auth",
-                "hmac",
+                "canvas-api",
                 "--webhook-jwks-url",
                 "https://canvas.example.test/jwks",
                 "--webhook-rate-limit",
@@ -260,7 +289,8 @@ class TestSetupCourseNonInteractive:
 
         assert result.exit_code == 0
         block_kwargs = mock_block_class.call_args.kwargs
-        assert block_kwargs["webhook_auth_mode"] is WebhookAuthMode.HMAC
+        assert block_kwargs["webhook_auth_mode"] is WebhookAuthMode.CANVAS_API
+        assert block_kwargs["webhook_allow_canvas_api_fallback"] is True
         assert str(block_kwargs["webhook_canvas_jwks_url"]) == "https://canvas.example.test/jwks"
         assert block_kwargs["webhook_enabled"] is False
         assert block_kwargs["webhook_rate_limit"] == "2/minute"
