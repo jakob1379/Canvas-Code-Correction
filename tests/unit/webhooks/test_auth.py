@@ -283,7 +283,7 @@ def test_validate_canvas_signature_jwt_required() -> None:
             success=True,
             message="JWT verification succeeded",
             status_code=200,
-            mode="jwt",
+            mode="legacy-bearer-jwt",
         )
         mock_validate.assert_called_once_with("valid.token", settings.webhook.secret)
 
@@ -298,7 +298,7 @@ def test_validate_canvas_signature_jwt_required() -> None:
             success=False,
             message="Missing Authorization header for JWT webhook",
             status_code=401,
-            mode="jwt",
+            mode="legacy-bearer-jwt",
         )
         mock_validate.assert_not_called()
 
@@ -313,7 +313,7 @@ def test_validate_canvas_signature_jwt_required() -> None:
             success=False,
             message="Authorization header must use Bearer token format",
             status_code=401,
-            mode="jwt",
+            mode="legacy-bearer-jwt",
         )
         mock_validate.assert_not_called()
 
@@ -382,7 +382,7 @@ def test_validate_canvas_signature_uses_explicit_canvas_api_fallback() -> None:
             success=True,
             message="Canvas API verification succeeded",
             status_code=200,
-            mode="canvas_api",
+            mode="canvas-api",
         )
         result = validate_canvas_signature(
             settings,
@@ -393,7 +393,7 @@ def test_validate_canvas_signature_uses_explicit_canvas_api_fallback() -> None:
             success=True,
             message="Canvas API verification succeeded",
             status_code=200,
-            mode="canvas_api",
+            mode="canvas-api",
         )
         mock_verify.assert_called_once_with(settings, b"payload")
 
@@ -475,7 +475,7 @@ def test_verify_via_canvas_api_success() -> None:
             success=True,
             message="Canvas API verification succeeded",
             status_code=200,
-            mode="canvas_api",
+            mode="canvas-api",
         )
         # Verify API call made to correct URL
         mock_get.assert_called_once()
@@ -504,7 +504,7 @@ def test_verify_via_canvas_api_failure() -> None:
         success=False,
         message="Webhook payload is not valid JSON",
         status_code=400,
-        mode="canvas_api",
+        mode="canvas-api",
     )
 
     # Test missing event_name
@@ -519,7 +519,7 @@ def test_verify_via_canvas_api_failure() -> None:
         success=False,
         message="Webhook payload missing assignment or submission id",
         status_code=401,
-        mode="canvas_api",
+        mode="canvas-api",
     )
 
     # Test wrong event name
@@ -537,7 +537,7 @@ def test_verify_via_canvas_api_failure() -> None:
         success=False,
         message="Webhook payload missing assignment or submission id",
         status_code=401,
-        mode="canvas_api",
+        mode="canvas-api",
     )
 
     # Test missing IDs
@@ -555,7 +555,7 @@ def test_verify_via_canvas_api_failure() -> None:
         success=False,
         message="Webhook payload missing assignment or submission id",
         status_code=401,
-        mode="canvas_api",
+        mode="canvas-api",
     )
 
     # Test non-integer IDs
@@ -581,7 +581,7 @@ def test_verify_via_canvas_api_failure() -> None:
         success=False,
         message="Webhook payload missing assignment or submission id",
         status_code=401,
-        mode="canvas_api",
+        mode="canvas-api",
     )
 
     # Test API request exception
@@ -616,7 +616,7 @@ def test_verify_via_canvas_api_failure() -> None:
             success=False,
             message="Canvas API verification failed",
             status_code=401,
-            mode="canvas_api",
+            mode="canvas-api",
         )
 
 
@@ -713,14 +713,14 @@ def test_verify_canvas_webhook() -> None:
             success=True,
             message="Canvas API verification succeeded",
             status_code=200,
-            mode="canvas_api",
+            mode="canvas-api",
         )
         result = verify_canvas_webhook(settings, payload_body, headers)
         assert result == WebhookVerificationResult(
             success=True,
             message="Canvas API verification succeeded",
             status_code=200,
-            mode="canvas_api",
+            mode="canvas-api",
         )
         mock_validate.assert_called_once()
         args = mock_validate.call_args.args
@@ -758,7 +758,7 @@ def test_verify_canvas_webhook_normalizes_header_values() -> None:
             success=True,
             message="ok",
             status_code=200,
-            mode="jwt",
+            mode="legacy-bearer-jwt",
         )
 
         result = verify_canvas_webhook(settings, payload_body, headers)
@@ -767,7 +767,7 @@ def test_verify_canvas_webhook_normalizes_header_values() -> None:
             success=True,
             message="ok",
             status_code=200,
-            mode="jwt",
+            mode="legacy-bearer-jwt",
         )
         mock_validate.assert_called_once_with(
             settings,

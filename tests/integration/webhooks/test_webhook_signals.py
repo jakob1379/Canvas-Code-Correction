@@ -245,7 +245,7 @@ def test_webhook_missing_authorization_header_jwt_required(
         success=False,
         message="Missing Authorization header for JWT webhook",
         status_code=401,
-        mode="jwt",
+        mode="legacy-bearer-jwt",
     )
 
     payload = create_canvas_webhook_payload()

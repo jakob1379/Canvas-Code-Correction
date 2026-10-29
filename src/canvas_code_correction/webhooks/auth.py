@@ -94,7 +94,7 @@ def _jwt_verification_result(
             success=False,
             message="Missing Authorization header for JWT webhook",
             status_code=HTTPStatus.UNAUTHORIZED.value,
-            mode="jwt",
+            mode=WebhookAuthMode.LEGACY_BEARER_JWT.value,
         )
 
     if not headers.authorization.startswith("Bearer "):
@@ -102,7 +102,7 @@ def _jwt_verification_result(
             success=False,
             message="Authorization header must use Bearer token format",
             status_code=HTTPStatus.UNAUTHORIZED.value,
-            mode="jwt",
+            mode=WebhookAuthMode.LEGACY_BEARER_JWT.value,
         )
 
     token = headers.authorization[7:]
@@ -111,14 +111,14 @@ def _jwt_verification_result(
             success=True,
             message="JWT verification succeeded",
             status_code=HTTPStatus.OK.value,
-            mode="jwt",
+            mode=WebhookAuthMode.LEGACY_BEARER_JWT.value,
         )
 
     return WebhookVerificationResult(
         success=False,
         message="Invalid JWT webhook signature",
         status_code=HTTPStatus.UNAUTHORIZED.value,
-        mode="jwt",
+        mode=WebhookAuthMode.LEGACY_BEARER_JWT.value,
     )
 
 
@@ -133,7 +133,7 @@ def _hmac_verification_result(
             success=False,
             message="Missing HMAC secret for webhook verification",
             status_code=HTTPStatus.UNAUTHORIZED.value,
-            mode="hmac",
+            mode=WebhookAuthMode.HMAC.value,
         )
 
     hmac_header = headers.hmac_signature()
@@ -142,7 +142,7 @@ def _hmac_verification_result(
             success=False,
             message="Missing HMAC signature header",
             status_code=HTTPStatus.UNAUTHORIZED.value,
-            mode="hmac",
+            mode=WebhookAuthMode.HMAC.value,
         )
 
     if validate_hmac_signature(payload_body, secret, hmac_header):
@@ -150,14 +150,14 @@ def _hmac_verification_result(
             success=True,
             message="HMAC verification succeeded",
             status_code=HTTPStatus.OK.value,
-            mode="hmac",
+            mode=WebhookAuthMode.HMAC.value,
         )
 
     return WebhookVerificationResult(
         success=False,
         message="Invalid HMAC webhook signature",
         status_code=HTTPStatus.UNAUTHORIZED.value,
-        mode="hmac",
+        mode=WebhookAuthMode.HMAC.value,
     )
 
 
@@ -338,7 +338,7 @@ def verify_via_canvas_api(
         success=success,
         message=message,
         status_code=status_code,
-        mode="canvas_api",
+        mode=WebhookAuthMode.CANVAS_API.value,
     )
 
 
@@ -348,11 +348,11 @@ def validate_canvas_signature(
     headers: WebhookSignatureHeaders,
     payload: CanvasWebhookPayload | None = None,
 ) -> WebhookVerificationResult:
-    """Validate Canvas webhook signature using configured verification mode.
+    """Validate a Canvas webhook using the course's effective authentication mode.
 
-    If webhook_require_jwt is True, validates JWT token from Authorization header.
-    Otherwise, validates HMAC when a shared webhook secret is configured. Canvas
-    API fallback is only allowed when explicitly enabled.
+    The mode comes from ``WebhookSettings.effective_auth_mode()``: an explicit
+    ``auth_mode`` wins, otherwise legacy settings select bearer JWT, then HMAC.
+    Canvas API existence checks run only with ``allow_canvas_api_fallback``.
     """
     mode = settings.webhook.effective_auth_mode()
     if mode is WebhookAuthMode.CANVAS_SIGNED_JWT:
