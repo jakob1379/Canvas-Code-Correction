@@ -196,7 +196,6 @@ def _canvas_signed_jwt_verification_result(  # noqa: PLR0911
         if signing_key.algorithm_name != _CANVAS_SIGNING_ALGORITHM:
             return invalid_result
         claims = jwt.decode(token, signing_key.key, algorithms=[_CANVAS_SIGNING_ALGORITHM])
-        payload = CanvasWebhookPayload.model_validate(claims)
     except PyJWKClientConnectionError:
         return WebhookVerificationResult(
             success=False,
@@ -204,8 +203,17 @@ def _canvas_signed_jwt_verification_result(  # noqa: PLR0911
             status_code=HTTPStatus.BAD_GATEWAY.value,
             mode=WebhookAuthMode.CANVAS_SIGNED_JWT.value,
         )
-    except (UnicodeDecodeError, PyJWTError, ValidationError):
+    except (UnicodeDecodeError, PyJWTError):
         return invalid_result
+    try:
+        payload = CanvasWebhookPayload.model_validate(claims)
+    except ValidationError:
+        return WebhookVerificationResult(
+            success=False,
+            message="Canvas signed event does not match the submission event schema",
+            status_code=HTTPStatus.UNPROCESSABLE_CONTENT.value,
+            mode=WebhookAuthMode.CANVAS_SIGNED_JWT.value,
+        )
     if not _is_for_course(payload.metadata, settings.canvas.course_id):
         return WebhookVerificationResult(
             success=False,

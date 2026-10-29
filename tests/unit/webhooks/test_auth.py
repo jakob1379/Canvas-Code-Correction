@@ -110,6 +110,17 @@ def test_validate_canvas_signed_jwt_rejects_body_signed_by_another_key() -> None
     assert result.status_code == 401
 
 
+def test_validate_canvas_signed_jwt_reports_invalid_signed_body_as_unprocessable() -> None:
+    """A genuine signature over an unusable event is a payload error, not an auth failure."""
+    claims = _course_claims()
+    del claims["body"]["submitted_at"]
+    with _serve_jwks():
+        result = _verify_signed(_sign(claims))
+
+    assert result.success is False
+    assert result.status_code == 422
+
+
 def test_validate_canvas_signed_jwt_rejects_expired_token() -> None:
     """An exp claim in the past is enforced."""
     claims = {**_course_claims(), "exp": int((datetime.now(UTC) - timedelta(hours=1)).timestamp())}
