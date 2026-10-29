@@ -12,11 +12,7 @@ $ printf "%s" "$CANVAS_API_TOKEN" | ccc course setup --no-interactive \
   --token-stdin \
   --api-url https://canvas.example.edu \
   --course-id 12345 \
-  --slug cs101 \
-  --assets-block course-assets-cs101 \
-  --assets-prefix graders/cs101/ \
-  --docker-image ghcr.io/example/cs101-grader:latest \
-  --work-pool course-work-pool-cs101
+  --docker-image ghcr.io/example/cs101-grader:latest
 ```
 
 Verify it:
@@ -27,7 +23,7 @@ $ ccc course list
 
 ## Runtime Loading Path
 
-CCC turns a `ccc-course-<slug>` block into runtime settings with:
+CCC turns a `ccc-course-<canvas-course-id>-<slugified-course-code>` block into runtime settings with:
 
 - `canvas_code_correction.bootstrap.load_course_block`
 - `canvas_code_correction.bootstrap.load_settings_from_course_block`
@@ -46,6 +42,14 @@ The runtime model itself lives in `src/canvas_code_correction/config.py`.
 
 - `bucket_block`
 - `path_prefix`
+- `assignment_path_prefixes`
+- `storage_auth_mode`
+
+`storage_auth_mode` is `shared_environment` for courses created by
+`ccc course setup`, meaning the runtime reads its S3 credentials from the
+ambient `RUSTFS_*` environment. Course blocks created before this setting
+existed default to `embedded_block_credentials` and keep using the credentials
+stored on their assets block.
 
 ### Grader
 
@@ -92,6 +96,8 @@ fields:
 - `canvas_course_id`
 - `asset_bucket_block`
 - `asset_path_prefix`
+- `assignment_asset_prefixes`
+- `storage_auth_mode`
 - `grader_image`
 - `work_pool_name`
 - `grader_env`
@@ -102,18 +108,25 @@ fields:
 
 `ccc course setup` populates these key fields:
 
-| CLI flag | Stored field |
+| Input source | Stored field |
 | --- | --- |
 | `--api-url` | `canvas_api_url` |
 | `--course-id` | `canvas_course_id` |
-| `--assets-block` | `asset_bucket_block` |
-| `--assets-prefix` | `asset_path_prefix` |
 | `--docker-image` | `grader_image` |
-| `--work-pool` | `work_pool_name` |
 | `--env` | `grader_env` |
 | `--webhook-auth` | `webhook_auth_mode` |
 | `--webhook-jwks-url` | `webhook_canvas_jwks_url` |
 | `--webhook-rate-limit` | `webhook_rate_limit` |
+| generated course ID and slugified course code | `asset_bucket_block` |
+| generated course ID and slugified course code | `asset_path_prefix` |
+| generated shared-environment setup | `storage_auth_mode=shared_environment` |
+| generated course ID and slugified course code | `work_pool_name` |
+| `--work-package` | `assignment_asset_prefixes` |
+
+Each `--work-package assignment_id:path` mapping uploads that package's
+`grader/` or `assets/` directory to `assignments/<assignment id>` in the course
+bucket, and records the prefix in `assignment_asset_prefixes`. Assignments
+without a mapping fall back to `asset_path_prefix`.
 
 ## Environment Variables
 
@@ -145,30 +158,32 @@ fields:
 | --- | --- |
 | `CLOUDFLARE_TUNNEL_TOKEN` | Secret token for a remotely managed named tunnel |
 | `CCC_WEBHOOK_PUBLIC_URL` | Stable public HTTPS origin, without a trailing slash |
-| `CCC_COURSE_SLUG` | Slug used to select `ccc-course-<slug>` |
+| `CCC_COURSE_SLUG` | Generated `<course id>-<slugified course code>` slug; selects `ccc-course-<slug>` and `course-work-pool-<slug>` |
 | `CANVAS_LIVE_EVENTS_JWKS_URL` | Optional Canvas signing-key endpoint override |
 | `CCC_WEBHOOK_DRY_RUN` | Keep Canvas writes disabled; defaults to `true` |
-| `CCC_WORK_POOL_NAME` | Prefect worker pool; defaults to `local-pool` |
 
 ### RustFS / S3-compatible storage
 
 | Variable | Default | Purpose |
 | --- | --- | --- |
 | `RUSTFS_ENDPOINT` | `http://localhost:9000` | S3 endpoint |
-| `RUSTFS_ACCESS_KEY` | `rustfsadmin` | Access key |
-| `RUSTFS_SECRET_KEY` | `rustfsadmin` | Secret key |
+| `RUSTFS_ACCESS_KEY` | `rustfsadmin` | Shared S3 access key |
+| `RUSTFS_SECRET_KEY` | `rustfsadmin` | Shared S3 secret key |
 | `RUSTFS_BUCKET_NAME` | `test-assets` | Bucket name |
 | `RUSTFS_PREFIX` | `dev` | Prefix used by `poe rustfs-setup` |
 
 See [Testing Canvas Live Events Locally](../platform-setup/08-local-live-events.md)
 for the complete `.env.dev`, tunnel, Canvas Data Services, and dry-run workflow.
 
+For shared-environment course setup, CCC uses `RUSTFS_ACCESS_KEY` and
+`RUSTFS_SECRET_KEY` for both setup-time uploads and runtime downloads.
+
 ## Common Errors
 
 Missing token:
 
 ```bash
-$ ccc course setup --no-interactive --slug cs101 --assets-block course-assets-cs101
+$ ccc course setup --no-interactive
 ```
 
 Expected output:
@@ -180,7 +195,7 @@ Expected output:
 Invalid Canvas credentials:
 
 ```bash
-$ ccc course setup --no-interactive --token invalid --course-id 12345 --assets-block course-assets-cs101
+$ ccc course setup --no-interactive --token invalid --course-id 12345
 ```
 
 Expected output begins with:

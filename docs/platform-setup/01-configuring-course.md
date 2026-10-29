@@ -6,18 +6,14 @@ reference, asset prefix, and Prefect work pool for one course.
 
 ## Try It Now
 
-If you already have a Canvas token, a course ID, and an assets block, run:
+If you already have a Canvas token and course ID, run:
 
 ```bash
 $ printf "%s" "$CANVAS_API_TOKEN" | ccc course setup --no-interactive \
   --token-stdin \
   --api-url https://canvas.example.edu \
   --course-id 12345 \
-  --slug cs101 \
-  --assets-block course-assets-cs101 \
-  --assets-prefix graders/cs101/ \
-  --docker-image ghcr.io/example/cs101-grader:latest \
-  --work-pool course-work-pool-cs101
+  --docker-image ghcr.io/example/cs101-grader:latest
 ```
 
 Expected output includes:
@@ -25,7 +21,7 @@ Expected output includes:
 ```text
 ✓ Canvas access validated successfully
 ✓ Course ID 12345 validated
-✓ Course configuration saved as block: ccc-course-cs101
+✓ Course configuration saved as block: ccc-course-12345-cs101
 ```
 
 ## What You Need
@@ -34,29 +30,36 @@ Before you run the command, gather:
 
 1. A **Canvas API token**
 2. The numeric **Canvas course ID**
-3. An **assets block** that points at S3-compatible storage
-4. A **grader Docker image**
-5. A **work pool name** for Prefect workers
+3. A **grader Docker image**
 
-If you still need the assets block, start with
+The CLI generates the course block name, assets block name, assets prefix, and
+work pool from the selected course and persists those generated values
+automatically.
+
+`ccc course setup` provisions the course bucket and uploads work packages using
+the shared RustFS S3 credentials in `RUSTFS_ACCESS_KEY` and
+`RUSTFS_SECRET_KEY`. Those credentials are used at setup time to:
+
+- create the generated course bucket
+- save the generated Prefect `S3Bucket` block
+- upload work packages into assignment-specific prefixes
+- verify RustFS access using the shared environment credentials
+
+If you still need the storage backend itself, start with
 [RustFS Storage](07-rustfs-storage.md) for local development or your production
 S3-compatible setup.
 
 ## The Command
 
 `ccc course setup` is interactive by default. For repeatable automation, use
-`--no-interactive` and pass every required value.
+`--no-interactive` and pass the required values.
 
 ```bash
 $ printf "%s" "$CANVAS_API_TOKEN" | ccc course setup --no-interactive \
   --token-stdin \
   --api-url https://canvas.example.edu \
   --course-id 12345 \
-  --slug cs101 \
-  --assets-block course-assets-cs101 \
-  --assets-prefix graders/cs101/ \
   --docker-image ghcr.io/example/cs101-grader:latest \
-  --work-pool course-work-pool-cs101 \
   --env PYTHONUNBUFFERED=1
 ```
 
@@ -67,19 +70,23 @@ $ printf "%s" "$CANVAS_API_TOKEN" | ccc course setup --no-interactive \
 | `--token-stdin` | Reads the Canvas token from standard input. |
 | `--api-url`, `-u` | Canvas base URL. |
 | `--course-id`, `-c` | Canvas course to bind to the block. |
-| `--slug` | Suffix used in the block name `ccc-course-<slug>`. |
-| `--assets-block` | Prefect block name for S3-compatible storage. |
-| `--assets-prefix` | Prefix inside the assets bucket, for example `graders/cs101/`. |
 | `--docker-image`, `-d` | Grader image used for corrections. |
-| `--work-pool` | Prefect work pool that should execute this course. |
+| `--work-package` | Map an assignment ID to a local work-package root and upload it during setup. |
 | `--env`, `-e` | Extra grader environment variables, repeatable. |
+
+Generated values:
+
+- Course block: `ccc-course-<course-id>-<slugified-course-code>`
+- Assets block: `ccc-assets-<course-id>-<slugified-course-code>`
+- Assets prefix: `graders/<course-id>-<slugified-course-code>/`
+- Work pool: `course-work-pool-<course-id>-<slugified-course-code>`
 
 ## What CCC Saves
 
-The resulting `ccc-course-<slug>` block contains:
+The resulting `ccc-course-<canvas-course-id>-<slugified-course-code>` block contains:
 
 - **Canvas** URL, token, and course ID
-- **Assets** block name and prefix
+- **Assets** block name, prefix, and storage auth mode
 - **Grader** image, work pool, and extra environment variables
 - **Webhook** defaults such as deployment name and rate limit
 
@@ -94,15 +101,15 @@ List the configured courses:
 $ ccc course list
 ```
 
-Expected result: a table that includes the block name, Canvas course ID, grader
-image, and assets block.
+Expected result: a table with the block name, Canvas course ID, grader image,
+assets block, and storage auth mode.
 
 ## Common Errors
 
 Missing token in non-interactive mode:
 
 ```bash
-$ ccc course setup --no-interactive --course-id 12345 --assets-block course-assets-cs101
+$ ccc course setup --no-interactive --course-id 12345
 ```
 
 Expected output:

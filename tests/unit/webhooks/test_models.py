@@ -28,14 +28,16 @@ def test_canvas_webhook_metadata() -> None:
 
 def test_submission_created_event() -> None:
     """Test SubmissionCreatedEvent validation."""
-    event = SubmissionCreatedEvent(
-        assignment_id="123",
-        submission_id="456",
-        submission_type="online_text_entry",
-        submitted_at=datetime.now(UTC),
-        updated_at=datetime.now(UTC),
-        user_id="789",
-        workflow_state="submitted",
+    event = SubmissionCreatedEvent.model_validate(
+        {
+            "assignment_id": "123",
+            "submission_id": "456",
+            "submission_type": "online_text_entry",
+            "submitted_at": datetime.now(UTC),
+            "updated_at": datetime.now(UTC),
+            "user_id": "789",
+            "workflow_state": "submitted",
+        },
     )
     assert event.assignment_id == 123
     assert event.submission_id == 456
@@ -46,14 +48,16 @@ def test_submission_created_event() -> None:
 
 def test_submission_updated_event_inherits() -> None:
     """Test SubmissionUpdatedEvent inherits from SubmissionCreatedEvent."""
-    event = SubmissionUpdatedEvent(
-        assignment_id="123",
-        submission_id="456",
-        submission_type="online_text_entry",
-        submitted_at=datetime.now(UTC),
-        updated_at=datetime.now(UTC),
-        user_id="789",
-        workflow_state="graded",
+    event = SubmissionUpdatedEvent.model_validate(
+        {
+            "assignment_id": "123",
+            "submission_id": "456",
+            "submission_type": "online_text_entry",
+            "submitted_at": datetime.now(UTC),
+            "updated_at": datetime.now(UTC),
+            "user_id": "789",
+            "workflow_state": "graded",
+        },
     )
     assert event.assignment_id == 123
     assert isinstance(event, SubmissionCreatedEvent)
@@ -61,20 +65,22 @@ def test_submission_updated_event_inherits() -> None:
 
 def test_canvas_webhook_payload_parsing() -> None:
     """Test CanvasWebhookPayload parsing and event extraction."""
-    payload = CanvasWebhookPayload(
-        metadata=CanvasWebhookMetadata(
-            event_name="submission_created",
-            event_time=datetime.now(UTC),
-            producer="canvas",
-        ),
-        body={
-            "assignment_id": "123",
-            "submission_id": "456",
-            "submission_type": "online_text_entry",
-            "submitted_at": datetime.now(UTC).isoformat(),
-            "updated_at": datetime.now(UTC).isoformat(),
-            "user_id": "789",
-            "workflow_state": "submitted",
+    payload = CanvasWebhookPayload.model_validate(
+        {
+            "metadata": {
+                "event_name": "submission_created",
+                "event_time": datetime.now(UTC),
+                "producer": "canvas",
+            },
+            "body": {
+                "assignment_id": "123",
+                "submission_id": "456",
+                "submission_type": "online_text_entry",
+                "submitted_at": datetime.now(UTC).isoformat(),
+                "updated_at": datetime.now(UTC).isoformat(),
+                "user_id": "789",
+                "workflow_state": "submitted",
+            },
         },
     )
     assert payload.get_event_type() == "submission_created"
@@ -86,20 +92,22 @@ def test_canvas_webhook_payload_parsing() -> None:
 
 def test_canvas_webhook_payload_invalid_event() -> None:
     """Test CanvasWebhookPayload with unsupported event type."""
-    payload = CanvasWebhookPayload(
-        metadata=CanvasWebhookMetadata(
-            event_name="assignment_created",
-            event_time=datetime.now(UTC),
-            producer="canvas",
-        ),
-        body={
-            "assignment_id": "123",
-            "submission_id": "456",
-            "submission_type": "online_text_entry",
-            "submitted_at": datetime.now(UTC).isoformat(),
-            "updated_at": datetime.now(UTC).isoformat(),
-            "user_id": "789",
-            "workflow_state": "submitted",
+    payload = CanvasWebhookPayload.model_validate(
+        {
+            "metadata": {
+                "event_name": "assignment_created",
+                "event_time": datetime.now(UTC),
+                "producer": "canvas",
+            },
+            "body": {
+                "assignment_id": "123",
+                "submission_id": "456",
+                "submission_type": "online_text_entry",
+                "submitted_at": datetime.now(UTC).isoformat(),
+                "updated_at": datetime.now(UTC).isoformat(),
+                "user_id": "789",
+                "workflow_state": "submitted",
+            },
         },
     )
     assert payload.get_event_type() == "assignment_created"
@@ -110,13 +118,15 @@ def test_canvas_webhook_payload_invalid_event() -> None:
 def test_canvas_webhook_payload_invalid_submission_body() -> None:
     """Test CanvasWebhookPayload with malformed submission event body."""
     with pytest.raises(ValidationError):
-        CanvasWebhookPayload(
-            metadata=CanvasWebhookMetadata(
-                event_name="submission_created",
-                event_time=datetime.now(UTC),
-                producer="canvas",
-            ),
-            body={"assignment_id": "123"},
+        CanvasWebhookPayload.model_validate(
+            {
+                "metadata": {
+                    "event_name": "submission_created",
+                    "event_time": datetime.now(UTC),
+                    "producer": "canvas",
+                },
+                "body": {"assignment_id": "123"},
+            },
         )
 
 

@@ -58,3 +58,8 @@ __pycache__/
 *.py,cover
 /.desloppify/
 /.envrc
+
+# Local run artifacts from the bundled example work package
+examples/*/local-workspace/results.json
+examples/*/local-workspace/points.txt
+examples/*/local-workspace/comments.txt

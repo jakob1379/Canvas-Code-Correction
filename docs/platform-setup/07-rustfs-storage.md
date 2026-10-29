@@ -44,8 +44,8 @@ These environment variables control the setup:
 | Variable | Default | Purpose |
 | --- | --- | --- |
 | `RUSTFS_ENDPOINT` | `http://localhost:9000` | S3-compatible endpoint |
-| `RUSTFS_ACCESS_KEY` | `rustfsadmin` | Access key |
-| `RUSTFS_SECRET_KEY` | `rustfsadmin` | Secret key |
+| `RUSTFS_ACCESS_KEY` | `rustfsadmin` | Shared S3 access key |
+| `RUSTFS_SECRET_KEY` | `rustfsadmin` | Shared S3 secret key |
 | `RUSTFS_BUCKET_NAME` | `test-assets` | Bucket name |
 | `RUSTFS_PREFIX` | `dev` | Prefix used for the sample asset |
 
@@ -58,15 +58,12 @@ your grader assets live:
 $ printf "%s" "$CANVAS_API_TOKEN" | ccc course setup --no-interactive \
   --token-stdin \
   --course-id 12345 \
-  --slug cs101 \
-  --assets-block local-rustfs \
-  --assets-prefix graders/cs101/ \
-  --docker-image ghcr.io/example/cs101-grader:latest \
-  --work-pool course-work-pool-cs101
+  --docker-image ghcr.io/example/cs101-grader:latest
 ```
 
-CCC will download grader assets from that block and prefix into
-`/workspace/assets`.
+CCC will create a generated course bucket, save the generated Prefect
+`S3Bucket` block, and use the shared environment credentials for work-package
+uploads and later runtime downloads into `/workspace/assets`.
 
 ## Example Override
 
@@ -84,6 +81,9 @@ $ poe rustfs-setup
 RustFS is for **development and testing**. For production use a managed or
 production-ready S3-compatible service and create the corresponding Prefect
 block there.
+
+CCC uses the shared RustFS S3 credentials present in the worker environment for
+both setup-time uploads and runtime downloads.
 
 ## Related Docs
 

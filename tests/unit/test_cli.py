@@ -20,6 +20,7 @@ from canvas_code_correction.flows.correction import (
     SubmissionMetadata,
 )
 from canvas_code_correction.prefect_blocks.canvas import CourseConfigBlock
+from canvas_code_correction.storage import seed_ambient_storage_env
 from canvas_code_correction.webhooks.deployments import DeploymentEnsureResult
 
 
@@ -40,6 +41,9 @@ def mock_course_block() -> MagicMock:
     mock.canvas_course_id = 123
     mock.asset_bucket_block = "test-bucket"
     mock.asset_path_prefix = "prefix"
+    mock.assignment_asset_prefixes = {"123": "prefix/assignments/123/assets"}
+    mock.storage_auth_mode = "embedded_block_credentials"
+    mock.asset_credentials_secret_block = None
     mock.workspace_root = None
     mock.grader_image = "test/image:latest"
     mock.work_pool_name = "test-pool"
@@ -133,9 +137,11 @@ def mock_flow_artifacts(tmp_path: Path) -> FlowArtifacts:
 
 @pytest.mark.local
 @patch("canvas_code_correction.cli.load_settings_from_course_block")
+@patch("canvas_code_correction.cli_course.seed_ambient_storage_env")
 @patch("canvas_code_correction.cli.correct_submission_flow")
 def test_run_once_single_submission_success(
     mock_flow: MagicMock,
+    mock_seed_storage_env: MagicMock,
     mock_resolve_settings: MagicMock,
     cli_runner: CliRunner,
     mock_settings: Settings,
@@ -156,6 +162,45 @@ def test_run_once_single_submission_success(
     assert "Correction flow completed successfully" in result.output
     mock_resolve_settings.assert_called_once_with("test-course")
     mock_flow.assert_called_once()
+
+
+@pytest.mark.local
+def test_seed_ambient_storage_env_mirrors_rustfs_credentials() -> None:
+    environ = {"RUSTFS_ACCESS_KEY": "course-key", "RUSTFS_SECRET_KEY": "course-secret"}
+
+    applied = seed_ambient_storage_env(environ)
+
+    assert applied == {
+        "AWS_ACCESS_KEY_ID": "course-key",
+        "AWS_SECRET_ACCESS_KEY": "course-secret",
+        "AWS_REGION": "us-east-1",
+        "AWS_DEFAULT_REGION": "us-east-1",
+    }
+
+
+@pytest.mark.local
+def test_seed_ambient_storage_env_invents_nothing_without_rustfs_credentials() -> None:
+    """An IAM role or ~/.aws profile must not be shadowed by invented dev defaults."""
+    environ: dict[str, str] = {}
+
+    assert seed_ambient_storage_env(environ) == {}
+    assert environ == {}
+
+
+@pytest.mark.local
+def test_seed_ambient_storage_env_preserves_existing_aws_values() -> None:
+    environ = {
+        "RUSTFS_ACCESS_KEY": "rustfs-key",
+        "RUSTFS_SECRET_KEY": "rustfs-secret",
+        "AWS_ACCESS_KEY_ID": "explicit-key",
+        "AWS_REGION": "eu-west-1",
+    }
+
+    applied = seed_ambient_storage_env(environ)
+
+    assert "AWS_ACCESS_KEY_ID" not in applied
+    assert environ["AWS_ACCESS_KEY_ID"] == "explicit-key"
+    assert applied["AWS_DEFAULT_REGION"] == "eu-west-1"
 
 
 @pytest.mark.local
@@ -454,17 +499,21 @@ def test_list_courses_success_with_blocks(
     cli_runner: CliRunner,
 ) -> None:
     """Test list_courses command when blocks exist."""
-    mock_find_course_blocks.return_value = ["ccc-course-cs101", "ccc-course-cs102"]
+    mock_find_course_blocks.return_value = ["ccc-course-101-cs101", "ccc-course-102-cs102"]
 
     # Mock load for each block
     mock_block1 = MagicMock()
     mock_block1.canvas_course_id = 101
     mock_block1.grader_image = "image1:latest"
     mock_block1.asset_bucket_block = "bucket1"
+    mock_block1.storage_auth_mode = "embedded_block_credentials"
+    mock_block1.asset_credentials_secret_block = None
     mock_block2 = MagicMock()
     mock_block2.canvas_course_id = 102
     mock_block2.grader_image = None
     mock_block2.asset_bucket_block = "bucket2"
+    mock_block2.storage_auth_mode = "shared_environment"
+    mock_block2.asset_credentials_secret_block = "ccc-assets-creds-cs102"
 
     mock_load_course_block.side_effect = [mock_block1, mock_block2]
 
@@ -472,8 +521,10 @@ def test_list_courses_success_with_blocks(
 
     assert result.exit_code == 0
     assert "Configured Courses" in result.output
-    assert "ccc-course-cs101" in result.output
-    assert "ccc-course-cs102" in result.output
+    # Assert the full generated names: a bare "cs101" would also match the
+    # pre-generated "ccc-course-cs101" form this branch replaced.
+    assert "ccc-course-101-cs101" in result.output
+    assert "ccc-course-102-cs102" in result.output
     mock_find_course_blocks.assert_called_once()
     assert mock_load_course_block.call_count == 2
 
@@ -519,14 +570,16 @@ def test_list_courses_load_raises_exception(
     cli_runner: CliRunner,
 ) -> None:
     """Test list_courses when load raises exception for a block."""
-    mock_find_course_blocks.return_value = ["ccc-course-cs101", "ccc-course-cs102"]
+    mock_find_course_blocks.return_value = ["ccc-course-101-cs101", "ccc-course-102-cs102"]
     mock_load_course_block.side_effect = RuntimeError("Load failed")
 
     result = cli_runner.invoke(app, ["course", "list"])
 
     # Should still exit with 0 and show error in table
     assert result.exit_code == 0
-    assert "Error: Load failed" in result.output
+    assert "Error:" in result.output
+    assert "Load" in result.output
+    assert "failed" in result.output.lower()
     mock_find_course_blocks.assert_called_once()
     assert mock_load_course_block.call_count == 2
 

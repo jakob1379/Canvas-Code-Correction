@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pytest
 from canvasapi.exceptions import CanvasException
-from pydantic import SecretStr
+from pydantic import HttpUrl, SecretStr
 from requests.exceptions import RequestException
 
 from canvas_code_correction.clients import canvas_resources
@@ -31,7 +31,7 @@ def build_resources_or_skip():
 
     settings = Settings(
         canvas=CanvasSettings(
-            api_url=api_url,
+            api_url=HttpUrl(api_url),
             token=SecretStr(token),
             course_id=course_id,
         ),

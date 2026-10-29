@@ -26,6 +26,7 @@ from canvas_code_correction.flows.correction import (
     SubmissionMetadata,
     UploadConfig,
     _canvas_object_to_dict,
+    _resolve_assignment_asset_prefix,
     _resolve_download_dir,
     _resolve_grader_config,
     _resolve_upload_config,
@@ -56,7 +57,7 @@ def _make_settings() -> Settings:
 @pytest.mark.local
 def test_download_submission_files_uses_resolved_names(tmp_path: Path) -> None:
     assignment = Mock()
-    submission = Mock()
+    submission = Mock(id=8)
     second_attachment = Mock(id=22, filename=None, display_name=None)
     submission.attachments = [
         {"id": 11, "filename": "report.txt"},
@@ -166,6 +167,37 @@ def test_prepare_workspace_task_builds_config_and_prepares_workspace() -> None:
 
 
 @pytest.mark.local
+def test_prepare_workspace_task_prefers_assignment_specific_asset_prefix() -> None:
+    settings = _make_settings()
+    settings.assets.assignment_path_prefixes = {10: "prefix/assignments/10/assets"}
+    resources = CanvasResources(canvas=Mock(), course=Mock(), settings=settings)
+    payload = CorrectSubmissionPayload(assignment_id=10, submission_id=20)
+
+    with patch(
+        "canvas_code_correction.flows.correction.prepare_workspace",
+    ) as mock_prepare_workspace:
+        prepare_workspace_task.fn(resources, payload, [])
+
+    mock_prepare_workspace.assert_called_once_with(
+        WorkspaceConfig(
+            workspace_root=resources.settings.workspace.root,
+            bucket_block=resources.settings.assets.bucket_block,
+            path_prefix="prefix/assignments/10/assets",
+            assignment_id=10,
+            submission_id=20,
+        ),
+        [],
+    )
+
+
+@pytest.mark.local
+def test_resolve_assignment_asset_prefix_falls_back_to_course_prefix() -> None:
+    settings = _make_settings()
+
+    assert _resolve_assignment_asset_prefix(settings, 999) == "prefix"
+
+
+@pytest.mark.local
 def test_execute_grader_returns_serializable_payload() -> None:
     workspace = WorkspacePaths(
         root=Path("workspace"),
@@ -229,7 +261,7 @@ def test_upload_feedback_returns_failure_without_feedback_zip() -> None:
 
 @pytest.mark.local
 def test_upload_feedback_uses_canvas_uploader(tmp_path: Path) -> None:
-    submission = Mock()
+    submission = Mock(id=20)
     assignment = Mock()
     assignment.get_submission.return_value = submission
     course = Mock()
@@ -307,7 +339,7 @@ def test_post_grade_returns_failure_without_points() -> None:
 
 @pytest.mark.local
 def test_post_grade_uses_canvas_uploader() -> None:
-    submission = Mock()
+    submission = Mock(id=20)
     assignment = Mock()
     assignment.get_submission.return_value = submission
     course = Mock()
@@ -565,6 +597,7 @@ def test_correct_submission_flow_orchestrates_stages(tmp_path: Path) -> None:
         command=["sh", "/workspace/assets/main.sh"],
         timeout_seconds=300,
         memory_mb=512,
+        environment={},
     )
     mock_upload_feedback.assert_called_once()
     assert mock_upload_feedback.call_args.args[3] == UploadConfig(

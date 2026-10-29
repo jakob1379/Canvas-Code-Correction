@@ -21,7 +21,7 @@ Prerequisites:
 import os
 import sys
 from typing import NamedTuple
-from urllib.parse import urlunparse
+from urllib.parse import urlparse, urlunparse
 
 import boto3
 import requests
@@ -70,10 +70,16 @@ def get_rustfs_config() -> RustfsConfig:
     )
 
 
+def is_aws_endpoint(endpoint_url: str) -> bool:
+    """Return whether the endpoint's *host* is AWS S3, not merely contains the string."""
+    host = (urlparse(endpoint_url).hostname or "").lower()
+    return host == "amazonaws.com" or host.endswith(".amazonaws.com")
+
+
 def get_bucket_owner_kwargs(endpoint_url: str) -> dict[str, str]:
     """Return ExpectedBucketOwner parameter if endpoint is AWS and owner is configured."""
     bucket_owner = os.getenv("AWS_BUCKET_OWNER")
-    if bucket_owner and "amazonaws.com" in endpoint_url:
+    if bucket_owner and is_aws_endpoint(endpoint_url):
         return {"ExpectedBucketOwner": bucket_owner}
     return {}
 
@@ -252,7 +258,6 @@ def main() -> int:
     print("\nNext steps:")
     print("1. Run integration tests: uv run pytest -m integration")
     print("2. Configure a course: uv run ccc course setup")
-    print(f"   --assets-block local-rustfs --s3-prefix {prefix}")
     print("3. Run correction flow: uv run ccc course run <assignment-id> --course <block>")
 
     return 0

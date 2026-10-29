@@ -3,7 +3,7 @@ from __future__ import annotations
 import importlib.metadata
 import os
 from importlib import import_module
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Annotated
 
 import canvas_code_correction.cli_course as cli_course_impl
 import canvas_code_correction.cli_system as cli_system_impl
@@ -19,6 +19,7 @@ from canvas_code_correction.bootstrap import (
     load_settings_from_course_block,
 )
 from canvas_code_correction.clients.canvas_resources import build_canvas_resources
+from canvas_code_correction.config import CANVAS_LIVE_EVENTS_JWKS_URL, WebhookAuthMode
 from canvas_code_correction.flows.correction import (
     CorrectSubmissionPayload,
     correct_submission_flow,
@@ -78,16 +79,32 @@ webhook_app = typer.Typer(
     help="Manage webhook server for Canvas submissions", rich_markup_mode="rich"
 )
 deploy_app = typer.Typer(help="Manage Prefect deployments", rich_markup_mode="rich")
+worker_app = typer.Typer(help="Manage course-scoped workers", rich_markup_mode="rich")
 
 
-@course_app.command(
-    "run", context_settings={"allow_extra_args": True, "ignore_unknown_options": True}
-)
-def course_run(ctx: typer.Context, assignment_id: int) -> None:
+@course_app.command("run")
+def course_run(
+    assignment_id: int,
+    submission_id: Annotated[
+        int | None, typer.Option("--submission-id", help="Limit the run to one submission")
+    ] = None,
+    course: Annotated[
+        str, typer.Option("--course", "-c", help="Course block name to load")
+    ] = "default-course",
+    download_dir: Annotated[
+        str | None, typer.Option("--download-dir", help="Directory for downloaded files")
+    ] = None,
+    dry_run: Annotated[bool, typer.Option("--dry-run", help="Skip upload side effects")] = False,
+) -> None:
     """Run correction flow for an assignment."""
     cli_course_impl.course_run_command(
-        ctx,
         assignment_id,
+        cli_course_impl.CourseRunOptions(
+            submission_id=submission_id,
+            course_block=course,
+            download_dir=None if download_dir is None else cli_course_impl.Path(download_dir),
+            dry_run=dry_run,
+        ),
         console=console,
         load_settings_from_course_block=load_settings_from_course_block,
         build_canvas_resources=build_canvas_resources,
@@ -96,13 +113,61 @@ def course_run(ctx: typer.Context, assignment_id: int) -> None:
     )
 
 
-@course_app.command(
-    "setup", context_settings={"allow_extra_args": True, "ignore_unknown_options": True}
-)
-def course_setup(ctx: typer.Context) -> None:
+@course_app.command("setup")
+def course_setup(
+    token_stdin: Annotated[
+        bool, typer.Option("--token-stdin", help="Read the Canvas token from stdin")
+    ] = False,
+    token: Annotated[str | None, typer.Option("--token", help="Canvas API token")] = None,
+    api_url: Annotated[str | None, typer.Option("--api-url", "-u", help="Canvas base URL")] = None,
+    course_id: Annotated[int, typer.Option("--course-id", "-c", help="Canvas course ID")] = 0,
+    docker_image: Annotated[
+        str, typer.Option("--docker-image", "-d", help="Docker image used for grading")
+    ] = "jakob1379/canvas-grader:latest",
+    work_packages: Annotated[
+        list[str] | None,
+        typer.Option(
+            "--map-assignments",
+            "--work-package",
+            help="Map an assignment ID to a work-package root using assignment_id:path",
+        ),
+    ] = None,
+    env_var: Annotated[
+        list[str] | None,
+        typer.Option("--env", "-e", help="Extra grader environment variable in KEY=VALUE form"),
+    ] = None,
+    interactive: Annotated[
+        bool, typer.Option("--interactive/--no-interactive", help="Enable or disable prompts")
+    ] = True,
+    webhook_auth: Annotated[
+        WebhookAuthMode, typer.Option("--webhook-auth", help="Webhook authentication mode")
+    ] = WebhookAuthMode.CANVAS_SIGNED_JWT,
+    webhook_jwks_url: Annotated[
+        str, typer.Option("--webhook-jwks-url", help="Canvas Live Events JWK set URL")
+    ] = CANVAS_LIVE_EVENTS_JWKS_URL,
+    webhook_rate_limit: Annotated[
+        str, typer.Option("--webhook-rate-limit", help="Per-course webhook rate limit")
+    ] = "10/minute",
+    webhook_disabled: Annotated[
+        bool, typer.Option("--webhook-disabled", help="Save the course with webhooks disabled")
+    ] = False,
+) -> None:
     """Interactively set up a course configuration."""
     cli_course_impl.course_setup_command(
-        ctx,
+        cli_course_impl.CourseSetupOptions(
+            token_stdin=token_stdin,
+            canvas_api_url=api_url,
+            canvas_token=token,
+            course_id=course_id,
+            docker_image=docker_image,
+            work_packages=work_packages or [],
+            env_var=env_var or [],
+            interactive=interactive,
+            webhook_auth_mode=webhook_auth,
+            webhook_canvas_jwks_url=webhook_jwks_url,
+            webhook_rate_limit=webhook_rate_limit,
+            webhook_enabled=not webhook_disabled,
+        ),
         console=console,
         Canvas=Canvas,
         CourseConfigBlock=CourseConfigBlock,
@@ -159,8 +224,24 @@ def system_status() -> None:
     )
 
 
+@worker_app.command("start")
+def system_worker_start(
+    course: Annotated[
+        str,
+        typer.Option("--course", "-c", help="Course block name to load"),
+    ],
+) -> None:
+    """Start a course-scoped Prefect worker with injected storage credentials."""
+    cli_system_impl.worker_start_command(
+        console=console,
+        course_block=course,
+        load_settings_from_course_block=load_settings_from_course_block,
+    )
+
+
 system_app.add_typer(webhook_app, name="webhook")
 system_app.add_typer(deploy_app, name="deploy")
+system_app.add_typer(worker_app, name="worker")
 app.add_typer(course_app, name="course")
 app.add_typer(system_app, name="system")
 

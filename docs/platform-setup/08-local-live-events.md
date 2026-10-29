@@ -54,11 +54,12 @@ CANVAS_COURSE_ID=
 CANVAS_TEST_ASSIGNMENT_ID=
 
 CCC_WORKSPACE_ROOT=
-CCC_WORK_POOL_NAME=local-pool
 ```
 
 `CCC_WEBHOOK_PUBLIC_URL` is the HTTPS origin only, with no trailing slash.
-`CCC_COURSE_SLUG` produces the block name `ccc-course-<slug>`. The Canvas JWK
+`CCC_COURSE_SLUG` must match the slug `ccc course setup` generates,
+`<course id>-<slugified course code>`; it selects the block
+`ccc-course-<slug>` and the work pool `course-work-pool-<slug>`. The Canvas JWK
 URL is optional when the built-in official endpoint is appropriate.
 
 The stack refuses live Canvas writes unless they are deliberately unlocked.
@@ -79,7 +80,7 @@ Validate configuration before creating containers:
 $ poe dev-stack-config
 ```
 
-Start the services and provision the local RustFS block, Prefect work pool,
+Start the services and provision the RustFS course bucket, Prefect work pool,
 course block, and deployment:
 
 ```bash
@@ -174,7 +175,7 @@ a transient JWK-fetch or Prefect handoff failure.
   unavailable. Restore connectivity and let Canvas retry.
 - **No Prefect run appears:** verify the deployment exists, the course slug in
   the callback matches its block, and the worker is online for
-  `CCC_WORK_POOL_NAME`.
+  `course-work-pool-<slug>`.
 - **The grader cannot see files:** `CCC_WORKSPACE_ROOT` must be absolute and
   mounted at the same path in the worker and host Docker daemon.
 - **Containers use localhost URLs:** service-to-service settings must use

@@ -41,13 +41,12 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD?You need to set a `POSTGRES_PASSWORD`
         in the env}
       PREFECT_API_DATABASE_CONNECTION_URL: postgresql+asyncpg://prefect:${POSTGRES_PASSWORD}@postgres:5432/prefect
-      PREFECT_SERVER_API_HOST: 0.0.0.0
       PREFECT_MESSAGING_BROKER: prefect_redis.messaging
       PREFECT_MESSAGING_CACHE: prefect_redis.messaging
       PREFECT_REDIS_MESSAGING_HOST: redis
       PREFECT_REDIS_MESSAGING_PORT: 6379
       PREFECT_REDIS_MESSAGING_DB: 0
-    command: prefect server start --no-services
+    command: prefect server start --host 0.0.0.0 --no-services
     ports: [4200:4200]
     healthcheck:
       test:
@@ -71,6 +70,7 @@ services:
       PREFECT_API_DATABASE_CONNECTION_URL: postgresql+asyncpg://prefect:${POSTGRES_PASSWORD}@postgres:5432/prefect
       PREFECT_MESSAGING_BROKER: prefect_redis.messaging
       PREFECT_MESSAGING_CACHE: prefect_redis.messaging
+      PREFECT_SERVER_API_HOST: 0.0.0.0
       PREFECT_REDIS_MESSAGING_HOST: redis
       PREFECT_REDIS_MESSAGING_PORT: 6379
       PREFECT_REDIS_MESSAGING_DB: 0
@@ -140,22 +140,19 @@ services:
           fi
           sleep 5
         done
-        pool="$${CCC_WORK_POOL_NAME:-local-pool}"
         slug="$$CCC_COURSE_SLUG"
-        prefix="$${RUSTFS_PREFIX:-dev}"
+        pool="course-work-pool-$$slug"
         jwks_url="$${CANVAS_LIVE_EVENTS_JWKS_URL:-https://8axpcl50e4.execute-api.us-east-1.amazonaws.com/main/jwks}"
         prefect work-pool create --type process --overwrite "$$pool"
-        printf %s "$$CANVAS_API_TOKEN" | ccc course setup \
-          --token-stdin \
-          --api-url "$$CANVAS_API_URL" \
-          --course-id "$$CANVAS_COURSE_ID" \
-          --no-interactive \
-          --assets-block local-rustfs \
-          --slug "$$slug" \
-          --assets-prefix "$$prefix" \
-          --work-pool "$$pool" \
-          --webhook-auth canvas-signed-jwt \
-          --webhook-jwks-url "$$jwks_url"
+        if ! prefect block inspect "ccc-course-config/ccc-course-$$slug" >/dev/null 2>&1; then
+          printf %s "$$CANVAS_API_TOKEN" | ccc course setup \
+            --token-stdin \
+            --api-url "$$CANVAS_API_URL" \
+            --course-id "$$CANVAS_COURSE_ID" \
+            --no-interactive \
+            --webhook-auth canvas-signed-jwt \
+            --webhook-jwks-url "$$jwks_url"
+        fi
         ccc system deploy create "ccc-course-$$slug"
         echo "Development webhook resources are ready."
         echo "Prefect UI: http://127.0.0.1:4200"
@@ -174,7 +171,7 @@ services:
       RUSTFS_ENDPOINT: http://rustfs:9000
     env_file: [.env.dev]
     entrypoint: []
-    command: prefect worker start --pool ${CCC_WORK_POOL_NAME:-local-pool} --type
+    command: prefect worker start --pool course-work-pool-${CCC_COURSE_SLUG} --type
       process
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock

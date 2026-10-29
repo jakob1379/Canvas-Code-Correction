@@ -8,20 +8,18 @@
       pkgs = nixpkgs.legacyPackages.${system};
     in
       {
-         devShell = pkgs.mkShell {
-           buildInputs = with pkgs; [
-             uv
-             act
-             docker
-           ];
+        devShell = pkgs.mkShell {
+          buildInputs = with pkgs; [
+            uv
+            act
+            docker
+          ];
 
-           LD_LIBRARY_PATH = "${pkgs.lib.makeLibraryPath [
-           ]}:$LD_LIBRARY_PATH";
-
-
-           shellHook = ''
+          shellHook = ''
+               export DOCKER_BUILDKIT=1
+               export COMPOSE_DOCKER_CLI_BUILD=1
              '';
-         };
+        };
       }
   );
 

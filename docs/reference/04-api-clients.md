@@ -125,9 +125,7 @@ feedback_file = Path("feedback.zip")
 grade = "95"
 
 config = UploadConfig(check_duplicates=True, dry_run=False)
-feedback_result, grade_result = uploader.upload_feedback_and_grade(
-    feedback_file, grade, config
-)
+feedback_result, grade_result = uploader.upload_feedback_and_grade(feedback_file, grade, config)
 
 print(feedback_result.message)
 print(grade_result.message)

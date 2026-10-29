@@ -21,13 +21,6 @@ Usage: ccc [OPTIONS] COMMAND [ARGS]...
 
 If you have not activated `.venv`, prefix commands with `uv run`.
 
-## Important Note About Help Output
-
-`ccc course setup` and `ccc course run` accept additional options that are
-parsed after the Typer entrypoint. That means `--help` only shows the top-level
-subcommand help, not every course-specific flag. The flag list below reflects
-the actual parser in `src/canvas_code_correction/cli_course.py`.
-
 ## Top-Level Commands
 
 ### `ccc course`
@@ -44,11 +37,12 @@ Available subcommands:
 
 - `webhook serve`
 - `deploy create`
+- `worker start`
 - `status`
 
 ## `ccc course setup`
 
-Creates or updates a `ccc-course-<slug>` Prefect block.
+Creates a generated `ccc-course-<canvas-course-id>-<slugified-course-code>` Prefect block.
 
 The repo also includes a ready-made local example grader at
 `examples/count-submitted-files/`.
@@ -62,14 +56,17 @@ The repo also includes a ready-made local example grader at
 | `--api-url`, `-u` | Canvas base URL | `https://canvas.instructure.com` |
 | `--course-id`, `-c` | Canvas course ID | interactive selection |
 | `--docker-image`, `-d` | Grader image | `jakob1379/canvas-grader:latest` |
-| `--map-assignments`, `--test-map` | Assignment-to-test mapping | repeatable |
+| `--work-package`, `--map-assignments` | Assignment-to-work-package mapping in `assignment_id:path` form. Use the work package root directory, the folder that contains `grader/` or `assets/`, for example `59160606:/path/to/my-work-package`. During setup, CCC records the assignment ID in that package's `work-package.yaml`, creates the generated course bucket, saves the Prefect `S3Bucket` block, and uploads the package's asset directory to `assignments/<assignment id>`. | repeatable |
 | `--env`, `-e` | Extra grader env in `KEY=VALUE` form | repeatable |
 | `--interactive` | Force prompts | enabled |
 | `--no-interactive` | Disable prompts | disabled |
-| `--assets-block` | Assets block name | prompt in interactive mode |
-| `--slug` | Course slug | inferred or prompted |
-| `--assets-prefix` | Assets prefix inside the bucket | `graders/<slug>/` |
-| `--work-pool` | Prefect work pool name | `course-work-pool-<slug>` |
+
+Generated values:
+
+- block name: `ccc-course-<course-id>-<slugified-course-code>`
+- assets block: `ccc-assets-<course-id>-<slugified-course-code>`
+- assets prefix: `graders/<course-id>-<slugified-course-code>/`
+- work pool: `course-work-pool-<course-id>-<slugified-course-code>`
 
 ### Example
 
@@ -78,18 +75,15 @@ $ printf "%s" "$CANVAS_API_TOKEN" | ccc course setup --no-interactive \
   --token-stdin \
   --api-url https://canvas.example.edu \
   --course-id 12345 \
-  --slug cs101 \
-  --assets-block course-assets-cs101 \
-  --assets-prefix graders/cs101/ \
   --docker-image ghcr.io/example/cs101-grader:latest \
-  --work-pool course-work-pool-cs101 \
+  --work-package 59160606:/path/to/my-work-package \
   --env PYTHONUNBUFFERED=1
 ```
 
 ### Common error
 
 ```bash
-$ ccc course setup --no-interactive --course-id 12345 --assets-block course-assets-cs101
+$ ccc course setup --no-interactive --course-id 12345
 ```
 
 Expected output:
@@ -117,13 +111,13 @@ Runs corrections for one assignment or one submission.
 Batch run:
 
 ```bash
-$ ccc course run 98765 --course ccc-course-cs101
+$ ccc course run 98765 --course ccc-course-12345-cs101
 ```
 
 Single submission:
 
 ```bash
-$ ccc course run 98765 --course ccc-course-cs101 --submission-id 54321 --dry-run
+$ ccc course run 98765 --course ccc-course-12345-cs101 --submission-id 54321 --dry-run
 ```
 
 ## `ccc course list`
@@ -135,7 +129,7 @@ $ ccc course list
 ```
 
 Expected output is a table containing block name, Canvas course ID, grader
-image, and assets block.
+image, assets block, and storage auth mode.
 
 ## `ccc system webhook serve`
 
@@ -156,13 +150,13 @@ Starting webhook server on 127.0.0.1:8080
 Creates or updates the built-in webhook deployment for a course block.
 
 ```bash
-$ ccc system deploy create ccc-course-cs101
+$ ccc system deploy create ccc-course-12345-cs101
 ```
 
 Expected output includes:
 
 ```text
-Creating deployment for course block: ccc-course-cs101
+Creating deployment for course block: ccc-course-12345-cs101
 Deployment 'ccc-cs101-deployment' created/updated successfully
 ```
 
@@ -178,6 +172,30 @@ Expected output contains health lines for:
 
 - `Prefect server`
 - `RustFS (S3)`
+
+## `ccc system worker start`
+
+Starts a course-scoped Prefect worker on the work pool named in that course's
+configuration. For `shared_environment` courses it mirrors any `RUSTFS_*`
+credentials in the environment into the `AWS_*` names boto3 reads; if none are
+set it changes nothing, leaving IAM roles and `~/.aws` profiles intact.
+
+```bash
+$ ccc system worker start --course ccc-course-12345-cs101
+```
+
+Expected output begins with:
+
+```text
+Starting Prefect worker for pool: course-work-pool-12345-cs101
+```
+
+For a `shared_environment` course that has `RUSTFS_*` credentials in the
+environment, this line appears first:
+
+```text
+Mirrored RUSTFS_* credentials into AWS_* for the worker
+```
 
 ## Global Option
 

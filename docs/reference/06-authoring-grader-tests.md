@@ -26,11 +26,7 @@ WORKSPACE_ROOT = Path(os.getenv("CCC_WORKSPACE_DIR", Path.cwd()))
 
 def submission_files(root: Path) -> list[str]:
     """Return sorted relative paths of all files under `root`."""
-    return sorted(
-        path.relative_to(root).as_posix()
-        for path in root.rglob("*")
-        if path.is_file()
-    )
+    return sorted(path.relative_to(root).as_posix() for path in root.rglob("*") if path.is_file())
 
 
 def write_outputs(files: list[str]) -> None:

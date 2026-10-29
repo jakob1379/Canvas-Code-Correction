@@ -39,34 +39,34 @@ jobs:
         with:
           ref: ${{ github.event.pull_request.head.sha }}
       - name: Install uv
-        uses: astral-sh/setup-uv@v7
+        uses: astral-sh/setup-uv@07a047e608db84b3d8c06cd9a7c7dcc9c355c18e # v10.3.2
         with:
           enable-cache: true
           python-version: '3.13'
       - name: Install dependencies
-        run: uv sync --all-groups --locked
+        run: uv sync --all-groups --locked --no-build
       - name: Audit locked runtime dependencies
-        run: uv run poe ci:audit
+        run: uv run --locked --no-build poe ci:audit
       - name: Check formatting
-        run: uv run ruff format --check .
+        run: uv run --locked --no-build ruff format --check .
       - name: Run lint checks
-        run: uv run ruff check .
+        run: uv run --locked --no-build ruff check .
       - name: Run type checks
-        run: uv run pyrefly check src
+        run: uv run --locked --no-build pyrefly check src
       - name: Setup RustFS for testing
         if: env.CANVAS_API_TOKEN != ''
         run: |
           # Wait for RustFS to be ready
           timeout 30 bash -c 'until curl -s -o /dev/null -w "%{http_code}" http://localhost:9000 | grep -q "^403$"; do sleep 1; done'
           # Run setup script
-          uv run python scripts/setup_rustfs.py
+          uv run --locked --no-build python scripts/setup_rustfs.py
       - name: Run unit tests
-        run: uv run pytest tests/unit -v --strict-markers --cov=src/canvas_code_correction
+        run: uv run --locked --no-build pytest tests/unit -v --strict-markers --cov=src/canvas_code_correction
           --cov-report=xml --cov-report=term
       - name: Generate HTML coverage report
         run: |
           if [ -f ".coverage" ]; then
-            uv run coverage html --data-file=.coverage
+            uv run --locked --no-build coverage html --data-file=.coverage
           else
             echo "Warning: .coverage file not found, skipping HTML report generation"
             echo "List of files in current directory:"
@@ -76,7 +76,7 @@ jobs:
           mkdir -p htmlcov
       - name: Upload coverage to Codecov
         if: github.event_name == 'push'
-        uses: codecov/codecov-action@v7
+        uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
         with:
           files: coverage.xml
           fail_ci_if_error: true
@@ -93,10 +93,10 @@ jobs:
       - name: Run integration tests (requires Canvas credentials)
         if: env.CANVAS_API_TOKEN != ''
         run: |
-          uv run pytest tests/integration -v --strict-markers -m integration --no-cov
+          uv run --locked --no-build pytest tests/integration -v --strict-markers -m integration --no-cov
       - name: Run e2e tests (requires Docker and Canvas credentials)
         if: env.CANVAS_API_TOKEN != ''
         run: |-
           # Start Docker daemon (already running on GitHub Actions)
           # Run e2e tests
-          uv run pytest tests/e2e -v --strict-markers -m e2e --no-cov
+          uv run --locked --no-build pytest tests/e2e -v --strict-markers -m e2e --no-cov

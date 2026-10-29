@@ -1,6 +1,7 @@
 from unittest.mock import Mock
 
 import pytest
+from pydantic import HttpUrl
 
 from canvas_code_correction.clients.canvas_resources import CanvasResources
 from canvas_code_correction.config import Settings
@@ -25,7 +26,7 @@ def _make_settings() -> Settings:
 
     return Settings(
         canvas=CanvasSettings(
-            api_url="https://canvas.test",
+            api_url=HttpUrl("https://canvas.test"),
             token=SecretStr("token"),
             course_id=1,
         ),
@@ -41,6 +42,7 @@ def test_fetch_submission_metadata_returns_serializable_dict(monkeypatch):
     submission = Mock()
     assignment.attributes = {"id": 10, "name": "Assignment"}
     submission.attributes = {"id": 20, "workflow_state": "submitted"}
+    submission.id = 20
     assignment.get_submission.return_value = submission
 
     course = Mock()
