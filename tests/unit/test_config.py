@@ -151,3 +151,15 @@ def test_webhook_settings_resolves_legacy_and_explicit_modes() -> None:
         ).effective_auth_mode()
         is WebhookAuthMode.CANVAS_SIGNED_JWT
     )
+
+
+def test_webhook_settings_canvas_api_mode_requires_fallback_opt_in() -> None:
+    """Selecting canvas-api cannot bypass the allow_canvas_api_fallback safety flag."""
+    assert WebhookSettings(auth_mode=WebhookAuthMode.CANVAS_API).effective_auth_mode() is None
+    assert (
+        WebhookSettings(
+            auth_mode=WebhookAuthMode.CANVAS_API,
+            allow_canvas_api_fallback=True,
+        ).effective_auth_mode()
+        is WebhookAuthMode.CANVAS_API
+    )

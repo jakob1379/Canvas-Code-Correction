@@ -114,6 +114,8 @@ class WebhookSettings(BaseModel):
 
     def effective_auth_mode(self) -> WebhookAuthMode | None:
         """Resolve explicit mode or the equivalent legacy configuration."""
+        if self.auth_mode is WebhookAuthMode.CANVAS_API:
+            return self.auth_mode if self.allow_canvas_api_fallback else None
         if self.auth_mode is not None:
             return self.auth_mode
         if self.require_jwt:
