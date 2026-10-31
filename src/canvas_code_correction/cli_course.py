@@ -14,16 +14,25 @@ import requests
 import typer
 import yaml
 from canvasapi.exceptions import CanvasException
+from limits import parse as parse_rate_limit
 from prefect.client.orchestration import get_client
 from prefect.exceptions import ObjectNotFound
 from prefect_aws.s3 import S3Bucket
-from pydantic import BaseModel, ConfigDict, Field, HttpUrl, SecretStr, ValidationError
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+    HttpUrl,
+    SecretStr,
+    TypeAdapter,
+    ValidationError,
+)
 from rich.panel import Panel
 from rich.prompt import Confirm, IntPrompt, Prompt
 from rich.table import Table
 from slugify import slugify
 
-from canvas_code_correction.config import WebhookAuthMode
+from canvas_code_correction.config import HttpsUrl, WebhookAuthMode
 from canvas_code_correction.storage import (
     RustfsProvisioningError,
     RustfsStorageConfig,
@@ -929,6 +938,15 @@ def course_run_command(
     _print_flow_result(result, console=console)
 
 
+def _validate_webhook_options(options: CourseSetupOptions, *, console: Console) -> None:
+    try:
+        TypeAdapter(HttpsUrl).validate_python(options.webhook_canvas_jwks_url)
+        parse_rate_limit(options.webhook_rate_limit)
+    except ValueError as exc:
+        console.print(f"[red]Invalid webhook option: {exc}[/red]")
+        raise typer.Exit(1) from exc
+
+
 def course_setup_command(
     options: CourseSetupOptions,
     *,
@@ -940,6 +958,7 @@ def course_setup_command(
     Confirm,
 ) -> None:
     console.print(Panel.fit("[bold blue]Canvas Code Correction - Course Setup[/bold blue]"))
+    _validate_webhook_options(options, console=console)
 
     canvas_credential = _resolve_canvas_token(
         options.canvas_token,

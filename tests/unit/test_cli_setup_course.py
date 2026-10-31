@@ -252,6 +252,45 @@ class TestSetupCourseNonInteractive:
         mock_canvas_class.assert_not_called()
 
     @pytest.mark.local
+    @pytest.mark.parametrize(
+        ("flag", "value"),
+        [
+            ("--webhook-jwks-url", "http://canvas.example.test/jwks"),
+            ("--webhook-rate-limit", "abc"),
+        ],
+    )
+    @patch("canvas_code_correction.cli.Canvas")
+    @patch("canvas_code_correction.cli.CourseConfigBlock")
+    def test_setup_course_rejects_invalid_webhook_options_before_any_change(
+        self,
+        mock_block_class: MagicMock,
+        mock_canvas_class: MagicMock,
+        flag: str,
+        value: str,
+        cli_runner: CliRunner,
+    ) -> None:
+        """Bad webhook options fail before Canvas is contacted or anything is provisioned."""
+        result = cli_runner.invoke(
+            app,
+            [
+                "course",
+                "setup",
+                "--no-interactive",
+                "--token",
+                "test-token",
+                "--course-id",
+                "13122436",
+                flag,
+                value,
+            ],
+        )
+
+        assert result.exit_code == 1
+        assert "Invalid webhook option" in result.output
+        mock_canvas_class.assert_not_called()
+        mock_block_class.assert_not_called()
+
+    @pytest.mark.local
     @patch("canvas_code_correction.cli.Canvas")
     @patch("canvas_code_correction.cli.CourseConfigBlock")
     def test_setup_course_accepts_webhook_overrides(
