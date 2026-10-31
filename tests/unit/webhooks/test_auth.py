@@ -28,6 +28,7 @@ from canvas_code_correction.config import (
 from canvas_code_correction.webhooks.auth import (
     WebhookSignatureHeaders,
     WebhookVerificationResult,
+    clear_jwk_cache,
     validate_canvas_signature,
     validate_hmac_signature,
     validate_jwt_token,
@@ -79,6 +80,7 @@ def _jwks(alg: str = "RS256") -> dict:
 
 @contextmanager
 def _serve_jwks(jwks: dict | None = None) -> Iterator[MagicMock]:
+    clear_jwk_cache()
     document = json.dumps(jwks or _jwks()).encode()
     with patch("jwt.jwks_client.urllib.request.build_opener") as build_opener:
         opener = build_opener.return_value
