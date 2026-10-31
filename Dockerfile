@@ -29,6 +29,7 @@ RUN addgroup --system --gid ${APP_GID} app && \
 
 COPY --from=base /app/.venv ./.venv
 COPY src ./src
+COPY scripts ./scripts
 
 RUN chown -R ${APP_UID}:${APP_GID} /app
 
