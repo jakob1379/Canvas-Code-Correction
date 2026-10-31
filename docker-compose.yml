@@ -171,8 +171,8 @@ services:
       RUSTFS_ENDPOINT: http://rustfs:9000
     env_file: [.env.dev]
     entrypoint: []
-    command: prefect worker start --pool course-work-pool-${CCC_COURSE_SLUG} --type
-      process
+    command: prefect worker start --pool course-work-pool-${CCC_COURSE_SLUG:?Set CCC_COURSE_SLUG
+      in .env.dev} --type process
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - ${CCC_WORKSPACE_ROOT:-/tmp/ccc/workspaces}:${CCC_WORKSPACE_ROOT:-/tmp/ccc/workspaces}
