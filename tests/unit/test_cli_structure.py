@@ -56,7 +56,7 @@ class TestCLICommandStructure:
 
     def test_course_setup_help_shows_supported_options(self, cli_runner: CliRunner) -> None:
         """Test that setup help includes the actual supported flags."""
-        result = cli_runner.invoke(app, ["course", "setup", "--help"])
+        result = cli_runner.invoke(app, ["course", "setup", "--help"], env={"COLUMNS": "200"})
 
         assert result.exit_code == 0
         assert "--token-stdin" in plain(result.output)
@@ -67,6 +67,7 @@ class TestCLICommandStructure:
         assert "--map-assignments" in plain(result.output)
         assert "--env" in plain(result.output)
         assert "--no-interactive" in plain(result.output)
+        assert "--webhook-auth" in plain(result.output)
 
     def test_course_run_help_shows_supported_options(self, cli_runner: CliRunner) -> None:
         """Test that run help includes the actual supported flags."""

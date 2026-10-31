@@ -1,12 +1,19 @@
 """Unit tests for webhook authentication."""
 
+import io
 import json
-from collections.abc import Mapping
+from collections.abc import Iterator, Mapping
+from contextlib import contextmanager
+from datetime import UTC, datetime, timedelta
 from typing import cast
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
+import jwt
+import jwt.algorithms
 import jwt.exceptions
+import pytest
 import requests
+from cryptography.hazmat.primitives.asymmetric import rsa
 from pydantic import HttpUrl, SecretStr
 
 from canvas_code_correction.config import (
@@ -14,18 +21,200 @@ from canvas_code_correction.config import (
     CourseAssetsSettings,
     GraderSettings,
     Settings,
+    WebhookAuthMode,
     WebhookSettings,
     WorkspaceSettings,
 )
 from canvas_code_correction.webhooks.auth import (
     WebhookSignatureHeaders,
     WebhookVerificationResult,
+    clear_jwk_cache,
     validate_canvas_signature,
     validate_hmac_signature,
     validate_jwt_token,
     verify_canvas_webhook,
     verify_via_canvas_api,
 )
+from tests.webhooks_shared import create_canvas_webhook_payload
+
+
+def _signed_jwt_settings() -> Settings:
+    return Settings(
+        canvas=CanvasSettings(
+            api_url=HttpUrl("https://canvas.instructure.com"),
+            token=SecretStr("fake"),
+            course_id=1,
+        ),
+        assets=CourseAssetsSettings(bucket_block="test"),
+        grader=GraderSettings(),
+        workspace=WorkspaceSettings(),
+        webhook=WebhookSettings(auth_mode=WebhookAuthMode.CANVAS_SIGNED_JWT),
+    )
+
+
+_SIGNING_KEY = rsa.generate_private_key(public_exponent=65537, key_size=2048)
+_OTHER_KEY = rsa.generate_private_key(public_exponent=65537, key_size=2048)
+
+
+def _course_claims(
+    context_id: str | None = "1",
+    *,
+    context_type: str = "Course",
+    event_time: datetime | None = None,
+) -> dict:
+    claims = create_canvas_webhook_payload()
+    claims["metadata"].update(context_type=context_type, context_id=context_id)
+    if event_time is not None:
+        claims["metadata"]["event_time"] = event_time.isoformat()
+    return claims
+
+
+def _sign(claims: dict, key: rsa.RSAPrivateKey = _SIGNING_KEY) -> bytes:
+    return jwt.encode(claims, key, algorithm="RS256", headers={"kid": "current"}).encode()
+
+
+def _jwks(alg: str = "RS256") -> dict:
+    jwk = jwt.algorithms.RSAAlgorithm.to_jwk(_SIGNING_KEY.public_key(), as_dict=True)
+    return {"keys": [{**jwk, "kid": "current", "alg": alg}]}
+
+
+@contextmanager
+def _serve_jwks(jwks: dict | None = None) -> Iterator[MagicMock]:
+    clear_jwk_cache()
+    document = json.dumps(jwks or _jwks()).encode()
+    with patch("jwt.jwks_client.urllib.request.build_opener") as build_opener:
+        opener = build_opener.return_value
+        opener.open.side_effect = lambda *_args, **_kwargs: io.BytesIO(document)
+        yield opener.open
+
+
+def _verify_signed(body: bytes) -> WebhookVerificationResult:
+    return validate_canvas_signature(_signed_jwt_settings(), body, WebhookSignatureHeaders())
+
+
+def test_validate_canvas_signed_jwt_body() -> None:
+    """A body signed by the Canvas key exposes its decoded event payload."""
+    with _serve_jwks():
+        result = _verify_signed(_sign(_course_claims()))
+
+    assert result.success is True
+    assert result.mode == "canvas-signed-jwt"
+    assert result.payload is not None
+    assert result.payload.metadata.event_name == "submission_created"
+
+
+def test_validate_canvas_signed_jwt_rejects_body_signed_by_another_key() -> None:
+    """A body signed by any key other than the published Canvas key is rejected."""
+    with _serve_jwks():
+        result = _verify_signed(_sign(_course_claims(), key=_OTHER_KEY))
+
+    assert result.success is False
+    assert result.status_code == 401
+
+
+def test_validate_canvas_signed_jwt_reports_invalid_signed_body_as_unprocessable() -> None:
+    """A genuine signature over an unusable event is a payload error, not an auth failure."""
+    claims = _course_claims()
+    del claims["body"]["submitted_at"]
+    with _serve_jwks():
+        result = _verify_signed(_sign(claims))
+
+    assert result.success is False
+    assert result.status_code == 422
+
+
+def test_validate_canvas_signed_jwt_rejects_expired_token() -> None:
+    """An exp claim in the past is enforced."""
+    claims = {**_course_claims(), "exp": int((datetime.now(UTC) - timedelta(hours=1)).timestamp())}
+    with _serve_jwks():
+        result = _verify_signed(_sign(claims))
+
+    assert result.success is False
+    assert result.status_code == 401
+
+
+@pytest.mark.parametrize(
+    ("context_type", "context_id", "accepted"),
+    [
+        ("Course", "1", True),
+        ("Course", "21070000000000001", True),
+        ("Course", "2", False),
+        ("Course", None, False),
+        ("Account", "1", False),
+    ],
+)
+def test_validate_canvas_signed_jwt_binds_event_to_course(
+    context_type: str,
+    context_id: str | None,
+    *,
+    accepted: bool,
+) -> None:
+    """A valid signature only authorizes events whose context is the configured course."""
+    with _serve_jwks():
+        result = _verify_signed(_sign(_course_claims(context_id, context_type=context_type)))
+
+    assert result.success is accepted
+    if not accepted:
+        assert result.status_code == 403
+
+
+@pytest.mark.parametrize("offset", [timedelta(hours=-2), timedelta(hours=2)])
+def test_validate_canvas_signed_jwt_rejects_events_outside_time_window(offset: timedelta) -> None:
+    """A captured signed body cannot be replayed indefinitely."""
+    with _serve_jwks():
+        result = _verify_signed(_sign(_course_claims(event_time=datetime.now(UTC) + offset)))
+
+    assert result.success is False
+    assert result.status_code == 401
+
+
+def test_validate_canvas_signed_jwt_rejects_jwk_published_for_another_algorithm() -> None:
+    """The JWK's own alg must match the token's, closing key confusion via a relabelled key."""
+    with _serve_jwks(_jwks(alg="RS512")):
+        result = _verify_signed(_sign(_course_claims()))
+
+    assert result.success is False
+    assert result.status_code == 401
+
+
+def test_validate_canvas_signed_jwt_does_not_refetch_for_each_unknown_kid() -> None:
+    """Unknown key IDs cannot force an upstream JWKS fetch per request."""
+    unknown_kid = jwt.encode(
+        _course_claims(),
+        _SIGNING_KEY,
+        algorithm="RS256",
+        headers={"kid": "unknown"},
+    ).encode()
+    with _serve_jwks() as fetch:
+        results = [_verify_signed(unknown_kid) for _ in range(5)]
+
+    assert all(result.status_code == 401 for result in results)
+    assert fetch.call_count == 1
+
+
+def test_validate_canvas_signed_jwt_refresh_failure_returns_bad_gateway() -> None:
+    """An unavailable JWK endpoint is retryable when no cached key exists."""
+    with _serve_jwks() as fetch:
+        fetch.side_effect = TimeoutError
+        result = _verify_signed(_sign(_course_claims()))
+
+    assert result.status_code == 502
+    assert result.success is False
+
+
+def test_validate_canvas_signed_jwt_rejects_symmetric_algorithm() -> None:
+    """Signed Canvas events never accept attacker-selected symmetric algorithms."""
+    body = jwt.encode(
+        _course_claims(),
+        "shared-secret-at-least-32-bytes-long",
+        algorithm="HS256",
+        headers={"kid": "current"},
+    ).encode()
+    with _serve_jwks():
+        result = _verify_signed(body)
+
+    assert result.status_code == 401
+    assert result.success is False
 
 
 def test_validate_jwt_token_valid() -> None:
@@ -96,7 +285,7 @@ def test_validate_canvas_signature_jwt_required() -> None:
             success=True,
             message="JWT verification succeeded",
             status_code=200,
-            mode="jwt",
+            mode="legacy-bearer-jwt",
         )
         mock_validate.assert_called_once_with("valid.token", settings.webhook.secret)
 
@@ -111,7 +300,7 @@ def test_validate_canvas_signature_jwt_required() -> None:
             success=False,
             message="Missing Authorization header for JWT webhook",
             status_code=401,
-            mode="jwt",
+            mode="legacy-bearer-jwt",
         )
         mock_validate.assert_not_called()
 
@@ -126,7 +315,7 @@ def test_validate_canvas_signature_jwt_required() -> None:
             success=False,
             message="Authorization header must use Bearer token format",
             status_code=401,
-            mode="jwt",
+            mode="legacy-bearer-jwt",
         )
         mock_validate.assert_not_called()
 
@@ -195,7 +384,7 @@ def test_validate_canvas_signature_uses_explicit_canvas_api_fallback() -> None:
             success=True,
             message="Canvas API verification succeeded",
             status_code=200,
-            mode="canvas_api",
+            mode="canvas-api",
         )
         result = validate_canvas_signature(
             settings,
@@ -206,7 +395,7 @@ def test_validate_canvas_signature_uses_explicit_canvas_api_fallback() -> None:
             success=True,
             message="Canvas API verification succeeded",
             status_code=200,
-            mode="canvas_api",
+            mode="canvas-api",
         )
         mock_verify.assert_called_once_with(settings, b"payload")
 
@@ -288,7 +477,7 @@ def test_verify_via_canvas_api_success() -> None:
             success=True,
             message="Canvas API verification succeeded",
             status_code=200,
-            mode="canvas_api",
+            mode="canvas-api",
         )
         # Verify API call made to correct URL
         mock_get.assert_called_once()
@@ -317,7 +506,7 @@ def test_verify_via_canvas_api_failure() -> None:
         success=False,
         message="Webhook payload is not valid JSON",
         status_code=400,
-        mode="canvas_api",
+        mode="canvas-api",
     )
 
     # Test missing event_name
@@ -332,7 +521,7 @@ def test_verify_via_canvas_api_failure() -> None:
         success=False,
         message="Webhook payload missing assignment or submission id",
         status_code=401,
-        mode="canvas_api",
+        mode="canvas-api",
     )
 
     # Test wrong event name
@@ -350,7 +539,7 @@ def test_verify_via_canvas_api_failure() -> None:
         success=False,
         message="Webhook payload missing assignment or submission id",
         status_code=401,
-        mode="canvas_api",
+        mode="canvas-api",
     )
 
     # Test missing IDs
@@ -368,7 +557,7 @@ def test_verify_via_canvas_api_failure() -> None:
         success=False,
         message="Webhook payload missing assignment or submission id",
         status_code=401,
-        mode="canvas_api",
+        mode="canvas-api",
     )
 
     # Test non-integer IDs
@@ -394,7 +583,7 @@ def test_verify_via_canvas_api_failure() -> None:
         success=False,
         message="Webhook payload missing assignment or submission id",
         status_code=401,
-        mode="canvas_api",
+        mode="canvas-api",
     )
 
     # Test API request exception
@@ -429,7 +618,7 @@ def test_verify_via_canvas_api_failure() -> None:
             success=False,
             message="Canvas API verification failed",
             status_code=401,
-            mode="canvas_api",
+            mode="canvas-api",
         )
 
 
@@ -526,14 +715,14 @@ def test_verify_canvas_webhook() -> None:
             success=True,
             message="Canvas API verification succeeded",
             status_code=200,
-            mode="canvas_api",
+            mode="canvas-api",
         )
         result = verify_canvas_webhook(settings, payload_body, headers)
         assert result == WebhookVerificationResult(
             success=True,
             message="Canvas API verification succeeded",
             status_code=200,
-            mode="canvas_api",
+            mode="canvas-api",
         )
         mock_validate.assert_called_once()
         args = mock_validate.call_args.args
@@ -571,7 +760,7 @@ def test_verify_canvas_webhook_normalizes_header_values() -> None:
             success=True,
             message="ok",
             status_code=200,
-            mode="jwt",
+            mode="legacy-bearer-jwt",
         )
 
         result = verify_canvas_webhook(settings, payload_body, headers)
@@ -580,7 +769,7 @@ def test_verify_canvas_webhook_normalizes_header_values() -> None:
             success=True,
             message="ok",
             status_code=200,
-            mode="jwt",
+            mode="legacy-bearer-jwt",
         )
         mock_validate.assert_called_once_with(
             settings,

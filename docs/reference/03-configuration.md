@@ -73,9 +73,22 @@ stored on their assets block.
 - `secret`
 - `deployment_name`
 - `enabled`
+- `auth_mode`
+- `canvas_jwks_url`
 - `require_jwt`
 - `rate_limit`
 - `allow_canvas_api_fallback`
+
+`canvas-api` authentication only checks that the submission exists in Canvas,
+so it takes effect only when `allow_canvas_api_fallback` is also true.
+`ccc course setup --webhook-auth canvas-api` sets both. The secret-based
+`hmac` and `legacy-bearer-jwt` modes remain for existing blocks; setup does not
+offer them because it cannot store a webhook secret.
+
+New course blocks use `canvas-signed-jwt`, which verifies the compact Canvas
+Live Events request body using Canvas-managed JWKs. `require_jwt` and the local
+webhook secret describe legacy bearer-JWT/HMAC clients; they are not the Canvas
+Live Events **Sign Payload** mechanism.
 
 ## Persisted Course Block Fields
 
@@ -93,8 +106,8 @@ fields:
 - `grader_image`
 - `work_pool_name`
 - `grader_env`
-- webhook fields such as `deployment_name`, `webhook_enabled`, and
-  `webhook_rate_limit`
+- webhook fields such as `deployment_name`, `webhook_enabled`,
+  `webhook_auth_mode`, `webhook_canvas_jwks_url`, and `webhook_rate_limit`
 
 ## CLI-to-Block Mapping
 
@@ -106,6 +119,11 @@ fields:
 | `--course-id` | `canvas_course_id` |
 | `--docker-image` | `grader_image` |
 | `--env` | `grader_env` |
+| `--webhook-auth` | `webhook_auth_mode` |
+| `--webhook-jwks-url` | `webhook_canvas_jwks_url` |
+| `--webhook-rate-limit` | `webhook_rate_limit` |
+| `--webhook-disabled` | `webhook_enabled=false` |
+| `--webhook-auth canvas-api` | `webhook_allow_canvas_api_fallback=true` |
 | generated course ID and slugified course code | `asset_bucket_block` |
 | generated course ID and slugified course code | `asset_path_prefix` |
 | generated shared-environment setup | `storage_auth_mode=shared_environment` |
@@ -141,6 +159,16 @@ without a mapping fall back to `asset_path_prefix`.
 | --- | --- | --- |
 | `CCC_WORKSPACE_ROOT` | Override workspace root | `/tmp/ccc/workspaces` |
 
+### Local Live Events stack
+
+| Variable | Purpose |
+| --- | --- |
+| `CLOUDFLARE_TUNNEL_TOKEN` | Secret token for a remotely managed named tunnel |
+| `CCC_WEBHOOK_PUBLIC_URL` | Stable public HTTPS origin, without a trailing slash |
+| `CCC_COURSE_SLUG` | Generated `<course id>-<slugified course code>` slug; selects `ccc-course-<slug>` and `course-work-pool-<slug>` |
+| `CANVAS_LIVE_EVENTS_JWKS_URL` | Optional Canvas signing-key endpoint override |
+| `CCC_WEBHOOK_DRY_RUN` | Keep Canvas writes disabled; defaults to `true` |
+
 ### RustFS / S3-compatible storage
 
 | Variable | Default | Purpose |
@@ -151,15 +179,11 @@ without a mapping fall back to `asset_path_prefix`.
 | `RUSTFS_BUCKET_NAME` | `test-assets` | Bucket name |
 | `RUSTFS_PREFIX` | `dev` | Prefix used by `poe rustfs-setup` |
 
+See [Testing Canvas Live Events Locally](../platform-setup/08-local-live-events.md)
+for the complete `.env.dev`, tunnel, Canvas Data Services, and dry-run workflow.
+
 For shared-environment course setup, CCC uses `RUSTFS_ACCESS_KEY` and
 `RUSTFS_SECRET_KEY` for both setup-time uploads and runtime downloads.
-
-## Known Gap
-
-`allow_canvas_api_fallback` exists in the runtime `WebhookSettings` model, but
-it is **not** currently exposed by `ccc course setup` or persisted on the
-course block. Treat it as an internal runtime field unless that persistence path
-is added.
 
 ## Common Errors
 

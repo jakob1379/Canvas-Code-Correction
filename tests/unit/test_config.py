@@ -9,8 +9,10 @@ from pydantic import HttpUrl, SecretStr
 
 from canvas_code_correction.bootstrap import load_settings_from_course_block
 from canvas_code_correction.config import (
+    CANVAS_LIVE_EVENTS_JWKS_URL,
     CanvasSettings,
     Settings,
+    WebhookAuthMode,
     WebhookSettings,
     WorkspaceSettings,
 )
@@ -44,6 +46,9 @@ def mock_course_block() -> MagicMock:
     mock.webhook_enabled = True
     mock.webhook_require_jwt = False
     mock.webhook_rate_limit = "10/minute"
+    mock.webhook_auth_mode = None
+    mock.webhook_canvas_jwks_url = CANVAS_LIVE_EVENTS_JWKS_URL
+    mock.webhook_allow_canvas_api_fallback = False
     return mock
 
 
@@ -128,3 +133,42 @@ def test_webhook_settings_default() -> None:
     assert settings.enabled is True
     assert settings.require_jwt is False
     assert settings.rate_limit == "10/minute"
+    assert settings.auth_mode is None
+    assert str(settings.canvas_jwks_url).rstrip("/") == CANVAS_LIVE_EVENTS_JWKS_URL
+
+
+def test_webhook_settings_resolves_legacy_and_explicit_modes() -> None:
+    """Explicit authentication takes precedence while old fields remain supported."""
+    assert (
+        WebhookSettings(require_jwt=True).effective_auth_mode() is WebhookAuthMode.LEGACY_BEARER_JWT
+    )
+    assert WebhookSettings(secret=SecretStr("secret")).effective_auth_mode() is WebhookAuthMode.HMAC
+    assert (
+        WebhookSettings(allow_canvas_api_fallback=True).effective_auth_mode()
+        is WebhookAuthMode.CANVAS_API
+    )
+    assert (
+        WebhookSettings(
+            auth_mode=WebhookAuthMode.CANVAS_SIGNED_JWT,
+            require_jwt=True,
+        ).effective_auth_mode()
+        is WebhookAuthMode.CANVAS_SIGNED_JWT
+    )
+
+
+def test_webhook_settings_rejects_cleartext_jwks_url() -> None:
+    """Signing keys are never fetched over plain HTTP."""
+    with pytest.raises(ValueError, match="URL scheme should be 'https'"):
+        WebhookSettings(canvas_jwks_url="http://canvas.example.test/jwks")
+
+
+def test_webhook_settings_canvas_api_mode_requires_fallback_opt_in() -> None:
+    """Selecting canvas-api cannot bypass the allow_canvas_api_fallback safety flag."""
+    assert WebhookSettings(auth_mode=WebhookAuthMode.CANVAS_API).effective_auth_mode() is None
+    assert (
+        WebhookSettings(
+            auth_mode=WebhookAuthMode.CANVAS_API,
+            allow_canvas_api_fallback=True,
+        ).effective_auth_mode()
+        is WebhookAuthMode.CANVAS_API
+    )

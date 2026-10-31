@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import importlib.metadata
 import os
+from enum import StrEnum
 from importlib import import_module
 from typing import TYPE_CHECKING, Annotated
 
@@ -19,6 +20,7 @@ from canvas_code_correction.bootstrap import (
     load_settings_from_course_block,
 )
 from canvas_code_correction.clients.canvas_resources import build_canvas_resources
+from canvas_code_correction.config import CANVAS_LIVE_EVENTS_JWKS_URL, WebhookAuthMode
 from canvas_code_correction.flows.correction import (
     CorrectSubmissionPayload,
     correct_submission_flow,
@@ -112,6 +114,13 @@ def course_run(
     )
 
 
+class SetupWebhookAuthMode(StrEnum):
+    """Webhook modes that work with what `ccc course setup` can persist."""
+
+    CANVAS_SIGNED_JWT = WebhookAuthMode.CANVAS_SIGNED_JWT.value
+    CANVAS_API = WebhookAuthMode.CANVAS_API.value
+
+
 @course_app.command("setup")
 def course_setup(
     token_stdin: Annotated[
@@ -138,6 +147,22 @@ def course_setup(
     interactive: Annotated[
         bool, typer.Option("--interactive/--no-interactive", help="Enable or disable prompts")
     ] = True,
+    webhook_auth: Annotated[
+        SetupWebhookAuthMode,
+        typer.Option(
+            "--webhook-auth",
+            help="Webhook authentication mode; canvas-api also opts in to Canvas API fallback",
+        ),
+    ] = SetupWebhookAuthMode.CANVAS_SIGNED_JWT,
+    webhook_jwks_url: Annotated[
+        str, typer.Option("--webhook-jwks-url", help="Canvas Live Events JWK set URL")
+    ] = CANVAS_LIVE_EVENTS_JWKS_URL,
+    webhook_rate_limit: Annotated[
+        str, typer.Option("--webhook-rate-limit", help="Per-course webhook rate limit")
+    ] = "10/minute",
+    webhook_disabled: Annotated[
+        bool, typer.Option("--webhook-disabled", help="Save the course with webhooks disabled")
+    ] = False,
 ) -> None:
     """Interactively set up a course configuration."""
     cli_course_impl.course_setup_command(
@@ -150,6 +175,10 @@ def course_setup(
             work_packages=work_packages or [],
             env_var=env_var or [],
             interactive=interactive,
+            webhook_auth_mode=WebhookAuthMode(webhook_auth),
+            webhook_canvas_jwks_url=webhook_jwks_url,
+            webhook_rate_limit=webhook_rate_limit,
+            webhook_enabled=not webhook_disabled,
         ),
         console=console,
         Canvas=Canvas,

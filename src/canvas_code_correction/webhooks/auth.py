@@ -5,12 +5,14 @@ from __future__ import annotations
 import hashlib
 import hmac
 from dataclasses import dataclass
+from datetime import UTC, datetime, timedelta
+from functools import cache
 from http import HTTPStatus
 from typing import TYPE_CHECKING
 
 import jwt
 import requests
-from jwt.exceptions import InvalidTokenError
+from jwt.exceptions import InvalidTokenError, PyJWKClientConnectionError, PyJWTError
 from pydantic import ValidationError
 
 if TYPE_CHECKING:
@@ -19,11 +21,41 @@ if TYPE_CHECKING:
     from pydantic import SecretStr
 
     from canvas_code_correction.config import Settings
+    from canvas_code_correction.webhooks.models import CanvasWebhookMetadata
 
+from canvas_code_correction.config import WebhookAuthMode
 from canvas_code_correction.webhooks.models import (
     CanvasWebhookPayload,
     UnsupportedSubmissionEventError,
 )
+
+_CANVAS_SIGNING_ALGORITHM = "RS256"
+_CANVAS_SHARD_ID_FACTOR = 10**13
+_MAX_EVENT_CLOCK_DIFFERENCE = timedelta(hours=1)
+
+
+@cache
+def _jwk_client(url: str) -> jwt.PyJWKClient:
+    return jwt.PyJWKClient(url, lifespan=3600, timeout=10)
+
+
+def clear_jwk_cache() -> None:
+    """Drop the process-local Canvas JWK clients and their caches, primarily for tests."""
+    _jwk_client.cache_clear()
+
+
+def _is_for_course(metadata: CanvasWebhookMetadata, course_id: int) -> bool:
+    context_id = metadata.context_id
+    if metadata.context_type != "Course" or context_id is None or not context_id.isdigit():
+        return False
+    # Live Events may carry global IDs: shard_id * 10**13 + local course id.
+    return course_id in {int(context_id), int(context_id) % _CANVAS_SHARD_ID_FACTOR}
+
+
+def _is_fresh(event_time: datetime) -> bool:
+    if event_time.tzinfo is None:
+        event_time = event_time.replace(tzinfo=UTC)
+    return abs(datetime.now(UTC) - event_time) <= _MAX_EVENT_CLOCK_DIFFERENCE
 
 
 def _is_json_parse_error(error: ValidationError) -> bool:
@@ -62,7 +94,7 @@ def _jwt_verification_result(
             success=False,
             message="Missing Authorization header for JWT webhook",
             status_code=HTTPStatus.UNAUTHORIZED.value,
-            mode="jwt",
+            mode=WebhookAuthMode.LEGACY_BEARER_JWT.value,
         )
 
     if not headers.authorization.startswith("Bearer "):
@@ -70,7 +102,7 @@ def _jwt_verification_result(
             success=False,
             message="Authorization header must use Bearer token format",
             status_code=HTTPStatus.UNAUTHORIZED.value,
-            mode="jwt",
+            mode=WebhookAuthMode.LEGACY_BEARER_JWT.value,
         )
 
     token = headers.authorization[7:]
@@ -79,14 +111,14 @@ def _jwt_verification_result(
             success=True,
             message="JWT verification succeeded",
             status_code=HTTPStatus.OK.value,
-            mode="jwt",
+            mode=WebhookAuthMode.LEGACY_BEARER_JWT.value,
         )
 
     return WebhookVerificationResult(
         success=False,
         message="Invalid JWT webhook signature",
         status_code=HTTPStatus.UNAUTHORIZED.value,
-        mode="jwt",
+        mode=WebhookAuthMode.LEGACY_BEARER_JWT.value,
     )
 
 
@@ -101,7 +133,7 @@ def _hmac_verification_result(
             success=False,
             message="Missing HMAC secret for webhook verification",
             status_code=HTTPStatus.UNAUTHORIZED.value,
-            mode="hmac",
+            mode=WebhookAuthMode.HMAC.value,
         )
 
     hmac_header = headers.hmac_signature()
@@ -110,7 +142,7 @@ def _hmac_verification_result(
             success=False,
             message="Missing HMAC signature header",
             status_code=HTTPStatus.UNAUTHORIZED.value,
-            mode="hmac",
+            mode=WebhookAuthMode.HMAC.value,
         )
 
     if validate_hmac_signature(payload_body, secret, hmac_header):
@@ -118,14 +150,14 @@ def _hmac_verification_result(
             success=True,
             message="HMAC verification succeeded",
             status_code=HTTPStatus.OK.value,
-            mode="hmac",
+            mode=WebhookAuthMode.HMAC.value,
         )
 
     return WebhookVerificationResult(
         success=False,
         message="Invalid HMAC webhook signature",
         status_code=HTTPStatus.UNAUTHORIZED.value,
-        mode="hmac",
+        mode=WebhookAuthMode.HMAC.value,
     )
 
 
@@ -137,6 +169,72 @@ class WebhookVerificationResult:
     message: str
     status_code: int
     mode: str
+    payload: CanvasWebhookPayload | None = None
+
+
+def _canvas_signed_jwt_verification_result(  # noqa: PLR0911
+    settings: Settings,
+    payload_body: bytes,
+) -> WebhookVerificationResult:
+    """Verify and decode a Canvas Live Events signed request body."""
+    invalid_result = WebhookVerificationResult(
+        success=False,
+        message="Invalid Canvas signed webhook payload",
+        status_code=HTTPStatus.UNAUTHORIZED.value,
+        mode=WebhookAuthMode.CANVAS_SIGNED_JWT.value,
+    )
+    try:
+        token = payload_body.decode("ascii").strip()
+        # Reading the header only rejects other algorithms early; jwt.decode below
+        # verifies the signature before claims are accepted.
+        header = jwt.get_unverified_header(token)  # NOSONAR
+        if header.get("alg") != _CANVAS_SIGNING_ALGORITHM or not header.get("kid"):
+            return invalid_result
+        jwks = _jwk_client(str(settings.webhook.canvas_jwks_url))
+        signing_key = jwks.get_signing_key(header["kid"])
+        # The JWK's own algorithm must match too, or a mislabelled key enables key confusion.
+        if signing_key.algorithm_name != _CANVAS_SIGNING_ALGORITHM:
+            return invalid_result
+        claims = jwt.decode(token, signing_key.key, algorithms=[_CANVAS_SIGNING_ALGORITHM])
+    except PyJWKClientConnectionError:
+        return WebhookVerificationResult(
+            success=False,
+            message="Canvas signing keys are temporarily unavailable",
+            status_code=HTTPStatus.BAD_GATEWAY.value,
+            mode=WebhookAuthMode.CANVAS_SIGNED_JWT.value,
+        )
+    except (UnicodeDecodeError, PyJWTError):
+        return invalid_result
+    try:
+        payload = CanvasWebhookPayload.model_validate(claims)
+    except ValidationError:
+        return WebhookVerificationResult(
+            success=False,
+            message="Canvas signed event does not match the submission event schema",
+            status_code=HTTPStatus.UNPROCESSABLE_CONTENT.value,
+            mode=WebhookAuthMode.CANVAS_SIGNED_JWT.value,
+        )
+    if not _is_for_course(payload.metadata, settings.canvas.course_id):
+        return WebhookVerificationResult(
+            success=False,
+            message="Canvas signed event is not for this course",
+            status_code=HTTPStatus.FORBIDDEN.value,
+            mode=WebhookAuthMode.CANVAS_SIGNED_JWT.value,
+        )
+    if not _is_fresh(payload.metadata.event_time):
+        return WebhookVerificationResult(
+            success=False,
+            message="Canvas signed event is outside the accepted event_time window",
+            status_code=HTTPStatus.UNAUTHORIZED.value,
+            mode=WebhookAuthMode.CANVAS_SIGNED_JWT.value,
+        )
+    return WebhookVerificationResult(
+        success=True,
+        message="Canvas signed JWT verification succeeded",
+        status_code=HTTPStatus.OK.value,
+        mode=WebhookAuthMode.CANVAS_SIGNED_JWT.value,
+        payload=payload,
+    )
 
 
 def validate_jwt_token(token: str, secret: SecretStr | None) -> bool:
@@ -240,7 +338,7 @@ def verify_via_canvas_api(
         success=success,
         message=message,
         status_code=status_code,
-        mode="canvas_api",
+        mode=WebhookAuthMode.CANVAS_API.value,
     )
 
 
@@ -250,19 +348,22 @@ def validate_canvas_signature(
     headers: WebhookSignatureHeaders,
     payload: CanvasWebhookPayload | None = None,
 ) -> WebhookVerificationResult:
-    """Validate Canvas webhook signature using configured verification mode.
+    """Validate a Canvas webhook using the course's effective authentication mode.
 
-    If webhook_require_jwt is True, validates JWT token from Authorization header.
-    Otherwise, validates HMAC when a shared webhook secret is configured. Canvas
-    API fallback is only allowed when explicitly enabled.
+    The mode comes from ``WebhookSettings.effective_auth_mode()``: an explicit
+    ``auth_mode`` wins, otherwise legacy settings select bearer JWT, then HMAC.
+    Canvas API existence checks run only with ``allow_canvas_api_fallback``.
     """
-    if settings.webhook.require_jwt:
+    mode = settings.webhook.effective_auth_mode()
+    if mode is WebhookAuthMode.CANVAS_SIGNED_JWT:
+        return _canvas_signed_jwt_verification_result(settings, payload_body)
+    if mode is WebhookAuthMode.LEGACY_BEARER_JWT:
         return _jwt_verification_result(settings, headers)
 
-    if settings.webhook.secret is not None:
+    if mode is WebhookAuthMode.HMAC:
         return _hmac_verification_result(settings, payload_body, headers)
 
-    if not settings.webhook.allow_canvas_api_fallback:
+    if mode is not WebhookAuthMode.CANVAS_API:
         return WebhookVerificationResult(
             success=False,
             message=(

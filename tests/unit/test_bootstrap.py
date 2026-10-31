@@ -11,6 +11,7 @@ from canvas_code_correction.bootstrap import (
     load_course_block,
     load_settings_from_course_block,
 )
+from canvas_code_correction.config import CANVAS_LIVE_EVENTS_JWKS_URL
 from canvas_code_correction.prefect_blocks.canvas import CourseConfigBlock
 
 
@@ -39,6 +40,9 @@ def _make_block() -> MagicMock:
     block.webhook_enabled = True
     block.webhook_require_jwt = False
     block.webhook_rate_limit = "10/minute"
+    block.webhook_auth_mode = None
+    block.webhook_canvas_jwks_url = CANVAS_LIVE_EVENTS_JWKS_URL
+    block.webhook_allow_canvas_api_fallback = False
     return block
 
 

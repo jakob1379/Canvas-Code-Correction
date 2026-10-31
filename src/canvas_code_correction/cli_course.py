@@ -14,15 +14,25 @@ import requests
 import typer
 import yaml
 from canvasapi.exceptions import CanvasException
+from limits import parse as parse_rate_limit
 from prefect.client.orchestration import get_client
 from prefect.exceptions import ObjectNotFound
 from prefect_aws.s3 import S3Bucket
-from pydantic import BaseModel, ConfigDict, Field, HttpUrl, SecretStr, ValidationError
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+    HttpUrl,
+    SecretStr,
+    TypeAdapter,
+    ValidationError,
+)
 from rich.panel import Panel
 from rich.prompt import Confirm, IntPrompt, Prompt
 from rich.table import Table
 from slugify import slugify
 
+from canvas_code_correction.config import HttpsUrl, WebhookAuthMode
 from canvas_code_correction.storage import (
     RustfsProvisioningError,
     RustfsStorageConfig,
@@ -90,6 +100,10 @@ class CourseSetupConfig:
     docker_image: str
     work_package_plans: tuple[WorkPackagePlan, ...]
     grader_env: dict[str, str]
+    webhook_auth_mode: WebhookAuthMode
+    webhook_canvas_jwks_url: str
+    webhook_rate_limit: str
+    webhook_enabled: bool
 
 
 @dataclass(frozen=True)
@@ -110,6 +124,10 @@ class CourseSetupOptions:
     work_packages: list[str]
     env_var: list[str]
     interactive: bool
+    webhook_auth_mode: WebhookAuthMode
+    webhook_canvas_jwks_url: str
+    webhook_rate_limit: str
+    webhook_enabled: bool
 
 
 class CourseConfigBlockPayload(TypedDict):
@@ -123,6 +141,11 @@ class CourseConfigBlockPayload(TypedDict):
     grader_image: str
     work_pool_name: str
     grader_env: dict[str, str]
+    webhook_auth_mode: WebhookAuthMode
+    webhook_canvas_jwks_url: HttpUrl
+    webhook_rate_limit: str
+    webhook_enabled: bool
+    webhook_allow_canvas_api_fallback: bool
 
 
 def _run_cli_step[T](console: Console, step: str, action: Callable[[], T]) -> T:
@@ -768,6 +791,10 @@ def _build_course_setup_config(
         ),
         work_package_plans=_build_work_package_plans(mappings, console=console),
         grader_env=_build_grader_env(options.env_var, console=console),
+        webhook_auth_mode=options.webhook_auth_mode,
+        webhook_canvas_jwks_url=options.webhook_canvas_jwks_url,
+        webhook_rate_limit=options.webhook_rate_limit,
+        webhook_enabled=options.webhook_enabled,
     )
 
 
@@ -784,6 +811,8 @@ def _print_course_setup_summary(config: CourseSetupConfig, *, console: Console) 
     summary_table.add_row("Work Pool", config.work_pool)
     summary_table.add_row("Docker Image", config.docker_image)
     summary_table.add_row("Work Packages", str(len(config.work_package_plans)))
+    summary_table.add_row("Webhook Auth", config.webhook_auth_mode.value)
+    summary_table.add_row("Webhook Enabled", str(config.webhook_enabled))
     console.print(summary_table)
 
     if not config.work_package_plans:
@@ -812,6 +841,11 @@ def _build_course_block_payload(config: CourseSetupConfig) -> CourseConfigBlockP
         "grader_image": config.docker_image,
         "work_pool_name": config.work_pool,
         "grader_env": config.grader_env,
+        "webhook_auth_mode": config.webhook_auth_mode,
+        "webhook_canvas_jwks_url": HttpUrl(config.webhook_canvas_jwks_url),
+        "webhook_rate_limit": config.webhook_rate_limit,
+        "webhook_enabled": config.webhook_enabled,
+        "webhook_allow_canvas_api_fallback": config.webhook_auth_mode is WebhookAuthMode.CANVAS_API,
     }
 
 
@@ -904,6 +938,15 @@ def course_run_command(
     _print_flow_result(result, console=console)
 
 
+def _validate_webhook_options(options: CourseSetupOptions, *, console: Console) -> None:
+    try:
+        TypeAdapter(HttpsUrl).validate_python(options.webhook_canvas_jwks_url)
+        parse_rate_limit(options.webhook_rate_limit)
+    except ValueError as exc:
+        console.print(f"[red]Invalid webhook option: {exc}[/red]")
+        raise typer.Exit(1) from exc
+
+
 def course_setup_command(
     options: CourseSetupOptions,
     *,
@@ -915,6 +958,7 @@ def course_setup_command(
     Confirm,
 ) -> None:
     console.print(Panel.fit("[bold blue]Canvas Code Correction - Course Setup[/bold blue]"))
+    _validate_webhook_options(options, console=console)
 
     canvas_credential = _resolve_canvas_token(
         options.canvas_token,

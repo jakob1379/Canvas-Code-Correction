@@ -1,10 +1,24 @@
 """Configuration helpers for Canvas Code Correction."""
 
 import tempfile
+from enum import StrEnum
 from pathlib import Path
-from typing import Literal
+from typing import Annotated, Literal
 
-from pydantic import BaseModel, Field, HttpUrl, SecretStr
+from pydantic import BaseModel, Field, HttpUrl, SecretStr, UrlConstraints
+
+CANVAS_LIVE_EVENTS_JWKS_URL = "https://8axpcl50e4.execute-api.us-east-1.amazonaws.com/main/jwks"
+
+HttpsUrl = Annotated[HttpUrl, UrlConstraints(allowed_schemes=["https"])]
+
+
+class WebhookAuthMode(StrEnum):
+    """Supported webhook authentication mechanisms."""
+
+    CANVAS_SIGNED_JWT = "canvas-signed-jwt"
+    HMAC = "hmac"
+    LEGACY_BEARER_JWT = "legacy-bearer-jwt"
+    CANVAS_API = "canvas-api"
 
 
 def _default_workspace_root() -> Path:
@@ -94,6 +108,25 @@ class WebhookSettings(BaseModel):
             "request authentication."
         ),
     )
+    auth_mode: WebhookAuthMode | None = Field(
+        default=None,
+        description="Explicit authentication mode; omitted preserves legacy configuration",
+    )
+    canvas_jwks_url: HttpsUrl = Field(default=CANVAS_LIVE_EVENTS_JWKS_URL, validate_default=True)
+
+    def effective_auth_mode(self) -> WebhookAuthMode | None:
+        """Resolve explicit mode or the equivalent legacy configuration."""
+        if self.auth_mode is WebhookAuthMode.CANVAS_API:
+            return self.auth_mode if self.allow_canvas_api_fallback else None
+        if self.auth_mode is not None:
+            return self.auth_mode
+        if self.require_jwt:
+            return WebhookAuthMode.LEGACY_BEARER_JWT
+        if self.secret is not None:
+            return WebhookAuthMode.HMAC
+        if self.allow_canvas_api_fallback:
+            return WebhookAuthMode.CANVAS_API
+        return None
 
 
 class Settings(BaseModel):

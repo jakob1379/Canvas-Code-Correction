@@ -4,6 +4,7 @@ from typing import cast
 import pytest
 from pydantic import HttpUrl, SecretStr, ValidationError
 
+from canvas_code_correction.config import WebhookAuthMode
 from canvas_code_correction.prefect_blocks import CourseConfigBlock
 
 pytestmark = pytest.mark.usefixtures("prefect_testing_environment")
@@ -44,6 +45,7 @@ def test_course_config_block_round_trip() -> None:
         grader_upload_comments=False,
         grader_upload_grades=True,
         grader_upload_verbose=True,
+        webhook_auth_mode=WebhookAuthMode.CANVAS_SIGNED_JWT,
     )
 
     block.save(block_name, overwrite=True)
@@ -69,5 +71,6 @@ def test_course_config_block_round_trip() -> None:
         assert loaded.grader_upload_comments is False
         assert loaded.grader_upload_grades is True
         assert loaded.grader_upload_verbose is True
+        assert loaded.webhook_auth_mode is WebhookAuthMode.CANVAS_SIGNED_JWT
     finally:
         CourseConfigBlock.delete(block_name)

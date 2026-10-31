@@ -196,18 +196,16 @@ def test_webhook_prefect_handoff_failure_returns_unsuccessful_response(
 
     mock_limiter = Mock()
     mock_limiter.hit.return_value = True
+    webhook_server.app.dependency_overrides[webhook_server.get_rate_limiter] = lambda: mock_limiter
     try:
-        with patch(
-            "canvas_code_correction.webhooks.server.get_rate_limiter",
-            return_value=mock_limiter,
-        ):
-            response = client.post(
-                "/webhooks/canvas/test-course",
-                json=payload,
-                headers=headers,
-            )
+        response = client.post(
+            "/webhooks/canvas/test-course",
+            json=payload,
+            headers=headers,
+        )
     finally:
         webhook_server.app.dependency_overrides.pop(webhook_server.get_webhook_runner, None)
+        webhook_server.app.dependency_overrides.pop(webhook_server.get_rate_limiter, None)
 
     assert response.status_code == 502
     body = response.json()

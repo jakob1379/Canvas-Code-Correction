@@ -26,7 +26,7 @@ The table below shows the completed milestones and their current state.
 | **Phase 1.5 – Test/Dev Environment**  | ✅ Complete | Shared Canvas cloud course (`https://canvas.instructure.com/courses/13121974`) for validation             | Enables rapid iteration without affecting production courses                                                |
 | **Phase 2 – Canvas Client Migration** | ✅ Complete | Canvas client, workspace store, Docker runner, result collector, uploader tasks, end‑to‑end Prefect flow  | All components implemented and tested; see the [migration plan](./02-phase-2-migration-plan.md) for details |
 | **Phase 3 – Container Runner**        | ✅ Complete | Docker execution with resource limits, smoke tests                                                        | Runner hardened for security and resource isolation                                                         |
-| **Phase 4 – Webhooks & Queueing**     | ✅ Complete | FastAPI webhook receiver with JWT validation, rate limiting, Prefect deployments, optional external queue | Production‑ready webhook handling                                                                           |
+| **Phase 4 – Webhooks & Queueing**     | 🟡 Core complete | FastAPI receiver, Canvas signed-payload validation, rate limiting, duplicate suppression, and Prefect deployments | Local tunnel workflow is available; production operations and any external queue remain separate work |
 | **Phase 5 – Reporting & Docs**        | ✅ Complete | Automated run summaries, expanded MkDocs content, GitHub Actions CI                                       | Documentation and reporting fully integrated into the CI/CD pipeline                                        |
 
 ## What’s Next

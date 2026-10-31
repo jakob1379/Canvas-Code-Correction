@@ -8,7 +8,7 @@ from typer.testing import CliRunner
 
 from canvas_code_correction.bootstrap import load_settings_from_course_block
 from canvas_code_correction.cli import app
-from canvas_code_correction.config import Settings
+from canvas_code_correction.config import CANVAS_LIVE_EVENTS_JWKS_URL, Settings
 from canvas_code_correction.flows.correction import (
     CollectedResults,
     CorrectionResults,
@@ -60,6 +60,9 @@ def mock_course_block() -> MagicMock:
     mock.webhook_enabled = True
     mock.webhook_require_jwt = False
     mock.webhook_rate_limit = "10/minute"
+    mock.webhook_auth_mode = None
+    mock.webhook_canvas_jwks_url = CANVAS_LIVE_EVENTS_JWKS_URL
+    mock.webhook_allow_canvas_api_fallback = False
     return mock
 
 

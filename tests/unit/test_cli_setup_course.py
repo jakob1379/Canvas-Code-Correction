@@ -9,10 +9,12 @@ import pytest
 import typer
 import yaml
 from prefect.exceptions import ObjectNotFound
+from pydantic import HttpUrl
 from typer.testing import CliRunner
 
 from canvas_code_correction import cli_course
 from canvas_code_correction.cli import app
+from canvas_code_correction.config import WebhookAuthMode
 from canvas_code_correction.prefect_blocks.canvas import CourseConfigBlock
 
 
@@ -185,6 +187,154 @@ class TestSetupCourseNonInteractive:
         mock_canvas_class.assert_called_once_with("https://canvas.instructure.com", "stdin-token")
 
     @pytest.mark.local
+    @patch("canvas_code_correction.cli.Canvas")
+    @patch("canvas_code_correction.cli.CourseConfigBlock")
+    def test_setup_course_persists_canvas_signed_webhook_defaults(
+        self,
+        mock_block_class: MagicMock,
+        mock_canvas_class: MagicMock,
+        cli_runner: CliRunner,
+        mock_canvas_course: MagicMock,
+    ) -> None:
+        mock_canvas = MagicMock()
+        mock_canvas.get_current_user.return_value = MagicMock()
+        mock_canvas.get_course.return_value = mock_canvas_course
+        mock_canvas_class.return_value = mock_canvas
+        mock_block_class.return_value = MagicMock()
+
+        result = cli_runner.invoke(
+            app,
+            [
+                "course",
+                "setup",
+                "--no-interactive",
+                "--token",
+                "test-token",
+                "--course-id",
+                "13122436",
+            ],
+        )
+
+        assert result.exit_code == 0
+        block_kwargs = mock_block_class.call_args.kwargs
+        assert block_kwargs["webhook_auth_mode"] is WebhookAuthMode.CANVAS_SIGNED_JWT
+        assert isinstance(block_kwargs["webhook_canvas_jwks_url"], HttpUrl)
+        assert block_kwargs["webhook_enabled"] is True
+        assert block_kwargs["webhook_rate_limit"] == "10/minute"
+        assert block_kwargs["webhook_allow_canvas_api_fallback"] is False
+
+    @pytest.mark.local
+    @pytest.mark.parametrize("mode", ["hmac", "legacy-bearer-jwt"])
+    @patch("canvas_code_correction.cli.Canvas")
+    def test_setup_course_rejects_webhook_modes_it_cannot_configure(
+        self,
+        mock_canvas_class: MagicMock,
+        mode: str,
+        cli_runner: CliRunner,
+    ) -> None:
+        """Setup cannot persist a webhook secret, so secret-based modes are not offered."""
+        result = cli_runner.invoke(
+            app,
+            [
+                "course",
+                "setup",
+                "--no-interactive",
+                "--token",
+                "test-token",
+                "--course-id",
+                "13122436",
+                "--webhook-auth",
+                mode,
+            ],
+        )
+
+        assert result.exit_code == 2
+        mock_canvas_class.assert_not_called()
+
+    @pytest.mark.local
+    @pytest.mark.parametrize(
+        ("flag", "value"),
+        [
+            ("--webhook-jwks-url", "http://canvas.example.test/jwks"),
+            ("--webhook-rate-limit", "abc"),
+        ],
+    )
+    @patch("canvas_code_correction.cli.Canvas")
+    @patch("canvas_code_correction.cli.CourseConfigBlock")
+    def test_setup_course_rejects_invalid_webhook_options_before_any_change(
+        self,
+        mock_block_class: MagicMock,
+        mock_canvas_class: MagicMock,
+        flag: str,
+        value: str,
+        cli_runner: CliRunner,
+    ) -> None:
+        """Bad webhook options fail before Canvas is contacted or anything is provisioned."""
+        result = cli_runner.invoke(
+            app,
+            [
+                "course",
+                "setup",
+                "--no-interactive",
+                "--token",
+                "test-token",
+                "--course-id",
+                "13122436",
+                flag,
+                value,
+            ],
+        )
+
+        assert result.exit_code == 1
+        assert "Invalid webhook option" in result.output
+        mock_canvas_class.assert_not_called()
+        mock_block_class.assert_not_called()
+
+    @pytest.mark.local
+    @patch("canvas_code_correction.cli.Canvas")
+    @patch("canvas_code_correction.cli.CourseConfigBlock")
+    def test_setup_course_accepts_webhook_overrides(
+        self,
+        mock_block_class: MagicMock,
+        mock_canvas_class: MagicMock,
+        cli_runner: CliRunner,
+        mock_canvas_course: MagicMock,
+    ) -> None:
+        mock_canvas = MagicMock()
+        mock_canvas.get_current_user.return_value = MagicMock()
+        mock_canvas.get_course.return_value = mock_canvas_course
+        mock_canvas_class.return_value = mock_canvas
+        mock_block_class.return_value = MagicMock()
+
+        result = cli_runner.invoke(
+            app,
+            [
+                "course",
+                "setup",
+                "--no-interactive",
+                "--token",
+                "test-token",
+                "--course-id",
+                "13122436",
+                "--webhook-auth",
+                "canvas-api",
+                "--webhook-jwks-url",
+                "https://canvas.example.test/jwks",
+                "--webhook-rate-limit",
+                "2/minute",
+                "--webhook-disabled",
+            ],
+        )
+
+        assert result.exit_code == 0
+        block_kwargs = mock_block_class.call_args.kwargs
+        assert block_kwargs["webhook_auth_mode"] is WebhookAuthMode.CANVAS_API
+        assert block_kwargs["webhook_allow_canvas_api_fallback"] is True
+        assert str(block_kwargs["webhook_canvas_jwks_url"]) == "https://canvas.example.test/jwks"
+        assert block_kwargs["webhook_enabled"] is False
+        assert block_kwargs["webhook_rate_limit"] == "2/minute"
+
+    @pytest.mark.local
     def test_setup_course_token_and_token_stdin_mutually_exclusive(
         self,
         cli_runner: CliRunner,
@@ -262,6 +412,10 @@ class TestSetupCourseNonInteractive:
                     work_packages=[],
                     env_var=[],
                     interactive=True,
+                    webhook_auth_mode=WebhookAuthMode.CANVAS_SIGNED_JWT,
+                    webhook_canvas_jwks_url="https://canvas.example.test/jwks",
+                    webhook_rate_limit="10/minute",
+                    webhook_enabled=True,
                 ),
                 console=MagicMock(),
                 Canvas=MagicMock(),
