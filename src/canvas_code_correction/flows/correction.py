@@ -117,9 +117,17 @@ class GradeUploadResult:
 class SubmissionAttachment(Protocol):
     """Protocol for a submission attachment reference."""
 
-    id: int | str | None
-    filename: str | None
-    display_name: str | None
+    @property
+    def id(self) -> int | str | None:
+        """Canvas file id of the attachment."""
+
+    @property
+    def filename(self) -> str | None:
+        """Stored filename of the attachment."""
+
+    @property
+    def display_name(self) -> str | None:
+        """Display name of the attachment."""
 
 
 @dataclass(frozen=True)
